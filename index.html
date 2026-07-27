@@ -3,760 +3,770 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Krueka — Plataforma escolar</title>
+<title>Krueka · Plataforma escolar</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
-  --text:#2C2C2B; --text2:#7D7A75; --canvas:#FFFFFF; --soft:#F9F8F7; --surface2:#F0EFED;
-  --border:#E6E5E3; --blue:#2783DE; --blue-soft:#E5F2FC; --green:#46A171; --green-soft:#E8F1EC;
-  --orange:#D5803B; --orange-soft:#FBEBDE; --red:#E56458; --red-soft:#FCE9E7;
+  --bg:#F9F8F7; --panel:#FFFFFF; --line:#E6E5E3; --soft:#F0EFED;
+  --tx:#2C2C2B; --tx2:#7D7A75;
+  --blue:#2783DE; --blue-bg:#E5F2FC;
+  --green:#46A171; --green-bg:#E8F1EC;
+  --orange:#D5803B; --orange-bg:#FBEBDE;
+  --red:#E56458; --red-bg:#FCE9E7;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#1A1A19; --panel:#232322; --line:#34342F; --soft:#2B2B2A; --tx:#F2F1EF; --tx2:#9C9892;
+    --blue-bg:#17324B; --green-bg:#193024; --orange-bg:#3A2A18; --red-bg:#3B1F1D; }
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  font-size:16px;line-height:1.5;color:var(--text);background:var(--soft);-webkit-font-smoothing:antialiased}
-button,input,select,textarea{font:inherit;color:inherit}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:0 0 10px}h3{font-size:15px;margin:0 0 6px}
+.sub{color:var(--tx2);font-size:13px;margin:0 0 14px}
+.note{color:var(--tx2);font-size:12px}
 .hidden{display:none !important}
-
-/* ---------- shell ---------- */
-.topbar{background:var(--canvas);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
-.topbar-in{max-width:1120px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
-.mark{width:28px;height:28px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:15px;font-weight:700}
-.brand small{display:block;font-weight:400;font-size:12px;color:var(--text2);letter-spacing:0}
-.spacer{flex:1}
-.who{font-size:14px;color:var(--text2)}
-main{max-width:1120px;margin:0 auto;padding:32px 24px 64px}
-
-/* ---------- generic ---------- */
-.card{background:var(--canvas);border:1px solid var(--border);border-radius:12px;padding:24px}
-.card + .card{margin-top:16px}
-h1{font-size:28px;line-height:1.25;margin:0 0 8px;letter-spacing:-.02em}
-h2{font-size:22px;margin:0 0 12px;letter-spacing:-.01em}
-h3{font-size:17px;margin:0 0 8px}
-.sub{color:var(--text2);margin:0 0 24px}
-label{display:block;font-size:14px;font-weight:600;margin:0 0 6px}
-input[type=text],input[type=password],input[type=number],select,textarea{
-  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--canvas)}
-input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
-textarea{min-height:88px;resize:vertical}
-.field{margin-bottom:16px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 18px;
-  border-radius:8px;border:1px solid var(--blue);background:var(--blue);color:#fff;font-weight:600;cursor:pointer}
-.btn:hover{filter:brightness(.95)}
-.btn.sec{background:var(--canvas);color:var(--text);border-color:var(--border)}
-.btn.ghost{background:transparent;border-color:transparent;color:var(--blue);padding:8px 10px}
-.btn.danger{background:var(--canvas);color:var(--red);border-color:var(--border)}
-.btn.sm{min-height:36px;padding:6px 12px;font-size:14px}
-.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-@media(max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
-.tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--surface2);color:var(--text2)}
-.tag.on{background:var(--green-soft);color:#2f6f4d}
-.tag.off{background:var(--surface2);color:var(--text2)}
-.tag.blue{background:var(--blue-soft);color:#1b5f9f}
-.note{font-size:14px;color:var(--text2)}
-.hr{height:1px;background:var(--border);margin:24px 0}
-table{width:100%;border-collapse:collapse;font-size:15px}
-th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:top}
-th{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2)}
-.empty{padding:32px;text-align:center;color:var(--text2);background:var(--soft);border-radius:8px}
-
-/* ---------- login ---------- */
-.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
-.login{width:100%;max-width:440px}
-.login .card{padding:32px}
-.tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:10px;margin-bottom:24px}
-.tabs button{flex:1;min-height:40px;border:0;background:transparent;border-radius:8px;font-weight:600;cursor:pointer;color:var(--text2)}
-.tabs button[aria-selected=true]{background:var(--canvas);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.05)}
-.err{background:var(--red-soft);color:#a8362b;border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:16px}
-
-/* ---------- nav ---------- */
-.nav{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:24px;overflow-x:auto}
-.nav button{border:0;background:transparent;padding:12px 14px;font-weight:600;color:var(--text2);cursor:pointer;
-  border-bottom:2px solid transparent;white-space:nowrap;min-height:44px}
-.nav button[aria-selected=true]{color:var(--blue);border-bottom-color:var(--blue)}
-
-/* ---------- stage ---------- */
-.stage{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--canvas)}
-.stage + .stage{margin-top:8px}
-.stage.done{background:var(--green-soft);border-color:#cfe3d7}
-.stage-t{font-weight:600}
-.code{font-family:Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:.18em;color:var(--blue)}
-.kpi{background:var(--soft);border:1px solid var(--border);border-radius:10px;padding:16px}
-.kpi b{display:block;font-size:26px;line-height:1.2}
-.kpi span{font-size:13px;color:var(--text2)}
-.plan li{margin-bottom:6px}
-.pill-list{display:flex;flex-wrap:wrap;gap:8px}
-.pill{border:1px solid var(--border);background:var(--canvas);border-radius:999px;padding:6px 14px;font-size:14px;cursor:pointer;min-height:36px}
-.pill[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
-.callout{border-left:3px solid var(--blue);background:var(--blue-soft);padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px}
-.callout.warn{border-color:var(--orange);background:var(--orange-soft)}
-.step{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-.step:last-child{border-bottom:0}
-.step input{margin-top:4px;width:18px;height:18px}
-.locked{text-align:center;padding:48px 24px;color:var(--text2)}
-.locked .big{font-size:34px;margin-bottom:8px}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.kpi b{display:block;font-size:24px}
+.kpi span{color:var(--tx2);font-size:12px}
+label{display:block;font-size:12px;color:var(--tx2);margin:10px 0 4px;font-weight:600}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{min-height:70px;resize:vertical}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 16px;border:0;border-radius:9px;background:var(--blue);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.btn:hover{filter:brightness(1.07)}
+.btn.sec{background:var(--soft);color:var(--tx);border:1px solid var(--line)}
+.btn.sm{padding:6px 11px;font-size:13px}
+.btn.dan{background:var(--red)}
+.btn.ok{background:var(--green)}
+.tag{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.tag.blue{background:var(--blue-bg);color:var(--blue)}
+.tag.green{background:var(--green-bg);color:var(--green)}
+.tag.orange{background:var(--orange-bg);color:var(--orange)}
+.tag.red{background:var(--red-bg);color:var(--red)}
+.tag.gray{background:var(--soft);color:var(--tx2)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx2);padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.topbar{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:9}
+.topbar .in{max-width:1080px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{width:26px;height:26px;border-radius:7px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800}
+.nav{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+.nav button{padding:7px 12px;border:0;background:transparent;color:var(--tx2);border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+.nav button[aria-selected="true"]{background:var(--blue-bg);color:var(--blue)}
+.code{font-size:34px;font-weight:800;letter-spacing:.13em;color:var(--blue)}
+.stage{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+.stage.on{border-color:var(--green);background:var(--green-bg)}
+.pill-list{display:flex;gap:6px;flex-wrap:wrap}
+.pill{padding:7px 12px;border:1px solid var(--line);background:var(--panel);color:var(--tx);border-radius:20px;font:inherit;font-size:13px;cursor:pointer}
+.pill[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+.alert{padding:10px 12px;border-radius:9px;font-size:13px;margin:10px 0}
+.alert.err{background:var(--red-bg);color:var(--red)}
+.alert.ok{background:var(--green-bg);color:var(--green)}
+.alert.info{background:var(--blue-bg);color:var(--blue)}
+.center{max-width:430px;margin:8vh auto;padding:0 16px}
+.tabs{display:flex;background:var(--soft);border-radius:10px;padding:4px;margin-bottom:14px}
+.tabs button{flex:1;padding:9px;border:0;background:transparent;color:var(--tx2);border-radius:7px;font:inherit;font-weight:600;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--panel);color:var(--tx)}
+.hr{height:1px;background:var(--line);margin:14px 0}
+.bar{height:7px;border-radius:6px;background:var(--soft);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--green)}
+.spinner{padding:24px;text-align:center;color:var(--tx2)}
 </style>
 </head>
 <body>
 
 <!-- ============ LOGIN ============ -->
-<div id="screen-login" class="login-wrap">
-  <div class="login">
-    <div style="text-align:center;margin-bottom:24px">
-      <div class="brand" style="justify-content:center;font-size:24px">
-        <span class="mark">K</span>
-        <span>Krueka</span>
-      </div>
-      <p class="note" style="margin:8px 0 0">Plataforma de clases · Informática</p>
+<div id="screen-login" class="center">
+  <div style="text-align:center;margin-bottom:18px">
+    <div class="row" style="justify-content:center;align-items:center;gap:9px">
+      <div class="logo" style="width:32px;height:32px">K</div>
+      <h1 style="margin:0">Krueka</h1>
     </div>
-    <div class="card">
-      <div class="tabs" role="tablist">
-        <button id="tab-doc" role="tab" aria-selected="true" onclick="App.loginTab('doc')">Soy docente</button>
-        <button id="tab-alu" role="tab" aria-selected="false" onclick="App.loginTab('alu')">Soy alumno</button>
-      </div>
-
-      <form id="form-doc" onsubmit="App.loginDocente(event)">
-        <div id="err-doc" class="err hidden"></div>
-        <div class="field">
-          <label for="u">Usuario</label>
-          <input id="u" type="text" autocomplete="username" placeholder="profe">
-        </div>
-        <div class="field">
-          <label for="p">Contraseña</label>
-          <input id="p" type="password" autocomplete="current-password" placeholder="••••••••">
-        </div>
-        <button class="btn" style="width:100%" type="submit">Entrar</button>
-      </form>
-
-      <form id="form-alu" class="hidden" onsubmit="App.loginAlumno(event)">
-        <div id="err-alu" class="err hidden"></div>
-        <div class="field">
-          <label for="cod">Código de la clase</label>
-          <input id="cod" type="text" inputmode="numeric" maxlength="4" placeholder="0000"
-                 style="font-size:24px;letter-spacing:.2em;text-align:center">
-        </div>
-        <div class="field">
-          <label for="nom">Tu nombre</label>
-          <select id="nom"><option value="">Primero escribí el código</option></select>
-        </div>
-        <button class="btn" style="width:100%" type="submit">Entrar al aula</button>
-      </form>
-    </div>
-    <p class="note" style="text-align:center;margin-top:16px">Usuario de prueba: <b>profe</b> · contraseña <b>krueka2026</b></p>
+    <p class="sub" style="margin-top:4px">Plataforma escolar · gestión de clases</p>
   </div>
-</div>
-
-<!-- ============ DOCENTE ============ -->
-<div id="screen-doc" class="hidden">
-  <div class="topbar"><div class="topbar-in">
-    <div class="brand"><span class="mark">K</span><span>Krueka<small>Panel del docente</small></span></div>
-    <div class="spacer"></div>
-    <span class="who" id="doc-who"></span>
-    <button class="btn sec sm" onclick="App.salir()">Salir</button>
-  </div></div>
-  <main>
-    <div class="nav" role="tablist">
-      <button id="n-clase" role="tab" aria-selected="true" onclick="App.tab('clase')">Clase de hoy</button>
-      <button id="n-alumnos" role="tab" aria-selected="false" onclick="App.tab('alumnos')">Alumnos</button>
-      <button id="n-entregas" role="tab" aria-selected="false" onclick="App.tab('entregas')">Entregas</button>
-      <button id="n-cursos" role="tab" aria-selected="false" onclick="App.tab('cursos')">Cursos</button>
-      <button id="n-ajustes" role="tab" aria-selected="false" onclick="App.tab('ajustes')">Ajustes</button>
+  <div class="card">
+    <div class="tabs">
+      <button id="tab-doc" aria-selected="true" onclick="UI.loginTab('doc')">Docente o dirección</button>
+      <button id="tab-alu" aria-selected="false" onclick="UI.loginTab('alu')">Soy alumno</button>
     </div>
-    <div id="v-clase"></div>
-    <div id="v-alumnos" class="hidden"></div>
-    <div id="v-entregas" class="hidden"></div>
-    <div id="v-cursos" class="hidden"></div>
-    <div id="v-ajustes" class="hidden"></div>
-  </main>
+
+    <form id="form-doc" onsubmit="Auth.entrar(event)">
+      <div id="err-doc" class="alert err hidden"></div>
+      <label for="email">Correo institucional</label>
+      <input id="email" type="email" autocomplete="username" placeholder="profe@krueka.edu.py" required>
+      <label for="pass">Contraseña</label>
+      <input id="pass" type="password" autocomplete="current-password" required>
+      <div style="height:14px"></div>
+      <button class="btn" style="width:100%;justify-content:center" type="submit">Entrar</button>
+    </form>
+
+    <form id="form-alu" class="hidden" onsubmit="Alumno.entrar(event)">
+      <div id="err-alu" class="alert err hidden"></div>
+      <label for="cod">Código de la clase</label>
+      <input id="cod" maxlength="6" style="text-transform:uppercase;text-align:center;font-size:24px;letter-spacing:.2em" placeholder="ABC123" oninput="Alumno.buscar()" required>
+      <label for="nom">Tu nombre</label>
+      <select id="nom" required><option value="">Primero escribí el código</option></select>
+      <div style="height:14px"></div>
+      <button class="btn" style="width:100%;justify-content:center" type="submit">Entrar al aula</button>
+    </form>
+  </div>
+  <p class="note" style="text-align:center">Los datos se guardan en la base central de la escuela.</p>
 </div>
 
-<!-- ============ ALUMNO ============ -->
-<div id="screen-alu" class="hidden">
-  <div class="topbar"><div class="topbar-in">
-    <div class="brand"><span class="mark">K</span><span>Krueka<small>Aula</small></span></div>
-    <div class="spacer"></div>
-    <span class="who" id="alu-who"></span>
-    <button class="btn sec sm" onclick="App.salir()">Salir</button>
+<!-- ============ PANEL ============ -->
+<div id="screen-app" class="hidden">
+  <div class="topbar"><div class="in">
+    <div class="logo">K</div>
+    <div>
+      <b>Krueka</b>
+      <div class="note" id="who"></div>
+    </div>
+    <div class="nav" id="nav"></div>
+    <button class="btn sec sm" onclick="Auth.salir()">Salir</button>
   </div></div>
-  <main><div id="v-alu"></div></main>
+  <div class="wrap" id="view"><div class="spinner">Cargando…</div></div>
+</div>
+
+<!-- ============ AULA DEL ALUMNO ============ -->
+<div id="screen-alu" class="hidden">
+  <div class="topbar"><div class="in">
+    <div class="logo">K</div>
+    <div><b>Aula</b><div class="note" id="alu-who"></div></div>
+    <button class="btn sec sm" style="margin-left:auto" onclick="location.reload()">Salir</button>
+  </div></div>
+  <div class="wrap" id="alu-view"></div>
 </div>
 
 <script>
-/* =====================================================================
-   Krueka — plataforma escolar de una sola página.
-   Los datos se guardan en el navegador (localStorage).
-   ===================================================================== */
-
-const CLASES = [
-  {
-    id:1, titulo:"Búsqueda segura y confiable de información",
-    unidad:"Integración de herramientas y uso educativo de internet",
-    capacidad:"Busca información en internet aplicando criterios de confiabilidad y cita sus fuentes.",
-    inicio:"Pregunta disparadora: ¿cómo sabemos si una página dice la verdad? Se acuerdan las normas de uso de internet. (8 min)",
-    desarrollo:"Búsqueda guiada en tres sitios, registro de fuentes, comparación de confiabilidad y redacción del resumen en el procesador de textos. (40 min)",
-    cierre:"Puesta en común de dos criterios y guardado del archivo con el nombre correcto. (12 min)",
-    indicadores:["Registra las tres fuentes con dirección y autor","Justifica cuál es más confiable","Redacta el resumen con sus palabras","Guarda el archivo con el nombre pedido"],
-    planB:"Sin internet: se trabaja con tres fichas impresas y se aplican los mismos criterios.",
-    actividad:{
-      titulo:"Investigo en internet con criterio",
-      objetivo:"Comparar tres fuentes y decidir cuál es más confiable.",
-      archivo:"Busqueda_Segura_Nombre",
-      pasos:["Elegí uno de los temas que da el profesor.","Buscá información en tres páginas distintas.","Anotá de cada una: título, dirección web y autor.","Marcá cuál te parece más confiable.","Escribí un resumen de 5 renglones con tus palabras.","Revisá la ortografía antes de guardar."],
-      preguntas:["Escribí las tres fuentes que usaste (título y dirección web).","¿Cuál te parece más confiable y por qué?","Pegá acá tu resumen de 5 renglones."]
-    }
-  },
-  {
-    id:2, titulo:"Imágenes libres y derechos de autor",
-    unidad:"Edición de imágenes",
-    capacidad:"Selecciona imágenes de uso libre, cita su licencia y edita una composición en Paint.",
-    inicio:"Se muestran dos imágenes: una libre y una con derechos. ¿Cuál puedo usar? (8 min)",
-    desarrollo:"Búsqueda en bancos de imágenes autorizados, registro de licencia y armado del cartel en Paint. (40 min)",
-    cierre:"Galería rápida de carteles y repaso de qué significa una licencia libre. (12 min)",
-    indicadores:["Usa imágenes de uso libre","Registra la licencia y el origen","Compone el cartel con título y frase","Guarda la imagen correctamente"],
-    planB:"Sin internet: el cartel se hace en Paint con dibujo propio y se explica por escrito qué son los derechos de autor.",
-    actividad:{
-      titulo:"Cartel con imágenes libres",
-      objetivo:"Crear un cartel usando solo imágenes que se pueden usar legalmente.",
-      archivo:"Imagenes_Libres_Nombre",
-      pasos:["Buscá dos imágenes libres en un banco autorizado.","Anotá de dónde las sacaste y qué licencia tienen.","Abrí Paint y armá el cartel sobre el cuidado de la sala.","Agregale título y una frase corta.","Guardá la imagen y pegá abajo las fuentes."],
-      preguntas:["¿De qué sitios sacaste las imágenes?","¿Qué licencia tienen?","Contá en 3 renglones qué mensaje transmite tu cartel."]
-    }
-  },
-  {
-    id:3, titulo:"Datos reales en Excel y gráficos",
-    unidad:"Planilla electrónica",
-    capacidad:"Organiza datos reales en una planilla, aplica fórmulas y representa la información en un gráfico.",
-    inicio:"Se muestra una tabla de datos oficial y se pregunta qué nos dice. (8 min)",
-    desarrollo:"Copiado de datos, orden en columnas, fórmulas de total y promedio, creación del gráfico de columnas. (40 min)",
-    cierre:"Lectura de dos conclusiones y guardado del archivo. (12 min)",
-    indicadores:["Ordena los datos con encabezados","Aplica fórmulas de total y promedio","Crea un gráfico con título","Redacta dos conclusiones"],
-    planB:"Sin internet: se usa la tabla impresa que trae el docente.",
-    actividad:{
-      titulo:"Mis datos en gráficos",
-      objetivo:"Convertir datos reales en un gráfico que se entienda.",
-      archivo:"Datos_Graficos_Nombre",
-      pasos:["Entrá al sitio oficial indicado y copiá la tabla.","Pegala en Excel y ordenala en columnas con encabezado.","Calculá total y promedio con fórmulas.","Creá un gráfico de columnas con título.","Escribí dos conclusiones."],
-      preguntas:["¿De qué sitio sacaste los datos?","¿Qué fórmulas usaste?","Escribí tus dos conclusiones."]
-    }
-  },
-  {
-    id:4, titulo:"Correo electrónico educativo",
-    unidad:"Integración de herramientas y uso educativo de internet",
-    capacidad:"Redacta un correo formal con archivo adjunto respetando la estructura y la netiqueta.",
-    inicio:"Se comparan dos correos: uno informal y uno formal. (8 min)",
-    desarrollo:"Redacción del correo con asunto, saludo, cuerpo y despedida; adjunto del trabajo anterior y envío. (40 min)",
-    cierre:"Revisión entre pares de la estructura del correo. (12 min)",
-    indicadores:["Usa asunto claro","Respeta la estructura formal","Adjunta el archivo correcto","Cuida la ortografía"],
-    planB:"Sin internet: el correo se escribe en el procesador de textos respetando la estructura formal.",
-    actividad:{
-      titulo:"Envío de mi trabajo por correo",
-      objetivo:"Enviar un trabajo por correo de manera formal.",
-      archivo:"Correo_Educativo_Nombre",
-      pasos:["Redactá el correo con asunto, saludo, cuerpo y despedida.","Adjuntá el trabajo de la clase anterior.","Revisá que el archivo pese menos de 10 MB.","Enviálo a la dirección indicada.","Guardá una captura del correo enviado."],
-      preguntas:["¿Qué asunto le pusiste al correo?","Pegá acá el cuerpo del correo.","¿Qué archivo adjuntaste?"]
-    }
-  },
-  {
-    id:5, titulo:"Formularios y encuestas digitales",
-    unidad:"Integración de herramientas y uso educativo de internet",
-    capacidad:"Diseña una encuesta breve, recoge respuestas y las interpreta en un gráfico.",
-    inicio:"¿Para qué sirve una encuesta? Ejemplos del colegio. (8 min)",
-    desarrollo:"Redacción de 5 preguntas en equipo, carga en el formulario, respuestas cruzadas y gráfico de resultados. (40 min)",
-    cierre:"Lectura de conclusiones por equipo. (12 min)",
-    indicadores:["Redacta preguntas claras","Carga correctamente el formulario","Representa los resultados","Escribe tres conclusiones"],
-    planB:"Sin internet: la encuesta se hace en papel y los resultados se vuelcan en la planilla.",
-    actividad:{
-      titulo:"Resultados de nuestra encuesta",
-      objetivo:"Recoger datos propios y leerlos con un gráfico.",
-      archivo:"Encuesta_Resultados_Nombre",
-      pasos:["En equipo, escribí 5 preguntas sobre un tema del colegio.","Cargá las preguntas en el formulario indicado.","Respondan entre los equipos.","Armá un gráfico con los resultados.","Escribí tres conclusiones."],
-      preguntas:["Escribí las 5 preguntas de tu encuesta.","¿Cuántas respuestas juntaron?","Escribí tus tres conclusiones."]
-    }
-  },
-  {
-    id:6, titulo:"Proyecto final integrador",
-    unidad:"Presentaciones digitales e integración",
-    capacidad:"Integra búsqueda, imagen, planilla y presentación en una campaña digital con propuesta de solución.",
-    inicio:"Se presentan los criterios del proyecto y se forman los equipos. (8 min)",
-    desarrollo:"Elección del problema, búsqueda de datos, armado de las 5 diapositivas con imagen libre y gráfico. (40 min)",
-    cierre:"Presentación de 3 minutos por equipo y coevaluación. (12 min)",
-    indicadores:["Elige un problema real y lo fundamenta","Integra imagen libre y gráfico","Propone una solución concreta","Presenta en el tiempo pedido"],
-    planB:"Sin electricidad: la campaña se arma en afiche y se presenta igual.",
-    actividad:{
-      titulo:"Campaña digital de mi comunidad",
-      objetivo:"Aplicar todo lo aprendido en una campaña con propuesta de solución.",
-      archivo:"Proyecto_Final_Equipo",
-      pasos:["Elegí un problema real del barrio o del colegio.","Buscá información confiable y citala.","Armá una presentación de 5 diapositivas.","Incluí una imagen libre y un gráfico.","Preparate para presentar en 3 minutos."],
-      preguntas:["¿Qué problema eligieron y por qué?","¿Qué fuentes usaron?","¿Cuál es su propuesta de solución?"]
-    }
-  }
-];
+const SUPABASE_URL = "https://janebfpnknapvntfqolf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ETAPAS = [
-  {k:"tema",     t:"Tema de la clase",        d:"El alumno ve la explicación y la capacidad a lograr"},
-  {k:"actividad",t:"Actividad práctica",       d:"Se habilitan las consignas paso a paso"},
-  {k:"entrega",  t:"Entrega del trabajo",      d:"El alumno puede enviar sus respuestas y el nombre del archivo"},
-  {k:"resultado",t:"Resultados y devolución",  d:"El alumno ve su nota y el comentario del docente"}
+  {k:"tema",     t:"Tema y capacidad",       d:"El alumno ve de qué trata la clase"},
+  {k:"actividad",t:"Actividad práctica",     d:"Se muestran los pasos a realizar"},
+  {k:"entrega",  t:"Entrega del trabajo",    d:"El alumno puede enviar su trabajo"},
+  {k:"resultado",t:"Resultados y devolución",d:"El alumno ve su nota y el comentario"}
 ];
 
-const DEFAULT_STATE = {
-  docente:{usuario:"profe", clave:"krueka2026", nombre:"Lic. Alfredo Pintos"},
-  cursos:[
-    {id:"c1", nombre:"9.º grado — Sección A", alumnos:[]},
-    {id:"c2", nombre:"9.º grado — Sección B", alumnos:[]}
-  ],
-  cursoActivo:"c1",
-  sesiones:{},   // cursoId -> {claseId, codigo, etapas:{}, asistencia:{}}
-  entregas:[]    // {id,cursoId,claseId,alumno,equipo,archivo,respuestas[],fecha,nota,devolucion}
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = id => document.getElementById(id);
+const hoy = () => new Date().toISOString().slice(0,10);
+function aviso(msg, tipo){ const v=$("view"); const d=document.createElement("div"); d.className="alert "+(tipo||"ok"); d.textContent=msg; v.prepend(d); setTimeout(()=>d.remove(), 4000); }
+
+/* estado global */
+const St = { user:null, perfil:null, asignaciones:[], csActual:null, planes:[], sesion:null, alumnos:[], tab:null };
+
+/* ==================== AUTENTICACIÓN ==================== */
+const Auth = {
+  async entrar(e){
+    e.preventDefault();
+    const err = $("err-doc"); err.classList.add("hidden");
+    const { data, error } = await db.auth.signInWithPassword({ email:$("email").value.trim(), password:$("pass").value });
+    if(error){ err.textContent = "Correo o contraseña incorrectos."; err.classList.remove("hidden"); return; }
+    St.user = data.user;
+    await Auth.cargarPerfil();
+  },
+  async cargarPerfil(){
+    const { data:perfil } = await db.from("profiles").select("*").eq("id", St.user.id).single();
+    if(!perfil){ alert("Tu usuario no tiene perfil asignado. Avisá al administrador."); return; }
+    St.perfil = perfil;
+    db.from("profiles").update({ ultimo_acceso:new Date().toISOString() }).eq("id", St.user.id).then(()=>{});
+    $("screen-login").classList.add("hidden");
+    $("screen-app").classList.remove("hidden");
+    const rol = {admin:"Administrador", director:"Dirección", docente:"Docente", alumno:"Alumno"}[perfil.role];
+    $("who").textContent = perfil.nombre + " · " + rol;
+    UI.construirNav();
+  },
+  async salir(){ await db.auth.signOut(); location.reload(); }
 };
 
-let S = null, sesionAlumno = null, tabActual = "clase";
-
-const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const $ = id => document.getElementById(id);
-const clase = id => CLASES.find(c=>c.id===id) || CLASES[0];
-
-function load(){
-  try{ const raw = localStorage.getItem("krueka_v1"); S = raw ? JSON.parse(raw) : structuredClone(DEFAULT_STATE); }
-  catch(e){ S = structuredClone(DEFAULT_STATE); }
-  if(!S.cursos || !S.cursos.length) S = structuredClone(DEFAULT_STATE);
-}
-function save(){ localStorage.setItem("krueka_v1", JSON.stringify(S)); }
-function curso(){ return S.cursos.find(c=>c.id===S.cursoActivo) || S.cursos[0]; }
-function sesion(){
-  const c = curso();
-  if(!S.sesiones[c.id]) S.sesiones[c.id] = {claseId:1, codigo:null, etapas:{}, asistencia:{}};
-  return S.sesiones[c.id];
-}
-
-const App = {
-  /* ---------- login ---------- */
+/* ==================== NAVEGACIÓN ==================== */
+const UI = {
   loginTab(w){
     $("tab-doc").setAttribute("aria-selected", w==="doc");
     $("tab-alu").setAttribute("aria-selected", w==="alu");
     $("form-doc").classList.toggle("hidden", w!=="doc");
     $("form-alu").classList.toggle("hidden", w!=="alu");
   },
-  loginDocente(e){
-    e.preventDefault();
-    const u = $("u").value.trim(), p = $("p").value;
-    if(u===S.docente.usuario && p===S.docente.clave){
-      $("err-doc").classList.add("hidden");
-      $("screen-login").classList.add("hidden");
-      $("screen-doc").classList.remove("hidden");
-      $("doc-who").textContent = S.docente.nombre;
-      App.render();
-    } else {
-      $("err-doc").textContent = "Usuario o contraseña incorrectos.";
-      $("err-doc").classList.remove("hidden");
-    }
+  menus(){
+    const r = St.perfil.role;
+    if(r==="docente") return [["clase","Clase de hoy"],["planificacion","Planificación"],["alumnos","Alumnos"],["entregas","Entregas"],["conducta","Registro anecdótico"]];
+    if(r==="director") return [["control","Control docente"],["resumen","Alumnos"],["planes","Planificaciones"]];
+    if(r==="admin")   return [["control","Control docente"],["usuarios","Usuarios y roles"],["estructura","Cursos y materias"]];
+    return [["control","Panel"]];
   },
-  buscarPorCodigo(cod){
-    for(const c of S.cursos){
-      const s = S.sesiones[c.id];
-      if(s && s.codigo && s.codigo===cod) return {c,s};
-    }
-    return null;
+  construirNav(){
+    const m = UI.menus();
+    $("nav").innerHTML = m.map(([k,t])=>`<button data-k="${k}" onclick="UI.ir('${k}')">${t}</button>`).join("");
+    UI.ir(m[0][0]);
   },
-  loginAlumno(e){
-    e.preventDefault();
-    const cod = $("cod").value.trim(), nombre = $("nom").value;
-    const f = App.buscarPorCodigo(cod);
-    const err = $("err-alu");
-    if(!f){ err.textContent="Ese código no corresponde a ninguna clase abierta."; err.classList.remove("hidden"); return; }
-    if(!nombre){ err.textContent="Elegí tu nombre en la lista."; err.classList.remove("hidden"); return; }
-    err.classList.add("hidden");
-    sesionAlumno = {cursoId:f.c.id, alumno:nombre};
-    $("screen-login").classList.add("hidden");
-    $("screen-alu").classList.remove("hidden");
-    $("alu-who").textContent = nombre + " · " + f.c.nombre;
-    App.renderAlumno();
-  },
-  refrescarNombres(){
-    const cod = $("cod").value.trim(), sel = $("nom"), f = App.buscarPorCodigo(cod);
-    if(!f){ sel.innerHTML = '<option value="">Primero escribí el código</option>'; return; }
-    const list = f.c.alumnos.length ? f.c.alumnos : [];
-    sel.innerHTML = '<option value="">Elegí tu nombre</option>' + list.map(a=>`<option>${esc(a)}</option>`).join("");
-  },
-  salir(){ sesionAlumno=null; location.reload(); },
+  ir(k){
+    St.tab = k;
+    document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.k===k));
+    $("view").innerHTML = '<div class="spinner">Cargando…</div>';
+    ({ clase:Docente.vClase, planificacion:Docente.vPlanificacion, alumnos:Docente.vAlumnos,
+       entregas:Docente.vEntregas, conducta:Docente.vConducta,
+       control:Direccion.vControl, resumen:Direccion.vAlumnos, planes:Direccion.vPlanes,
+       usuarios:Admin.vUsuarios, estructura:Admin.vEstructura })[k]();
+  }
+};
 
-  /* ---------- navegación docente ---------- */
-  tab(t){
-    tabActual = t;
-    ["clase","alumnos","entregas","cursos","ajustes"].forEach(k=>{
-      $("n-"+k).setAttribute("aria-selected", k===t);
-      $("v-"+k).classList.toggle("hidden", k!==t);
-    });
-    App.render();
-  },
-  render(){
-    if(tabActual==="clase") App.vClase();
-    if(tabActual==="alumnos") App.vAlumnos();
-    if(tabActual==="entregas") App.vEntregas();
-    if(tabActual==="cursos") App.vCursos();
-    if(tabActual==="ajustes") App.vAjustes();
-  },
+/* ==================== DATOS COMPARTIDOS ==================== */
+async function cargarAsignaciones(){
+  let q = db.from("course_subjects").select("id, horas_semanales, teacher_id, courses(id,nombre), subjects(id,nombre)");
+  if(St.perfil.role === "docente") q = q.eq("teacher_id", St.perfil.id);
+  const { data } = await q;
+  St.asignaciones = data || [];
+  if(!St.csActual && St.asignaciones.length) St.csActual = St.asignaciones[0].id;
+  return St.asignaciones;
+}
+function selectorCurso(onchange){
+  return `<label>Curso y materia</label><select onchange="${onchange}">` +
+    St.asignaciones.map(a=>`<option value="${a.id}" ${a.id===St.csActual?"selected":""}>${esc(a.courses.nombre)} · ${esc(a.subjects.nombre)}</option>`).join("") +
+    `</select>`;
+}
+async function cargarAlumnos(courseId){
+  const { data } = await db.from("enrollments").select("id, numero_lista, students(id,nombre)").eq("course_id", courseId).eq("activo", true);
+  St.alumnos = (data||[]).map(e=>({ id:e.students.id, nombre:e.students.nombre })).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  return St.alumnos;
+}
+function asignacionActual(){ return St.asignaciones.find(a=>a.id===St.csActual); }
 
-  /* ---------- clase de hoy ---------- */
-  vClase(){
-    const c = curso(), s = sesion(), cl = clase(s.claseId);
-    const presentes = Object.values(s.asistencia).filter(v=>v==="presente").length;
-    const entregas = S.entregas.filter(e=>e.cursoId===c.id && e.claseId===cl.id).length;
-    $("v-clase").innerHTML = `
+/* ==================== PANEL DOCENTE ==================== */
+const Docente = {
+  async cambiarCurso(id){ St.csActual = id; UI.ir(St.tab); },
+
+  async vClase(){
+    await cargarAsignaciones();
+    const a = asignacionActual();
+    if(!a){ $("view").innerHTML = '<div class="card"><h2>Todavía no tenés cursos asignados</h2><p class="sub">Pedile a dirección que te asigne un curso y una materia.</p></div>'; return; }
+    const [{data:planes}, {data:ses}] = await Promise.all([
+      db.from("lesson_plans").select("*").eq("course_subject_id", a.id).order("numero"),
+      db.from("class_sessions").select("*").eq("course_subject_id", a.id).eq("abierta", true).maybeSingle()
+    ]);
+    St.planes = planes || []; St.sesion = ses || null;
+    await cargarAlumnos(a.courses.id);
+    const plan = St.sesion ? St.planes.find(p=>p.id===St.sesion.lesson_plan_id) : St.planes[0];
+    const et = (St.sesion && St.sesion.etapas) || {};
+    let asis = {};
+    if(St.sesion){
+      const { data:att } = await db.from("attendance").select("student_id, estado").eq("session_id", St.sesion.id);
+      (att||[]).forEach(r=>asis[r.student_id]=r.estado);
+    }
+    const presentes = Object.values(asis).filter(v=>v==="presente").length;
+
+    $("view").innerHTML = `
       <div class="card">
-        <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="row" style="justify-content:space-between">
           <div style="flex:1;min-width:260px">
-            <span class="tag blue">${esc(c.nombre)}</span>
-            <h1 style="margin-top:12px">Clase ${cl.id} · ${esc(cl.titulo)}</h1>
-            <p class="sub" style="margin-bottom:0">Unidad: ${esc(cl.unidad)} · 60 minutos</p>
+            <span class="tag blue">${esc(a.courses.nombre)} · ${esc(a.subjects.nombre)}</span>
+            <h1 style="margin-top:10px">${plan ? "Clase "+(plan.numero||"")+" · "+esc(plan.titulo) : "Sin planificación cargada"}</h1>
+            <p class="sub" style="margin:0">${plan ? esc(plan.unidad||"")+" · "+plan.duracion_min+" minutos" : "Cargá una en la pestaña Planificación"}</p>
           </div>
           <div style="text-align:right">
             <div class="note">Código para los alumnos</div>
-            <div class="code">${s.codigo ? esc(s.codigo) : "— — — —"}</div>
-            <button class="btn sm" onclick="App.abrirSesion()">${s.codigo?"Generar otro":"Abrir la clase"}</button>
+            <div class="code">${St.sesion ? esc(St.sesion.codigo) : "— — — —"}</div>
+            <button class="btn sm" onclick="Docente.abrirClase()">${St.sesion ? "Abrir otra clase" : "Abrir la clase"}</button>
           </div>
         </div>
         <div class="hr"></div>
-        <label>Elegí la clase a desarrollar</label>
-        <div class="pill-list">
-          ${CLASES.map(x=>`<button class="pill" aria-pressed="${x.id===cl.id}" onclick="App.setClase(${x.id})">Clase ${x.id}</button>`).join("")}
-        </div>
+        <label>Clase a desarrollar</label>
+        <div class="pill-list">${St.planes.map(p=>`<button class="pill" aria-pressed="${plan&&p.id===plan.id}" onclick="Docente.elegirPlan('${p.id}')">Clase ${p.numero||""}</button>`).join("") || '<span class="note">Sin planificaciones</span>'}</div>
       </div>
 
-      <div class="grid3" style="margin-top:16px">
-        <div class="kpi"><b>${c.alumnos.length}</b><span>Alumnos en la lista</span></div>
+      <div class="grid3">
+        <div class="kpi"><b>${St.alumnos.length}</b><span>Alumnos en la lista</span></div>
         <div class="kpi"><b>${presentes}</b><span>Presentes hoy</span></div>
-        <div class="kpi"><b>${entregas}</b><span>Trabajos entregados</span></div>
+        <div class="kpi"><b>${Object.keys(et).filter(k=>et[k]).length}/4</b><span>Etapas liberadas</span></div>
       </div>
+
+      ${plan ? `<div class="card"><h2>Desarrollo de la clase</h2>
+        <p><b>Capacidad:</b> ${esc(plan.capacidad||"—")}</p>
+        <p><b>Inicio (8 min):</b> ${esc(plan.inicio||"—")}</p>
+        <p><b>Desarrollo (40 min):</b> ${esc(plan.desarrollo||"—")}</p>
+        <p><b>Cierre (12 min):</b> ${esc(plan.cierre||"—")}</p>
+        <div class="alert info" style="margin-bottom:0"><b>Plan B:</b> ${esc(plan.plan_b||"—")}</div>
+      </div>` : ""}
 
       <div class="card">
         <h2>Liberar por etapas</h2>
-        <p class="note" style="margin-top:-4px">El alumno solo ve lo que vos habilitás. Así nadie se adelanta.</p>
-        ${ETAPAS.map(e=>{
-          const on = !!s.etapas[e.k];
-          return `<div class="stage ${on?"done":""}">
-            <div><div class="stage-t">${e.t}</div><div class="note">${e.d}</div></div>
-            <div class="row" style="gap:8px">
-              <span class="tag ${on?"on":"off"}">${on?"Liberado":"Bloqueado"}</span>
-              <button class="btn ${on?"sec":""} sm" onclick="App.toggleEtapa('${e.k}')">${on?"Bloquear":"Liberar"}</button>
-            </div>
-          </div>`;
-        }).join("")}
-      </div>
-
-      <div class="card">
-        <h2>Plan de la clase</h2>
-        <p><b>Capacidad:</b> ${esc(cl.capacidad)}</p>
-        <div class="grid3">
-          <div><h3>Inicio</h3><p class="note">${esc(cl.inicio)}</p></div>
-          <div><h3>Desarrollo</h3><p class="note">${esc(cl.desarrollo)}</p></div>
-          <div><h3>Cierre</h3><p class="note">${esc(cl.cierre)}</p></div>
-        </div>
-        <div class="hr"></div>
-        <div class="grid2">
-          <div>
-            <h3>Indicadores de evaluación</h3>
-            <ul class="plan">${cl.indicadores.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
-          </div>
-          <div>
-            <h3>Actividad y archivo</h3>
-            <p class="note" style="margin:0 0 8px">${esc(cl.actividad.titulo)} — ${esc(cl.actividad.objetivo)}</p>
-            <p style="margin:0"><span class="tag">Archivo: ${esc(cl.actividad.archivo)}</span></p>
-          </div>
-        </div>
-        <div class="callout warn" style="margin-top:16px"><b>Plan B:</b> ${esc(cl.planB)}</div>
+        <p class="sub">Los alumnos solo ven lo que vos habilitás.</p>
+        ${ETAPAS.map(e=>`<div class="stage ${et[e.k]?"on":""}">
+            <div style="flex:1"><b>${e.t}</b><div class="note">${e.d}</div></div>
+            <button class="btn sm ${et[e.k]?"sec":"ok"}" ${St.sesion?"":"disabled"} onclick="Docente.etapa('${e.k}')">${et[e.k]?"Ocultar":"Liberar"}</button>
+          </div>`).join("")}
+        ${St.sesion?"":'<p class="note">Abrí la clase para poder liberar las etapas.</p>'}
       </div>
 
       <div class="card">
         <h2>Asistencia</h2>
-        ${c.alumnos.length ? `<table><thead><tr><th>Alumno</th><th style="width:230px">Estado</th></tr></thead><tbody>
-          ${c.alumnos.map(a=>{
-            const v = s.asistencia[a] || "";
-            return `<tr><td>${esc(a)}</td><td>
-              <select onchange="App.setAsistencia('${esc(a).replace(/'/g,"\\'")}', this.value)">
-                <option value="" ${v===""?"selected":""}>Sin marcar</option>
-                <option value="presente" ${v==="presente"?"selected":""}>Presente</option>
-                <option value="tarde" ${v==="tarde"?"selected":""}>Llegó tarde</option>
-                <option value="ausente" ${v==="ausente"?"selected":""}>Ausente</option>
-              </select></td></tr>`;
-          }).join("")}
-        </tbody></table>` : `<div class="empty">Todavía no cargaste la lista de alumnos. Andá a la pestaña <b>Alumnos</b>.</div>`}
+        ${!St.sesion ? '<p class="note">Abrí la clase para tomar asistencia.</p>' :
+          (St.alumnos.length ? `<table><tbody>${St.alumnos.map(al=>`<tr><td>${esc(al.nombre)}</td><td style="text-align:right">
+            ${[["presente","Presente"],["tarde","Tarde"],["ausente","Ausente"],["justificado","Justificado"]].map(([v,t])=>
+              `<button class="pill" aria-pressed="${asis[al.id]===v}" onclick="Docente.asistencia('${al.id}','${v}')">${t}</button>`).join(" ")}
+          </td></tr>`).join("")}</tbody></table>` : '<p class="note">Cargá la lista en la pestaña Alumnos.</p>')}
       </div>`;
   },
-  setClase(id){ const s=sesion(); s.claseId=id; s.etapas={}; save(); App.vClase(); },
-  toggleEtapa(k){ const s=sesion(); s.etapas[k]=!s.etapas[k]; save(); App.vClase(); },
-  setAsistencia(a,v){ const s=sesion(); s.asistencia[a]=v; save(); App.vClase(); },
-  abrirSesion(){
-    const s=sesion();
-    s.codigo = String(Math.floor(1000+Math.random()*9000));
-    save(); App.vClase();
+
+  async elegirPlan(id){
+    if(!St.sesion){ St.planes.sort((a,b)=>(a.id===id?-1:1)); await Docente.abrirClase(id); return; }
+    await db.from("class_sessions").update({ lesson_plan_id:id, etapas:{} }).eq("id", St.sesion.id);
+    UI.ir("clase");
+  },
+  async abrirClase(planId){
+    const plan = planId || (St.sesion ? St.sesion.lesson_plan_id : (St.planes[0] && St.planes[0].id));
+    if(!plan){ alert("Primero cargá una planificación."); return; }
+    const { error } = await db.rpc("abrir_clase", { p_course_subject_id:St.csActual, p_lesson_plan_id:plan });
+    if(error){ alert("No se pudo abrir la clase: "+error.message); return; }
+    UI.ir("clase");
+  },
+  async etapa(k){
+    const et = Object.assign({}, St.sesion.etapas||{});
+    et[k] = !et[k];
+    await db.from("class_sessions").update({ etapas:et }).eq("id", St.sesion.id);
+    UI.ir("clase");
+  },
+  async asistencia(studentId, estado){
+    await db.from("attendance").upsert({ session_id:St.sesion.id, student_id:studentId, estado, registrado_por:St.perfil.id }, { onConflict:"session_id,student_id" });
+    UI.ir("clase");
+  },
+
+  /* ---------- planificación ---------- */
+  async vPlanificacion(){
+    await cargarAsignaciones();
+    const a = asignacionActual();
+    if(!a){ $("view").innerHTML='<div class="card"><p class="sub">Sin cursos asignados.</p></div>'; return; }
+    const { data:planes } = await db.from("lesson_plans").select("*, lesson_indicators(id,descripcion,puntaje_max,orden)").eq("course_subject_id", a.id).order("numero");
+    $("view").innerHTML = `
+      <div class="card">${selectorCurso("Docente.cambiarCurso(this.value)")}</div>
+      <div class="card">
+        <h2>Cargar una clase nueva</h2>
+        <p class="sub">Preparala con anticipación: el día de la clase ya te aparece lista para dictar.</p>
+        <div class="grid2">
+          <div><label>Número</label><input id="p-num" type="number" min="1" value="${(planes||[]).length+1}"></div>
+          <div><label>Fecha prevista</label><input id="p-fecha" type="date" value="${hoy()}"></div>
+        </div>
+        <label>Título de la clase</label><input id="p-tit" placeholder="Ej.: Hoja de cálculo y gráficos">
+        <label>Unidad</label><input id="p-uni">
+        <label>Capacidad del programa</label><textarea id="p-cap"></textarea>
+        <div class="grid2">
+          <div><label>Inicio (8 min)</label><textarea id="p-ini"></textarea></div>
+          <div><label>Desarrollo (40 min)</label><textarea id="p-des"></textarea></div>
+          <div><label>Cierre (12 min)</label><textarea id="p-cie"></textarea></div>
+          <div><label>Plan B sin internet o sin electricidad</label><textarea id="p-pb"></textarea></div>
+        </div>
+        <div class="hr"></div>
+        <h3>Actividad del alumno</h3>
+        <div class="grid2">
+          <div><label>Título</label><input id="p-atit"></div>
+          <div><label>Nombre del archivo a entregar</label><input id="p-arch" placeholder="Tema_Nombre"></div>
+        </div>
+        <label>Objetivo</label><input id="p-aobj">
+        <label>Pasos (uno por línea)</label><textarea id="p-pasos"></textarea>
+        <label>Preguntas de cierre (una por línea)</label><textarea id="p-preg"></textarea>
+        <div class="hr"></div>
+        <h3>Indicadores y puntajes</h3>
+        <p class="sub">Un indicador por línea, con el puntaje al final separado por punto y coma. Ej.: <i>Cumple la consigna; 30</i></p>
+        <textarea id="p-ind">Cumple la consigna solicitada; 30
+Calidad técnica del trabajo digital; 25
+Cita fuentes confiables; 20
+Presentación y ortografía; 15
+Entrega en el tiempo previsto; 10</textarea>
+        <div style="height:12px"></div>
+        <button class="btn" onclick="Docente.guardarPlan()">Guardar planificación</button>
+      </div>
+
+      <div class="card">
+        <h2>Planificaciones cargadas (${(planes||[]).length})</h2>
+        <table><thead><tr><th>N.º</th><th>Clase</th><th>Fecha</th><th>Indicadores</th><th>Estado</th><th></th></tr></thead><tbody>
+        ${(planes||[]).map(p=>`<tr>
+          <td>${p.numero||""}</td>
+          <td><b>${esc(p.titulo)}</b><div class="note">${esc(p.unidad||"")}</div></td>
+          <td>${p.fecha_prevista||"—"}</td>
+          <td>${(p.lesson_indicators||[]).length} · ${(p.lesson_indicators||[]).reduce((s,i)=>s+Number(i.puntaje_max),0)} pts</td>
+          <td><span class="tag ${p.estado==="dictada"?"green":p.estado==="borrador"?"gray":"blue"}">${p.estado}</span></td>
+          <td><button class="btn sec sm" onclick="Docente.borrarPlan('${p.id}')">Borrar</button></td>
+        </tr>`).join("") || '<tr><td colspan="6" class="note">Todavía no cargaste ninguna.</td></tr>'}
+        </tbody></table>
+      </div>`;
+  },
+  async guardarPlan(){
+    const val = id => $(id).value.trim();
+    if(!val("p-tit")){ alert("Poné al menos el título de la clase."); return; }
+    const lineas = t => t.split("\n").map(s=>s.trim()).filter(Boolean);
+    const { data:plan, error } = await db.from("lesson_plans").insert({
+      course_subject_id: St.csActual,
+      numero: Number(val("p-num"))||null,
+      titulo: val("p-tit"), unidad: val("p-uni"), capacidad: val("p-cap"),
+      fecha_prevista: val("p-fecha")||null, duracion_min:60,
+      inicio: val("p-ini"), desarrollo: val("p-des"), cierre: val("p-cie"), plan_b: val("p-pb"),
+      actividad_titulo: val("p-atit"), actividad_objetivo: val("p-aobj"), actividad_archivo: val("p-arch"),
+      actividad_pasos: lineas($("p-pasos").value), actividad_preguntas: lineas($("p-preg").value),
+      estado: "planificada", created_by: St.perfil.id
+    }).select().single();
+    if(error){ alert("No se pudo guardar: "+error.message); return; }
+    const inds = lineas($("p-ind").value).map((l,i)=>{
+      const p = l.split(";");
+      return { lesson_plan_id:plan.id, descripcion:p[0].trim(), puntaje_max:Number((p[1]||"20").trim())||20, orden:i+1 };
+    });
+    if(inds.length) await db.from("lesson_indicators").insert(inds);
+    UI.ir("planificacion"); aviso("Planificación guardada.");
+  },
+  async borrarPlan(id){
+    if(!confirm("¿Borrar esta planificación?")) return;
+    await db.from("lesson_plans").delete().eq("id", id);
+    UI.ir("planificacion");
   },
 
   /* ---------- alumnos ---------- */
-  vAlumnos(){
-    const c = curso();
-    $("v-alumnos").innerHTML = `
+  async vAlumnos(){
+    await cargarAsignaciones();
+    const a = asignacionActual();
+    if(!a){ $("view").innerHTML='<div class="card"><p class="sub">Sin cursos asignados.</p></div>'; return; }
+    await cargarAlumnos(a.courses.id);
+    $("view").innerHTML = `
+      <div class="card">${selectorCurso("Docente.cambiarCurso(this.value)")}</div>
       <div class="card">
-        <h1>Lista de alumnos</h1>
-        <p class="sub">Curso: <b>${esc(c.nombre)}</b> · ${c.alumnos.length} alumnos cargados</p>
-        <div class="field">
-          <label for="pega">Pegá la lista, un alumno por línea</label>
-          <textarea id="pega" placeholder="Acosta, María Belén&#10;Benítez, Juan Carlos&#10;Cabrera, Lucía"></textarea>
-          <p class="note">Podés copiar la columna directamente desde Excel.</p>
-        </div>
-        <div class="row">
-          <button class="btn" onclick="App.cargarLista(false)">Agregar a la lista</button>
-          <button class="btn sec" onclick="App.cargarLista(true)">Reemplazar la lista</button>
-          <label class="btn sec" style="margin:0;cursor:pointer">Importar CSV
-            <input type="file" accept=".csv,.txt" class="hidden" onchange="App.importarCSV(event)">
-          </label>
-        </div>
+        <h2>Cargar la lista</h2>
+        <p class="sub">Pegá los nombres, uno por línea. Podés copiarlos directamente desde Excel.</p>
+        <textarea id="lista" style="min-height:130px" placeholder="Acosta, María Belén
+Benítez, Juan Carlos"></textarea>
+        <div style="height:10px"></div>
+        <button class="btn" onclick="Docente.guardarLista()">Agregar a la lista</button>
       </div>
       <div class="card">
-        <h2>Alumnos del curso</h2>
-        ${c.alumnos.length ? `<table><thead><tr><th style="width:48px">#</th><th>Nombre</th><th style="width:110px"></th></tr></thead><tbody>
-          ${c.alumnos.map((a,i)=>`<tr><td>${i+1}</td><td>${esc(a)}</td>
-            <td><button class="btn danger sm" onclick="App.quitarAlumno(${i})">Quitar</button></td></tr>`).join("")}
-        </tbody></table>` : `<div class="empty">Todavía no hay alumnos en este curso.</div>`}
+        <h2>${esc(a.courses.nombre)} · ${St.alumnos.length} alumnos</h2>
+        <table><tbody>${St.alumnos.map((al,i)=>`<tr><td style="width:34px" class="note">${i+1}</td><td>${esc(al.nombre)}</td>
+          <td style="text-align:right"><button class="btn sec sm" onclick="Docente.quitarAlumno('${al.id}')">Quitar</button></td></tr>`).join("") || '<tr><td class="note">Lista vacía.</td></tr>'}</tbody></table>
       </div>`;
   },
-  cargarLista(reemplazar){
-    const txt = $("pega").value;
-    const nombres = txt.split(/\n|;/).map(x=>x.replace(/^\s*\d+[\.\)\-]\s*/,"").trim()).filter(Boolean);
-    if(!nombres.length){ alert("Pegá al menos un nombre."); return; }
-    const c = curso();
-    c.alumnos = reemplazar ? nombres : [...c.alumnos, ...nombres.filter(n=>!c.alumnos.includes(n))];
-    save(); App.vAlumnos();
+  async guardarLista(){
+    const a = asignacionActual();
+    const nombres = $("lista").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    if(!nombres.length) return;
+    const inst = St.perfil.institution_id;
+    const { data:creados, error } = await db.from("students").insert(nombres.map(n=>({ institution_id:inst, nombre:n }))).select();
+    if(error){ alert("No se pudo guardar: "+error.message); return; }
+    await db.from("enrollments").insert(creados.map(s=>({ student_id:s.id, course_id:a.courses.id })));
+    UI.ir("alumnos"); aviso(nombres.length+" alumnos agregados.");
   },
-  importarCSV(ev){
-    const f = ev.target.files[0]; if(!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      const nombres = String(r.result).split(/\r?\n/).map(l=>l.split(",")[0].trim()).filter(Boolean);
-      const c = curso();
-      c.alumnos = [...c.alumnos, ...nombres.filter(n=>!c.alumnos.includes(n))];
-      save(); App.vAlumnos();
-    };
-    r.readAsText(f);
+  async quitarAlumno(id){
+    await db.from("students").update({ activo:false }).eq("id", id);
+    UI.ir("alumnos");
   },
-  quitarAlumno(i){ const c=curso(); c.alumnos.splice(i,1); save(); App.vAlumnos(); },
 
   /* ---------- entregas ---------- */
-  vEntregas(){
-    const c = curso(), s = sesion();
-    const list = S.entregas.filter(e=>e.cursoId===c.id).sort((a,b)=>b.fecha-a.fecha);
-    $("v-entregas").innerHTML = `
+  async vEntregas(){
+    await cargarAsignaciones();
+    const a = asignacionActual();
+    const { data:ses } = await db.from("class_sessions").select("id, fecha, codigo, lesson_plans(titulo, numero)").eq("course_subject_id", a.id).order("fecha", { ascending:false }).limit(20);
+    const ids = (ses||[]).map(s=>s.id);
+    const { data:subs } = ids.length ? await db.from("submissions").select("*, students(nombre)").in("session_id", ids).order("entregado_at", { ascending:false }) : { data:[] };
+    $("view").innerHTML = `
+      <div class="card">${selectorCurso("Docente.cambiarCurso(this.value)")}</div>
       <div class="card">
-        <h1>Entregas</h1>
-        <p class="sub">Curso: <b>${esc(c.nombre)}</b> · ${list.length} trabajos recibidos</p>
-        ${list.length ? list.map(e=>`
-          <div class="card" style="background:var(--soft)">
-            <div class="row" style="justify-content:space-between">
-              <div><b>${esc(e.alumno)}</b> <span class="tag">Clase ${e.claseId}</span></div>
-              <span class="note">${new Date(e.fecha).toLocaleString("es-PY")}</span>
-            </div>
-            <p class="note" style="margin:8px 0 0">Archivo declarado: <b>${esc(e.archivo||"—")}</b>${e.equipo?` · Equipo: ${esc(e.equipo)}`:""}</p>
-            ${e.respuestas.map((r,i)=>`<p style="margin:8px 0 0"><b>${i+1}.</b> ${esc(r)||"<em>sin responder</em>"}</p>`).join("")}
-            <div class="grid2" style="margin-top:12px">
-              <div><label>Nota (0-100)</label>
-                <input type="number" min="0" max="100" value="${e.nota??""}" onchange="App.calificar('${e.id}','nota',this.value)"></div>
-              <div><label>Devolución</label>
-                <input type="text" value="${esc(e.devolucion||"")}" onchange="App.calificar('${e.id}','devolucion',this.value)"></div>
-            </div>
-          </div>`).join("")
-        : `<div class="empty">Todavía no hay entregas. Liberá la etapa <b>Entrega del trabajo</b> para que los alumnos puedan enviar.</div>`}
+        <h2>Entregas recibidas (${(subs||[]).length})</h2>
+        <table><thead><tr><th>Alumno</th><th>Clase</th><th>Trabajo</th><th>Nota</th><th>Devolución</th><th></th></tr></thead><tbody>
+        ${(subs||[]).map(s=>{
+          const se = (ses||[]).find(x=>x.id===s.session_id) || {};
+          const cl = se.lesson_plans || {};
+          return `<tr>
+            <td><b>${esc(s.students?s.students.nombre:"")}</b><div class="note">${new Date(s.entregado_at).toLocaleString("es-PY")}</div></td>
+            <td>${cl.numero?"Clase "+cl.numero:""}<div class="note">${esc(cl.titulo||"")}</div></td>
+            <td>${esc(s.archivo_nombre||"—")}${s.enlace?`<div class="note">${esc(s.enlace)}</div>`:""}
+                ${(s.respuestas||[]).length?`<details><summary class="note">Ver respuestas</summary>${(s.respuestas||[]).map(r=>`<p class="note">${esc(r)}</p>`).join("")}</details>`:""}</td>
+            <td style="width:90px"><input type="number" min="0" max="100" value="${s.nota==null?"":s.nota}" id="n-${s.id}"></td>
+            <td><input value="${esc(s.devolucion||"")}" id="d-${s.id}"></td>
+            <td><button class="btn sm" onclick="Docente.corregir('${s.id}')">Guardar</button></td>
+          </tr>`;
+        }).join("") || '<tr><td colspan="6" class="note">Todavía no hay entregas.</td></tr>'}
+        </tbody></table>
       </div>`;
   },
-  calificar(id,campo,valor){
-    const e = S.entregas.find(x=>x.id===id); if(!e) return;
-    e[campo] = campo==="nota" ? (valor===""?null:Number(valor)) : valor;
-    save();
+  async corregir(id){
+    const nota = $("n-"+id).value === "" ? null : Number($("n-"+id).value);
+    await db.from("submissions").update({ nota, devolucion:$("d-"+id).value, corregido_por:St.perfil.id, corregido_at:new Date().toISOString() }).eq("id", id);
+    aviso("Corrección guardada.");
   },
 
-  /* ---------- cursos ---------- */
-  vCursos(){
-    $("v-cursos").innerHTML = `
+  /* ---------- registro anecdótico ---------- */
+  async vConducta(){
+    await cargarAsignaciones();
+    const a = asignacionActual();
+    await cargarAlumnos(a.courses.id);
+    const { data:regs } = await db.from("anecdotal_records").select("*, students(nombre)").eq("course_subject_id", a.id).order("fecha", { ascending:false }).limit(60);
+    $("view").innerHTML = `
+      <div class="card">${selectorCurso("Docente.cambiarCurso(this.value)")}</div>
       <div class="card">
-        <h1>Cursos</h1>
-        <p class="sub">Elegí con qué curso vas a trabajar hoy.</p>
-        ${S.cursos.map(c=>`
-          <div class="stage ${c.id===S.cursoActivo?"done":""}">
-            <div><div class="stage-t">${esc(c.nombre)}</div><div class="note">${c.alumnos.length} alumnos</div></div>
-            <div class="row" style="gap:8px">
-              ${c.id===S.cursoActivo?'<span class="tag on">En uso</span>':`<button class="btn sec sm" onclick="App.usarCurso('${c.id}')">Usar este</button>`}
-              <button class="btn danger sm" onclick="App.borrarCurso('${c.id}')">Borrar</button>
-            </div>
-          </div>`).join("")}
-        <div class="hr"></div>
-        <div class="field"><label for="nc">Nombre del nuevo curso</label>
-          <input id="nc" type="text" placeholder="9.º grado — Sección C"></div>
-        <button class="btn" onclick="App.nuevoCurso()">Crear curso</button>
-      </div>`;
-  },
-  usarCurso(id){ S.cursoActivo=id; save(); App.tab("clase"); },
-  nuevoCurso(){
-    const n = $("nc").value.trim(); if(!n) return;
-    S.cursos.push({id:"c"+Date.now(), nombre:n, alumnos:[]}); save(); App.vCursos();
-  },
-  borrarCurso(id){
-    if(S.cursos.length===1){ alert("Tiene que quedar al menos un curso."); return; }
-    if(!confirm("¿Borrar el curso y sus datos?")) return;
-    S.cursos = S.cursos.filter(c=>c.id!==id);
-    delete S.sesiones[id];
-    S.entregas = S.entregas.filter(e=>e.cursoId!==id);
-    if(S.cursoActivo===id) S.cursoActivo = S.cursos[0].id;
-    save(); App.vCursos();
-  },
-
-  /* ---------- ajustes ---------- */
-  vAjustes(){
-    $("v-ajustes").innerHTML = `
-      <div class="card">
-        <h1>Ajustes del docente</h1>
+        <h2>Nuevo registro</h2>
         <div class="grid2">
-          <div class="field"><label for="an">Nombre</label><input id="an" type="text" value="${esc(S.docente.nombre)}"></div>
-          <div class="field"><label for="au">Usuario</label><input id="au" type="text" value="${esc(S.docente.usuario)}"></div>
+          <div><label>Alumno</label><select id="r-alu">${St.alumnos.map(al=>`<option value="${al.id}">${esc(al.nombre)}</option>`).join("")}</select></div>
+          <div><label>Tipo</label><select id="r-tipo"><option value="positivo">Positivo</option><option value="a_mejorar">A mejorar</option><option value="observacion" selected>Observación</option></select></div>
+          <div><label>Puntos (pueden ser negativos)</label><input id="r-pts" type="number" step="0.5" value="0"></div>
+          <div><label>Fecha</label><input id="r-fecha" type="date" value="${hoy()}"></div>
         </div>
-        <div class="field"><label for="ap">Contraseña</label><input id="ap" type="text" value="${esc(S.docente.clave)}"></div>
-        <button class="btn" onclick="App.guardarDocente()">Guardar cambios</button>
+        <label>Descripción</label><textarea id="r-desc" placeholder="Qué se observó y en qué contexto"></textarea>
+        <div style="height:10px"></div>
+        <button class="btn" onclick="Docente.guardarConducta()">Registrar</button>
       </div>
       <div class="card">
-        <h2>Copia de seguridad</h2>
-        <p class="note">Los datos se guardan en esta computadora. Exportá el archivo para pasarlos a otra máquina o para tener respaldo.</p>
-        <div class="row">
-          <button class="btn sec" onclick="App.exportar()">Exportar datos</button>
-          <label class="btn sec" style="margin:0;cursor:pointer">Importar datos
-            <input type="file" accept=".json" class="hidden" onchange="App.importar(event)"></label>
-          <button class="btn danger" onclick="App.reiniciar()">Borrar todo</button>
-        </div>
+        <h2>Últimos registros</h2>
+        <table><thead><tr><th>Fecha</th><th>Alumno</th><th>Tipo</th><th>Descripción</th><th>Puntos</th></tr></thead><tbody>
+        ${(regs||[]).map(r=>`<tr><td>${r.fecha}</td><td>${esc(r.students?r.students.nombre:"")}</td>
+          <td><span class="tag ${r.tipo==="positivo"?"green":r.tipo==="a_mejorar"?"orange":"gray"}">${r.tipo.replace("_"," ")}</span></td>
+          <td>${esc(r.descripcion)}</td><td><b>${r.puntos}</b></td></tr>`).join("") || '<tr><td colspan="5" class="note">Sin registros todavía.</td></tr>'}
+        </tbody></table>
       </div>`;
   },
-  guardarDocente(){
-    S.docente.nombre=$("an").value.trim()||S.docente.nombre;
-    S.docente.usuario=$("au").value.trim()||S.docente.usuario;
-    S.docente.clave=$("ap").value||S.docente.clave;
-    save(); $("doc-who").textContent=S.docente.nombre; alert("Cambios guardados.");
-  },
-  exportar(){
-    const blob = new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = "krueka_datos.json"; a.click();
-  },
-  importar(ev){
-    const f = ev.target.files[0]; if(!f) return;
-    const r = new FileReader();
-    r.onload = () => { try{ S = JSON.parse(r.result); save(); alert("Datos importados."); location.reload(); }
-      catch(e){ alert("El archivo no es válido."); } };
-    r.readAsText(f);
-  },
-  reiniciar(){ if(confirm("¿Borrar todos los datos de esta computadora?")){ localStorage.removeItem("krueka_v1"); location.reload(); } },
-
-  /* ---------- vista del alumno ---------- */
-  renderAlumno(){
-    const c = S.cursos.find(x=>x.id===sesionAlumno.cursoId);
-    const s = S.sesiones[c.id], cl = clase(s.claseId), a = cl.actividad;
-    const yo = sesionAlumno.alumno;
-    const mia = S.entregas.find(e=>e.cursoId===c.id && e.claseId===cl.id && e.alumno===yo);
-
-    if(!s.etapas.tema){
-      $("v-alu").innerHTML = `<div class="card"><div class="locked">
-        <div class="big">⏳</div><h2>Esperá al profesor</h2>
-        <p class="note">La clase todavía no fue liberada. En cuanto el profesor la habilite, vas a ver el tema acá.</p>
-        <button class="btn sec" onclick="App.renderAlumno()">Actualizar</button>
-      </div></div>`;
-      return;
-    }
-
-    let html = `
-      <div class="card">
-        <span class="tag blue">Clase ${cl.id}</span>
-        <h1 style="margin-top:12px">${esc(cl.titulo)}</h1>
-        <p class="sub">${esc(cl.capacidad)}</p>
-        <div class="callout">Recordá: internet solo para la clase, sin datos personales y citando siempre de dónde sacaste la información.</div>
-      </div>`;
-
-    if(s.etapas.actividad){
-      html += `<div class="card">
-        <h2>${esc(a.titulo)}</h2>
-        <p class="note" style="margin-top:-4px">${esc(a.objetivo)}</p>
-        <div style="margin-top:12px">
-          ${a.pasos.map((p,i)=>`<div class="step"><input type="checkbox" id="pa${i}"><label for="pa${i}" style="font-weight:400;margin:0">${esc(p)}</label></div>`).join("")}
-        </div>
-        <div class="callout warn" style="margin-top:16px">Guardá tu archivo con este nombre exacto: <b>${esc(a.archivo)}</b></div>
-      </div>`;
-    } else {
-      html += `<div class="card"><div class="locked"><div class="big">🔒</div>
-        <h3>La actividad todavía no está liberada</h3>
-        <p class="note">Leé el tema mientras tanto.</p>
-        <button class="btn sec" onclick="App.renderAlumno()">Actualizar</button></div></div>`;
-    }
-
-    if(s.etapas.entrega){
-      if(mia){
-        html += `<div class="card"><h2>Tu entrega</h2>
-          <p class="tag on">Enviada el ${new Date(mia.fecha).toLocaleString("es-PY")}</p>
-          <p class="note">Archivo declarado: <b>${esc(mia.archivo||"—")}</b></p></div>`;
-      } else {
-        html += `<div class="card">
-          <h2>Entregar mi trabajo</h2>
-          ${a.preguntas.map((q,i)=>`<div class="field"><label for="r${i}">${i+1}. ${esc(q)}</label><textarea id="r${i}"></textarea></div>`).join("")}
-          <div class="grid2">
-            <div class="field"><label for="arch">Nombre del archivo que guardaste</label>
-              <input id="arch" type="text" value="${esc(a.archivo)}"></div>
-            <div class="field"><label for="eq">Compañeros de equipo (si trabajaste en equipo)</label>
-              <input id="eq" type="text" placeholder="Nombre y apellido"></div>
-          </div>
-          <button class="btn" onclick="App.entregar()">Enviar mi trabajo</button>
-        </div>`;
-      }
-    }
-
-    if(s.etapas.resultado && mia){
-      html += `<div class="card"><h2>Mi resultado</h2>
-        <p style="font-size:34px;font-weight:700;margin:0">${mia.nota??"—"}<span class="note" style="font-size:16px"> / 100</span></p>
-        <p class="note">${esc(mia.devolucion||"Todavía sin devolución escrita.")}</p></div>`;
-    }
-
-    $("v-alu").innerHTML = html;
-  },
-  entregar(){
-    const c = S.cursos.find(x=>x.id===sesionAlumno.cursoId), s = S.sesiones[c.id], cl = clase(s.claseId);
-    const respuestas = cl.actividad.preguntas.map((q,i)=>$("r"+i).value.trim());
-    S.entregas.push({
-      id:"e"+Date.now(), cursoId:c.id, claseId:cl.id, alumno:sesionAlumno.alumno,
-      equipo:$("eq").value.trim(), archivo:$("arch").value.trim(),
-      respuestas, fecha:Date.now(), nota:null, devolucion:""
+  async guardarConducta(){
+    if(!$("r-desc").value.trim()){ alert("Escribí la descripción."); return; }
+    const { error } = await db.from("anecdotal_records").insert({
+      student_id: $("r-alu").value, course_subject_id: St.csActual,
+      session_id: St.sesion ? St.sesion.id : null,
+      fecha: $("r-fecha").value, tipo: $("r-tipo").value,
+      descripcion: $("r-desc").value.trim(), puntos: Number($("r-pts").value)||0,
+      registrado_por: St.perfil.id
     });
-    save(); App.renderAlumno();
+    if(error){ alert("No se pudo registrar: "+error.message); return; }
+    UI.ir("conducta"); aviso("Registro guardado.");
   }
 };
 
-/* ---------- arranque ---------- */
-load();
-document.addEventListener("input", e => { if(e.target.id==="cod") App.refrescarNombres(); });
-
-/* modo demostración para revisar las pantallas: ?demo=docente | ?demo=alumno */
-const qs = new URLSearchParams(location.search);
-if(qs.get("demo")){
-  S = structuredClone(DEFAULT_STATE);
-  S.cursos[0].alumnos = ["Acosta, María Belén","Benítez, Juan Carlos","Cabrera, Lucía","Duarte, Mateo","Espínola, Sofía"];
-  S.sesiones["c1"] = {claseId:1, codigo:"4821", etapas:{tema:true, actividad:true}, asistencia:{"Acosta, María Belén":"presente","Benítez, Juan Carlos":"presente","Cabrera, Lucía":"tarde"}};
-  S.entregas = [{id:"e1",cursoId:"c1",claseId:1,alumno:"Acosta, María Belén",equipo:"",archivo:"Busqueda_Segura_MariaBelen",
-    respuestas:["MEC — mec.gov.py, Wikipedia, Blog escolar","La del MEC, porque es un sitio oficial del Estado.","Internet permite acceder a información..."],
-    fecha:Date.now(), nota:null, devolucion:""}];
-  if(qs.get("demo")==="alumno"){
-    sesionAlumno = {cursoId:"c1", alumno:"Acosta, María Belén"};
-    $("screen-login").classList.add("hidden"); $("screen-alu").classList.remove("hidden");
-    $("alu-who").textContent = "Acosta, María Belén · 9.º grado — Sección A";
-    App.renderAlumno();
-  } else {
-    $("screen-login").classList.add("hidden"); $("screen-doc").classList.remove("hidden");
-    $("doc-who").textContent = S.docente.nombre;
-    App.render();
+/* ==================== PANEL DE DIRECCIÓN ==================== */
+const Direccion = {
+  async vControl(){
+    const { data } = await db.from("v_docente_cumplimiento").select("*").order("docente");
+    const filas = data || [];
+    const tot = filas.reduce((s,f)=>({
+      clases: s.clases + Number(f.clases_dictadas||0),
+      asis: s.asis + Number(f.clases_con_asistencia||0),
+      anec: s.anec + Number(f.registros_anecdoticos||0),
+      plan: s.plan + Number(f.planificaciones_listas||0)
+    }), {clases:0, asis:0, anec:0, plan:0});
+    $("view").innerHTML = `
+      <h1>Control de implementación</h1>
+      <p class="sub">Estado real de cada docente: clases dictadas, asistencia tomada, registro anecdótico y correcciones.</p>
+      <div class="grid3">
+        <div class="kpi"><b>${filas.length}</b><span>Asignaciones activas</span></div>
+        <div class="kpi"><b>${tot.clases}</b><span>Clases dictadas</span></div>
+        <div class="kpi"><b>${tot.clases?Math.round(100*tot.asis/tot.clases):0}%</b><span>Con asistencia tomada</span></div>
+        <div class="kpi"><b>${tot.anec}</b><span>Registros anecdóticos</span></div>
+        <div class="kpi"><b>${tot.plan}</b><span>Planificaciones listas</span></div>
+      </div>
+      <div class="card">
+        <table><thead><tr><th>Docente</th><th>Curso y materia</th><th>Planificaciones</th><th>Clases</th><th>Asistencia</th><th>Registro anecdótico</th><th>Correcciones</th><th>Última clase</th></tr></thead><tbody>
+        ${filas.map(f=>{
+          const pct = Number(f.pct_asistencia_tomada||0);
+          const color = pct>=80?"green":pct>=50?"orange":"red";
+          return `<tr>
+            <td><b>${esc(f.docente||"Sin asignar")}</b><div class="note">${esc(f.email||"")}</div></td>
+            <td>${esc(f.curso)}<div class="note">${esc(f.materia)}</div></td>
+            <td>${f.planificaciones_listas}/${f.planificaciones}</td>
+            <td>${f.clases_dictadas}</td>
+            <td><span class="tag ${color}">${pct}%</span><div class="bar" style="margin-top:5px"><i style="width:${pct}%"></i></div></td>
+            <td>${f.registros_anecdoticos} <span class="note">(${f.puntos_asignados} pts)</span></td>
+            <td>${f.entregas_corregidas}/${f.entregas_recibidas}</td>
+            <td>${f.ultima_clase||"—"}</td>
+          </tr>`;
+        }).join("") || '<tr><td colspan="8" class="note">Sin datos todavía.</td></tr>'}
+        </tbody></table>
+      </div>`;
+  },
+  async vAlumnos(){
+    const { data } = await db.from("v_alumno_resumen").select("*").order("curso").order("alumno");
+    $("view").innerHTML = `
+      <h1>Alumnos</h1>
+      <div class="card"><table><thead><tr><th>Alumno</th><th>Curso</th><th>Presentes</th><th>Ausentes</th><th>Tardanzas</th><th>Puntos de conducta</th><th>Promedio</th></tr></thead><tbody>
+      ${(data||[]).map(a=>`<tr><td>${esc(a.alumno)}</td><td>${esc(a.curso)}</td><td>${a.presentes}</td><td>${a.ausentes}</td><td>${a.tardanzas}</td><td>${a.puntos_conducta}</td><td>${a.promedio==null?"—":a.promedio}</td></tr>`).join("") || '<tr><td colspan="7" class="note">Sin alumnos cargados.</td></tr>'}
+      </tbody></table></div>`;
+  },
+  async vPlanes(){
+    const { data } = await db.from("lesson_plans").select("*, course_subjects(courses(nombre), subjects(nombre), profiles(nombre)), lesson_indicators(id)").order("fecha_prevista", { ascending:false }).limit(100);
+    $("view").innerHTML = `
+      <h1>Planificaciones cargadas</h1>
+      <p class="sub">Lo que cada docente dejó preparado para las próximas clases.</p>
+      <div class="card"><table><thead><tr><th>Fecha</th><th>Docente</th><th>Curso y materia</th><th>Clase</th><th>Indicadores</th><th>Estado</th></tr></thead><tbody>
+      ${(data||[]).map(p=>{
+        const cs = p.course_subjects||{};
+        return `<tr><td>${p.fecha_prevista||"—"}</td><td>${esc(cs.profiles?cs.profiles.nombre:"—")}</td>
+        <td>${esc(cs.courses?cs.courses.nombre:"")}<div class="note">${esc(cs.subjects?cs.subjects.nombre:"")}</div></td>
+        <td><b>${esc(p.titulo)}</b><div class="note">${esc(p.capacidad||"")}</div></td>
+        <td>${(p.lesson_indicators||[]).length}</td>
+        <td><span class="tag ${p.estado==="dictada"?"green":p.estado==="borrador"?"gray":"blue"}">${p.estado}</span></td></tr>`;
+      }).join("") || '<tr><td colspan="6" class="note">Sin planificaciones.</td></tr>'}
+      </tbody></table></div>`;
   }
-}
+};
+
+/* ==================== PANEL DE ADMINISTRACIÓN ==================== */
+const Admin = {
+  async vUsuarios(){
+    const { data } = await db.from("profiles").select("*").order("role").order("nombre");
+    $("view").innerHTML = `
+      <h1>Usuarios y roles</h1>
+      <p class="sub">Asigná el rol de cada persona. El rol define qué ve y qué puede hacer.</p>
+      <div class="card"><table><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Último acceso</th></tr></thead><tbody>
+      ${(data||[]).map(p=>`<tr>
+        <td><b>${esc(p.nombre)}</b></td><td>${esc(p.email||"")}</td>
+        <td><select onchange="Admin.rol('${p.id}', this.value)">
+          ${["admin","director","docente","alumno"].map(r=>`<option value="${r}" ${p.role===r?"selected":""}>${r}</option>`).join("")}
+        </select></td>
+        <td><button class="btn sec sm" onclick="Admin.activo('${p.id}', ${!p.activo})">${p.activo?"Activo":"Inactivo"}</button></td>
+        <td class="note">${p.ultimo_acceso? new Date(p.ultimo_acceso).toLocaleString("es-PY") : "nunca"}</td>
+      </tr>`).join("")}
+      </tbody></table></div>
+      <div class="card">
+        <h2>Cómo se agregan docentes</h2>
+        <p class="sub">Cada docente se registra con su correo institucional desde el panel de Supabase (Authentication → Add user). Al entrar por primera vez aparece acá y vos le asignás el rol y el curso.</p>
+      </div>`;
+  },
+  async rol(id, role){ await db.from("profiles").update({ role }).eq("id", id); aviso("Rol actualizado."); },
+  async activo(id, v){ await db.from("profiles").update({ activo:v }).eq("id", id); UI.ir("usuarios"); },
+
+  async vEstructura(){
+    const [{data:cursos}, {data:materias}, {data:docentes}, {data:asigs}] = await Promise.all([
+      db.from("courses").select("*").order("nombre"),
+      db.from("subjects").select("*").order("nombre"),
+      db.from("profiles").select("id,nombre").eq("role","docente").order("nombre"),
+      db.from("course_subjects").select("id, courses(nombre), subjects(nombre), profiles(nombre), horas_semanales")
+    ]);
+    $("view").innerHTML = `
+      <h1>Cursos, materias y asignaciones</h1>
+      <div class="grid2">
+        <div class="card">
+          <h2>Nuevo curso</h2>
+          <label>Nombre</label><input id="c-nom" placeholder="9.º grado — Sección C">
+          <div class="grid2"><div><label>Grado</label><input id="c-gra" placeholder="9.º"></div>
+          <div><label>Sección</label><input id="c-sec" placeholder="C"></div></div>
+          <div style="height:10px"></div><button class="btn" onclick="Admin.nuevoCurso()">Crear curso</button>
+        </div>
+        <div class="card">
+          <h2>Nueva materia</h2>
+          <label>Nombre</label><input id="m-nom" placeholder="Matemática">
+          <label>Área</label><input id="m-area" placeholder="Ciencias exactas">
+          <div style="height:10px"></div><button class="btn" onclick="Admin.nuevaMateria()">Crear materia</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Asignar docente</h2>
+        <div class="grid2">
+          <div><label>Curso</label><select id="a-cur">${(cursos||[]).map(c=>`<option value="${c.id}">${esc(c.nombre)}</option>`).join("")}</select></div>
+          <div><label>Materia</label><select id="a-mat">${(materias||[]).map(m=>`<option value="${m.id}">${esc(m.nombre)}</option>`).join("")}</select></div>
+          <div><label>Docente</label><select id="a-doc">${(docentes||[]).map(d=>`<option value="${d.id}">${esc(d.nombre)}</option>`).join("")}</select></div>
+          <div><label>Horas semanales</label><input id="a-hs" type="number" step="0.5" value="2"></div>
+        </div>
+        <div style="height:10px"></div><button class="btn" onclick="Admin.asignar()">Asignar</button>
+      </div>
+      <div class="card">
+        <h2>Asignaciones actuales</h2>
+        <table><thead><tr><th>Curso</th><th>Materia</th><th>Docente</th><th>Horas</th></tr></thead><tbody>
+        ${(asigs||[]).map(a=>`<tr><td>${esc(a.courses.nombre)}</td><td>${esc(a.subjects.nombre)}</td><td>${esc(a.profiles?a.profiles.nombre:"Sin asignar")}</td><td>${a.horas_semanales||"—"}</td></tr>`).join("")}
+        </tbody></table>
+      </div>`;
+  },
+  async nuevoCurso(){
+    const { error } = await db.from("courses").insert({ institution_id:St.perfil.institution_id, nombre:$("c-nom").value.trim(), grado:$("c-gra").value.trim(), seccion:$("c-sec").value.trim() });
+    if(error){ alert(error.message); return; } UI.ir("estructura");
+  },
+  async nuevaMateria(){
+    const { error } = await db.from("subjects").insert({ institution_id:St.perfil.institution_id, nombre:$("m-nom").value.trim(), area:$("m-area").value.trim() });
+    if(error){ alert(error.message); return; } UI.ir("estructura");
+  },
+  async asignar(){
+    const { error } = await db.from("course_subjects").insert({ course_id:$("a-cur").value, subject_id:$("a-mat").value, teacher_id:$("a-doc").value, horas_semanales:Number($("a-hs").value)||null });
+    if(error){ alert(error.message); return; } UI.ir("estructura");
+  }
+};
+
+/* ==================== AULA DEL ALUMNO ==================== */
+const Alumno = { aula:null, codigo:"", yo:null,
+  async buscar(){
+    const cod = $("cod").value.trim().toUpperCase();
+    const sel = $("nom");
+    if(cod.length < 6){ sel.innerHTML = '<option value="">Primero escribí el código</option>'; return; }
+    const { data, error } = await db.rpc("aula_por_codigo", { p_codigo:cod });
+    if(error || !data){ sel.innerHTML = '<option value="">Código no encontrado</option>'; return; }
+    Alumno.aula = data; Alumno.codigo = cod;
+    sel.innerHTML = '<option value="">Elegí tu nombre</option>' + (data.alumnos||[]).map(a=>`<option value="${a.id}">${esc(a.nombre)}</option>`).join("");
+  },
+  async entrar(e){
+    e.preventDefault();
+    const err = $("err-alu"); err.classList.add("hidden");
+    if(!Alumno.aula){ err.textContent = "Ese código no corresponde a ninguna clase abierta."; err.classList.remove("hidden"); return; }
+    if(!$("nom").value){ err.textContent = "Elegí tu nombre en la lista."; err.classList.remove("hidden"); return; }
+    Alumno.yo = { id:$("nom").value, nombre:$("nom").selectedOptions[0].textContent };
+    $("screen-login").classList.add("hidden");
+    $("screen-alu").classList.remove("hidden");
+    $("alu-who").textContent = Alumno.yo.nombre + " · " + Alumno.aula.curso;
+    Alumno.render();
+    setInterval(Alumno.refrescar, 15000);
+  },
+  async refrescar(){
+    const { data } = await db.rpc("aula_por_codigo", { p_codigo:Alumno.codigo });
+    if(data){ Alumno.aula = data; Alumno.render(); }
+  },
+  async render(){
+    const a = Alumno.aula, et = a.etapas||{}, cl = a.clase||{};
+    const res = await db.rpc("mi_resultado", { p_codigo:Alumno.codigo, p_student_id:Alumno.yo.id });
+    const r = res.data || {};
+    $("alu-view").innerHTML = `
+      ${et.tema ? `<div class="card">
+        <span class="tag blue">${esc(a.materia)}</span>
+        <h1 style="margin-top:10px">${esc(cl.titulo||"")}</h1>
+        <p class="sub">${esc(cl.unidad||"")}</p>
+        <p><b>Lo que vamos a lograr:</b> ${esc(cl.capacidad||"")}</p>
+      </div>` : '<div class="card"><h2>Esperá al profesor</h2><p class="sub">En unos momentos se habilita el tema de la clase.</p></div>'}
+
+      ${et.actividad ? `<div class="card">
+        <h2>${esc(cl.actividad_titulo||"Actividad")}</h2>
+        <p class="sub">${esc(cl.actividad_objetivo||"")}</p>
+        <ol>${(cl.pasos||[]).map(p=>`<li>${esc(p)}</li>`).join("")}</ol>
+        ${cl.actividad_archivo?`<div class="alert info">Guardá tu archivo con el nombre <b>${esc(cl.actividad_archivo)}</b></div>`:""}
+      </div>` : ""}
+
+      ${et.entrega ? `<div class="card">
+        <h2>Entregar mi trabajo</h2>
+        ${r.entregado?'<div class="alert ok">Ya enviaste tu trabajo. Podés corregirlo y volver a enviar.</div>':""}
+        ${(cl.preguntas||[]).map((p,i)=>`<label>${esc(p)}</label><textarea id="q${i}"></textarea>`).join("")}
+        <label>Nombre del archivo que guardaste</label><input id="e-arch" value="${esc(cl.actividad_archivo||"")}">
+        <label>Enlace (opcional)</label><input id="e-link" placeholder="Si subiste el trabajo a la nube">
+        <label>Compañeros de equipo (opcional)</label><input id="e-eq">
+        <label>Comentario para el profesor (opcional)</label><input id="e-com">
+        <div style="height:12px"></div>
+        <button class="btn" onclick="Alumno.entregar(${(cl.preguntas||[]).length})">Enviar mi trabajo</button>
+      </div>` : ""}
+
+      ${et.resultado ? `<div class="card">
+        <h2>Mi resultado</h2>
+        ${r.nota!=null ? `<div class="code" style="font-size:44px">${r.nota}</div><p><b>Devolución:</b> ${esc(r.devolucion||"—")}</p>`
+          : '<p class="sub">El profesor todavía no corrigió tu trabajo.</p>'}
+      </div>` : ""}`;
+  },
+  async entregar(nPreg){
+    const respuestas = [];
+    for(let i=0;i<nPreg;i++) respuestas.push($("q"+i).value.trim());
+    const { error } = await db.rpc("entregar_trabajo", {
+      p_codigo:Alumno.codigo, p_student_id:Alumno.yo.id, p_respuestas:respuestas,
+      p_archivo:$("e-arch").value.trim(), p_enlace:$("e-link").value.trim(),
+      p_equipo:$("e-eq").value.trim(), p_comentario:$("e-com").value.trim()
+    });
+    if(error){ alert("No se pudo enviar: "+error.message); return; }
+    Alumno.render();
+    alert("Trabajo enviado. Ya le llegó al profesor.");
+  }
+};
+
+/* ==================== INICIO ==================== */
+(async function(){
+  const { data } = await db.auth.getSession();
+  if(data.session){ St.user = data.session.user; await Auth.cargarPerfil(); }
+})();
 </script>
 </body>
 </html>
