@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Krueka — Plataforma escolar</title>
+<style>
+:root{
+  --text:#2C2C2B; --text2:#7D7A75; --canvas:#FFFFFF; --soft:#F9F8F7; --surface2:#F0EFED;
+  --border:#E6E5E3; --blue:#2783DE; --blue-soft:#E5F2FC; --green:#46A171; --green-soft:#E8F1EC;
+  --orange:#D5803B; --orange-soft:#FBEBDE; --red:#E56458; --red-soft:#FCE9E7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.5;color:var(--text);background:var(--soft);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none !important}
+
+/* ---------- shell ---------- */
+.topbar{background:var(--canvas);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.topbar-in{max-width:1120px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
+.mark{width:28px;height:28px;border-radius:8px;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:15px;font-weight:700}
+.brand small{display:block;font-weight:400;font-size:12px;color:var(--text2);letter-spacing:0}
+.spacer{flex:1}
+.who{font-size:14px;color:var(--text2)}
+main{max-width:1120px;margin:0 auto;padding:32px 24px 64px}
+
+/* ---------- generic ---------- */
+.card{background:var(--canvas);border:1px solid var(--border);border-radius:12px;padding:24px}
+.card + .card{margin-top:16px}
+h1{font-size:28px;line-height:1.25;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:22px;margin:0 0 12px;letter-spacing:-.01em}
+h3{font-size:17px;margin:0 0 8px}
+.sub{color:var(--text2);margin:0 0 24px}
+label{display:block;font-size:14px;font-weight:600;margin:0 0 6px}
+input[type=text],input[type=password],input[type=number],select,textarea{
+  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--canvas)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
+textarea{min-height:88px;resize:vertical}
+.field{margin-bottom:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 18px;
+  border-radius:8px;border:1px solid var(--blue);background:var(--blue);color:#fff;font-weight:600;cursor:pointer}
+.btn:hover{filter:brightness(.95)}
+.btn.sec{background:var(--canvas);color:var(--text);border-color:var(--border)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--blue);padding:8px 10px}
+.btn.danger{background:var(--canvas);color:var(--red);border-color:var(--border)}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--surface2);color:var(--text2)}
+.tag.on{background:var(--green-soft);color:#2f6f4d}
+.tag.off{background:var(--surface2);color:var(--text2)}
+.tag.blue{background:var(--blue-soft);color:#1b5f9f}
+.note{font-size:14px;color:var(--text2)}
+.hr{height:1px;background:var(--border);margin:24px 0}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--text2)}
+.empty{padding:32px;text-align:center;color:var(--text2);background:var(--soft);border-radius:8px}
+
+/* ---------- login ---------- */
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px}
+.login{width:100%;max-width:440px}
+.login .card{padding:32px}
+.tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:10px;margin-bottom:24px}
+.tabs button{flex:1;min-height:40px;border:0;background:transparent;border-radius:8px;font-weight:600;cursor:pointer;color:var(--text2)}
+.tabs button[aria-selected=true]{background:var(--canvas);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.err{background:var(--red-soft);color:#a8362b;border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:16px}
+
+/* ---------- nav ---------- */
+.nav{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:24px;overflow-x:auto}
+.nav button{border:0;background:transparent;padding:12px 14px;font-weight:600;color:var(--text2);cursor:pointer;
+  border-bottom:2px solid transparent;white-space:nowrap;min-height:44px}
+.nav button[aria-selected=true]{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* ---------- stage ---------- */
+.stage{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid var(--border);border-radius:10px;background:var(--canvas)}
+.stage + .stage{margin-top:8px}
+.stage.done{background:var(--green-soft);border-color:#cfe3d7}
+.stage-t{font-weight:600}
+.code{font-family:Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:.18em;color:var(--blue)}
+.kpi{background:var(--soft);border:1px solid var(--border);border-radius:10px;padding:16px}
+.kpi b{display:block;font-size:26px;line-height:1.2}
+.kpi span{font-size:13px;color:var(--text2)}
+.plan li{margin-bottom:6px}
+.pill-list{display:flex;flex-wrap:wrap;gap:8px}
+.pill{border:1px solid var(--border);background:var(--canvas);border-radius:999px;padding:6px 14px;font-size:14px;cursor:pointer;min-height:36px}
+.pill[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+.callout{border-left:3px solid var(--blue);background:var(--blue-soft);padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px}
+.callout.warn{border-color:var(--orange);background:var(--orange-soft)}
+.step{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:0}
+.step input{margin-top:4px;width:18px;height:18px}
+.locked{text-align:center;padding:48px 24px;color:var(--text2)}
+.locked .big{font-size:34px;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="screen-login" class="login-wrap">
+  <div class="login">
+    <div style="text-align:center;margin-bottom:24px">
+      <div class="brand" style="justify-content:center;font-size:24px">
+        <span class="mark">K</span>
+        <span>Krueka</span>
+      </div>
+      <p class="note" style="margin:8px 0 0">Plataforma de clases · Informática</p>
+    </div>
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button id="tab-doc" role="tab" aria-selected="true" onclick="App.loginTab('doc')">Soy docente</button>
+        <button id="tab-alu" role="tab" aria-selected="false" onclick="App.loginTab('alu')">Soy alumno</button>
+      </div>
+
+      <form id="form-doc" onsubmit="App.loginDocente(event)">
+        <div id="err-doc" class="err hidden"></div>
+        <div class="field">
+          <label for="u">Usuario</label>
+          <input id="u" type="text" autocomplete="username" placeholder="profe">
+        </div>
+        <div class="field">
+          <label for="p">Contraseña</label>
+          <input id="p" type="password" autocomplete="current-password" placeholder="••••••••">
+        </div>
+        <button class="btn" style="width:100%" type="submit">Entrar</button>
+      </form>
+
+      <form id="form-alu" class="hidden" onsubmit="App.loginAlumno(event)">
+        <div id="err-alu" class="err hidden"></div>
+        <div class="field">
+          <label for="cod">Código de la clase</label>
+          <input id="cod" type="text" inputmode="numeric" maxlength="4" placeholder="0000"
+                 style="font-size:24px;letter-spacing:.2em;text-align:center">
+        </div>
+        <div class="field">
+          <label for="nom">Tu nombre</label>
+          <select id="nom"><option value="">Primero escribí el código</option></select>
+        </div>
+        <button class="btn" style="width:100%" type="submit">Entrar al aula</button>
+      </form>
+    </div>
+    <p class="note" style="text-align:center;margin-top:16px">Usuario de prueba: <b>profe</b> · contraseña <b>krueka2026</b></p>
+  </div>
+</div>
+
+<!-- ============ DOCENTE ============ -->
+<div id="screen-doc" class="hidden">
+  <div class="topbar"><div class="topbar-in">
+    <div class="brand"><span class="mark">K</span><span>Krueka<small>Panel del docente</small></span></div>
+    <div class="spacer"></div>
+    <span class="who" id="doc-who"></span>
+    <button class="btn sec sm" onclick="App.salir()">Salir</button>
+  </div></div>
+  <main>
+    <div class="nav" role="tablist">
+      <button id="n-clase" role="tab" aria-selected="true" onclick="App.tab('clase')">Clase de hoy</button>
+      <button id="n-alumnos" role="tab" aria-selected="false" onclick="App.tab('alumnos')">Alumnos</button>
+      <button id="n-entregas" role="tab" aria-selected="false" onclick="App.tab('entregas')">Entregas</button>
+      <button id="n-cursos" role="tab" aria-selected="false" onclick="App.tab('cursos')">Cursos</button>
+      <button id="n-ajustes" role="tab" aria-selected="false" onclick="App.tab('ajustes')">Ajustes</button>
+    </div>
+    <div id="v-clase"></div>
+    <div id="v-alumnos" class="hidden"></div>
+    <div id="v-entregas" class="hidden"></div>
+    <div id="v-cursos" class="hidden"></div>
+    <div id="v-ajustes" class="hidden"></div>
+  </main>
+</div>
+
+<!-- ============ ALUMNO ============ -->
+<div id="screen-alu" class="hidden">
+  <div class="topbar"><div class="topbar-in">
+    <div class="brand"><span class="mark">K</span><span>Krueka<small>Aula</small></span></div>
+    <div class="spacer"></div>
+    <span class="who" id="alu-who"></span>
+    <button class="btn sec sm" onclick="App.salir()">Salir</button>
+  </div></div>
+  <main><div id="v-alu"></div></main>
+</div>
+
+<script>
+/* =====================================================================
+   Krueka — plataforma escolar de una sola página.
+   Los datos se guardan en el navegador (localStorage).
+   ===================================================================== */
+
+const CLASES = [
+  {
+    id:1, titulo:"Búsqueda segura y confiable de información",
+    unidad:"Integración de herramientas y uso educativo de internet",
+    capacidad:"Busca información en internet aplicando criterios de confiabilidad y cita sus fuentes.",
+    inicio:"Pregunta disparadora: ¿cómo sabemos si una página dice la verdad? Se acuerdan las normas de uso de internet. (8 min)",
+    desarrollo:"Búsqueda guiada en tres sitios, registro de fuentes, comparación de confiabilidad y redacción del resumen en el procesador de textos. (40 min)",
+    cierre:"Puesta en común de dos criterios y guardado del archivo con el nombre correcto. (12 min)",
+    indicadores:["Registra las tres fuentes con dirección y autor","Justifica cuál es más confiable","Redacta el resumen con sus palabras","Guarda el archivo con el nombre pedido"],
+    planB:"Sin internet: se trabaja con tres fichas impresas y se aplican los mismos criterios.",
+    actividad:{
+      titulo:"Investigo en internet con criterio",
+      objetivo:"Comparar tres fuentes y decidir cuál es más confiable.",
+      archivo:"Busqueda_Segura_Nombre",
+      pasos:["Elegí uno de los temas que da el profesor.","Buscá información en tres páginas distintas.","Anotá de cada una: título, dirección web y autor.","Marcá cuál te parece más confiable.","Escribí un resumen de 5 renglones con tus palabras.","Revisá la ortografía antes de guardar."],
+      preguntas:["Escribí las tres fuentes que usaste (título y dirección web).","¿Cuál te parece más confiable y por qué?","Pegá acá tu resumen de 5 renglones."]
+    }
+  },
+  {
+    id:2, titulo:"Imágenes libres y derechos de autor",
+    unidad:"Edición de imágenes",
+    capacidad:"Selecciona imágenes de uso libre, cita su licencia y edita una composición en Paint.",
+    inicio:"Se muestran dos imágenes: una libre y una con derechos. ¿Cuál puedo usar? (8 min)",
+    desarrollo:"Búsqueda en bancos de imágenes autorizados, registro de licencia y armado del cartel en Paint. (40 min)",
+    cierre:"Galería rápida de carteles y repaso de qué significa una licencia libre. (12 min)",
+    indicadores:["Usa imágenes de uso libre","Registra la licencia y el origen","Compone el cartel con título y frase","Guarda la imagen correctamente"],
+    planB:"Sin internet: el cartel se hace en Paint con dibujo propio y se explica por escrito qué son los derechos de autor.",
+    actividad:{
+      titulo:"Cartel con imágenes libres",
+      objetivo:"Crear un cartel usando solo imágenes que se pueden usar legalmente.",
+      archivo:"Imagenes_Libres_Nombre",
+      pasos:["Buscá dos imágenes libres en un banco autorizado.","Anotá de dónde las sacaste y qué licencia tienen.","Abrí Paint y armá el cartel sobre el cuidado de la sala.","Agregale título y una frase corta.","Guardá la imagen y pegá abajo las fuentes."],
+      preguntas:["¿De qué sitios sacaste las imágenes?","¿Qué licencia tienen?","Contá en 3 renglones qué mensaje transmite tu cartel."]
+    }
+  },
+  {
+    id:3, titulo:"Datos reales en Excel y gráficos",
+    unidad:"Planilla electrónica",
+    capacidad:"Organiza datos reales en una planilla, aplica fórmulas y representa la información en un gráfico.",
+    inicio:"Se muestra una tabla de datos oficial y se pregunta qué nos dice. (8 min)",
+    desarrollo:"Copiado de datos, orden en columnas, fórmulas de total y promedio, creación del gráfico de columnas. (40 min)",
+    cierre:"Lectura de dos conclusiones y guardado del archivo. (12 min)",
+    indicadores:["Ordena los datos con encabezados","Aplica fórmulas de total y promedio","Crea un gráfico con título","Redacta dos conclusiones"],
+    planB:"Sin internet: se usa la tabla impresa que trae el docente.",
+    actividad:{
+      titulo:"Mis datos en gráficos",
+      objetivo:"Convertir datos reales en un gráfico que se entienda.",
+      archivo:"Datos_Graficos_Nombre",
+      pasos:["Entrá al sitio oficial indicado y copiá la tabla.","Pegala en Excel y ordenala en columnas con encabezado.","Calculá total y promedio con fórmulas.","Creá un gráfico de columnas con título.","Escribí dos conclusiones."],
+      preguntas:["¿De qué sitio sacaste los datos?","¿Qué fórmulas usaste?","Escribí tus dos conclusiones."]
+    }
+  },
+  {
+    id:4, titulo:"Correo electrónico educativo",
+    unidad:"Integración de herramientas y uso educativo de internet",
+    capacidad:"Redacta un correo formal con archivo adjunto respetando la estructura y la netiqueta.",
+    inicio:"Se comparan dos correos: uno informal y uno formal. (8 min)",
+    desarrollo:"Redacción del correo con asunto, saludo, cuerpo y despedida; adjunto del trabajo anterior y envío. (40 min)",
+    cierre:"Revisión entre pares de la estructura del correo. (12 min)",
+    indicadores:["Usa asunto claro","Respeta la estructura formal","Adjunta el archivo correcto","Cuida la ortografía"],
+    planB:"Sin internet: el correo se escribe en el procesador de textos respetando la estructura formal.",
+    actividad:{
+      titulo:"Envío de mi trabajo por correo",
+      objetivo:"Enviar un trabajo por correo de manera formal.",
+      archivo:"Correo_Educativo_Nombre",
+      pasos:["Redactá el correo con asunto, saludo, cuerpo y despedida.","Adjuntá el trabajo de la clase anterior.","Revisá que el archivo pese menos de 10 MB.","Enviálo a la dirección indicada.","Guardá una captura del correo enviado."],
+      preguntas:["¿Qué asunto le pusiste al correo?","Pegá acá el cuerpo del correo.","¿Qué archivo adjuntaste?"]
+    }
+  },
+  {
+    id:5, titulo:"Formularios y encuestas digitales",
+    unidad:"Integración de herramientas y uso educativo de internet",
+    capacidad:"Diseña una encuesta breve, recoge respuestas y las interpreta en un gráfico.",
+    inicio:"¿Para qué sirve una encuesta? Ejemplos del colegio. (8 min)",
+    desarrollo:"Redacción de 5 preguntas en equipo, carga en el formulario, respuestas cruzadas y gráfico de resultados. (40 min)",
+    cierre:"Lectura de conclusiones por equipo. (12 min)",
+    indicadores:["Redacta preguntas claras","Carga correctamente el formulario","Representa los resultados","Escribe tres conclusiones"],
+    planB:"Sin internet: la encuesta se hace en papel y los resultados se vuelcan en la planilla.",
+    actividad:{
+      titulo:"Resultados de nuestra encuesta",
+      objetivo:"Recoger datos propios y leerlos con un gráfico.",
+      archivo:"Encuesta_Resultados_Nombre",
+      pasos:["En equipo, escribí 5 preguntas sobre un tema del colegio.","Cargá las preguntas en el formulario indicado.","Respondan entre los equipos.","Armá un gráfico con los resultados.","Escribí tres conclusiones."],
+      preguntas:["Escribí las 5 preguntas de tu encuesta.","¿Cuántas respuestas juntaron?","Escribí tus tres conclusiones."]
+    }
+  },
+  {
+    id:6, titulo:"Proyecto final integrador",
+    unidad:"Presentaciones digitales e integración",
+    capacidad:"Integra búsqueda, imagen, planilla y presentación en una campaña digital con propuesta de solución.",
+    inicio:"Se presentan los criterios del proyecto y se forman los equipos. (8 min)",
+    desarrollo:"Elección del problema, búsqueda de datos, armado de las 5 diapositivas con imagen libre y gráfico. (40 min)",
+    cierre:"Presentación de 3 minutos por equipo y coevaluación. (12 min)",
+    indicadores:["Elige un problema real y lo fundamenta","Integra imagen libre y gráfico","Propone una solución concreta","Presenta en el tiempo pedido"],
+    planB:"Sin electricidad: la campaña se arma en afiche y se presenta igual.",
+    actividad:{
+      titulo:"Campaña digital de mi comunidad",
+      objetivo:"Aplicar todo lo aprendido en una campaña con propuesta de solución.",
+      archivo:"Proyecto_Final_Equipo",
+      pasos:["Elegí un problema real del barrio o del colegio.","Buscá información confiable y citala.","Armá una presentación de 5 diapositivas.","Incluí una imagen libre y un gráfico.","Preparate para presentar en 3 minutos."],
+      preguntas:["¿Qué problema eligieron y por qué?","¿Qué fuentes usaron?","¿Cuál es su propuesta de solución?"]
+    }
+  }
+];
+
+const ETAPAS = [
+  {k:"tema",     t:"Tema de la clase",        d:"El alumno ve la explicación y la capacidad a lograr"},
+  {k:"actividad",t:"Actividad práctica",       d:"Se habilitan las consignas paso a paso"},
+  {k:"entrega",  t:"Entrega del trabajo",      d:"El alumno puede enviar sus respuestas y el nombre del archivo"},
+  {k:"resultado",t:"Resultados y devolución",  d:"El alumno ve su nota y el comentario del docente"}
+];
+
+const DEFAULT_STATE = {
+  docente:{usuario:"profe", clave:"krueka2026", nombre:"Lic. Alfredo Pintos"},
+  cursos:[
+    {id:"c1", nombre:"9.º grado — Sección A", alumnos:[]},
+    {id:"c2", nombre:"9.º grado — Sección B", alumnos:[]}
+  ],
+  cursoActivo:"c1",
+  sesiones:{},   // cursoId -> {claseId, codigo, etapas:{}, asistencia:{}}
+  entregas:[]    // {id,cursoId,claseId,alumno,equipo,archivo,respuestas[],fecha,nota,devolucion}
+};
+
+let S = null, sesionAlumno = null, tabActual = "clase";
+
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = id => document.getElementById(id);
+const clase = id => CLASES.find(c=>c.id===id) || CLASES[0];
+
+function load(){
+  try{ const raw = localStorage.getItem("krueka_v1"); S = raw ? JSON.parse(raw) : structuredClone(DEFAULT_STATE); }
+  catch(e){ S = structuredClone(DEFAULT_STATE); }
+  if(!S.cursos || !S.cursos.length) S = structuredClone(DEFAULT_STATE);
+}
+function save(){ localStorage.setItem("krueka_v1", JSON.stringify(S)); }
+function curso(){ return S.cursos.find(c=>c.id===S.cursoActivo) || S.cursos[0]; }
+function sesion(){
+  const c = curso();
+  if(!S.sesiones[c.id]) S.sesiones[c.id] = {claseId:1, codigo:null, etapas:{}, asistencia:{}};
+  return S.sesiones[c.id];
+}
+
+const App = {
+  /* ---------- login ---------- */
+  loginTab(w){
+    $("tab-doc").setAttribute("aria-selected", w==="doc");
+    $("tab-alu").setAttribute("aria-selected", w==="alu");
+    $("form-doc").classList.toggle("hidden", w!=="doc");
+    $("form-alu").classList.toggle("hidden", w!=="alu");
+  },
+  loginDocente(e){
+    e.preventDefault();
+    const u = $("u").value.trim(), p = $("p").value;
+    if(u===S.docente.usuario && p===S.docente.clave){
+      $("err-doc").classList.add("hidden");
+      $("screen-login").classList.add("hidden");
+      $("screen-doc").classList.remove("hidden");
+      $("doc-who").textContent = S.docente.nombre;
+      App.render();
+    } else {
+      $("err-doc").textContent = "Usuario o contraseña incorrectos.";
+      $("err-doc").classList.remove("hidden");
+    }
+  },
+  buscarPorCodigo(cod){
+    for(const c of S.cursos){
+      const s = S.sesiones[c.id];
+      if(s && s.codigo && s.codigo===cod) return {c,s};
+    }
+    return null;
+  },
+  loginAlumno(e){
+    e.preventDefault();
+    const cod = $("cod").value.trim(), nombre = $("nom").value;
+    const f = App.buscarPorCodigo(cod);
+    const err = $("err-alu");
+    if(!f){ err.textContent="Ese código no corresponde a ninguna clase abierta."; err.classList.remove("hidden"); return; }
+    if(!nombre){ err.textContent="Elegí tu nombre en la lista."; err.classList.remove("hidden"); return; }
+    err.classList.add("hidden");
+    sesionAlumno = {cursoId:f.c.id, alumno:nombre};
+    $("screen-login").classList.add("hidden");
+    $("screen-alu").classList.remove("hidden");
+    $("alu-who").textContent = nombre + " · " + f.c.nombre;
+    App.renderAlumno();
+  },
+  refrescarNombres(){
+    const cod = $("cod").value.trim(), sel = $("nom"), f = App.buscarPorCodigo(cod);
+    if(!f){ sel.innerHTML = '<option value="">Primero escribí el código</option>'; return; }
+    const list = f.c.alumnos.length ? f.c.alumnos : [];
+    sel.innerHTML = '<option value="">Elegí tu nombre</option>' + list.map(a=>`<option>${esc(a)}</option>`).join("");
+  },
+  salir(){ sesionAlumno=null; location.reload(); },
+
+  /* ---------- navegación docente ---------- */
+  tab(t){
+    tabActual = t;
+    ["clase","alumnos","entregas","cursos","ajustes"].forEach(k=>{
+      $("n-"+k).setAttribute("aria-selected", k===t);
+      $("v-"+k).classList.toggle("hidden", k!==t);
+    });
+    App.render();
+  },
+  render(){
+    if(tabActual==="clase") App.vClase();
+    if(tabActual==="alumnos") App.vAlumnos();
+    if(tabActual==="entregas") App.vEntregas();
+    if(tabActual==="cursos") App.vCursos();
+    if(tabActual==="ajustes") App.vAjustes();
+  },
+
+  /* ---------- clase de hoy ---------- */
+  vClase(){
+    const c = curso(), s = sesion(), cl = clase(s.claseId);
+    const presentes = Object.values(s.asistencia).filter(v=>v==="presente").length;
+    const entregas = S.entregas.filter(e=>e.cursoId===c.id && e.claseId===cl.id).length;
+    $("v-clase").innerHTML = `
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div style="flex:1;min-width:260px">
+            <span class="tag blue">${esc(c.nombre)}</span>
+            <h1 style="margin-top:12px">Clase ${cl.id} · ${esc(cl.titulo)}</h1>
+            <p class="sub" style="margin-bottom:0">Unidad: ${esc(cl.unidad)} · 60 minutos</p>
+          </div>
+          <div style="text-align:right">
+            <div class="note">Código para los alumnos</div>
+            <div class="code">${s.codigo ? esc(s.codigo) : "— — — —"}</div>
+            <button class="btn sm" onclick="App.abrirSesion()">${s.codigo?"Generar otro":"Abrir la clase"}</button>
+          </div>
+        </div>
+        <div class="hr"></div>
+        <label>Elegí la clase a desarrollar</label>
+        <div class="pill-list">
+          ${CLASES.map(x=>`<button class="pill" aria-pressed="${x.id===cl.id}" onclick="App.setClase(${x.id})">Clase ${x.id}</button>`).join("")}
+        </div>
+      </div>
+
+      <div class="grid3" style="margin-top:16px">
+        <div class="kpi"><b>${c.alumnos.length}</b><span>Alumnos en la lista</span></div>
+        <div class="kpi"><b>${presentes}</b><span>Presentes hoy</span></div>
+        <div class="kpi"><b>${entregas}</b><span>Trabajos entregados</span></div>
+      </div>
+
+      <div class="card">
+        <h2>Liberar por etapas</h2>
+        <p class="note" style="margin-top:-4px">El alumno solo ve lo que vos habilitás. Así nadie se adelanta.</p>
+        ${ETAPAS.map(e=>{
+          const on = !!s.etapas[e.k];
+          return `<div class="stage ${on?"done":""}">
+            <div><div class="stage-t">${e.t}</div><div class="note">${e.d}</div></div>
+            <div class="row" style="gap:8px">
+              <span class="tag ${on?"on":"off"}">${on?"Liberado":"Bloqueado"}</span>
+              <button class="btn ${on?"sec":""} sm" onclick="App.toggleEtapa('${e.k}')">${on?"Bloquear":"Liberar"}</button>
+            </div>
+          </div>`;
+        }).join("")}
+      </div>
+
+      <div class="card">
+        <h2>Plan de la clase</h2>
+        <p><b>Capacidad:</b> ${esc(cl.capacidad)}</p>
+        <div class="grid3">
+          <div><h3>Inicio</h3><p class="note">${esc(cl.inicio)}</p></div>
+          <div><h3>Desarrollo</h3><p class="note">${esc(cl.desarrollo)}</p></div>
+          <div><h3>Cierre</h3><p class="note">${esc(cl.cierre)}</p></div>
+        </div>
+        <div class="hr"></div>
+        <div class="grid2">
+          <div>
+            <h3>Indicadores de evaluación</h3>
+            <ul class="plan">${cl.indicadores.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
+          </div>
+          <div>
+            <h3>Actividad y archivo</h3>
+            <p class="note" style="margin:0 0 8px">${esc(cl.actividad.titulo)} — ${esc(cl.actividad.objetivo)}</p>
+            <p style="margin:0"><span class="tag">Archivo: ${esc(cl.actividad.archivo)}</span></p>
+          </div>
+        </div>
+        <div class="callout warn" style="margin-top:16px"><b>Plan B:</b> ${esc(cl.planB)}</div>
+      </div>
+
+      <div class="card">
+        <h2>Asistencia</h2>
+        ${c.alumnos.length ? `<table><thead><tr><th>Alumno</th><th style="width:230px">Estado</th></tr></thead><tbody>
+          ${c.alumnos.map(a=>{
+            const v = s.asistencia[a] || "";
+            return `<tr><td>${esc(a)}</td><td>
+              <select onchange="App.setAsistencia('${esc(a).replace(/'/g,"\\'")}', this.value)">
+                <option value="" ${v===""?"selected":""}>Sin marcar</option>
+                <option value="presente" ${v==="presente"?"selected":""}>Presente</option>
+                <option value="tarde" ${v==="tarde"?"selected":""}>Llegó tarde</option>
+                <option value="ausente" ${v==="ausente"?"selected":""}>Ausente</option>
+              </select></td></tr>`;
+          }).join("")}
+        </tbody></table>` : `<div class="empty">Todavía no cargaste la lista de alumnos. Andá a la pestaña <b>Alumnos</b>.</div>`}
+      </div>`;
+  },
+  setClase(id){ const s=sesion(); s.claseId=id; s.etapas={}; save(); App.vClase(); },
+  toggleEtapa(k){ const s=sesion(); s.etapas[k]=!s.etapas[k]; save(); App.vClase(); },
+  setAsistencia(a,v){ const s=sesion(); s.asistencia[a]=v; save(); App.vClase(); },
+  abrirSesion(){
+    const s=sesion();
+    s.codigo = String(Math.floor(1000+Math.random()*9000));
+    save(); App.vClase();
+  },
+
+  /* ---------- alumnos ---------- */
+  vAlumnos(){
+    const c = curso();
+    $("v-alumnos").innerHTML = `
+      <div class="card">
+        <h1>Lista de alumnos</h1>
+        <p class="sub">Curso: <b>${esc(c.nombre)}</b> · ${c.alumnos.length} alumnos cargados</p>
+        <div class="field">
+          <label for="pega">Pegá la lista, un alumno por línea</label>
+          <textarea id="pega" placeholder="Acosta, María Belén&#10;Benítez, Juan Carlos&#10;Cabrera, Lucía"></textarea>
+          <p class="note">Podés copiar la columna directamente desde Excel.</p>
+        </div>
+        <div class="row">
+          <button class="btn" onclick="App.cargarLista(false)">Agregar a la lista</button>
+          <button class="btn sec" onclick="App.cargarLista(true)">Reemplazar la lista</button>
+          <label class="btn sec" style="margin:0;cursor:pointer">Importar CSV
+            <input type="file" accept=".csv,.txt" class="hidden" onchange="App.importarCSV(event)">
+          </label>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Alumnos del curso</h2>
+        ${c.alumnos.length ? `<table><thead><tr><th style="width:48px">#</th><th>Nombre</th><th style="width:110px"></th></tr></thead><tbody>
+          ${c.alumnos.map((a,i)=>`<tr><td>${i+1}</td><td>${esc(a)}</td>
+            <td><button class="btn danger sm" onclick="App.quitarAlumno(${i})">Quitar</button></td></tr>`).join("")}
+        </tbody></table>` : `<div class="empty">Todavía no hay alumnos en este curso.</div>`}
+      </div>`;
+  },
+  cargarLista(reemplazar){
+    const txt = $("pega").value;
+    const nombres = txt.split(/\n|;/).map(x=>x.replace(/^\s*\d+[\.\)\-]\s*/,"").trim()).filter(Boolean);
+    if(!nombres.length){ alert("Pegá al menos un nombre."); return; }
+    const c = curso();
+    c.alumnos = reemplazar ? nombres : [...c.alumnos, ...nombres.filter(n=>!c.alumnos.includes(n))];
+    save(); App.vAlumnos();
+  },
+  importarCSV(ev){
+    const f = ev.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      const nombres = String(r.result).split(/\r?\n/).map(l=>l.split(",")[0].trim()).filter(Boolean);
+      const c = curso();
+      c.alumnos = [...c.alumnos, ...nombres.filter(n=>!c.alumnos.includes(n))];
+      save(); App.vAlumnos();
+    };
+    r.readAsText(f);
+  },
+  quitarAlumno(i){ const c=curso(); c.alumnos.splice(i,1); save(); App.vAlumnos(); },
+
+  /* ---------- entregas ---------- */
+  vEntregas(){
+    const c = curso(), s = sesion();
+    const list = S.entregas.filter(e=>e.cursoId===c.id).sort((a,b)=>b.fecha-a.fecha);
+    $("v-entregas").innerHTML = `
+      <div class="card">
+        <h1>Entregas</h1>
+        <p class="sub">Curso: <b>${esc(c.nombre)}</b> · ${list.length} trabajos recibidos</p>
+        ${list.length ? list.map(e=>`
+          <div class="card" style="background:var(--soft)">
+            <div class="row" style="justify-content:space-between">
+              <div><b>${esc(e.alumno)}</b> <span class="tag">Clase ${e.claseId}</span></div>
+              <span class="note">${new Date(e.fecha).toLocaleString("es-PY")}</span>
+            </div>
+            <p class="note" style="margin:8px 0 0">Archivo declarado: <b>${esc(e.archivo||"—")}</b>${e.equipo?` · Equipo: ${esc(e.equipo)}`:""}</p>
+            ${e.respuestas.map((r,i)=>`<p style="margin:8px 0 0"><b>${i+1}.</b> ${esc(r)||"<em>sin responder</em>"}</p>`).join("")}
+            <div class="grid2" style="margin-top:12px">
+              <div><label>Nota (0-100)</label>
+                <input type="number" min="0" max="100" value="${e.nota??""}" onchange="App.calificar('${e.id}','nota',this.value)"></div>
+              <div><label>Devolución</label>
+                <input type="text" value="${esc(e.devolucion||"")}" onchange="App.calificar('${e.id}','devolucion',this.value)"></div>
+            </div>
+          </div>`).join("")
+        : `<div class="empty">Todavía no hay entregas. Liberá la etapa <b>Entrega del trabajo</b> para que los alumnos puedan enviar.</div>`}
+      </div>`;
+  },
+  calificar(id,campo,valor){
+    const e = S.entregas.find(x=>x.id===id); if(!e) return;
+    e[campo] = campo==="nota" ? (valor===""?null:Number(valor)) : valor;
+    save();
+  },
+
+  /* ---------- cursos ---------- */
+  vCursos(){
+    $("v-cursos").innerHTML = `
+      <div class="card">
+        <h1>Cursos</h1>
+        <p class="sub">Elegí con qué curso vas a trabajar hoy.</p>
+        ${S.cursos.map(c=>`
+          <div class="stage ${c.id===S.cursoActivo?"done":""}">
+            <div><div class="stage-t">${esc(c.nombre)}</div><div class="note">${c.alumnos.length} alumnos</div></div>
+            <div class="row" style="gap:8px">
+              ${c.id===S.cursoActivo?'<span class="tag on">En uso</span>':`<button class="btn sec sm" onclick="App.usarCurso('${c.id}')">Usar este</button>`}
+              <button class="btn danger sm" onclick="App.borrarCurso('${c.id}')">Borrar</button>
+            </div>
+          </div>`).join("")}
+        <div class="hr"></div>
+        <div class="field"><label for="nc">Nombre del nuevo curso</label>
+          <input id="nc" type="text" placeholder="9.º grado — Sección C"></div>
+        <button class="btn" onclick="App.nuevoCurso()">Crear curso</button>
+      </div>`;
+  },
+  usarCurso(id){ S.cursoActivo=id; save(); App.tab("clase"); },
+  nuevoCurso(){
+    const n = $("nc").value.trim(); if(!n) return;
+    S.cursos.push({id:"c"+Date.now(), nombre:n, alumnos:[]}); save(); App.vCursos();
+  },
+  borrarCurso(id){
+    if(S.cursos.length===1){ alert("Tiene que quedar al menos un curso."); return; }
+    if(!confirm("¿Borrar el curso y sus datos?")) return;
+    S.cursos = S.cursos.filter(c=>c.id!==id);
+    delete S.sesiones[id];
+    S.entregas = S.entregas.filter(e=>e.cursoId!==id);
+    if(S.cursoActivo===id) S.cursoActivo = S.cursos[0].id;
+    save(); App.vCursos();
+  },
+
+  /* ---------- ajustes ---------- */
+  vAjustes(){
+    $("v-ajustes").innerHTML = `
+      <div class="card">
+        <h1>Ajustes del docente</h1>
+        <div class="grid2">
+          <div class="field"><label for="an">Nombre</label><input id="an" type="text" value="${esc(S.docente.nombre)}"></div>
+          <div class="field"><label for="au">Usuario</label><input id="au" type="text" value="${esc(S.docente.usuario)}"></div>
+        </div>
+        <div class="field"><label for="ap">Contraseña</label><input id="ap" type="text" value="${esc(S.docente.clave)}"></div>
+        <button class="btn" onclick="App.guardarDocente()">Guardar cambios</button>
+      </div>
+      <div class="card">
+        <h2>Copia de seguridad</h2>
+        <p class="note">Los datos se guardan en esta computadora. Exportá el archivo para pasarlos a otra máquina o para tener respaldo.</p>
+        <div class="row">
+          <button class="btn sec" onclick="App.exportar()">Exportar datos</button>
+          <label class="btn sec" style="margin:0;cursor:pointer">Importar datos
+            <input type="file" accept=".json" class="hidden" onchange="App.importar(event)"></label>
+          <button class="btn danger" onclick="App.reiniciar()">Borrar todo</button>
+        </div>
+      </div>`;
+  },
+  guardarDocente(){
+    S.docente.nombre=$("an").value.trim()||S.docente.nombre;
+    S.docente.usuario=$("au").value.trim()||S.docente.usuario;
+    S.docente.clave=$("ap").value||S.docente.clave;
+    save(); $("doc-who").textContent=S.docente.nombre; alert("Cambios guardados.");
+  },
+  exportar(){
+    const blob = new Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "krueka_datos.json"; a.click();
+  },
+  importar(ev){
+    const f = ev.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = () => { try{ S = JSON.parse(r.result); save(); alert("Datos importados."); location.reload(); }
+      catch(e){ alert("El archivo no es válido."); } };
+    r.readAsText(f);
+  },
+  reiniciar(){ if(confirm("¿Borrar todos los datos de esta computadora?")){ localStorage.removeItem("krueka_v1"); location.reload(); } },
+
+  /* ---------- vista del alumno ---------- */
+  renderAlumno(){
+    const c = S.cursos.find(x=>x.id===sesionAlumno.cursoId);
+    const s = S.sesiones[c.id], cl = clase(s.claseId), a = cl.actividad;
+    const yo = sesionAlumno.alumno;
+    const mia = S.entregas.find(e=>e.cursoId===c.id && e.claseId===cl.id && e.alumno===yo);
+
+    if(!s.etapas.tema){
+      $("v-alu").innerHTML = `<div class="card"><div class="locked">
+        <div class="big">⏳</div><h2>Esperá al profesor</h2>
+        <p class="note">La clase todavía no fue liberada. En cuanto el profesor la habilite, vas a ver el tema acá.</p>
+        <button class="btn sec" onclick="App.renderAlumno()">Actualizar</button>
+      </div></div>`;
+      return;
+    }
+
+    let html = `
+      <div class="card">
+        <span class="tag blue">Clase ${cl.id}</span>
+        <h1 style="margin-top:12px">${esc(cl.titulo)}</h1>
+        <p class="sub">${esc(cl.capacidad)}</p>
+        <div class="callout">Recordá: internet solo para la clase, sin datos personales y citando siempre de dónde sacaste la información.</div>
+      </div>`;
+
+    if(s.etapas.actividad){
+      html += `<div class="card">
+        <h2>${esc(a.titulo)}</h2>
+        <p class="note" style="margin-top:-4px">${esc(a.objetivo)}</p>
+        <div style="margin-top:12px">
+          ${a.pasos.map((p,i)=>`<div class="step"><input type="checkbox" id="pa${i}"><label for="pa${i}" style="font-weight:400;margin:0">${esc(p)}</label></div>`).join("")}
+        </div>
+        <div class="callout warn" style="margin-top:16px">Guardá tu archivo con este nombre exacto: <b>${esc(a.archivo)}</b></div>
+      </div>`;
+    } else {
+      html += `<div class="card"><div class="locked"><div class="big">🔒</div>
+        <h3>La actividad todavía no está liberada</h3>
+        <p class="note">Leé el tema mientras tanto.</p>
+        <button class="btn sec" onclick="App.renderAlumno()">Actualizar</button></div></div>`;
+    }
+
+    if(s.etapas.entrega){
+      if(mia){
+        html += `<div class="card"><h2>Tu entrega</h2>
+          <p class="tag on">Enviada el ${new Date(mia.fecha).toLocaleString("es-PY")}</p>
+          <p class="note">Archivo declarado: <b>${esc(mia.archivo||"—")}</b></p></div>`;
+      } else {
+        html += `<div class="card">
+          <h2>Entregar mi trabajo</h2>
+          ${a.preguntas.map((q,i)=>`<div class="field"><label for="r${i}">${i+1}. ${esc(q)}</label><textarea id="r${i}"></textarea></div>`).join("")}
+          <div class="grid2">
+            <div class="field"><label for="arch">Nombre del archivo que guardaste</label>
+              <input id="arch" type="text" value="${esc(a.archivo)}"></div>
+            <div class="field"><label for="eq">Compañeros de equipo (si trabajaste en equipo)</label>
+              <input id="eq" type="text" placeholder="Nombre y apellido"></div>
+          </div>
+          <button class="btn" onclick="App.entregar()">Enviar mi trabajo</button>
+        </div>`;
+      }
+    }
+
+    if(s.etapas.resultado && mia){
+      html += `<div class="card"><h2>Mi resultado</h2>
+        <p style="font-size:34px;font-weight:700;margin:0">${mia.nota??"—"}<span class="note" style="font-size:16px"> / 100</span></p>
+        <p class="note">${esc(mia.devolucion||"Todavía sin devolución escrita.")}</p></div>`;
+    }
+
+    $("v-alu").innerHTML = html;
+  },
+  entregar(){
+    const c = S.cursos.find(x=>x.id===sesionAlumno.cursoId), s = S.sesiones[c.id], cl = clase(s.claseId);
+    const respuestas = cl.actividad.preguntas.map((q,i)=>$("r"+i).value.trim());
+    S.entregas.push({
+      id:"e"+Date.now(), cursoId:c.id, claseId:cl.id, alumno:sesionAlumno.alumno,
+      equipo:$("eq").value.trim(), archivo:$("arch").value.trim(),
+      respuestas, fecha:Date.now(), nota:null, devolucion:""
+    });
+    save(); App.renderAlumno();
+  }
+};
+
+/* ---------- arranque ---------- */
+load();
+document.addEventListener("input", e => { if(e.target.id==="cod") App.refrescarNombres(); });
+
+/* modo demostración para revisar las pantallas: ?demo=docente | ?demo=alumno */
+const qs = new URLSearchParams(location.search);
+if(qs.get("demo")){
+  S = structuredClone(DEFAULT_STATE);
+  S.cursos[0].alumnos = ["Acosta, María Belén","Benítez, Juan Carlos","Cabrera, Lucía","Duarte, Mateo","Espínola, Sofía"];
+  S.sesiones["c1"] = {claseId:1, codigo:"4821", etapas:{tema:true, actividad:true}, asistencia:{"Acosta, María Belén":"presente","Benítez, Juan Carlos":"presente","Cabrera, Lucía":"tarde"}};
+  S.entregas = [{id:"e1",cursoId:"c1",claseId:1,alumno:"Acosta, María Belén",equipo:"",archivo:"Busqueda_Segura_MariaBelen",
+    respuestas:["MEC — mec.gov.py, Wikipedia, Blog escolar","La del MEC, porque es un sitio oficial del Estado.","Internet permite acceder a información..."],
+    fecha:Date.now(), nota:null, devolucion:""}];
+  if(qs.get("demo")==="alumno"){
+    sesionAlumno = {cursoId:"c1", alumno:"Acosta, María Belén"};
+    $("screen-login").classList.add("hidden"); $("screen-alu").classList.remove("hidden");
+    $("alu-who").textContent = "Acosta, María Belén · 9.º grado — Sección A";
+    App.renderAlumno();
+  } else {
+    $("screen-login").classList.add("hidden"); $("screen-doc").classList.remove("hidden");
+    $("doc-who").textContent = S.docente.nombre;
+    App.render();
+  }
+}
+</script>
+</body>
+</html>
