@@ -1,25 +1,27 @@
 /* ==================== TALLER: HERRAMIENTAS Y BUSCADOR ==================== */
 const HERRAMIENTAS = {
-  word:       { t:"Word",       d:"Documento de texto",        u:"https://www.office.com/launch/word?auth=2" },
-  excel:      { t:"Excel",      d:"Planilla y gráficos",       u:"https://www.office.com/launch/excel?auth=2" },
-  powerpoint: { t:"PowerPoint", d:"Presentación con diapositivas", u:"https://www.office.com/launch/powerpoint?auth=2" },
-  canva:      { t:"Canva",      d:"Diseño gráfico",            u:"https://www.canva.com/design/play" }
+  word:       { t:"Documento",   d:"Escribir textos",              k:"documento" },
+  excel:      { t:"Planilla",    d:"Tablas, cuentas y gráficos",   k:"planilla" },
+  powerpoint: { t:"Diapositivas",d:"Presentación con láminas",     k:"diapositivas" },
+  canva:      { t:"Diapositivas",d:"Diseño de láminas",            k:"diapositivas" }
 };
 
 const Taller = {
   abrir(k){
     const h = HERRAMIENTAS[k]; if(!h) return;
-    window.open(h.u, "krueka-"+k, "noopener");
+    if(typeof Oficina === "undefined"){ alert("Actualizá la página con Ctrl + F5."); return; }
+    Oficina.abrir(h.k);
   },
   tarjeta(herr){
-    const orden = herr && HERRAMIENTAS[herr] ? [herr].concat(Object.keys(HERRAMIENTAS).filter(k=>k!==herr)) : Object.keys(HERRAMIENTAS);
+    const claves = ["word","excel","powerpoint"];
+    const orden = herr && HERRAMIENTAS[herr] ? [herr].concat(claves.filter(k=>k!==herr)) : claves;
     return `<div class="card" style="margin:12px 0 0">
       <h3>Herramientas de trabajo</h3>
-      <p class="note">${herr&&HERRAMIENTAS[herr]?"Para esta tarea vas a usar <b>"+HERRAMIENTAS[herr].t+"</b>.":"Elegí la herramienta que necesites."} Se abre al costado y Krueka queda abierta con la consigna a la vista.</p>
+      <p class="note">${herr&&HERRAMIENTAS[herr]?"Para esta tarea vas a usar <b>"+HERRAMIENTAS[herr].t+"</b>.":"Elegí la herramienta que necesites."} Se abren <b>dentro de Krueka</b>: no hace falta ninguna cuenta ni salir de la plataforma. Tu trabajo se guarda solo y le llega al profesor.</p>
       <div class="pill-list" style="margin-top:8px">
         ${orden.map(k=>`<button class="pill" aria-pressed="${k===herr}" onclick="Taller.abrir('${k}')">${HERRAMIENTAS[k].t} · ${HERRAMIENTAS[k].d}</button>`).join("")}
       </div>
-      <p class="note" style="margin-top:8px">Cuando termines, volvé a esta pestaña y enviá tu trabajo más abajo.</p>
+      <p class="note" style="margin-top:8px">Cuando termines, apretá <b>Volver a la actividad</b> y enviá tu trabajo más abajo.</p>
     </div>`;
   },
   buscador(){
