@@ -13,11 +13,21 @@ Docente.verTrabajo = async function(sessionId, studentId){
     if(d.tipo === "documento"){
       bloque = '<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px">' + (c.html || "<i>Sin texto</i>") + '</div>';
     } else if(d.tipo === "planilla"){
-      const cs = c.celdas || {}, cols = ["A","B","C","D","E","F","G","H"];
+      const cs = c.celdas || {}, fo = c.formatos || {}, an = c.anchos || {}, al = c.altos || {};
+      const cols = ["A","B","C","D","E","F","G","H"];
+      const est = ref=>{
+        const o = fo[ref] || {};
+        return (o.bd ? "border:2px solid #2C2C2B;" : "") +
+          (o.b ? "font-weight:700;" : "") + (o.i ? "font-style:italic;" : "") +
+          (o.u ? "text-decoration:underline;" : "") + (o.al ? "text-align:" + o.al + ";" : "") +
+          (o.bg ? "background:" + o.bg + ";" : "") + (o.fg ? "color:" + o.fg + ";" : "") +
+          (o.fs ? "font-size:" + o.fs + "px;" : "") + (o.ff ? "font-family:" + o.ff + ";" : "");
+      };
       let filas = "";
       for(let f=1; f<=24; f++){
-        if(!cols.some(x=>cs[x+f])) continue;
-        filas += "<tr><th>" + f + "</th>" + cols.map(x=>"<td>" + esc(cs[x+f] || "") + "</td>").join("") + "</tr>";
+        if(!cols.some(x=>cs[x+f] || fo[x+f])) continue;
+        filas += '<tr style="' + (al[f] ? "height:" + al[f] + "px" : "") + '"><th>' + f + "</th>" +
+          cols.map(x=>'<td style="' + est(x+f) + (an[x] ? "min-width:" + an[x] + "px;" : "") + '">' + esc(cs[x+f] || "") + "</td>").join("") + "</tr>";
       }
       bloque = filas
         ? '<table><thead><tr><th></th>' + cols.map(x=>"<th>"+x+"</th>").join("") + '</tr></thead><tbody>' + filas + '</tbody></table>'
@@ -71,7 +81,7 @@ Docente.panelTrabajos = async function(){
         '<td><span class="tag blue">' + (nombre[d.tipo]||d.tipo) + '</span>' +
         (d.titulo ? '<div class="note">' + esc(d.titulo) + '</div>' : "") + '</td>' +
         '<td class="note">' + new Date(d.actualizado_at).toLocaleString("es-PY") + '</td>' +
-        '<td><button class="btn sec sm" onclick="Docente.verTrabajo(\\'' + d.session_id + '\\',\\'' + d.student_id + '\\')">Ver trabajo</button></td></tr>';
+        '<td><button class="btn sec sm" onclick="Docente.verTrabajo(\'' + d.session_id + '\',\'' + d.student_id + '\')">Ver trabajo</button></td></tr>';
     }).join("");
     cont.innerHTML = '<h2>Trabajos hechos dentro de Krueka (' + (docs||[]).length + ')</h2>' +
       '<p class="sub">Documentos, planillas y diapositivas que los alumnos hicieron en la plataforma. Abrilos ac\u00e1 y despu\u00e9s pon\u00e9 el puntaje arriba, en la entrega.</p>' +
