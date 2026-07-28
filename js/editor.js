@@ -11,7 +11,7 @@ const COLS = ["A","B","C","D","E","F","G","H"];
 const FILAS = 24;
 
 const Oficina = {
-  tipo:null, datos:null, slide:0, timer:null,
+  tipo:null, datos:null, slide:0, timer:null, sel:"A1",
 
   /* ---------- abrir y cerrar ---------- */
   async abrir(tipo){
@@ -142,17 +142,42 @@ const Oficina = {
 
   /* ---------- planilla ---------- */
   verPlanilla(){
-    let h = '<div style="max-width:1000px;margin:0 auto">' +
-      '<div style="background:#fff;border:1px solid #E6E5E3;border-radius:12px;padding:10px;margin-bottom:12px;font-size:13px;color:#7D7A75">' +
-        'Escrib\u00ed n\u00fameros o texto en las celdas. Para calcular empez\u00e1 con <b>=</b> : ' +
-        '<code>=A1+B1</code>, <code>=SUMA(A1:A10)</code>, <code>=PROMEDIO(B1:B8)</code>, <code>=MAX(C1:C5)</code>, <code>=MIN(C1:C5)</code>, <code>=CONTAR(A1:A20)</code>.' +
-        '<div style="margin-top:8px"><button onclick="Oficina.grafico()" style="'+Oficina.btn("#F0EFED","#2C2C2B")+'">Hacer gr\u00e1fico de barras (columna A: nombres, columna B: n\u00fameros)</button></div>' +
+    const bs = Oficina.btn("#F0EFED","#2C2C2B") + "padding:6px 10px;";
+    let h = '<div style="max-width:1060px;margin:0 auto">' +
+      '<div style="background:#fff;border:1px solid #E6E5E3;border-radius:12px;padding:10px;margin-bottom:10px">' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:13px">' +
+          '<span style="color:#7D7A75">Aplicar a</span>' +
+          '<input id="ofi-rango" value="' + (Oficina.sel||"A1") + '" placeholder="A1 o A1:D6" style="width:100px;padding:6px 8px;border:1px solid #E6E5E3;border-radius:8px;font:inherit;text-transform:uppercase">' +
+          '<button onclick="Oficina.fmt(\'b\')" style="'+bs+'font-weight:800">N</button>' +
+          '<button onclick="Oficina.fmt(\'i\')" style="'+bs+'font-style:italic">K</button>' +
+          '<button onclick="Oficina.fmt(\'u\')" style="'+bs+'text-decoration:underline">S</button>' +
+          '<button onclick="Oficina.fmt(\'al\',\'left\')" style="'+bs+'">Izquierda</button>' +
+          '<button onclick="Oficina.fmt(\'al\',\'center\')" style="'+bs+'">Centrar</button>' +
+          '<button onclick="Oficina.fmt(\'al\',\'right\')" style="'+bs+'">Derecha</button>' +
+          '<button onclick="Oficina.fmt(\'bd\')" style="'+bs+'">Bordes</button>' +
+          '<label style="display:flex;align-items:center;gap:4px;color:#7D7A75">Relleno <input type="color" value="#E5F2FC" onchange="Oficina.fmt(\'bg\',this.value)" style="width:34px;height:28px;padding:0;border:1px solid #E6E5E3;border-radius:6px"></label>' +
+          '<label style="display:flex;align-items:center;gap:4px;color:#7D7A75">Letra <input type="color" value="#2C2C2B" onchange="Oficina.fmt(\'fg\',this.value)" style="width:34px;height:28px;padding:0;border:1px solid #E6E5E3;border-radius:6px"></label>' +
+          '<select onchange="Oficina.fmt(\'ff\',this.value)" style="padding:6px;border:1px solid #E6E5E3;border-radius:8px;font:inherit">' +
+            '<option value="">Tipo de letra</option><option>Arial</option><option>Verdana</option><option>Georgia</option><option>Courier New</option><option>Times New Roman</option></select>' +
+          '<select onchange="Oficina.fmt(\'fs\',this.value)" style="padding:6px;border:1px solid #E6E5E3;border-radius:8px;font:inherit">' +
+            '<option value="">Tama\u00f1o</option><option>10</option><option>12</option><option>14</option><option>16</option><option>18</option><option>22</option></select>' +
+          '<button onclick="Oficina.ancho(20)" style="'+bs+'">Ancho +</button>' +
+          '<button onclick="Oficina.ancho(-20)" style="'+bs+'">Ancho -</button>' +
+          '<button onclick="Oficina.alto(6)" style="'+bs+'">Alto +</button>' +
+          '<button onclick="Oficina.alto(-6)" style="'+bs+'">Alto -</button>' +
+          '<button onclick="Oficina.fmt(\'limpiar\')" style="'+bs+'">Quitar formato</button>' +
+        '</div>' +
+        '<div style="margin-top:8px;font-size:12px;color:#7D7A75">' +
+          'Escrib\u00ed la celda o el rango en <b>Aplicar a</b> (por ejemplo <code>A1</code> o <code>A1:D6</code>) y toc\u00e1 el bot\u00f3n de formato. ' +
+          'Para calcular, empez\u00e1 la celda con <b>=</b> : <code>=A1+B1</code>, <code>=SUMA(A1:A10)</code>, <code>=PROMEDIO(B1:B8)</code>, <code>=MAX(C1:C5)</code>, <code>=MIN(C1:C5)</code>, <code>=CONTAR(A1:A20)</code>.' +
+          '<button onclick="Oficina.grafico()" style="'+bs+'margin-left:8px">Gr\u00e1fico de barras (A: nombres, B: n\u00fameros)</button>' +
+        '</div>' +
       '</div>' +
       '<div id="ofi-graf"></div>' +
       '<div style="overflow:auto;background:#fff;border:1px solid #E6E5E3;border-radius:12px"><table style="border-collapse:collapse;font-size:14px"><tr>' +
-      '<th style="'+Oficina.th()+'"></th>' + COLS.map(c=>'<th style="'+Oficina.th()+'min-width:110px">'+c+'</th>').join("") + '</tr>';
+      '<th style="'+Oficina.th()+'"></th>' + COLS.map(c=>'<th id="h-'+c+'" style="'+Oficina.th()+'min-width:110px">'+c+'</th>').join("") + '</tr>';
     for(let f=1; f<=FILAS; f++){
-      h += '<tr><th style="'+Oficina.th()+'">'+f+'</th>';
+      h += '<tr id="r-'+f+'"><th style="'+Oficina.th()+'">'+f+'</th>';
       for(const c of COLS){
         const ref = c+f;
         h += '<td id="c-'+ref+'" data-ref="'+ref+'" contenteditable="true" ' +
@@ -164,10 +189,102 @@ const Oficina = {
     h += '</table></div></div>';
     document.getElementById("ofi-cuerpo").innerHTML = h;
     Oficina.recalcular();
+    Oficina.aplicar();
   },
   th(){ return "background:#F0EFED;border:1px solid #E6E5E3;padding:6px 8px;color:#7D7A75;font-weight:600;"; },
   celdas(){ return Oficina.datos.contenido.celdas || (Oficina.datos.contenido.celdas = {}); },
-  foco(td){ td.textContent = Oficina.celdas()[td.dataset.ref] || ""; },
+  formatos(){ return Oficina.datos.contenido.formatos || (Oficina.datos.contenido.formatos = {}); },
+  anchos(){ return Oficina.datos.contenido.anchos || (Oficina.datos.contenido.anchos = {}); },
+  altos(){ return Oficina.datos.contenido.altos || (Oficina.datos.contenido.altos = {}); },
+  refs(txt){
+    const t = String(txt||"").toUpperCase().replace(/\s/g,"");
+    const m = t.match(/^([A-H])([0-9]{1,2})(?::([A-H])([0-9]{1,2}))?$/);
+    if(!m) return [];
+    const c1 = COLS.indexOf(m[1]), c2 = m[3] ? COLS.indexOf(m[3]) : c1;
+    const f1 = parseInt(m[2],10), f2 = m[4] ? parseInt(m[4],10) : parseInt(m[2],10);
+    const out = [];
+    for(let c=Math.min(c1,c2); c<=Math.max(c1,c2); c++)
+      for(let f=Math.min(f1,f2); f<=Math.max(f1,f2); f++) if(f>=1 && f<=FILAS) out.push(COLS[c]+f);
+    return out;
+  },
+  seleccion(){
+    const i = document.getElementById("ofi-rango");
+    const rs = Oficina.refs(i ? i.value : Oficina.sel);
+    if(rs.length) return rs;
+    return Oficina.sel ? [Oficina.sel] : [];
+  },
+  fmt(prop, valor){
+    const rs = Oficina.seleccion();
+    if(!rs.length){ alert("Escrib\u00ed la celda o el rango en Aplicar a, por ejemplo A1 o A1:D6."); return; }
+    const fs = Oficina.formatos();
+    if(prop === "limpiar"){ rs.forEach(r=>{ delete fs[r]; }); }
+    else if(prop==="b" || prop==="i" || prop==="u" || prop==="bd"){
+      const encender = !rs.every(r=>fs[r] && fs[r][prop]);
+      rs.forEach(r=>{
+        const o = fs[r] || (fs[r] = {});
+        if(encender) o[prop] = 1; else delete o[prop];
+        if(!Object.keys(o).length) delete fs[r];
+      });
+    } else {
+      rs.forEach(r=>{
+        const o = fs[r] || (fs[r] = {});
+        if(valor) o[prop] = valor; else delete o[prop];
+        if(!Object.keys(o).length) delete fs[r];
+      });
+    }
+    Oficina.aplicar();
+    Oficina.marcar();
+  },
+  ancho(d){
+    const rs = Oficina.seleccion(); if(!rs.length) return;
+    const an = Oficina.anchos();
+    const cols = [];
+    rs.forEach(r=>{ const c = r[0]; if(cols.indexOf(c)<0) cols.push(c); });
+    cols.forEach(c=>{ an[c] = Math.max(70, Math.min(360, (an[c]||110) + d)); });
+    Oficina.aplicar(); Oficina.marcar();
+  },
+  alto(d){
+    const rs = Oficina.seleccion(); if(!rs.length) return;
+    const al = Oficina.altos();
+    const filas = [];
+    rs.forEach(r=>{ const f = r.slice(1); if(filas.indexOf(f)<0) filas.push(f); });
+    filas.forEach(f=>{ al[f] = Math.max(28, Math.min(120, (al[f]||34) + d)); });
+    Oficina.aplicar(); Oficina.marcar();
+  },
+  estilo(ref){
+    const o = Oficina.formatos()[ref] || {};
+    return (o.bd ? "border:2px solid #2C2C2B;" : "border:1px solid #E6E5E3;") +
+      "padding:6px 8px;outline:none;" +
+      (o.b ? "font-weight:700;" : "") +
+      (o.i ? "font-style:italic;" : "") +
+      (o.u ? "text-decoration:underline;" : "") +
+      (o.al ? "text-align:" + o.al + ";" : "") +
+      (o.bg ? "background:" + o.bg + ";" : "") +
+      (o.fg ? "color:" + o.fg + ";" : "") +
+      (o.fs ? "font-size:" + o.fs + "px;" : "") +
+      (o.ff ? "font-family:" + o.ff + ";" : "");
+  },
+  aplicar(){
+    const an = Oficina.anchos(), al = Oficina.altos();
+    for(const c of COLS){
+      const th = document.getElementById("h-" + c);
+      if(th) th.style.minWidth = (an[c]||110) + "px";
+    }
+    for(let f=1; f<=FILAS; f++){
+      const tr = document.getElementById("r-" + f);
+      if(tr) tr.style.height = al[f] ? al[f] + "px" : "";
+      for(const c of COLS){
+        const td = document.getElementById("c-" + c + f);
+        if(td) td.setAttribute("style", Oficina.estilo(c+f) + "min-width:" + (an[c]||110) + "px;");
+      }
+    }
+  },
+  foco(td){
+    Oficina.sel = td.dataset.ref;
+    const i = document.getElementById("ofi-rango");
+    if(i) i.value = Oficina.sel;
+    td.textContent = Oficina.celdas()[td.dataset.ref] || "";
+  },
   salir(td){
     const v = td.textContent.trim();
     const cs = Oficina.celdas();
@@ -220,14 +337,17 @@ const Oficina = {
     for(const c of COLS) for(let f=1; f<=FILAS; f++){
       const ref = c+f, td = document.getElementById("c-"+ref);
       if(!td || td === document.activeElement) continue;
-      const bruto = cs[ref];
-      if(bruto == null || bruto === ""){ td.textContent = ""; td.style.textAlign = "left"; continue; }
+      const bruto = cs[ref], fo = Oficina.formatos()[ref] || {};
+      if(bruto == null || bruto === ""){ td.textContent = ""; if(!fo.al) td.style.textAlign = "left"; if(!fo.bg) td.style.background = ""; continue; }
       if(String(bruto).charAt(0) === "="){
         const r = Oficina.evaluar(String(bruto), [ref]);
-        td.textContent = r; td.style.textAlign = "right"; td.style.background = "#E5F2FC";
+        td.textContent = r;
+        if(!fo.al) td.style.textAlign = "right";
+        if(!fo.bg) td.style.background = "#E5F2FC";
       } else {
-        td.textContent = bruto; td.style.background = "";
-        td.style.textAlign = isNaN(Number(String(bruto).replace(",","."))) ? "left" : "right";
+        td.textContent = bruto;
+        if(!fo.bg) td.style.background = "";
+        if(!fo.al) td.style.textAlign = isNaN(Number(String(bruto).replace(",","."))) ? "left" : "right";
       }
     }
   },
@@ -297,7 +417,7 @@ const Oficina = {
     const pintar = ()=>{
       const s = ss[i];
       caja.innerHTML = '<h1 style="font-size:44px;margin:0 0 24px">' + (Oficina.esc(s.titulo)||"") + '</h1>' +
-        String(s.texto||"").split("\\n").filter(Boolean).map(l=>'<p style="margin:8px 0">\u2022 ' + Oficina.esc(l) + '</p>').join("") +
+        String(s.texto||"").split("\n").filter(Boolean).map(l=>'<p style="margin:8px 0">\u2022 ' + Oficina.esc(l) + '</p>').join("") +
         '<div style="position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:10px;align-items:center">' +
           '<button id="pr-a" style="'+Oficina.btn("#7D7A75","#fff")+'">Anterior</button>' +
           '<span style="font-size:14px">' + (i+1) + ' / ' + ss.length + '</span>' +
