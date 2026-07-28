@@ -111,7 +111,7 @@ const Alumno = { aula:null, codigo:"", yo:null, equipo:[], hist:null,
       ${et.actividad ? `<div class="card">
         <h2>${esc(cl.actividad_titulo||"Actividad")}</h2>
         <p class="sub">${esc(cl.actividad_objetivo||"")}</p>
-        ${cl.guia_alumno?`<div class="card" style="background:var(--soft);margin:0 0 12px"><h3>Para guiarte</h3>${cl.guia_alumno.split("\n").filter(Boolean).map(l=>`<p style="margin:4px 0">${esc(l)}</p>`).join("")}</div>`:""}
+        ${cl.guia_alumno?`<div class="card" style="background:var(--soft);margin:0 0 12px"><h3>Para guiarte</h3>${cl.guia_alumno.split("\\n").filter(Boolean).map(l=>`<p style="margin:4px 0">${esc(l)}</p>`).join("")}</div>`:""}
         <h3>Pasos</h3>
         <ol>${(cl.pasos||[]).map(p=>`<li>${esc(p)}</li>`).join("")}</ol>
         ${cl.actividad_archivo?`<div class="alert info">Guardá tu archivo con el nombre <b>${esc(cl.actividad_archivo)}</b></div>`:""}
@@ -125,6 +125,7 @@ const Alumno = { aula:null, codigo:"", yo:null, equipo:[], hist:null,
         ${cerrado ? `<div class="alert warn">Tu trabajo ya fue entregado el ${r.entregado_at?new Date(r.entregado_at).toLocaleString("es-PY"):""} y quedó cerrado. Si necesitás cambiar algo, pedile al profesor que te habilite la edición.</div>`
           : `${r.entregado?'<div class="alert ok">El profesor te habilitó una edición. Corregí y volvé a enviar: después queda cerrado otra vez.</div>':""}
         ${(cl.preguntas||[]).map((p,i)=>`<label>${esc(p)}</label><textarea id="q${i}"></textarea>`).join("")}
+        <div id="e-docs"></div>
         <label>Nombre del archivo que guardaste</label><input id="e-arch" value="${esc(cl.actividad_archivo||"")}">
         <label>Enlace (opcional)</label><input id="e-link" placeholder="Si subiste el trabajo a la nube">
         <label>Comentario para el profesor (opcional)</label><input id="e-com">
@@ -139,6 +140,10 @@ const Alumno = { aula:null, codigo:"", yo:null, equipo:[], hist:null,
       </div>` : ""}
 
       ${Alumno.cardHistorial()}`;
+
+    if(et.entrega && !cerrado && typeof Oficina !== "undefined"){
+      Oficina.resumen().then(h=>{ const d = $("e-docs"); if(d) d.innerHTML = h; });
+    }
   },
   async entregar(nPreg){
     const respuestas = [];
@@ -155,7 +160,7 @@ const Alumno = { aula:null, codigo:"", yo:null, equipo:[], hist:null,
     }
     Alumno.hist = null;
     Alumno.render();
-    if(fallas.length) alert("Algunas entregas no se pudieron enviar:\n" + fallas.join("\n"));
+    if(fallas.length) alert("Algunas entregas no se pudieron enviar:\\n" + fallas.join("\\n"));
     else alert("Trabajo enviado. Ya le llegó al profesor y quedó cerrado.");
   }
 };
