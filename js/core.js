@@ -55,7 +55,7 @@ const UI = {
   },
   menus(){
     const r = St.perfil.role;
-    if(r==="docente") return [["clase","Clase de hoy"],["planificacion","Planificación"],["alumnos","Alumnos"],["entregas","Entregas"],["conducta","Registro anecdótico"],["taller","Taller"],["miscursos","Mis cursos"]];
+    if(r==="docente") return [["clase","Clase de hoy"],["planificacion","Planificación"],["alumnos","Alumnos"],["vigilancia","Centinela"],["entregas","Entregas"],["conducta","Registro anecdótico"],["taller","Taller"],["miscursos","Mis cursos"]];
     if(r==="director") return [["control","Control docente"],["resumen","Alumnos"],["planes","Planificaciones"]];
     if(r==="admin")   return [["control","Control docente"],["usuarios","Usuarios y roles"],["estructura","Cursos y materias"]];
     return [["control","Panel"]];
@@ -70,7 +70,7 @@ const UI = {
     document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.k===k));
     $("view").innerHTML = '<div class="spinner">Cargando…</div>';
     ({ clase:Docente.vClase, planificacion:Docente.vPlanificacion, alumnos:Docente.vAlumnos, miscursos:Docente.vMisCursos,
-       entregas:Docente.vEntregas, conducta:Docente.vConducta, taller:Docente.vTaller,
+       entregas:Docente.vEntregas, conducta:Docente.vConducta, taller:Docente.vTaller, vigilancia:Docente.vVigilancia,
        control:Direccion.vControl, resumen:Direccion.vAlumnos, planes:Direccion.vPlanes,
        usuarios:Admin.vUsuarios, estructura:Admin.vEstructura })[k]();
   }
@@ -96,3 +96,76 @@ async function cargarAlumnos(courseId){
   return St.alumnos;
 }
 function asignacionActual(){ return St.asignaciones.find(a=>a.id===St.csActual); }
+
+/* ==================== CENTINELA: vigilancia de pantalla ==================== */
+function deviceId(){
+  let d = localStorage.getItem("krueka_device");
+  if(!d){ d = "pc-" + Math.random().toString(36).slice(2,8).toUpperCase(); localStorage.setItem("krueka_device", d); }
+  return d;
+}
+
+const Centinela = {
+  on:false, codigo:"", alumno:null, salida:null, ultimaAct:Date.now(),
+  iniciar(codigo, alumnoId){
+    if(Centinela.on) return;
+    Centinela.on = true; Centinela.codigo = codigo; Centinela.alumno = alumnoId;
+    document.addEventListener("visibilitychange", ()=>{
+      if(document.hidden) Centinela.salio("minimiz\u00f3 la ventana o cambi\u00f3 de pesta\u00f1a");
+      else Centinela.volvio();
+    });
+    window.addEventListener("blur",  ()=>Centinela.salio("abri\u00f3 otro programa o ventana"));
+    window.addEventListener("focus", ()=>Centinela.volvio());
+    window.addEventListener("beforeunload", ()=>Centinela.enviar("cerro","cerr\u00f3 la p\u00e1gina antes de terminar", null, true));
+    document.addEventListener("paste", ()=>Centinela.enviar("pego_texto","peg\u00f3 texto copiado de otro lado"));
+    ["click","keydown","mousemove","touchstart"].forEach(ev=>
+      document.addEventListener(ev, ()=>{ Centinela.ultimaAct = Date.now(); }, {passive:true}));
+    setInterval(Centinela.control, 30000);
+  },
+  salio(detalle){
+    if(!Centinela.on || Centinela.salida) return;
+    Centinela.salida = Date.now();
+    Centinela.enviar("salio", detalle);
+  },
+  volvio(){
+    if(!Centinela.on || !Centinela.salida) return;
+    const seg = Math.round((Date.now() - Centinela.salida)/1000);
+    Centinela.salida = null;
+    Centinela.enviar("volvio", "volvi\u00f3 a la actividad", seg);
+    if(seg > 20) Centinela.cartel("Estuviste " + seg + " segundos fuera de la actividad. El profesor lo ve en su panel.");
+  },
+  control(){
+    if(!Centinela.on || Centinela.salida) return;
+    if(Date.now() - Centinela.ultimaAct > 300000){
+      Centinela.ultimaAct = Date.now();
+      Centinela.enviar("inactivo", "5 minutos sin trabajar en la pantalla");
+    }
+  },
+  cartel(msg){
+    let d = $("cent-cartel");
+    if(!d){
+      d = document.createElement("div"); d.id = "cent-cartel";
+      d.style.cssText = "position:fixed;left:16px;right:16px;bottom:16px;z-index:99;max-width:520px;margin:auto;" +
+        "background:var(--nar-b,#FBEBDE);color:#7a4517;border:1px solid #D5803B;border-radius:12px;padding:12px 14px;font-size:14px";
+      document.body.appendChild(d);
+    }
+    d.textContent = msg;
+    clearTimeout(Centinela._t);
+    Centinela._t = setTimeout(()=>{ d.remove(); }, 6000);
+  },
+  enviar(tipo, detalle, seg, urgente){
+    if(!Centinela.on || !Centinela.alumno) return;
+    const body = { p_codigo:Centinela.codigo, p_student_id:Centinela.alumno, p_tipo:tipo,
+                   p_detalle:detalle||null, p_segundos:seg==null?null:seg };
+    if(urgente){
+      try{
+        fetch(SUPABASE_URL + "/rest/v1/rpc/registrar_evento_foco", {
+          method:"POST", keepalive:true,
+          headers:{ "Content-Type":"application/json", apikey:SUPABASE_KEY, Authorization:"Bearer "+SUPABASE_KEY },
+          body:JSON.stringify(body)
+        });
+      }catch(e){}
+      return;
+    }
+    db.rpc("registrar_evento_foco", body).then(()=>{});
+  }
+};
