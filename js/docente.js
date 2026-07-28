@@ -92,7 +92,7 @@ const Docente = {
               <td class="note" style="white-space:nowrap">${r.registrado_at ? new Date(r.registrado_at).toLocaleString("es-PY",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}</td>
             </tr>`;
           }).join("")}</tbody></table>
-          <p class="note" style="margin-top:8px">La observación se guarda sola al salir del casillero. Si marcás a alguien ausente o justificado, su nombre desaparece de la lista de ingreso de los alumnos; al justificado se le acredita igual el puntaje de la clase.</p>` : '<p class="note">Cargá la lista en la pestaña Alumnos.</p>')}
+          <p class="note" style="margin-top:8px">La observación se guarda sola al salir del casillero.</p>` : '<p class="note">Cargá la lista en la pestaña Alumnos.</p>')}
       </div>`;
   },
 
@@ -208,7 +208,7 @@ const Docente = {
   async guardarPlan(){
     const val = id => $(id).value.trim();
     if(!val("p-tit")){ alert("Poné al menos el título de la clase."); return; }
-    const lineas = t => t.split("\n").map(s=>s.trim()).filter(Boolean);
+    const lineas = t => t.split("\\n").map(s=>s.trim()).filter(Boolean);
     const { data:plan, error } = await db.from("lesson_plans").insert({
       course_subject_id: St.csActual,
       numero: Number(val("p-num"))||null,
@@ -257,7 +257,7 @@ const Docente = {
   },
   async guardarLista(){
     const a = asignacionActual();
-    const nombres = $("lista").value.split("\n").map(s=>s.trim()).filter(Boolean);
+    const nombres = $("lista").value.split("\\n").map(s=>s.trim()).filter(Boolean);
     if(!nombres.length) return;
     const inst = St.perfil.institution_id;
     const { data:creados, error } = await db.from("students").insert(nombres.map(n=>({ institution_id:inst, nombre:n }))).select();
@@ -310,13 +310,18 @@ const Docente = {
     await cargarAsignaciones();
     const a = asignacionActual();
     const { data:ses } = await db.from("class_sessions")
-      .select("id, fecha, codigo, abierta").eq("course_subject_id", a.id)
+      .select("id, fecha, codigo, abierta, kiosco").eq("course_subject_id", a.id)
       .order("fecha", { ascending:false }).limit(5);
     const ids = (ses||[]).map(s=>s.id);
     const { data:ev } = ids.length ? await db.from("focus_events")
       .select("*, students(nombre)").in("session_id", ids)
       .order("creado_at", { ascending:false }).limit(120) : { data:[] };
     const lista = ev||[];
+    const { data:claims } = ids.length ? await db.from("aula_claims")
+      .select("*, students(nombre)").in("session_id", ids).order("claimed_at", { ascending:false }) : { data:[] };
+    const enPc = claims||[];
+    const abierta = (ses||[]).find(s=>s.abierta) || null;
+    const pedidos = enPc.filter(c=>c.pide_salir);
 
     const porAlumno = {};
     lista.slice().reverse().forEach(e=>{
@@ -331,9 +336,12 @@ const Docente = {
     const filas = Object.values(porAlumno).sort((x,y)=>y.salidas - x.salidas);
     const nuevos = lista.filter(e=>!e.visto && e.tipo!=="volvio").length;
 
-    const texto = { salio:"Sali\u00f3 de la actividad", volvio:"Volvi\u00f3", cerro:"Cerr\u00f3 la p\u00e1gina",
-                    inactivo:"Sin actividad", pego_texto:"Peg\u00f3 texto copiado" };
-    const color = { salio:"orange", volvio:"green", cerro:"red", inactivo:"orange", pego_texto:"red" };
+    const texto = { salio:"Sali\\u00f3 de la actividad", volvio:"Volvi\\u00f3", cerro:"Cerr\\u00f3 la p\\u00e1gina",
+                    inactivo:"Sin actividad", pego_texto:"Peg\\u00f3 texto copiado",
+                    pide_salir:"Pide permiso para salir", rompio_bloqueo:"Sali\\u00f3 de la pantalla bloqueada",
+                    desbloqueo:"Pantalla liberada por el docente", bloqueo:"Pantalla bloqueada de nuevo" };
+    const color = { salio:"orange", volvio:"green", cerro:"red", inactivo:"orange", pego_texto:"red",
+                    pide_salir:"blue", rompio_bloqueo:"red", desbloqueo:"gray", bloqueo:"gray" };
 
     $("view").innerHTML = `
       <div class="card">${selectorCurso("Docente.cambiarCurso(this.value)")}</div>
@@ -344,6 +352,31 @@ const Docente = {
         <button class="btn sec sm" onclick="Docente.vVigilancia()">Actualizar ahora</button>
         <button class="btn sec sm" onclick="Docente.avisosEscritorio()">Activar notificaciones en esta PC</button>
         ${nuevos?`<button class="btn sec sm" onclick="Docente.marcarVistos()">Marcar todo como revisado</button>`:""}
+      </div>
+
+      <div class="card">
+        <h2>Pantalla bloqueada</h2>
+        <p class="sub">Mientras la clase está abierta, la plataforma se pone en pantalla completa y bloquea las teclas de salida. Si el alumno igual se va a otro programa, le tapa la pantalla hasta que vuelva.</p>
+        ${abierta ? `<div class="row" style="align-items:center;gap:10px">
+            <span class="tag ${abierta.kiosco?"green":"gray"}">${abierta.kiosco?"Bloqueo activado":"Bloqueo desactivado"}</span>
+            <button class="btn ${abierta.kiosco?"sec":"ok"} sm" onclick="Docente.kiosco('${abierta.id}', ${abierta.kiosco?"false":"true"})">${abierta.kiosco?"Desactivar para toda la clase":"Activar para toda la clase"}</button>
+          </div>` : '<p class="note">No hay ninguna clase abierta en este momento.</p>'}
+        ${pedidos.length?`<div class="alert warn" style="margin-top:12px"><b>${pedidos.length} alumno(s) piden permiso para salir.</b></div>`:""}
+        <div style="height:10px"></div>
+        <table><thead><tr><th>Alumno</th><th>Computadora</th><th>Pantalla</th><th>Permiso</th></tr></thead><tbody>
+        ${enPc.map(c=>{
+          const lib = c.liberado && (!c.liberado_hasta || new Date(c.liberado_hasta) > new Date());
+          return `<tr>
+            <td><b>${esc(c.students?c.students.nombre:"—")}</b>${c.pide_salir?`<div class="note">Pide salir: ${esc(c.motivo_salida||"sin motivo")}</div>`:""}</td>
+            <td class="note">${esc(c.device_id||"—")}</td>
+            <td>${lib?`<span class="tag orange">Liberada${c.liberado_hasta?" hasta "+new Date(c.liberado_hasta).toLocaleTimeString("es-PY",{hour:"2-digit",minute:"2-digit"}):""}</span>`:'<span class="tag green">Bloqueada</span>'}</td>
+            <td>${lib
+              ? `<button class="btn sm" onclick="Docente.autorizar('${c.session_id}','${c.student_id}',0)">Volver a bloquear</button>`
+              : `<button class="btn ok sm" onclick="Docente.autorizar('${c.session_id}','${c.student_id}',5)">Permitir 5 min</button>
+                 <button class="btn sec sm" onclick="Docente.autorizar('${c.session_id}','${c.student_id}',60)">Permitir toda la clase</button>`}</td>
+          </tr>`;
+        }).join("") || '<tr><td colspan="4" class="note">Todavía no entró ningún alumno.</td></tr>'}
+        </tbody></table>
       </div>
 
       <div class="card">
@@ -374,7 +407,7 @@ const Docente = {
     if(Docente._vig) clearTimeout(Docente._vig);
     Docente._vig = setTimeout(()=>{ if(St.tab==="vigilancia") Docente.vVigilancia(); }, 20000);
 
-    const graves = lista.filter(e=>!e.visto && (e.tipo==="salio"||e.tipo==="cerro"||e.tipo==="pego_texto"));
+    const graves = lista.filter(e=>!e.visto && (e.tipo==="salio"||e.tipo==="cerro"||e.tipo==="pego_texto"||e.tipo==="rompio_bloqueo"||e.tipo==="pide_salir"));
     if(graves.length && "Notification" in window && Notification.permission==="granted"){
       const g = graves[0];
       if(Docente._ultimoAviso !== g.id){
@@ -382,6 +415,18 @@ const Docente = {
         new Notification("Krueka · " + (g.students?g.students.nombre:"Un alumno"), { body: g.detalle || texto[g.tipo] });
       }
     }
+  },
+  async kiosco(sessionId, activar){
+    const { error } = await db.from("class_sessions").update({ kiosco:activar }).eq("id", sessionId);
+    if(error){ alert("No se pudo cambiar: "+error.message); return; }
+    aviso(activar?"Pantalla bloqueada para toda la clase.":"Bloqueo desactivado: los alumnos pueden usar la computadora libremente.");
+    Docente.vVigilancia();
+  },
+  async autorizar(sessionId, studentId, minutos){
+    const { error } = await db.rpc("autorizar_salida", { p_session_id:sessionId, p_student_id:studentId, p_minutos:minutos });
+    if(error){ alert("No se pudo: "+error.message); return; }
+    aviso(minutos?("Le habilitaste la pantalla por "+minutos+" minutos."):"La pantalla volvió a bloquearse.");
+    Docente.vVigilancia();
   },
   avisosEscritorio(){
     if(!("Notification" in window)){ aviso("Este navegador no permite notificaciones.", "warn"); return; }
@@ -408,7 +453,7 @@ const Docente = {
       <div class="card">${selectorCurso("Docente.cambiarCurso(this.value)")}</div>
       <div class="card">
         <h2>Entregas recibidas (${(subs||[]).length})</h2>
-        <p class="sub">Cada trabajo queda cerrado al enviarse. Si un alumno necesita corregirlo, habilitale la edición con el botón de la derecha.</p>
+        <p class="sub">Cada trabajo queda cerrado al enviarse. Si el alumno necesita corregir algo, habilitale una edición.</p>
         <table><thead><tr><th>Alumno</th><th>Clase</th><th>Trabajo</th><th>Nota</th><th>Devolución</th><th></th></tr></thead><tbody>
         ${(subs||[]).map(s=>{
           const se = (ses||[]).find(x=>x.id===s.session_id) || {};
