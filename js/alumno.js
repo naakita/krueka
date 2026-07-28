@@ -30,6 +30,7 @@ const Alumno = { aula:null, codigo:"", yo:null, equipo:[], hist:null,
     $("screen-alu").classList.remove("hidden");
     $("alu-who").textContent = yo.nombre + " · " + Alumno.aula.curso;
     Centinela.iniciar(Alumno.codigo, yo.id);
+    Kiosco.iniciar(Alumno.codigo, yo.id);
     Alumno.render();
     setInterval(Alumno.refrescar, 15000);
   },
