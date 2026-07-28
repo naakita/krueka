@@ -92,7 +92,7 @@ const Docente = {
               <td class="note" style="white-space:nowrap">${r.registrado_at ? new Date(r.registrado_at).toLocaleString("es-PY",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—"}</td>
             </tr>`;
           }).join("")}</tbody></table>
-          <p class="note" style="margin-top:8px">La observación se guarda sola al salir del casillero.</p>` : '<p class="note">Cargá la lista en la pestaña Alumnos.</p>')}
+          <p class="note" style="margin-top:8px">La observación se guarda sola al salir del casillero. Si marcás a alguien ausente o justificado, su nombre desaparece de la lista de ingreso de los alumnos; al justificado se le acredita igual el puntaje de la clase.</p>` : '<p class="note">Cargá la lista en la pestaña Alumnos.</p>')}
       </div>`;
   },
 
@@ -305,6 +305,99 @@ const Docente = {
       ${Taller.buscador()}`;
   },
 
+  /* ---------- centinela: vigilancia de pantallas ---------- */
+  async vVigilancia(){
+    await cargarAsignaciones();
+    const a = asignacionActual();
+    const { data:ses } = await db.from("class_sessions")
+      .select("id, fecha, codigo, abierta").eq("course_subject_id", a.id)
+      .order("fecha", { ascending:false }).limit(5);
+    const ids = (ses||[]).map(s=>s.id);
+    const { data:ev } = ids.length ? await db.from("focus_events")
+      .select("*, students(nombre)").in("session_id", ids)
+      .order("creado_at", { ascending:false }).limit(120) : { data:[] };
+    const lista = ev||[];
+
+    const porAlumno = {};
+    lista.slice().reverse().forEach(e=>{
+      const n = e.students ? e.students.nombre : "—";
+      const p = porAlumno[n] || (porAlumno[n] = { nombre:n, salidas:0, segundos:0, cerro:0, pegos:0, fuera:false, ultimo:e.creado_at });
+      if(e.tipo==="salio"){ p.salidas++; p.fuera = true; }
+      if(e.tipo==="volvio"){ p.segundos += (e.segundos_fuera||0); p.fuera = false; }
+      if(e.tipo==="cerro"){ p.cerro++; p.fuera = true; }
+      if(e.tipo==="pego_texto") p.pegos++;
+      p.ultimo = e.creado_at;
+    });
+    const filas = Object.values(porAlumno).sort((x,y)=>y.salidas - x.salidas);
+    const nuevos = lista.filter(e=>!e.visto && e.tipo!=="volvio").length;
+
+    const texto = { salio:"Sali\u00f3 de la actividad", volvio:"Volvi\u00f3", cerro:"Cerr\u00f3 la p\u00e1gina",
+                    inactivo:"Sin actividad", pego_texto:"Peg\u00f3 texto copiado" };
+    const color = { salio:"orange", volvio:"green", cerro:"red", inactivo:"orange", pego_texto:"red" };
+
+    $("view").innerHTML = `
+      <div class="card">${selectorCurso("Docente.cambiarCurso(this.value)")}</div>
+      <div class="card">
+        <h1>Centinela</h1>
+        <p class="sub">Avisa cuando un alumno minimiza la ventana, abre otro programa, pega texto copiado o cierra la página antes de terminar.</p>
+        ${nuevos?`<div class="alert warn">${nuevos} avisos sin revisar.</div>`:'<div class="alert ok">Sin avisos nuevos.</div>'}
+        <button class="btn sec sm" onclick="Docente.vVigilancia()">Actualizar ahora</button>
+        <button class="btn sec sm" onclick="Docente.avisosEscritorio()">Activar notificaciones en esta PC</button>
+        ${nuevos?`<button class="btn sec sm" onclick="Docente.marcarVistos()">Marcar todo como revisado</button>`:""}
+      </div>
+
+      <div class="card">
+        <h2>Resumen por alumno</h2>
+        <table><thead><tr><th>Alumno</th><th>Estado</th><th>Salidas</th><th>Tiempo fuera</th><th>Otros avisos</th></tr></thead><tbody>
+        ${filas.map(p=>`<tr>
+          <td><b>${esc(p.nombre)}</b><div class="note">Último aviso: ${new Date(p.ultimo).toLocaleTimeString("es-PY",{hour:"2-digit",minute:"2-digit"})}</div></td>
+          <td>${p.fuera?'<span class="tag red">Fuera de la actividad</span>':'<span class="tag green">Trabajando</span>'}</td>
+          <td>${p.salidas}</td>
+          <td>${p.segundos?Math.round(p.segundos/60)+" min "+(p.segundos%60)+" s":"—"}</td>
+          <td>${p.cerro?`<span class="tag orange">Cerró ${p.cerro}×</span> `:""}${p.pegos?`<span class="tag orange">Pegó texto ${p.pegos}×</span>`:""}${(!p.cerro&&!p.pegos)?'<span class="note">—</span>':""}</td>
+        </tr>`).join("") || '<tr><td colspan="5" class="note">Todavía no hay avisos. Aparecen solos mientras los alumnos trabajan.</td></tr>'}
+        </tbody></table>
+      </div>
+
+      <div class="card">
+        <h2>Avisos uno por uno</h2>
+        <table><thead><tr><th>Hora</th><th>Alumno</th><th>Qué pasó</th></tr></thead><tbody>
+        ${lista.map(e=>`<tr>
+          <td>${new Date(e.creado_at).toLocaleString("es-PY",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td>
+          <td>${esc(e.students?e.students.nombre:"—")}</td>
+          <td><span class="tag ${color[e.tipo]||"blue"}">${texto[e.tipo]||e.tipo}</span>
+              <div class="note">${esc(e.detalle||"")}${e.segundos_fuera?" · "+e.segundos_fuera+" segundos fuera":""}</div></td>
+        </tr>`).join("") || '<tr><td colspan="3" class="note">Sin registros.</td></tr>'}
+        </tbody></table>
+      </div>`;
+
+    if(Docente._vig) clearTimeout(Docente._vig);
+    Docente._vig = setTimeout(()=>{ if(St.tab==="vigilancia") Docente.vVigilancia(); }, 20000);
+
+    const graves = lista.filter(e=>!e.visto && (e.tipo==="salio"||e.tipo==="cerro"||e.tipo==="pego_texto"));
+    if(graves.length && "Notification" in window && Notification.permission==="granted"){
+      const g = graves[0];
+      if(Docente._ultimoAviso !== g.id){
+        Docente._ultimoAviso = g.id;
+        new Notification("Krueka · " + (g.students?g.students.nombre:"Un alumno"), { body: g.detalle || texto[g.tipo] });
+      }
+    }
+  },
+  avisosEscritorio(){
+    if(!("Notification" in window)){ aviso("Este navegador no permite notificaciones.", "warn"); return; }
+    Notification.requestPermission().then(p=>{
+      if(p==="granted") aviso("Listo: vas a recibir un aviso en pantalla cuando un alumno salga de la actividad.");
+      else aviso("No se activaron las notificaciones en esta computadora.", "warn");
+    });
+  },
+  async marcarVistos(){
+    const a = asignacionActual();
+    const { data:ses } = await db.from("class_sessions").select("id").eq("course_subject_id", a.id).order("fecha", { ascending:false }).limit(5);
+    const ids = (ses||[]).map(s=>s.id);
+    if(ids.length) await db.from("focus_events").update({ visto:true }).in("session_id", ids).eq("visto", false);
+    Docente.vVigilancia();
+  },
+
   async vEntregas(){
     await cargarAsignaciones();
     const a = asignacionActual();
@@ -315,6 +408,7 @@ const Docente = {
       <div class="card">${selectorCurso("Docente.cambiarCurso(this.value)")}</div>
       <div class="card">
         <h2>Entregas recibidas (${(subs||[]).length})</h2>
+        <p class="sub">Cada trabajo queda cerrado al enviarse. Si un alumno necesita corregirlo, habilitale la edición con el botón de la derecha.</p>
         <table><thead><tr><th>Alumno</th><th>Clase</th><th>Trabajo</th><th>Nota</th><th>Devolución</th><th></th></tr></thead><tbody>
         ${(subs||[]).map(s=>{
           const se = (ses||[]).find(x=>x.id===s.session_id) || {};
@@ -326,11 +420,19 @@ const Docente = {
                 ${(s.respuestas||[]).length?`<details><summary class="note">Ver respuestas</summary>${(s.respuestas||[]).map(r=>`<p class="note">${esc(r)}</p>`).join("")}</details>`:""}</td>
             <td style="width:90px"><input type="number" min="0" max="100" value="${s.nota==null?"":s.nota}" id="n-${s.id}"></td>
             <td><input value="${esc(s.devolucion||"")}" id="d-${s.id}"></td>
-            <td><button class="btn sm" onclick="Docente.corregir('${s.id}')">Guardar</button></td>
+            <td><button class="btn sm" onclick="Docente.corregir('${s.id}')">Guardar</button>
+                ${s.acreditado?'<div class="note">Falta justificada</div>':
+                  s.edicion_habilitada?'<div class="note">Edición habilitada</div>':
+                  `<div style="height:6px"></div><button class="btn sec sm" onclick="Docente.permitirEditar('${s.id}')">Permitir editar</button>`}</td>
           </tr>`;
         }).join("") || '<tr><td colspan="6" class="note">Todavía no hay entregas.</td></tr>'}
         </tbody></table>
       </div>`;
+  },
+  async permitirEditar(id){
+    await db.from("submissions").update({ edicion_habilitada:true }).eq("id", id);
+    aviso("Le habilitaste una edición. Cuando vuelva a enviar, queda cerrado de nuevo.");
+    UI.ir("entregas");
   },
   async corregir(id){
     const nota = $("n-"+id).value === "" ? null : Number($("n-"+id).value);
