@@ -114,14 +114,15 @@ const Oficina = {
       ["undo","","Deshacer","Deshacer"], ["redo","","Rehacer","Rehacer"]
     ];
     document.getElementById("ofi-cuerpo").innerHTML =
-      '<div style="max-width:900px;margin:0 auto">' +
+      '<div style="display:flex;gap:16px;align-items:flex-start">' + Oficina.guia() +
+      '<div style="flex:1;min-width:0;max-width:900px">' + Oficina.botonGuia() +
         '<div style="background:#fff;border:1px solid #E6E5E3;border-radius:12px;padding:8px;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' +
           barra.map(b=>'<button title="'+b[3]+'" onclick="Oficina.cmd(\''+b[0]+'\',\''+b[1]+'\')" style="padding:6px 10px;border:1px solid #E6E5E3;border-radius:8px;background:#F9F8F7;font:inherit;cursor:pointer">'+b[2]+'</button>').join("") +
           '<span id="ofi-pal" style="margin-left:auto;align-self:center;font-size:13px;color:#7D7A75"></span>' +
         '</div>' +
         '<div id="ofi-doc" contenteditable="true" style="background:#fff;border:1px solid #E6E5E3;border-radius:12px;min-height:60vh;padding:34px 40px;outline:none"></div>' +
         '<p style="font-size:13px;color:#7D7A75">Escrib\u00ed ac\u00e1 tu trabajo. Se guarda solo cada unos segundos y el profesor lo ve desde su panel.</p>' +
-      '</div>';
+      '</div></div>';
     const d = document.getElementById("ofi-doc");
     d.innerHTML = Oficina.datos.contenido.html || "";
     d.oninput = ()=>{ Oficina.palabras(); Oficina.marcar(); };
@@ -140,10 +141,49 @@ const Oficina = {
     p.textContent = n + (n===1?" palabra":" palabras");
   },
 
+  /* ---------- guia de la tarea (panel de la izquierda) ---------- */
+  clase(){
+    if(typeof Alumno === "undefined" || !Alumno.aula) return null;
+    const cl = Alumno.aula.clase;
+    if(!cl) return null;
+    const hay = cl.actividad_titulo || cl.actividad_objetivo || cl.guia_alumno || (cl.pasos && cl.pasos.length);
+    return hay ? cl : null;
+  },
+  guia(){
+    const cl = Oficina.clase();
+    if(!cl) return "";
+    const pasos = cl.pasos || [];
+    return '<div id="ofi-guia" style="width:310px;min-width:260px;flex:0 0 auto;position:sticky;top:0;max-height:calc(100vh - 120px);overflow:auto;background:#fff;border:1px solid #E6E5E3;border-radius:12px;padding:16px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">' +
+        '<span style="font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#7D7A75">Tu tarea, paso a paso</span>' +
+        '<button onclick="Oficina.guiaToggle()" style="' + Oficina.btn("#F0EFED","#2C2C2B") + 'padding:4px 8px;font-size:12px">Ocultar</button>' +
+      '</div>' +
+      '<h3 style="margin:6px 0 4px">' + Oficina.esc(cl.actividad_titulo || "Actividad") + '</h3>' +
+      (cl.actividad_objetivo ? '<p style="margin:0 0 10px;font-size:14px;color:#7D7A75">' + Oficina.esc(cl.actividad_objetivo) + '</p>' : "") +
+      (cl.guia_alumno ? '<div style="background:#F0EFED;border-radius:10px;padding:10px;margin-bottom:10px;font-size:14px">' +
+        String(cl.guia_alumno).split("\n").filter(Boolean).map(l=>'<p style="margin:3px 0">' + Oficina.esc(l) + '</p>').join("") + '</div>' : "") +
+      (pasos.length ? '<ol style="margin:0;padding-left:20px;font-size:14px">' +
+        pasos.map(p=>'<li style="margin-bottom:8px">' + Oficina.esc(p) + '</li>').join("") + '</ol>' : "") +
+      (cl.actividad_archivo ? '<div style="margin-top:10px;background:#E5F2FC;border-radius:10px;padding:10px;font-size:13px">Guard\u00e1 tu trabajo con el nombre <b>' + Oficina.esc(cl.actividad_archivo) + '</b></div>' : "") +
+    '</div>';
+  },
+  guiaToggle(){
+    const g = document.getElementById("ofi-guia"), b = document.getElementById("ofi-guia-ver");
+    if(!g || !b) return;
+    const oculta = g.style.display === "none";
+    g.style.display = oculta ? "block" : "none";
+    b.style.display = oculta ? "none" : "inline-block";
+  },
+  botonGuia(){
+    if(!Oficina.clase()) return "";
+    return '<button id="ofi-guia-ver" onclick="Oficina.guiaToggle()" style="' + Oficina.btn("#46A171","#fff") + 'display:none;margin-bottom:10px">Ver la tarea</button>';
+  },
+
   /* ---------- planilla ---------- */
   verPlanilla(){
     const bs = Oficina.btn("#F0EFED","#2C2C2B") + "padding:6px 10px;";
-    let h = '<div style="max-width:1060px;margin:0 auto">' +
+    let h = '<div style="display:flex;gap:16px;align-items:flex-start">' + Oficina.guia() +
+      '<div style="flex:1;min-width:0">' + Oficina.botonGuia() +
       '<div style="background:#fff;border:1px solid #E6E5E3;border-radius:12px;padding:10px;margin-bottom:10px">' +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:13px">' +
           '<span style="color:#7D7A75">Aplicar a</span>' +
@@ -186,7 +226,7 @@ const Oficina = {
       }
       h += '</tr>';
     }
-    h += '</table></div></div>';
+    h += '</table></div></div></div>';
     document.getElementById("ofi-cuerpo").innerHTML = h;
     Oficina.recalcular();
     Oficina.aplicar();
