@@ -1,16 +1,22 @@
 /* ==================== CICLOS Y DOCENTE DE GRADO ====================
-   Primer ciclo   · 1.o a 3.o grado   → maestro de grado (9 materias)
-   Segundo ciclo  · 4.o a 6.o grado   → maestro de grado (10 materias)
-   Tercer ciclo   · 7.o a 9.o grado   → por materia
-   Nivel medio    · 1.er a 3.er curso → por materia
+   Primer ciclo   · 1.o, 2.o y 3.o grado    → maestro de grado (9 materias)
+   Segundo ciclo  · 4.o, 5.o y 6.o grado    → maestro de grado (10 materias)
+   Tercer ciclo   · 7.o, 8.o y 9.o grado    → por materia
+   Nivel medio    · 1.er, 2.o y 3.er curso  → por materia
+   OJO: 1-3 / 4-6 / 7-9 son codigos internos, nunca se muestran al usuario.
 ===================================================================== */
 
 const CICLOS = [
-  ["1-3",   "Primer ciclo",  "1.º a 3.º grado",   "9 materias · maestro de grado"],
-  ["4-6",   "Segundo ciclo", "4.º a 6.º grado",   "10 materias · maestro de grado"],
-  ["7-9",   "Tercer ciclo",  "7.º a 9.º grado",   "por materia"],
-  ["media", "Nivel medio",   "1.º a 3.º curso",   "por materia"]
+  ["1-3",   "Primer ciclo",  "1.º, 2.º y 3.º grado",   "9 materias · maestro de grado"],
+  ["4-6",   "Segundo ciclo", "4.º, 5.º y 6.º grado",   "10 materias · maestro de grado"],
+  ["7-9",   "Tercer ciclo",  "7.º, 8.º y 9.º grado",   "por materia"],
+  ["media", "Nivel medio",   "1.º, 2.º y 3.º curso",   "por materia"]
 ];
+
+function nombreCiclo(c){
+  const x = CICLOS.find(y=>y[0] === c);
+  return x ? x[1] + " (" + x[2] + ")" : "sin ciclo definido";
+}
 
 const Grado = {
   docentes: [], resumen: [],
@@ -27,7 +33,7 @@ const Grado = {
     const prim = Grado.primaria();
     return '<div class="card" style="border-color:#2783DE">' +
       '<h2>Docente de grado (primaria)</h2>' +
-      '<p class="sub">En el <b>primer ciclo</b> (1.º a 3.º) y en el <b>segundo ciclo</b> (4.º a 6.º) el maestro está a cargo de <b>todo el grado</b>. Elegí el grado y el docente: la plataforma crea de una sola vez las materias oficiales del ciclo y se las asigna todas. En el <b>tercer ciclo</b> (7.º a 9.º) y en el <b>nivel medio</b> (1.º a 3.º curso) la asignación es por materia, con el bloque de abajo.</p>' +
+      '<p class="sub">En el <b>primer ciclo</b> (1.º, 2.º y 3.º grado) y en el <b>segundo ciclo</b> (4.º, 5.º y 6.º grado) el maestro está a cargo de <b>todo el grado</b>. Elegí el grado y el docente: la plataforma crea de una sola vez las materias oficiales del ciclo y se las asigna todas. En el <b>tercer ciclo</b> (7.º, 8.º y 9.º grado) y en el <b>nivel medio</b> (1.º, 2.º y 3.º curso) la asignación es por materia, con el bloque de abajo.</p>' +
       (prim.length
         ? '<div class="grid2">' +
           '<div><label>Grado</label><select id="g-cur">' +
@@ -49,17 +55,19 @@ const Grado = {
       '<p class="sub">Si un curso aparece sin ciclo, completá su campo <b>Grado</b> (por ejemplo 6.º, 8.º o 2.º Curso).</p>' +
       CICLOS.map(c=>{
         const filas = Grado.resumen.filter(x=>x.ciclo === c[0]);
-        return '<h3 style="margin-top:14px">' + c[1] + ' <span class="note">' + c[2] + ' · ' + c[3] + '</span></h3>' +
+        return '<h3 style="margin-top:16px">' + c[1] + ' <span class="note">· ' + c[2] + ' · ' + c[3] + '</span></h3>' +
           (filas.length
-            ? '<div style="overflow:auto"><table><thead><tr><th>Curso</th><th>Materias</th><th>Docentes</th><th>Sin docente</th></tr></thead><tbody>' +
-              filas.map(x=>'<tr><td><b>' + esc(x.curso) + '</b></td><td>' + x.materias + '</td>' +
+            ? '<div style="overflow:auto"><table><thead><tr><th>Curso</th><th>Grado</th><th>Materias</th><th>Docentes</th><th>Sin docente</th></tr></thead><tbody>' +
+              filas.map(x=>'<tr><td><b>' + esc(x.curso) + '</b></td>' +
+                '<td><span class="tag blue">' + esc(c[1]) + '</span></td>' +
+                '<td>' + x.materias + '</td>' +
                 '<td>' + ((x.docentes||[]).map(n=>esc(n)).join(", ") || '<span class="note">—</span>') + '</td>' +
                 '<td>' + (Number(x.sin_docente) ? '<span class="tag orange">' + x.sin_docente + '</span>' : '<span class="tag green">0</span>') + '</td></tr>').join("") +
               '</tbody></table></div>'
             : '<p class="note">Sin cursos cargados en este ciclo.</p>');
       }).join("") +
       (Grado.resumen.some(x=>!x.ciclo)
-        ? '<h3 style="margin-top:14px">Sin ciclo definido</h3><ul>' +
+        ? '<h3 style="margin-top:16px">Sin ciclo definido</h3><ul>' +
           Grado.resumen.filter(x=>!x.ciclo).map(x=>'<li>' + esc(x.curso) + '</li>').join("") +
           '</ul><p class="note">Renombrá el curso o cargá su grado para que entre en el ciclo que corresponde.</p>'
         : "") +
@@ -96,5 +104,18 @@ const Grado = {
     } else {
       el.insertAdjacentHTML("beforeend", Grado.html());
     }
+  };
+})();
+
+/* El atajo de “Mis cursos” tambien tiene que nombrar bien el ciclo */
+(function(){
+  if(typeof Prim === "undefined") return;
+  Prim.crearMaterias = async function(){
+    const cid = Prim.cursoActual();
+    if(!cid) return;
+    const { data, error } = await db.rpc("crear_materias_grado", { p_course_id: cid, p_teacher_id: null });
+    if(error){ alert("No se pudo: " + error.message); return; }
+    aviso("Listo. " + nombreCiclo(data.ciclo) + ". Materias creadas: " + data.creadas + ".");
+    await cargarAsignaciones();
   };
 })();
