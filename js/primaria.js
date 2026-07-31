@@ -364,8 +364,8 @@ const Planilla = {
       '<button class="btn sec" onclick="Planilla.exportar()">Descargar en Excel</button>' +
       '<button class="btn sec" onclick="Planilla.word()">Descargar en Word</button>' +
       '</div>' +
-      '<p class="note" style="margin-top:8px">Calificación: 5 desde 90%, 4 desde 80%, 3 desde 70%, 2 desde 60%, 1 por debajo.</p>' +
-      '</div>';
+      '</div>' +
+      Planilla.cardEscala();
   },
   cambiarCurso(id){ Prim.courseId = id; Planilla.materia = null; Planilla.vista(); },
   cambiarMateria(m){ Planilla.materia = m; Planilla.vista(); },
@@ -374,6 +374,21 @@ const Planilla = {
     const d = Planilla.datos;
     return [["N.º","Alumno","R.S.A. diario","Tareas y trabajos","Parcial","Global","Capacidad institucional","Total","%","Calificación"]]
       .concat((d.filas||[]).map((f,i)=>[i+1, f.alumno, f.rsa_diario, f.tareas, f.parcial, f.global, f.institucional, f.total, f.porcentaje, f.calificacion]));
+  },
+  cardEscala(){
+    const e = Planilla.datos.escala || { maximo:0, base:0, tramos:[] };
+    const color = { 2:"orange", 3:"blue", 4:"green", 5:"green" };
+    return '<div class="card"><h2>Escala de calificación</h2>' +
+      '<p class="sub">El 70% del puntaje total es la nota <b>2</b>. Por debajo de ese puntaje la nota es <b>1</b>. Lo que va del 70% al 100% se divide en cuatro tramos y, cuando no dan montos iguales, los puntos que sobran se suman a las notas 2 y 3: al 4 y al 5 llegan solamente los mayores puntajes.</p>' +
+      '<div style="overflow:auto"><table><thead><tr><th>Calificación</th><th>Puntaje</th><th>Porcentaje</th><th>Alumnos</th></tr></thead><tbody>' +
+      '<tr><td><span class="tag red">1</span></td><td>0 a ' + Math.max(0, Number(e.base) - 1) + '</td><td>menos del 70%</td><td>' +
+        (Planilla.datos.filas||[]).filter(f=>f.calificacion === 1).length + '</td></tr>' +
+      (e.tramos||[]).map(t=>'<tr><td><span class="tag ' + (color[t.calificacion]||"gray") + '">' + t.calificacion + '</span></td>' +
+        '<td>' + t.desde + ' a ' + t.hasta + '</td>' +
+        '<td>' + (e.maximo ? Math.round(t.desde * 100 / e.maximo) + '% a ' + Math.round(t.hasta * 100 / e.maximo) + '%' : "—") + '</td>' +
+        '<td>' + (Planilla.datos.filas||[]).filter(f=>f.calificacion === t.calificacion).length + '</td></tr>').join("") +
+      '</tbody></table></div>' +
+      '<p class="note">Puntaje total de la materia en esta etapa: <b>' + Number(e.maximo) + '</b> puntos. Base para aprobar (70%): <b>' + Number(e.base) + '</b> puntos.</p></div>';
   },
   exportar(){
     KG.excel("Planilla_RSA_" + KG.slug(Planilla.materia) + "_etapa" + Prim.etapa, Planilla.filas());
