@@ -1,0 +1,57 @@
+/* Video motion: una mano levanta una piedra que se convierte en la Tierra */
+.motion-stage{display:flex;justify-content:center;margin:8px auto 0;max-width:340px}
+.motion-stage svg{width:100%;height:auto;overflow:visible}
+
+/* La mano sube desde abajo sosteniendo la piedra */
+.m-hand{animation:handUp 7s ease-in-out infinite;transform-origin:160px 260px;opacity:0}
+@keyframes handUp{
+  0%{transform:translateY(74px);opacity:0}
+  12%{opacity:1}
+  28%{transform:translateY(0);opacity:1}
+  80%{transform:translateY(0);opacity:1}
+  93%{opacity:0}
+  100%{transform:translateY(74px);opacity:0}
+}
+
+/* El conjunto piedra/tierra sube con la mano y da la vuelta */
+.m-spin{animation:spinTurn 7s ease-in-out infinite;transform-origin:160px 150px}
+@keyframes spinTurn{
+  0%{transform:translateY(74px) rotate(0deg)}
+  28%{transform:translateY(0) rotate(0deg)}
+  50%{transform:translateY(0) rotate(180deg)}
+  80%{transform:translateY(-6px) rotate(360deg)}
+  93%{transform:translateY(-6px) rotate(360deg)}
+  100%{transform:translateY(74px) rotate(360deg)}
+}
+
+/* La piedra se desvanece mientras aparece la Tierra (la transformación) */
+.m-stone{animation:stoneOut 7s ease-in-out infinite}
+@keyframes stoneOut{0%,38%{opacity:1}52%,100%{opacity:0}}
+.m-earth{animation:earthIn 7s ease-in-out infinite;transform-origin:160px 150px;opacity:0}
+@keyframes earthIn{
+  0%,40%{opacity:0;transform:scale(.7)}
+  56%{opacity:1;transform:scale(1.07)}
+  66%{transform:scale(1)}
+  90%{opacity:1}
+  100%{opacity:0;transform:scale(.7)}
+}
+
+/* Resplandor que acompaña la transformación */
+.m-glow{animation:glowPulse 7s ease-in-out infinite;opacity:0}
+@keyframes glowPulse{0%,40%{opacity:0}56%,86%{opacity:.9}100%{opacity:0}}
+
+/* Órbita y satélites girando (la Tierra en el mundo) */
+.m-orbit{transform-origin:160px 150px;opacity:0;
+  animation:orbitSpin 14s linear infinite, orbitShow 7s ease-in-out infinite}
+@keyframes orbitSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes orbitShow{0%,52%{opacity:0}64%,92%{opacity:1}100%{opacity:0}}
+
+/* Texto final */
+.m-tag{animation:tagIn 7s ease-in-out infinite;opacity:0}
+@keyframes tagIn{0%,58%{opacity:0;transform:translateY(8px)}70%,90%{opacity:1;transform:translateY(0)}100%{opacity:0}}
+
+@media(prefers-reduced-motion:reduce){
+  .m-hand,.m-spin,.m-stone,.m-earth,.m-glow,.m-orbit,.m-tag{animation:none !important;opacity:1 !important;transform:none !important}
+  .m-stone{opacity:0 !important}
+  .m-earth{opacity:1 !important}
+}
