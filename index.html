@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/home-motion.css">
 </head>
 <body>
 
@@ -23,8 +24,8 @@
   </a>
   <nav class="links">
     <a href="#plataforma">Plataforma</a>
+    <a href="#clubes">Clubes</a>
     <a href="#nosotros">Nosotros</a>
-    <a href="club/">Club</a>
     <a href="#contacto">Contacto</a>
   </nav>
   <a class="btn btn-primary btn-nav" href="app.html">Ingresar</a>
@@ -39,6 +40,10 @@
     <p class="sub reveal d2">Krueka es una plataforma educativa de gestión donde se ejecutan
     programas de estudios especializados para escuelas y colegios.
     Del aula a la dirección, todo en un solo lugar.</p>
+
+    <!-- Video motion: una mano levanta una piedra que se convierte en la Tierra -->
+    <div id="hero-motion" class="reveal d2"></div>
+
     <div class="cta reveal d3">
       <a class="btn btn-primary" href="app.html">Ingresar <span class="arr">→</span></a>
       <a class="btn btn-ghost" href="#plataforma">Conocer la plataforma</a>
@@ -77,13 +82,40 @@
         <p>Se ejecutan programas de estudios especializados para escuelas y colegios, con contenidos y lecciones que avanzan al ritmo de cada curso.</p>
       </article>
     </div>
+  </section>
+
+  <!-- ============ CLUBES INTERNOS ============ -->
+  <section id="clubes" class="section">
+    <p class="eyebrow reveal">Clubes internos</p>
+    <h2 class="reveal d1">Cada escuela puede crear sus propios clubes.</h2>
+    <p class="section-sub reveal d2">Además de la gestión de clases, cada institución puede crear clubes internos
+    exclusivos para sus alumnos — como el club de informática — con inscripción, lecciones con juegos
+    por nivel y control de cuotas, todo en un espacio aparte y solo para su comunidad.</p>
+
+    <div class="grid">
+      <article class="card reveal">
+        <div class="ic">🎮</div>
+        <h3>Espacio exclusivo por escuela</h3>
+        <p>Cada club es privado de la institución: no es para todos, solo para los alumnos de esa escuela.</p>
+      </article>
+      <article class="card reveal d1">
+        <div class="ic">🧩</div>
+        <h3>Lecciones con juegos</h3>
+        <p>Los chicos entran con un código personal y avanzan por lecciones con juegos y desbloqueo progresivo.</p>
+      </article>
+      <article class="card reveal d2">
+        <div class="ic">🛡️</div>
+        <h3>Control y auditoría</h3>
+        <p>Cada código queda ligado a un solo equipo y la dirección ve el seguimiento de acceso de cada alumno.</p>
+      </article>
+    </div>
 
     <div class="club-call reveal">
       <div>
-        <h3>🎮 Club de informática</h3>
-        <p>Registro aparte del sistema escolar: inscripción de alumnos, lecciones con juegos por nivel y control de cuotas con abonos parciales.</p>
+        <h3>🎮 El club de B.E.I ya está en marcha</h3>
+        <p>Betesda Educación Integral ya tiene su club de informática exclusivo, con ingreso por código para sus alumnos.</p>
       </div>
-      <a class="btn btn-ghost" href="club/">Ir al club <span class="arr">→</span></a>
+      <a class="btn btn-ghost" href="club/">Ver el club <span class="arr">→</span></a>
     </div>
   </section>
 
@@ -136,5 +168,6 @@
 </footer>
 
 <script src="js/home.js"></script>
+<script src="js/home-motion.js"></script>
 </body>
 </html>
