@@ -1,83 +1,10 @@
-/* Video motion elaborado: mano → piedra → Tierra */
-.motion-stage{display:flex;justify-content:center;margin:6px auto 0;max-width:360px}
-.motion-stage svg{width:100%;height:auto;overflow:visible}
-
-/* Estrellas titilando */
-.m-stars .st{animation:twinkle 3.2s ease-in-out infinite}
-.m-stars .st2{animation:twinkle 3.2s ease-in-out infinite;animation-delay:1s}
-.m-stars .st3{animation:twinkle 3.2s ease-in-out infinite;animation-delay:2s}
-@keyframes twinkle{0%,100%{opacity:.15}50%{opacity:.9}}
-
-/* La mano sube sosteniendo la piedra */
-.m-hand{animation:handUp 7s cubic-bezier(.4,.1,.2,1) infinite;transform-origin:180px 300px;opacity:0}
-@keyframes handUp{
-  0%{transform:translateY(90px);opacity:0}
-  10%{opacity:1}
-  26%{transform:translateY(0);opacity:1}
-  80%{transform:translateY(0);opacity:1}
-  92%{opacity:0}
-  100%{transform:translateY(90px);opacity:0}
-}
-
-/* Piedra/Tierra suben con la mano y dan la vuelta */
-.m-spin{animation:spinTurn 7s cubic-bezier(.4,.1,.2,1) infinite;transform-origin:180px 168px}
-@keyframes spinTurn{
-  0%{transform:translateY(90px) rotate(0deg)}
-  26%{transform:translateY(0) rotate(0deg)}
-  46%{transform:translateY(0) rotate(180deg)}
-  80%{transform:translateY(-6px) rotate(360deg)}
-  92%{transform:translateY(-6px) rotate(360deg)}
-  100%{transform:translateY(90px) rotate(360deg)}
-}
-
-/* La piedra se desvanece al transformarse */
-.m-stone,.m-stone-tex,.m-stone-hi{animation:stoneOut 7s ease-in-out infinite}
-@keyframes stoneOut{0%,38%{opacity:1}50%,100%{opacity:0}}
-
-/* La Tierra aparece con la transformación */
-.m-earth{animation:earthIn 7s cubic-bezier(.34,1.4,.4,1) infinite;transform-origin:180px 168px;opacity:0}
-@keyframes earthIn{
-  0%,40%{opacity:0;transform:scale(.55)}
-  54%{opacity:1;transform:scale(1.08)}
-  62%{transform:scale(1)}
-  90%{opacity:1}
-  100%{opacity:0;transform:scale(.55)}
-}
-
-/* Los continentes giran (la Tierra rotando) */
-.m-continents{animation:contSpin 9s linear infinite;transform-origin:180px 168px}
-@keyframes contSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-
-/* Nubes a la deriva */
-.m-clouds{animation:cloudDrift 9s ease-in-out infinite}
-@keyframes cloudDrift{0%,100%{transform:translateX(0)}50%{transform:translateX(-10px)}}
-
-/* Atmósfera brillando alrededor de la Tierra */
-.m-atmo{animation:atmoPulse 7s ease-in-out infinite;transform-origin:180px 168px;opacity:0}
-@keyframes atmoPulse{0%,44%{opacity:0;transform:scale(.8)}60%,86%{opacity:1;transform:scale(1.06)}100%{opacity:0;transform:scale(.8)}}
-
-/* Destello en el momento de la transformación */
-.m-burst{animation:burstFlash 7s ease-out infinite;transform-origin:180px 168px;opacity:0}
-@keyframes burstFlash{
-  0%,42%{opacity:0;transform:scale(0)}
-  47%{opacity:1;transform:scale(4)}
-  58%{opacity:0;transform:scale(11)}
-  100%{opacity:0;transform:scale(0)}
-}
-
-/* Órbita con satélites (aparece cuando ya es la Tierra) */
-.m-orbit{transform-origin:180px 168px;opacity:0;
-  animation:orbitSpin 14s linear infinite, orbitShow 7s ease-in-out infinite}
-@keyframes orbitSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-@keyframes orbitShow{0%,56%{opacity:0}66%,92%{opacity:1}100%{opacity:0}}
-
-/* Texto final */
-.m-tag{animation:tagIn 7s ease-in-out infinite;opacity:0}
-@keyframes tagIn{0%,60%{opacity:0;transform:translateY(8px)}72%,90%{opacity:1;transform:translateY(0)}100%{opacity:0}}
-
-@media(prefers-reduced-motion:reduce){
-  .m-hand,.m-spin,.m-stone,.m-stone-tex,.m-stone-hi,.m-earth,.m-continents,.m-clouds,.m-atmo,.m-burst,.m-orbit,.m-tag,.m-stars .st,.m-stars .st2,.m-stars .st3{animation:none !important}
-  .m-stone,.m-stone-tex,.m-stone-hi,.m-burst{opacity:0 !important}
-  .m-earth,.m-atmo,.m-orbit,.m-tag,.m-stars .st,.m-stars .st2,.m-stars .st3{opacity:1 !important}
-  .m-hand{opacity:1 !important;transform:none !important}
-}
+/* Hero motion real: video mano → piedra → Tierra */
+.hero-media{position:absolute;inset:0;z-index:0;overflow:hidden;background:#05070b}
+.hero-video{width:100%;height:100%;display:block;object-fit:cover;object-position:center;opacity:0;filter:saturate(.92) contrast(1.05) brightness(.78);transition:opacity 1s ease}
+.hero-video.ready{opacity:1}
+.hero-media-scrim{position:absolute;inset:0;background:linear-gradient(90deg,#05070b 0%,rgba(5,7,11,.98) 22%,rgba(5,7,11,.78) 43%,rgba(5,7,11,.16) 72%),linear-gradient(0deg,#05070b 0%,transparent 32%,rgba(5,7,11,.12) 72%,rgba(5,7,11,.58) 100%)}
+.hero-media::after{content:"";position:absolute;inset:0;background:radial-gradient(560px 460px at 76% 40%,rgba(56,138,255,.10),transparent 70%);mix-blend-mode:screen}
+.hero-noise{position:absolute;inset:-40%;opacity:.035;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");animation:noise-shift .24s steps(2) infinite}@keyframes noise-shift{0%{transform:translate(0)}25%{transform:translate(2%,1%)}50%{transform:translate(-1%,2%)}75%{transform:translate(1%,-2%)}100%{transform:translate(0)}}
+@media(max-width:980px){.hero-video{object-position:60% center}.hero-media-scrim{background:linear-gradient(90deg,#05070b 0%,rgba(5,7,11,.96) 32%,rgba(5,7,11,.40) 70%),linear-gradient(0deg,#05070b 0%,transparent 45%)}}
+@media(max-width:720px){.hero-video{object-position:67% center;filter:saturate(.9) contrast(1.04) brightness(.63)}.hero-media-scrim{background:linear-gradient(0deg,#05070b 0%,rgba(5,7,11,.93) 32%,rgba(5,7,11,.34) 62%,rgba(5,7,11,.52) 100%),linear-gradient(90deg,rgba(5,7,11,.62),transparent 82%)}}
+@media(prefers-reduced-motion:reduce){.hero-video{display:none}.hero-noise{display:none}}
