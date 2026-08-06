@@ -73,26 +73,36 @@ const UI = {
     $("form-doc").classList.toggle("hidden", w!=="doc");
     $("form-alu").classList.toggle("hidden", w!=="alu");
   },
+  /* Mismo orden para todos los roles: primero el día a día, después la organización y al final los informes */
   menus(){
     const r = St.perfil.role;
-    if(r==="docente") return [["clase","Clase de hoy"],["planificacion","Planificación"],["alumnos","Alumnos"],["vigilancia","Centinela"],["entregas","Entregas"],["conducta","Registro anecdótico"],["taller","Taller"],["miscursos","Mis cursos"]];
-    if(r==="director") return [["control","Control docente"],["resumen","Alumnos"],["planes","Planificaciones"]];
-    if(r==="admin")   return [["control","Control docente"],["usuarios","Usuarios y roles"],["estructura","Cursos y materias"]];
+    if(r==="docente") return [["clase","Clase de hoy"],["planificacion","Planificación"],["alumnos","Mis alumnos"],["entregas","Entregas"],["vigilancia","Centinela"],["conducta","Registro anecdótico"],["taller","Taller"],["miscursos","Mis cursos"]];
+    if(r==="director") return [["control","Control docente"],["planes","Planificaciones"],["resumen","Resumen de alumnos"]];
+    if(r==="admin")   return [["control","Control docente"],["estructura","Cursos y materias"],["usuarios","Usuarios y roles"]];
     return [["control","Panel"]];
   },
   construirNav(){
     const m = UI.menus();
-    $("nav").innerHTML = m.map(([k,t])=>`<button data-k="${k}" onclick="UI.ir('${k}')">${t}</button>`).join("");
+    const nav = $("nav");
+    nav.setAttribute("role", "tablist");
+    nav.setAttribute("aria-label", "Secciones de la plataforma");
+    nav.innerHTML = m.map(([k,t])=>`<button data-k="${k}" role="tab" aria-selected="false" title="${t}" onclick="UI.ir('${k}')">${t}</button>`).join("");
     UI.ir(m[0][0]);
   },
   ir(k){
     St.tab = k;
     document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.k===k));
     $("view").innerHTML = '<div class="spinner">Cargando…</div>';
-    ({ clase:Docente.vClase, planificacion:Docente.vPlanificacion, alumnos:Docente.vAlumnos, miscursos:Docente.vMisCursos,
+    const vistas = { clase:Docente.vClase, planificacion:Docente.vPlanificacion, alumnos:Docente.vAlumnos, miscursos:Docente.vMisCursos,
        entregas:Docente.vEntregas, conducta:Docente.vConducta, taller:Docente.vTaller, vigilancia:Docente.vVigilancia,
        control:Direccion.vControl, resumen:Direccion.vAlumnos, planes:Direccion.vPlanes,
-       usuarios:Admin.vUsuarios, estructura:Admin.vEstructura })[k]();
+       usuarios:Admin.vUsuarios, estructura:Admin.vEstructura };
+    const vista = vistas[k];
+    if(typeof vista !== "function"){
+      $("view").innerHTML = '<div class="alert err">Esta sección no está disponible para tu rol.</div>';
+      return;
+    }
+    vista();
   }
 };
 
