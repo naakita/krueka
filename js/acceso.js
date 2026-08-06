@@ -1,4 +1,4 @@
-/* Acceso a Krueka: recuperar la cuenta y crear una contraseña nueva */
+/* Acceso a Krueka: captcha, recuperar la cuenta y crear una contraseña nueva */
 (function () {
   var g = function (id) { return document.getElementById(id); };
 
@@ -8,6 +8,37 @@
     box.textContent = texto;
     box.className = "alert " + (tipo || "ok");
     box.classList.remove("hidden");
+  }
+
+  /* ---- Captcha de Cloudflare Turnstile ----
+     El widget vive dentro del formulario de docentes y deja su comprobante
+     en un campo oculto. Si Cloudflare no carga, el ingreso sigue funcionando. */
+  var Captcha = {
+    campo: function () { return document.querySelector('#form-doc [name="cf-turnstile-response"]'); },
+    token: function () { var c = Captcha.campo(); return (c && c.value) || undefined; },
+    reiniciar: function () { try { if (window.turnstile) window.turnstile.reset(); } catch (err) {} }
+  };
+  window.Captcha = Captcha;
+
+  /* ---- Aviso de contraseñas filtradas ----
+     Consulta el servicio público HaveIBeenPwned con el método de anonimato por
+     prefijo: solo viajan los primeros 5 caracteres del hash, nunca la contraseña. */
+  async function vecesFiltrada(clave) {
+    try {
+      if (!(window.crypto && crypto.subtle)) return 0;
+      var datos = new TextEncoder().encode(clave);
+      var hash = await crypto.subtle.digest("SHA-1", datos);
+      var hex = Array.from(new Uint8Array(hash)).map(function (b) {
+        return b.toString(16).padStart(2, "0");
+      }).join("").toUpperCase();
+      var prefijo = hex.slice(0, 5), resto = hex.slice(5);
+      var r = await fetch("https://api.pwnedpasswords.com/range/" + prefijo, { headers: { "Add-Padding": "true" } });
+      if (!r.ok) return 0;
+      var texto = await r.text();
+      var linea = texto.split("\n").find(function (l) { return l.slice(0, resto.length).toUpperCase() === resto; });
+      if (!linea) return 0;
+      return parseInt((linea.split(":")[1] || "0").trim(), 10) || 0;
+    } catch (err) { return 0; }
   }
 
   var Cuenta = {
@@ -28,10 +59,12 @@
       if (link) link.textContent = "Enviando\u2026";
 
       var r = await db.auth.resetPasswordForEmail(correo, {
-        redirectTo: location.origin + location.pathname
+        redirectTo: location.origin + location.pathname,
+        captchaToken: Captcha.token()
       });
 
       if (link) link.textContent = original;
+      Captcha.reiniciar();
       if (r && r.error) { decir("err-doc", "No se pudo enviar el correo: " + r.error.message, "err"); return; }
       decir("err-doc", "Listo. Te enviamos un correo a " + correo + " con el enlace para crear una contrase\u00f1a nueva. Si no lo ves, revis\u00e1 el correo no deseado.", "ok");
     },
@@ -40,8 +73,17 @@
     async guardarNueva(e) {
       e.preventDefault();
       var p1 = g("np1").value, p2 = g("np2").value;
-      if (p1.length < 8) { decir("err-nueva", "La contrase\u00f1a debe tener al menos 8 caracteres.", "err"); return; }
+      if (p1.length < 10) { decir("err-nueva", "La contrase\u00f1a debe tener al menos 10 caracteres.", "err"); return; }
       if (p1 !== p2) { decir("err-nueva", "Las dos contrase\u00f1as no coinciden.", "err"); return; }
+      if (!/[0-9]/.test(p1) || !/[a-zA-Z]/.test(p1)) { decir("err-nueva", "Combin\u00e1 letras y n\u00fameros para que sea m\u00e1s segura.", "err"); return; }
+
+      decir("err-nueva", "Revisando que la contrase\u00f1a sea segura\u2026", "info");
+      var veces = await vecesFiltrada(p1);
+      if (veces > 0) {
+        decir("err-nueva", "Esa contrase\u00f1a aparece en filtraciones p\u00fablicas de internet (" + veces.toLocaleString("es") + " veces). Eleg\u00ed otra distinta.", "err");
+        return;
+      }
+
       var r = await db.auth.updateUser({ password: p1 });
       if (r && r.error) { decir("err-nueva", "No se pudo cambiar la contrase\u00f1a: " + r.error.message, "err"); return; }
       decir("err-nueva", "Tu contrase\u00f1a qued\u00f3 cambiada. Ya pod\u00e9s entrar con ella.", "ok");
