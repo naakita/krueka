@@ -24,6 +24,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif}
 h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:0 0 10px}h3{font-size:15px;margin:0 0 6px}
+a{color:var(--blue)}
 .sub{color:var(--tx2);font-size:13px;margin:0 0 14px}
 .note{color:var(--tx2);font-size:12px}
 .hidden{display:none !important}
@@ -57,6 +58,8 @@ tr:last-child td{border-bottom:0}
 .topbar{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:9}
 .topbar .in{max-width:1080px;margin:0 auto;padding:11px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .marca{background:#fff;border-radius:10px;padding:6px 10px;display:block}
+.marca-link{display:inline-block;text-decoration:none;border-radius:10px;transition:transform .15s ease,box-shadow .15s ease}
+.marca-link:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(39,131,222,.18)}
 .logo{width:26px;height:26px;border-radius:7px;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:800}
 .nav{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
 .nav button{padding:7px 12px;border:0;background:transparent;color:var(--tx2);border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
@@ -79,6 +82,9 @@ tr:last-child td{border-bottom:0}
 .bar{height:7px;border-radius:6px;background:var(--soft);overflow:hidden}
 .bar>i{display:block;height:100%;background:var(--green)}
 .spinner{padding:24px;text-align:center;color:var(--tx2)}
+.linkfila{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.linkfila a{font-size:12.5px;font-weight:600;text-decoration:none}
+.linkfila a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
@@ -86,7 +92,9 @@ tr:last-child td{border-bottom:0}
 <!-- ============ LOGIN ============ -->
 <div id="screen-login" class="center">
   <div style="text-align:center;margin-bottom:18px">
-    <img class="marca" alt="Krueka — enseñar, aprender, crecer" style="height:104px">
+    <a href="index.html" class="marca-link" title="Volver al inicio de Krueka" aria-label="Volver al inicio de Krueka">
+      <img class="marca" alt="Krueka — enseñar, aprender, crecer" style="height:104px">
+    </a>
     <p class="sub" style="margin-top:4px">Plataforma escolar · gestión de clases</p>
   </div>
   <div class="card">
@@ -101,8 +109,13 @@ tr:last-child td{border-bottom:0}
       <input id="email" type="email" autocomplete="username" placeholder="profe@krueka.edu.py" required>
       <label for="pass">Contraseña</label>
       <input id="pass" type="password" autocomplete="current-password" required>
+      <div class="linkfila">
+        <a href="index.html">← Volver al inicio</a>
+        <a href="#" id="link-recuperar" onclick="Cuenta.recuperar(event)">¿Olvidaste tu contraseña?</a>
+      </div>
       <div style="height:14px"></div>
       <button class="btn" style="width:100%;justify-content:center" type="submit">Entrar</button>
+      <p class="note" style="text-align:center;margin:12px 0 0">¿Perdiste el acceso a tu cuenta? <a href="mailto:contacto@krueka.com?subject=Recuperar%20mi%20cuenta%20de%20Krueka">Escribinos a contacto@krueka.com</a></p>
     </form>
 
     <form id="form-alu" class="hidden" onsubmit="Alumno.entrar(event)">
@@ -111,11 +124,39 @@ tr:last-child td{border-bottom:0}
       <input id="cod" maxlength="6" style="text-transform:uppercase;text-align:center;font-size:24px;letter-spacing:.2em" placeholder="ABC123" oninput="Alumno.buscar()" required>
       <label for="nom">Tu nombre</label>
       <select id="nom" required><option value="">Primero escribí el código</option></select>
+      <div class="linkfila">
+        <a href="index.html">← Volver al inicio</a>
+      </div>
       <div style="height:14px"></div>
       <button class="btn" style="width:100%;justify-content:center" type="submit">Entrar al aula</button>
+      <p class="note" style="text-align:center;margin:12px 0 0">Los alumnos no usan contraseña: entran con el código que dicta el docente al empezar la clase.</p>
     </form>
   </div>
   <p class="note" style="text-align:center">Los datos se guardan en la base central de la escuela.</p>
+</div>
+
+<!-- ============ CONTRASEÑA NUEVA (llega desde el correo de recuperación) ============ -->
+<div id="screen-nueva" class="center hidden">
+  <div style="text-align:center;margin-bottom:18px">
+    <a href="index.html" class="marca-link" title="Volver al inicio de Krueka" aria-label="Volver al inicio de Krueka">
+      <img class="marca" alt="Krueka" style="height:86px">
+    </a>
+  </div>
+  <div class="card">
+    <h2>Crear una contraseña nueva</h2>
+    <p class="sub">Escribila dos veces para confirmar. Tiene que tener al menos 8 caracteres.</p>
+    <div id="err-nueva" class="alert err hidden"></div>
+    <form onsubmit="Cuenta.guardarNueva(event)">
+      <label for="np1">Contraseña nueva</label>
+      <input id="np1" type="password" autocomplete="new-password" required>
+      <label for="np2">Repetila</label>
+      <input id="np2" type="password" autocomplete="new-password" required>
+      <div style="height:14px"></div>
+      <button class="btn" style="width:100%;justify-content:center" type="submit">Guardar contraseña</button>
+    </form>
+    <div style="height:10px"></div>
+    <button class="btn sec sm" onclick="Cuenta.cancelarNueva()">Cancelar</button>
+  </div>
 </div>
 
 <!-- ============ PANEL ============ -->
@@ -143,25 +184,26 @@ tr:last-child td{border-bottom:0}
   <div class="wrap" id="alu-view"></div>
 </div>
 
-<script src="js/core.js?v=20260804b"></script>
-<script src="js/kiosco.js?v=20260804b"></script>
-<script src="js/docente.js?v=20260804b"></script>
-<script src="js/direccion.js?v=20260804b"></script>
-<script src="js/admin.js?v=20260804b"></script>
-<script src="js/taller.js?v=20260804b"></script>
-<script src="js/editor.js?v=20260804b"></script>
-<script src="js/trabajos.js?v=20260804b"></script>
-<script src="js/inclusion.js?v=20260804b"></script>
-<script src="js/gestion.js?v=20260804b"></script>
-<script src="js/primaria.js?v=20260804b"></script>
-<script src="js/grado.js?v=20260804b"></script>
-<script src="js/club.js?v=20260804b"></script>
-<script src="js/club-juego.js?v=20260804b"></script>
-<script src="js/club-panel.js?v=20260804b"></script>
-<script src="js/club-abonos.js?v=20260804b"></script>
-<script src="js/club-auditoria.js?v=20260804b"></script>
-<script src="js/alumnos-admin.js?v=20260804b"></script>
-<script src="js/calificar.js?v=20260804b"></script>
-<script src="js/alumno.js?v=20260804b"></script>
+<script src="js/core.js?v=20260806"></script>
+<script src="js/acceso.js?v=20260806"></script>
+<script src="js/kiosco.js?v=20260806"></script>
+<script src="js/docente.js?v=20260806"></script>
+<script src="js/direccion.js?v=20260806"></script>
+<script src="js/admin.js?v=20260806"></script>
+<script src="js/taller.js?v=20260806"></script>
+<script src="js/editor.js?v=20260806"></script>
+<script src="js/trabajos.js?v=20260806"></script>
+<script src="js/inclusion.js?v=20260806"></script>
+<script src="js/gestion.js?v=20260806"></script>
+<script src="js/primaria.js?v=20260806"></script>
+<script src="js/grado.js?v=20260806"></script>
+<script src="js/club.js?v=20260806"></script>
+<script src="js/club-juego.js?v=20260806"></script>
+<script src="js/club-panel.js?v=20260806"></script>
+<script src="js/club-abonos.js?v=20260806"></script>
+<script src="js/club-auditoria.js?v=20260806"></script>
+<script src="js/alumnos-admin.js?v=20260806"></script>
+<script src="js/calificar.js?v=20260806"></script>
+<script src="js/alumno.js?v=20260806"></script>
 </body>
 </html>
