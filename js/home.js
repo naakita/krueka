@@ -1,31 +1,48 @@
-/* Krueka — home: motion de entrada al hacer scroll */
+/* Krueka — home pública: navegación, reveal y detalles de interfaz. */
 (function () {
-  var els = document.querySelectorAll('.reveal');
+  'use strict';
 
-  // Si no hay IntersectionObserver o el usuario prefiere menos movimiento, mostrar todo.
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reveals = document.querySelectorAll('.reveal');
+
   if (!('IntersectionObserver' in window) || reduced) {
-    els.forEach(function (el) { el.classList.add('is-visible'); });
-    return;
+    reveals.forEach(function (el) { el.classList.add('is-visible'); });
+  } else {
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.11, rootMargin: '0px 0px -7% 0px' });
+    reveals.forEach(function (el) { observer.observe(el); });
   }
 
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (entry) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        io.unobserve(entry.target);
-      }
+  var nav = document.getElementById('nav');
+  function syncNav() {
+    if (nav) nav.classList.toggle('scrolled', window.scrollY > 14);
+  }
+  window.addEventListener('scroll', syncNav, { passive: true });
+  syncNav();
+
+  var menu = document.querySelector('.menu-button');
+  var links = document.getElementById('nav-links');
+  if (menu && links) {
+    menu.addEventListener('click', function () {
+      var open = menu.getAttribute('aria-expanded') === 'true';
+      menu.setAttribute('aria-expanded', String(!open));
+      menu.setAttribute('aria-label', open ? 'Abrir menú' : 'Cerrar menú');
+      links.classList.toggle('open', !open);
     });
-  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
-
-  els.forEach(function (el) { io.observe(el); });
-
-  // Sombra de la barra de navegación al hacer scroll.
-  var nav = document.querySelector('.nav');
-  function onScroll() {
-    if (!nav) return;
-    nav.style.boxShadow = (window.scrollY > 10) ? '0 10px 30px rgba(0,0,0,.35)' : 'none';
+    links.addEventListener('click', function (event) {
+      if (event.target.tagName !== 'A') return;
+      menu.setAttribute('aria-expanded', 'false');
+      menu.setAttribute('aria-label', 'Abrir menú');
+      links.classList.remove('open');
+    });
   }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
+
+  var year = document.getElementById('year');
+  if (year) year.textContent = String(new Date().getFullYear());
 })();

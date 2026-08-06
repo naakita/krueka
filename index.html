@@ -1,142 +1,241 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-PY">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Krueka — Plataforma educativa de gestión</title>
-<meta name="description" content="Krueka es una plataforma educativa de gestión donde se ejecutan programas de estudios especializados para escuelas y colegios.">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Krueka — Toda tu escuela conectada</title>
+<meta name="description" content="Krueka conecta dirección, docentes y alumnos en una sola plataforma educativa: clases, asistencia, planificación, entregas, seguimiento y clubes internos.">
+<meta name="theme-color" content="#05070b">
+<meta property="og:title" content="Krueka — Toda tu escuela conectada">
+<meta property="og:description" content="El sistema operativo educativo para gestionar el aula y la institución en tiempo real.">
+<meta property="og:type" content="website">
 <link rel="icon" href="logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/home.css">
-<link rel="stylesheet" href="css/home-motion.css">
+<link rel="stylesheet" href="css/home.css?v=20260805">
+<link rel="stylesheet" href="css/home-hero.css?v=20260805">
+<link rel="stylesheet" href="css/home-sections.css?v=20260805">
+<link rel="stylesheet" href="css/home-responsive.css?v=20260805">
+<link rel="stylesheet" href="css/home-motion.css?v=20260805">
 </head>
 <body>
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+<div class="site-grid" aria-hidden="true"></div>
 
-<!-- Fondo animado -->
-<div class="bg"><span class="orb orb-1"></span><span class="orb orb-2"></span><span class="orb orb-3"></span></div>
-
-<!-- ============ NAV ============ -->
-<header class="nav">
-  <a class="brand" href="#top">
-    <img src="logo.svg" alt="Krueka" class="brand-logo">
+<header class="nav" id="nav">
+  <a class="brand" href="#top" aria-label="Krueka, inicio">
+    <img src="logo.svg" alt="" class="brand-logo">
     <span>Krueka</span>
   </a>
-  <nav class="links">
+  <nav class="links" id="nav-links" aria-label="Navegación principal">
     <a href="#plataforma">Plataforma</a>
+    <a href="#como-funciona">Cómo funciona</a>
     <a href="#clubes">Clubes</a>
     <a href="#contacto">Contacto</a>
   </nav>
-  <a class="btn btn-primary btn-nav" href="app.html">Ingresar</a>
+  <a class="btn btn-primary btn-nav" href="app.html">Ingresar <span aria-hidden="true">→</span></a>
+  <button class="menu-button" type="button" aria-label="Abrir menú" aria-controls="nav-links" aria-expanded="false">
+    <span></span><span></span>
+  </button>
 </header>
 
-<main id="top">
-
-  <!-- ============ HERO ============ -->
-  <section class="hero">
-    <p class="eyebrow reveal">Plataforma educativa de gestión</p>
-    <h1 class="reveal d1">La forma más simple<br>de <em>gestionar</em> tu escuela.</h1>
-    <p class="sub reveal d2">Krueka es una plataforma educativa de gestión donde se ejecutan
-    programas de estudios especializados para escuelas y colegios.
-    Del aula a la dirección, todo en un solo lugar.</p>
-
-    <!-- Video motion: una mano levanta una piedra que se convierte en la Tierra -->
-    <div id="hero-motion" class="reveal d2"></div>
-
-    <div class="cta reveal d3">
-      <a class="btn btn-primary" href="app.html">Ingresar <span class="arr">→</span></a>
-      <a class="btn btn-ghost" href="#plataforma">Conocer la plataforma</a>
+<main id="contenido">
+  <section class="hero" id="top">
+    <div class="hero-media" id="hero-motion" aria-hidden="true">
+      <video id="hero-video" class="hero-video" muted loop playsinline preload="none"></video>
+      <div class="hero-media-scrim"></div>
+      <div class="hero-noise"></div>
     </div>
-    <p class="hero-note reveal d4">Acceso para administradores, dirección y docentes.</p>
+
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow reveal"><span class="status-dot"></span> Plataforma educativa · Paraguay</p>
+        <h1 class="reveal d1">Una sola plataforma.<br><em>Toda tu escuela conectada.</em></h1>
+        <p class="hero-sub reveal d2">Krueka une dirección, docentes y alumnos en una experiencia digital clara: clases, asistencia, planificación, entregas y seguimiento en tiempo real.</p>
+        <div class="hero-actions reveal d3">
+          <a class="btn btn-primary btn-lg" href="app.html">Ingresar a Krueka <span aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost btn-lg" href="mailto:contacto@krueka.com?subject=Quiero%20una%20demostración%20de%20Krueka">Solicitar una demo</a>
+        </div>
+        <ul class="hero-trust reveal d4" aria-label="Características principales">
+          <li><span>✓</span> Sin instalaciones</li>
+          <li><span>✓</span> Gestión por roles</li>
+          <li><span>✓</span> Información en tiempo real</li>
+        </ul>
+      </div>
+
+      <div class="hero-signals" aria-hidden="true">
+        <div class="signal-card signal-class float-card">
+          <div class="signal-top"><span class="live-dot"></span><span>Clase activa</span><b>EN VIVO</b></div>
+          <strong>9.º grado · Informática</strong>
+          <small>Etapa 03 · Entrega habilitada</small>
+          <div class="progress"><i style="width:74%"></i></div>
+        </div>
+        <div class="signal-card signal-attendance float-card">
+          <span class="signal-icon">↗</span>
+          <small>Asistencia de hoy</small>
+          <strong>27 <span>/ 29</span></strong>
+          <em>93% presentes</em>
+        </div>
+        <div class="signal-card signal-plan float-card">
+          <span class="verified">✓</span>
+          <div><small>Planificación</small><strong>Verificada</strong></div>
+        </div>
+      </div>
+    </div>
+    <a class="scroll-cue" href="#plataforma" aria-label="Ver la plataforma"><span></span>Explorar</a>
   </section>
 
-  <!-- ============ MARQUESINA ============ -->
-  <div class="marquee" aria-hidden="true">
-    <div class="marquee-track">
-      <span>Gestión de clases</span><span>Asistencia</span><span>Planificaciones</span><span>Entregas y notas</span><span>Registro anecdótico</span><span>Clubes internos</span>
-      <span>Gestión de clases</span><span>Asistencia</span><span>Planificaciones</span><span>Entregas y notas</span><span>Registro anecdótico</span><span>Clubes internos</span>
+  <div class="signal-strip" aria-label="Funciones de Krueka">
+    <div class="signal-strip-track">
+      <span>Clases por etapas</span><i></i><span>Asistencia inteligente</span><i></i><span>Planificación docente</span><i></i><span>Entregas y evaluación</span><i></i><span>Control directivo</span><i></i><span>Clubes internos</span><i></i>
+      <span>Clases por etapas</span><i></i><span>Asistencia inteligente</span><i></i><span>Planificación docente</span><i></i><span>Entregas y evaluación</span><i></i><span>Control directivo</span><i></i><span>Clubes internos</span><i></i>
     </div>
   </div>
 
-  <!-- ============ PLATAFORMA ============ -->
-  <section id="plataforma" class="section">
-    <p class="eyebrow reveal">La plataforma</p>
-    <h2 class="reveal d1">Todo el colegio, organizado.</h2>
-    <p class="section-sub reveal d2">Un mismo sistema para el trabajo diario del aula y el control de la dirección.</p>
+  <section class="section platform" id="plataforma">
+    <div class="section-heading">
+      <p class="eyebrow reveal">Sistema operativo educativo</p>
+      <h2 class="reveal d1">No es otro panel.<br><em>Es la escuela funcionando mejor.</em></h2>
+      <p class="section-lead reveal d2">Cada rol ve exactamente lo que necesita. El aula avanza, la dirección acompaña y la información queda organizada.</p>
+    </div>
 
-    <div class="grid">
-      <article class="card reveal">
-        <div class="ic">🧑‍🏫</div>
-        <h3>Para docentes</h3>
-        <p>Abren la clase con un código, liberan tema, actividad y entrega por etapas, toman asistencia y corrigen con nota y devolución. Todo desde la computadora del aula.</p>
+    <div class="bento">
+      <article class="bento-card bento-class reveal">
+        <div class="card-label"><span class="live-dot"></span> Aula en tiempo real</div>
+        <h3>La clase avanza por etapas, sin perder a nadie.</h3>
+        <p>El docente abre un código y controla cuándo se libera cada momento de la experiencia.</p>
+        <div class="class-console" aria-hidden="true">
+          <div class="console-head"><span>Clase #0842</span><b>9.º A</b><em>10:42</em></div>
+          <div class="stage-row done"><span>01</span><div><b>Tema</b><small>Publicado</small></div><i>✓</i></div>
+          <div class="stage-row done"><span>02</span><div><b>Actividad</b><small>En progreso</small></div><i>✓</i></div>
+          <div class="stage-row active"><span>03</span><div><b>Entrega</b><small>27 alumnos conectados</small></div><i>●</i></div>
+          <div class="stage-row"><span>04</span><div><b>Resultado</b><small>Bloqueado</small></div><i>—</i></div>
+        </div>
       </article>
-      <article class="card reveal d1">
-        <div class="ic">📊</div>
-        <h3>Para la dirección</h3>
-        <p>Control de cumplimiento docente en tiempo real: planificaciones, clases dictadas, asistencia con semáforo, registros y entregas corregidas por docente y por alumno.</p>
+
+      <article class="bento-card bento-direction reveal d1">
+        <div class="card-label">Visión directiva</div>
+        <h3>Decisiones con información, no con suposiciones.</h3>
+        <div class="metric-grid" aria-hidden="true">
+          <div><small>Clases dictadas</small><strong>96%</strong><span class="up">+8%</span></div>
+          <div><small>Planificaciones</small><strong>24</strong><span>al día</span></div>
+          <div class="metric-wide"><small>Cumplimiento semanal</small><div class="bars"><i style="height:38%"></i><i style="height:54%"></i><i style="height:48%"></i><i style="height:72%"></i><i style="height:89%"></i><i style="height:96%"></i></div></div>
+        </div>
       </article>
-      <article class="card reveal d2">
-        <div class="ic">🎓</div>
-        <h3>Programas especializados</h3>
-        <p>Se ejecutan programas de estudios especializados para escuelas y colegios, con contenidos y lecciones que avanzan al ritmo de cada curso.</p>
+
+      <article class="bento-card bento-student reveal">
+        <span class="bento-icon">◎</span>
+        <div class="card-label">Experiencia del alumno</div>
+        <h3>Entrar es simple. Aprender, visible.</h3>
+        <p>Un código de seis caracteres, una interfaz clara y cada paso disponible cuando corresponde.</p>
+        <div class="code-demo" aria-hidden="true"><span>K</span><span>R</span><span>8</span><span>2</span><span>A</span><span>Q</span></div>
+      </article>
+
+      <article class="bento-card bento-manage reveal d1">
+        <span class="bento-icon">◇</span>
+        <div class="card-label">Trabajo docente</div>
+        <h3>Menos tareas repetidas. Más tiempo para enseñar.</h3>
+        <ul>
+          <li><span>01</span> Planificaciones organizadas</li>
+          <li><span>02</span> Asistencia en segundos</li>
+          <li><span>03</span> Evaluación por indicadores</li>
+        </ul>
       </article>
     </div>
   </section>
 
-  <!-- ============ CLUBES INTERNOS ============ -->
-  <section id="clubes" class="section">
-    <p class="eyebrow reveal">Clubes internos</p>
-    <h2 class="reveal d1">Cada escuela puede crear sus propios clubes.</h2>
-    <p class="section-sub reveal d2">Además de la gestión de clases, cada institución puede crear clubes internos
-    exclusivos para sus alumnos — como un club de informática — con inscripción, lecciones con juegos
-    por nivel y control de cuotas, todo en un espacio aparte y solo para su comunidad.</p>
-
-    <div class="grid">
-      <article class="card reveal">
-        <div class="ic">🎮</div>
-        <h3>Espacio exclusivo por escuela</h3>
-        <p>Cada club es privado de la institución: no es para todos, solo para los alumnos de esa escuela.</p>
-      </article>
-      <article class="card reveal d1">
-        <div class="ic">🧩</div>
-        <h3>Lecciones con juegos</h3>
-        <p>Los chicos entran con un código personal y avanzan por lecciones con juegos y desbloqueo progresivo.</p>
-      </article>
-      <article class="card reveal d2">
-        <div class="ic">🛡️</div>
-        <h3>Control y auditoría</h3>
-        <p>Cada código queda ligado a un solo equipo y la dirección ve el seguimiento de acceso de cada alumno.</p>
-      </article>
+  <section class="section workflow" id="como-funciona">
+    <div class="workflow-copy">
+      <p class="eyebrow reveal">Cómo funciona</p>
+      <h2 class="reveal d1">De abrir la clase a medir el avance.</h2>
+      <p class="section-lead reveal d2">Un flujo pensado para el ritmo real de una institución, no para una demostración.</p>
+    </div>
+    <div class="steps">
+      <article class="step reveal"><span>01</span><div class="step-line"></div><h3>Abrí</h3><p>El docente inicia la clase y genera el acceso seguro para su curso.</p></article>
+      <article class="step reveal d1"><span>02</span><div class="step-line"></div><h3>Acompañá</h3><p>Contenido, actividad y entrega se habilitan en el momento correcto.</p></article>
+      <article class="step reveal d2"><span>03</span><div class="step-line"></div><h3>Medí</h3><p>Asistencia, evidencias y resultados quedan disponibles para seguimiento.</p></article>
     </div>
   </section>
 
-  <!-- ============ CONTACTO ============ -->
-  <section id="contacto" class="section">
-    <div class="contact reveal">
-      <p class="eyebrow">Contacto</p>
-      <h2>¿Querés adquirir Krueka para tu institución?</h2>
-      <p>Escribinos y te mostramos cómo implementar la plataforma y los programas de estudios en tu escuela o colegio.</p>
-      <div class="cta">
-        <a class="btn btn-primary" href="mailto:contacto@krueka.com?subject=Quiero%20adquirir%20Krueka">Escribir a contacto@krueka.com <span class="arr">→</span></a>
+  <section class="section clubs" id="clubes">
+    <div class="club-shell reveal">
+      <div class="club-copy">
+        <p class="eyebrow">Ecosistema Krueka</p>
+        <h2>La escuela también vive <em>más allá del aula.</em></h2>
+        <p>Cada institución puede crear clubes privados con inscripción, lecciones, juegos por nivel, progreso y control de cuotas.</p>
+        <a class="text-link" href="mailto:contacto@krueka.com?subject=Quiero%20activar%20un%20club%20en%20Krueka">Quiero activar un club <span>→</span></a>
+      </div>
+      <div class="club-console" aria-hidden="true">
+        <div class="club-console-head"><div><span></span><span></span><span></span></div><small>club.krueka.com</small><b>● ONLINE</b></div>
+        <div class="club-dashboard">
+          <aside><i class="active"></i><i></i><i></i><i></i></aside>
+          <div class="club-main">
+            <div class="club-welcome"><small>CLUB DE INFORMÁTICA</small><strong>¡Hola, Alex!</strong><span>Nivel 04 · Explorador digital</span></div>
+            <div class="club-lessons"><div><b>✓</b><span>Seguridad digital</span></div><div class="current"><b>▶</b><span>Creá con IA</span></div><div><b>05</b><span>Mi primera app</span></div></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
+  <section class="trust-section">
+    <div class="trust-inner">
+      <div class="trust-copy reveal"><p class="eyebrow">Diseñada para instituciones reales</p><h2>Tecnología que acompaña, sin complicar.</h2></div>
+      <div class="trust-points">
+        <article class="reveal"><span>01</span><h3>Acceso por roles</h3><p>Cada persona ve únicamente las herramientas que necesita.</p></article>
+        <article class="reveal d1"><span>02</span><h3>Seguimiento verificable</h3><p>Las acciones importantes quedan registradas para acompañar mejor.</p></article>
+        <article class="reveal d2"><span>03</span><h3>Construida para el aula</h3><p>Textos claros, pocos pasos y funcionamiento pensado para docentes.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section contact-section" id="contacto">
+    <div class="contact-card reveal">
+      <div class="contact-glow" aria-hidden="true"></div>
+      <p class="eyebrow">El próximo paso</p>
+      <h2>Tu institución puede empezar a transformarse hoy.</h2>
+      <p>Conocé cómo Krueka puede adaptarse al trabajo de tu escuela o colegio.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="mailto:contacto@krueka.com?subject=Quiero%20implementar%20Krueka">Solicitar una demostración <span aria-hidden="true">→</span></a>
+        <a class="btn btn-ghost btn-lg" href="app.html">Ya tengo acceso</a>
+      </div>
+    </div>
+  </section>
 </main>
 
-<!-- ============ FOOTER ============ -->
 <footer class="footer">
-  <div class="foot-in">
-    <a class="brand" href="#top"><img src="logo.svg" alt="Krueka" class="brand-logo"><span>Krueka</span></a>
-    <p>Plataforma educativa de gestión · Grupo FERPIN</p>
-    <div class="foot-links">
-      <a href="app.html">Ingresar</a>
-      <a href="#contacto">Contacto</a>
-    </div>
+  <div class="footer-inner">
+    <a class="brand" href="#top"><img src="logo.svg" alt="" class="brand-logo"><span>Krueka</span></a>
+    <p>Una plataforma educativa de Grupo FERPIN.</p>
+    <div class="footer-links"><a href="#plataforma">Plataforma</a><a href="#clubes">Clubes</a><a href="mailto:contacto@krueka.com">Contacto</a></div>
+    <small>© <span id="year">2026</span> Krueka</small>
   </div>
 </footer>
 
-<script src="js/home.js"></script>
-<script src="js/home-motion.js"></script>
+<script src="js/home-motion-data-1a.js?v=20260805"></script>
+<script src="js/home-motion-data-1b.js?v=20260805"></script>
+<script src="js/home-motion-data-1c.js?v=20260805"></script>
+<script src="js/home-motion-data-1d.js?v=20260805"></script>
+<script src="js/home-motion-data-1e.js?v=20260805"></script>
+<script src="js/home-motion-data-1f.js?v=20260805"></script>
+<script src="js/home-motion-data-1g.js?v=20260805"></script>
+<script src="js/home-motion-data-1h.js?v=20260805"></script>
+<script src="js/home-motion-data-2.js?v=20260805"></script>
+<script src="js/home-motion-data-3.js?v=20260805"></script>
+<script src="js/home-motion-data-4.js?v=20260805"></script>
+<script src="js/home-motion-data-5.js?v=20260805"></script>
+<script src="js/home-motion-data-6.js?v=20260805"></script>
+<script src="js/home-motion-data-7.js?v=20260805"></script>
+<script src="js/home-motion-data-8.js?v=20260805"></script>
+<script src="js/home-motion-data-9.js?v=20260805"></script>
+<script src="js/home-motion-data-10.js?v=20260805"></script>
+<script src="js/home-motion-data-11.js?v=20260805"></script>
+<script src="js/home-motion-data-12.js?v=20260805"></script>
+<script src="js/home-motion-data-13.js?v=20260805"></script>
+<script src="js/home-motion-data-14.js?v=20260805"></script>
+<script src="js/home-motion-poster.js?v=20260805"></script>
+<script src="js/home.js?v=20260805"></script>
+<script src="js/home-motion.js?v=20260805"></script>
 </body>
 </html>
