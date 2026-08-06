@@ -45,8 +45,21 @@ const Auth = {
   async entrar(e){
     e.preventDefault();
     const err = $("err-doc"); err.classList.add("hidden");
-    const { data, error } = await db.auth.signInWithPassword({ email:$("email").value.trim(), password:$("pass").value });
-    if(error){ err.textContent = "Correo o contraseña incorrectos."; err.classList.remove("hidden"); return; }
+    const captchaToken = (window.Captcha && Captcha.token()) || undefined;
+    const { data, error } = await db.auth.signInWithPassword({
+      email:$("email").value.trim(),
+      password:$("pass").value,
+      options: { captchaToken }
+    });
+    if(error){
+      if(window.Captcha) Captcha.reiniciar();
+      const m = String(error.message || "");
+      err.textContent = /captcha/i.test(m)
+        ? "No pudimos verificar que seas una persona. Esperá unos segundos y volvé a intentar."
+        : "Correo o contraseña incorrectos.";
+      err.classList.remove("hidden");
+      return;
+    }
     St.user = data.user;
     await Auth.cargarPerfil();
   },
@@ -73,20 +86,19 @@ const UI = {
     $("form-doc").classList.toggle("hidden", w!=="doc");
     $("form-alu").classList.toggle("hidden", w!=="alu");
   },
-  /* Mismo orden para todos los roles: primero el día a día, después la organización y al final los informes */
+  /* Un mismo orden para todos los roles: primero el día a día, después la organización y al final los informes */
   menus(){
     const r = St.perfil.role;
     if(r==="docente") return [["clase","Clase de hoy"],["planificacion","Planificación"],["alumnos","Mis alumnos"],["entregas","Entregas"],["vigilancia","Centinela"],["conducta","Registro anecdótico"],["taller","Taller"],["miscursos","Mis cursos"]];
     if(r==="director") return [["control","Control docente"],["planes","Planificaciones"],["resumen","Resumen de alumnos"]];
-    if(r==="admin")   return [["control","Control docente"],["estructura","Cursos y materias"],["usuarios","Usuarios y roles"]];
+    if(r==="admin")   return [["control","Control docente"],["estructura","Cursos y materias"],["usuarios","Usuarios y roles"],["gestalumnos","Gestion de alumnos"]];
     return [["control","Panel"]];
   },
   construirNav(){
     const m = UI.menus();
-    const nav = $("nav");
-    nav.setAttribute("role", "tablist");
-    nav.setAttribute("aria-label", "Secciones de la plataforma");
-    nav.innerHTML = m.map(([k,t])=>`<button data-k="${k}" role="tab" aria-selected="false" title="${t}" onclick="UI.ir('${k}')">${t}</button>`).join("");
+    $("nav").setAttribute("role", "tablist");
+    $("nav").setAttribute("aria-label", "Secciones de la plataforma");
+    $("nav").innerHTML = m.map(([k,t])=>`<button data-k="${k}" role="tab" aria-selected="false" title="${t}" onclick="UI.ir('${k}')">${t}</button>`).join("");
     UI.ir(m[0][0]);
   },
   ir(k){
@@ -96,7 +108,8 @@ const UI = {
     const vistas = { clase:Docente.vClase, planificacion:Docente.vPlanificacion, alumnos:Docente.vAlumnos, miscursos:Docente.vMisCursos,
        entregas:Docente.vEntregas, conducta:Docente.vConducta, taller:Docente.vTaller, vigilancia:Docente.vVigilancia,
        control:Direccion.vControl, resumen:Direccion.vAlumnos, planes:Direccion.vPlanes,
-       usuarios:Admin.vUsuarios, estructura:Admin.vEstructura };
+       usuarios:Admin.vUsuarios, estructura:Admin.vEstructura,
+       gestalumnos: (window.Alumnos && Alumnos.vGestion) };
     const vista = vistas[k];
     if(typeof vista !== "function"){
       $("view").innerHTML = '<div class="alert err">Esta sección no está disponible para tu rol.</div>';
