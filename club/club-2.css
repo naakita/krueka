@@ -1,0 +1,55 @@
+/* Club Krueka 2/4 */
+.club-dashboard-top>div{display:flex;align-items:center;gap:9px;letter-spacing:.08em}
+.club-dashboard-top small{color:var(--club-muted);font-size:11px;border-left:1px solid var(--club-line);padding-left:10px}
+.club-brand-dot{width:11px;height:11px;border-radius:50%;background:var(--club-accent);box-shadow:0 0 18px var(--club-accent)}
+.club-dashboard-hero{position:relative;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;background:var(--club-panel);border:1px solid var(--club-line);border-radius:var(--club-radius);padding:28px;box-shadow:var(--club-shadow);overflow:hidden;margin-bottom:34px}
+.club-dashboard-hero:after{content:"";position:absolute;width:240px;height:240px;border-radius:50%;right:-100px;bottom:-150px;background:var(--club-primary);opacity:.09}
+.club-avatar{width:82px;height:82px;display:grid;place-items:center;font-size:43px;border-radius:24px;background:linear-gradient(145deg,color-mix(in srgb,var(--club-primary) 22%,var(--club-panel)),color-mix(in srgb,var(--club-accent) 18%,var(--club-panel)));border:1px solid color-mix(in srgb,var(--club-primary) 28%,var(--club-line));position:relative;z-index:1}
+.club-hero-copy{position:relative;z-index:1}
+.club-hero-copy h1{font-size:clamp(25px,4vw,42px);letter-spacing:-.035em;line-height:1.08;margin:5px 0 7px}
+.club-hero-copy p{margin:0;color:var(--club-muted);max-width:640px}
+.club-score{position:relative;z-index:1;text-align:right;padding:8px 12px}
+.club-score strong{display:block;font-size:34px;line-height:1;color:var(--club-primary)}
+body[data-club-nivel="juniors"] .club-score strong{color:var(--club-accent)}
+.club-score span{font-size:11px;letter-spacing:.15em;color:var(--club-muted);font-weight:900}
+.club-progress-wrap{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:13px;padding-top:16px;border-top:1px solid var(--club-line)}
+.club-progress-wrap>div:first-child{display:flex;gap:7px;align-items:baseline;white-space:nowrap}
+.club-progress-wrap span,.club-progress-wrap small{color:var(--club-muted);font-size:12px}
+.club-progress{height:9px;border-radius:99px;background:var(--club-panel-2);overflow:hidden;border:1px solid var(--club-line)}
+.club-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--club-primary),var(--club-accent));box-shadow:0 0 18px color-mix(in srgb,var(--club-accent) 60%,transparent)}
+.club-module{margin:0 0 34px}
+.club-module-title{display:flex;align-items:center;gap:12px;margin:0 0 14px}
+.club-module-title>span{font:900 12px/1 ui-monospace,monospace;color:var(--club-primary);border:1px solid var(--club-line);border-radius:9px;padding:7px 8px;background:var(--club-panel)}
+body[data-club-nivel="juniors"] .club-module-title>span{color:var(--club-accent)}
+.club-module-title h2{font-size:17px;margin:0;letter-spacing:-.01em}
+.club-mission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.club-mission{position:relative;min-height:190px;text-align:left;border:1px solid var(--club-line);border-radius:20px;padding:20px;background:var(--club-panel);box-shadow:0 8px 26px rgba(28,39,63,.07);display:grid;grid-template-columns:auto 1fr;grid-template-rows:1fr auto;gap:12px 15px;overflow:hidden;cursor:pointer;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.club-mission:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--mission)}
+.club-mission:hover:not(:disabled){transform:translateY(-4px);border-color:color-mix(in srgb,var(--mission) 55%,var(--club-line));box-shadow:0 18px 40px color-mix(in srgb,var(--mission) 14%,transparent)}
+.club-mission:disabled{cursor:not-allowed;opacity:.48;filter:saturate(.55)}
+.club-mission-number{position:absolute;right:15px;top:12px;font:900 28px/1 ui-monospace,monospace;color:color-mix(in srgb,var(--club-muted) 16%,transparent)}
+.club-mission-icon{width:62px;height:62px;border-radius:18px;display:grid;place-items:center;font-size:32px;background:color-mix(in srgb,var(--mission) 13%,var(--club-panel-2));border:1px solid color-mix(in srgb,var(--mission) 22%,var(--club-line));z-index:1}
+.club-mission-body{display:flex;flex-direction:column;min-width:0;padding-right:18px;z-index:1}
+.club-mission-body small{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--mission);font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.club-mission-body strong{font-size:19px;line-height:1.18;margin:5px 0 7px;letter-spacing:-.02em}
+.club-mission-body em{font-style:normal;color:var(--club-muted);font-size:13px;line-height:1.4}
+.club-meta{display:flex;gap:12px;align-items:center;margin-top:auto;padding-top:12px}
+.club-meta b{font-size:11px;color:var(--club-muted)}
+.club-dificultad{display:inline-flex;gap:3px;align-items:center}
+.club-dificultad i{width:12px;height:4px;border-radius:3px;background:var(--club-line)}
+.club-dificultad i.on{background:var(--mission,var(--club-primary))}
+.club-mission-state{grid-column:1/-1;display:flex;align-items:center;justify-content:center;border-radius:11px;padding:9px 12px;background:var(--club-panel-2);color:var(--club-muted);font-size:12px;font-weight:900}
+.club-mission.done{border-color:color-mix(in srgb,var(--club-ok) 40%,var(--club-line))}
+.club-mission.done:before{background:var(--club-ok)}
+.club-mission.done .club-mission-state{background:color-mix(in srgb,var(--club-ok) 12%,var(--club-panel));color:var(--club-ok)}
+.club-mission.review .club-mission-state{background:color-mix(in srgb,#f2a900 13%,var(--club-panel));color:#c17800}
+.club-submitted{position:absolute;right:12px;bottom:51px;padding:4px 8px;border-radius:7px;background:color-mix(in srgb,var(--club-accent) 15%,var(--club-panel));font-size:9px;color:var(--club-accent);font-weight:900}
+/* cabecera interna */
+.club-cabecera{display:flex;align-items:center;gap:13px;margin-bottom:24px;padding:4px 0}
+.club-cabecera-txt{display:flex;flex-direction:column}
+.club-cabecera-txt span{font-size:10px;color:var(--club-muted);text-transform:uppercase;letter-spacing:.1em}
+.club-cabecera-txt strong{font-size:16px}
+.club-xp{margin-left:auto;border:1px solid var(--club-line);background:var(--club-panel);border-radius:12px;padding:9px 12px;font:900 12px ui-monospace,monospace;color:var(--club-primary)}
+body[data-club-nivel="juniors"] .club-xp{color:var(--club-accent)}
+.club-brief{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;padding:30px;border-radius:var(--club-radius);color:#fff;background:linear-gradient(135deg,var(--mission),color-mix(in srgb,var(--mission) 55%,#11162a));box-shadow:0 22px 55px color-mix(in srgb,var(--mission) 28%,transparent);position:relative;overflow:hidden}
+.club-brief:after{content:"";position:absolute;width:280px;height:280px;border:45px solid rgba(255,255,255,.08);border-radius:50%;right:-90px;top:-120px}
