@@ -7,6 +7,7 @@
 <title>Krueka · Plataforma escolar</title>
 <link rel="icon" id="favicon">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>
 :root{
   --bg:#F9F8F7; --panel:#FFFFFF; --line:#E6E5E3; --soft:#F0EFED;
@@ -85,6 +86,7 @@ tr:last-child td{border-bottom:0}
 .linkfila{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
 .linkfila a{font-size:12.5px;font-weight:600;text-decoration:none}
 .linkfila a:hover{text-decoration:underline}
+.captcha{display:flex;justify-content:center;margin:14px 0 0;min-height:0}
 </style>
 </head>
 <body>
@@ -113,6 +115,7 @@ tr:last-child td{border-bottom:0}
         <a href="index.html">← Volver al inicio</a>
         <a href="#" id="link-recuperar" onclick="Cuenta.recuperar(event)">¿Olvidaste tu contraseña?</a>
       </div>
+      <div class="captcha cf-turnstile" data-sitekey="0x4AAAAAAEIqJeQrYo8E9sKD" data-language="es" data-theme="auto" data-size="flexible"></div>
       <div style="height:14px"></div>
       <button class="btn" style="width:100%;justify-content:center" type="submit">Entrar</button>
       <p class="note" style="text-align:center;margin:12px 0 0">¿Perdiste el acceso a tu cuenta? <a href="mailto:contacto@krueka.com?subject=Recuperar%20mi%20cuenta%20de%20Krueka">Escribinos a contacto@krueka.com</a></p>
@@ -144,7 +147,7 @@ tr:last-child td{border-bottom:0}
   </div>
   <div class="card">
     <h2>Crear una contraseña nueva</h2>
-    <p class="sub">Escribila dos veces para confirmar. Tiene que tener al menos 8 caracteres.</p>
+    <p class="sub">Escribila dos veces para confirmar. Al menos 10 caracteres, con letras y números. Te avisamos si esa contraseña aparece en filtraciones conocidas de internet.</p>
     <div id="err-nueva" class="alert err hidden"></div>
     <form onsubmit="Cuenta.guardarNueva(event)">
       <label for="np1">Contraseña nueva</label>
@@ -184,26 +187,26 @@ tr:last-child td{border-bottom:0}
   <div class="wrap" id="alu-view"></div>
 </div>
 
-<script src="js/core.js?v=20260806c"></script>
-<script src="js/acceso.js?v=20260806c"></script>
-<script src="js/kiosco.js?v=20260806c"></script>
-<script src="js/docente.js?v=20260806c"></script>
-<script src="js/direccion.js?v=20260806c"></script>
-<script src="js/admin.js?v=20260806c"></script>
-<script src="js/taller.js?v=20260806c"></script>
-<script src="js/editor.js?v=20260806c"></script>
-<script src="js/trabajos.js?v=20260806c"></script>
-<script src="js/inclusion.js?v=20260806c"></script>
-<script src="js/gestion.js?v=20260806c"></script>
-<script src="js/primaria.js?v=20260806c"></script>
-<script src="js/grado.js?v=20260806c"></script>
-<script src="js/club.js?v=20260806c"></script>
-<script src="js/club-juego.js?v=20260806c"></script>
-<script src="js/club-panel.js?v=20260806c"></script>
-<script src="js/club-abonos.js?v=20260806c"></script>
-<script src="js/club-auditoria.js?v=20260806c"></script>
-<script src="js/alumnos-admin.js?v=20260806c"></script>
-<script src="js/calificar.js?v=20260806c"></script>
-<script src="js/alumno.js?v=20260806c"></script>
+<script src="js/core.js?v=20260806d"></script>
+<script src="js/acceso.js?v=20260806d"></script>
+<script src="js/kiosco.js?v=20260806d"></script>
+<script src="js/docente.js?v=20260806d"></script>
+<script src="js/direccion.js?v=20260806d"></script>
+<script src="js/admin.js?v=20260806d"></script>
+<script src="js/taller.js?v=20260806d"></script>
+<script src="js/editor.js?v=20260806d"></script>
+<script src="js/trabajos.js?v=20260806d"></script>
+<script src="js/inclusion.js?v=20260806d"></script>
+<script src="js/gestion.js?v=20260806d"></script>
+<script src="js/primaria.js?v=20260806d"></script>
+<script src="js/grado.js?v=20260806d"></script>
+<script src="js/club.js?v=20260806d"></script>
+<script src="js/club-juego.js?v=20260806d"></script>
+<script src="js/club-panel.js?v=20260806d"></script>
+<script src="js/club-abonos.js?v=20260806d"></script>
+<script src="js/club-auditoria.js?v=20260806d"></script>
+<script src="js/alumnos-admin.js?v=20260806d"></script>
+<script src="js/calificar.js?v=20260806d"></script>
+<script src="js/alumno.js?v=20260806d"></script>
 </body>
 </html>
