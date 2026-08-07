@@ -3,7 +3,7 @@
 > Documento de referencia obligatoria antes de modificar el proyecto.
 > Si cambiás módulos, dependencias, tablas o funciones de servidor, **actualizá este archivo en el mismo commit**.
 >
-> Última verificación contra el código: 04/08/2026 (rama `main`).
+> Última verificación contra el código: 06/08/2026 (rama `main`).
 
 ---
 
@@ -19,9 +19,9 @@ de servidor**, no el código del cliente.
 
 ## 2. Grafo de carga (dependencia real entre archivos)
 
-`index.html` contiene el HTML, todo el CSS y los tres contenedores de pantalla
+`app.html` contiene el HTML, todo el CSS y los tres contenedores de pantalla
 (`#screen-login`, `#screen-app`, `#screen-alu`), y carga los scripts en este
-orden exacto:
+orden base:
 
 ```
 supabase-js@2 (CDN)
@@ -50,8 +50,8 @@ Reglas que se derivan del grafo:
   función invocada desde la vista tiene que ser global. Renombrar un método
   rompe la vista sin error de compilación.
 - Los `<script>` llevan `?v=AAAAMMDD` para romper caché.
-  **Al modificar cualquier JS hay que subir esa versión en `index.html`**, si no
-  los navegadores del aula siguen con el archivo viejo.
+  **Al modificar cualquier JS hay que cambiar esa versión**, si no los
+  navegadores del aula siguen con el archivo viejo.
 
 ## 3. Qué contiene `core.js` (nada se toca sin leer esto)
 
@@ -63,59 +63,101 @@ Reglas que se derivan del grafo:
 | `esc()`, `$()`, `hoy()`, `aviso()` | utilidades. `esc()` es la **única** defensa contra XSS en el HTML generado |
 | `St` | estado global: user, perfil, asignaciones, csActual, planes, sesion, alumnos, asis, tab |
 | `Auth` | login por correo/contraseña, carga de perfil, `ultimo_acceso`, logout |
-| `UI` | menús por rol y `UI.ir()` con la **tabla de despacho** hacia `Docente.*`, `Direccion.*`, `Admin.*` |
+| `UI` | menús por rol y `UI.ir()` con la tabla de despacho hacia los módulos |
 | `cargarAsignaciones()`, `selectorCurso()`, `cargarAlumnos()`, `asignacionActual()` | datos compartidos entre módulos |
 | `deviceId()` | identificador de PC guardado en `localStorage` |
-| `Centinela` | telemetría de foco del alumno (salió, volvió, pegó texto, inactivo, rompió bloqueo) |
-| `Kiosco` | pantalla completa forzada, bloqueo de teclas, cortina y pedido de permiso |
+| `Centinela` | telemetría de foco del alumno |
+| `Kiosco` | pantalla completa forzada, bloqueo de teclas y pedido de permiso |
 
-### Menús por rol (definidos en `UI.menus()`)
+### Menús por rol
 
 - **docente:** clase, planificación, alumnos, centinela, entregas, registro anecdótico, taller, mis cursos
 - **director:** control docente, alumnos, planificaciones
 - **admin:** control docente, usuarios y roles, cursos y materias
 
-Agregar una entrada de menú exige **dos** cambios: la tupla en `UI.menus()` y la
-entrada correspondiente en la tabla de despacho de `UI.ir()`. Si falta la
-segunda, la pestaña queda en «Cargando…» para siempre.
+Agregar una entrada de menú exige la tupla y la entrada correspondiente en la
+tabla de despacho de `UI.ir()`.
 
 ## 4. Dependencias hacia la base de datos
-
-Esto es lo que **ningún analizador de código detecta** y lo que más rompe la app.
 
 Tablas leídas o escritas desde `core.js`:
 
 - `profiles` (id, nombre, role, ultimo_acceso)
-- `course_subjects` (id, horas_semanales, teacher_id) con relación a `courses` y `subjects`
-- `enrollments` (course_id, activo, numero_lista) con relación a `students`
+- `course_subjects` con relación a `courses` y `subjects`
+- `enrollments` con relación a `students`
 
-Funciones de servidor (RPC) invocadas desde `core.js`:
+Funciones de servidor compartidas:
 
 - `registrar_evento_foco(p_codigo, p_student_id, p_tipo, p_detalle, p_segundos)`
 - `pedir_salida(p_codigo, p_student_id, p_motivo)`
-- `estado_kiosco(p_codigo, p_student_id)` → `{ abierta, kiosco, liberado, liberado_hasta }`
-
-Además, el esquema completo tiene 15 tablas (instituciones, perfiles, materias,
-cursos, asignaciones, alumnos, matrículas, planificaciones, indicadores,
-sesiones de clase, asistencia, registro anecdótico, entregas, puntajes por
-indicador y auditoría), 2 vistas de control y las funciones para abrir clase,
-entrar con código, entregar trabajo y consultar resultado. El Club de
-informática (`js/club.js`) tiene su propio registro, **separado del sistema
-escolar**: no mezclar sus tablas con matrículas ni asistencia.
+- `estado_kiosco(p_codigo, p_student_id)`
 
 **RLS activado en todas las tablas.** Cada docente ve solo sus cursos; dirección
-y administración ven toda la institución. Un cambio de consulta que «no anda»
-casi siempre es una política RLS, no un bug de JavaScript.
+y administración ven toda la institución. Un cambio de consulta que no funciona
+suele ser una política o un permiso, no un bug de JavaScript.
 
-## 5. Zonas de riesgo (ordenadas por impacto)
+## 5. Zonas de riesgo
 
-1. **`core.js`** — lo usa todo. Un error acá tira la plataforma completa.
-2. **`gestion.js` (40 KB), `docente.js` (33 KB), `editor.js` (28 KB), `club.js` (28 KB), `primaria.js` (26 KB)** — los archivos más grandes; conviene leerlos completos antes de editarlos.
-3. **Frontera escolar ↔ club** — el club se desplegó encima del sistema escolar. Al tocar el club, verificar que asistencia, planificaciones y entregas sigan funcionando.
+1. **`core.js`** — lo usa todo.
+2. **Archivos globales grandes** — leerlos completos antes de editar.
+3. **Frontera escolar ↔ Club** — verificar siempre que asistencia, planificaciones y entregas normales sigan funcionando.
 4. **Nombres globales** — colisión silenciosa entre archivos.
-5. **Versión de caché** en `index.html`.
+5. **Versión de caché** — actualizarla en cada despliegue.
 
 ## 6. Plan B y aula sin internet
 
 La plataforma **requiere internet** (Supabase + CDN de supabase-js). Toda clase
 planificada en Krueka necesita su Plan B en papel o en archivo local.
+
+## 7. Club privado B.E.I. (06/08/2026)
+
+El Club es exclusivo de la institución
+`88c4af03-bdce-48e6-b548-b6904fe704bd` (B.E.I. — Betesda Educación Integral).
+`/club/` no publica inscripción, grupos, horarios ni cuotas: es una página
+`noindex` que redirige a `app.html?club=bei`. La home pública oculta el módulo.
+`club_grupos()` y `club_inscribir(jsonb)` no son ejecutables por `anon`.
+
+### Carga del cliente
+
+`app.html` mantiene `js/club-juego.js` como punto compatible. Ese archivo carga,
+con versión `20260806f`, los cuatro fragmentos del juego y luego:
+
+- `js/club-mejoras.js`: integración B.E.I., normalización del avatar y tema.
+- `js/club-entregas.js`: evidencia, revisión directiva y equipos.
+- `js/club-retos.js`: ordenar, respuesta abierta y decisión justificada.
+- `js/club-pausas.js`: pausa lúdica de memoria cada diez minutos.
+- `club/club-mejoras.css`: temas crema/tierra y azul-gris, sin negro ni blanco intenso.
+
+La home carga `css/home-soft.css` desde `js/home.js` y usa un azul pizarra medio.
+
+### Datos nuevos
+
+- `club_project_files`: hasta 3 archivos por misión, 4 MB cada uno; JPEG, PNG,
+  WebP, PDF o texto. El contenido se almacena en `bytea`.
+- `club_challenge_teams`: equipos de 2 a 4 por misión.
+- `club_challenge_members`: membresía y aporte individual.
+
+Las tres tablas tienen RLS sin políticas de acceso directo y permisos de tabla
+revocados. Solo se accede mediante RPC con validación institucional.
+
+### RPC nuevas y modificadas
+
+Flujo del estudiante (rol anónimo por código personal B.E.I.):
+
+- `club_entregar_archivo`
+- `club_archivos_mision`
+- `club_descargar_archivo`
+- `club_equipo_estado`, `club_equipo_crear`, `club_equipo_unirse`, `club_equipo_aportar`
+- `club_entrar`, `club_leccion`, `club_responder`, `club_entregar_proyecto`, `club_terminar`
+
+Revisión solo para sesión autenticada con rol administración/dirección:
+
+- `club_entregas_revision`
+- `club_descargar_archivo_admin`
+- `club_calificar_entrega`
+
+Las 112 actividades se distribuyen ahora en 28 de elección, 28 de ordenar, 28
+de respuesta abierta y 28 de decisión con justificación. `club_leccion` elimina
+`correct_order` antes de responder al navegador; la validación ocurre en el servidor.
+Una misión nueva no se completa sin archivo o enlace de evidencia. Los progresos
+ya aprobados antes de la migración se conservan.
