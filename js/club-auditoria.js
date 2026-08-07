@@ -22,6 +22,7 @@ const ClubAud = {
         + '<td style="white-space:nowrap">'
         + '<button class="btn sm sec" onclick="ClubAud.editar(\'' + a.id + '\',\'' + esc(a.nombre) + '\',' + (a.activo?'true':'false') + ')">editar</button> '
         + '<button class="btn sm sec" onclick="ClubAud.liberar(\'' + a.id + '\',\'' + esc(a.nombre) + '\')">liberar equipo</button> '
+        + (a.activo ? '<button class="btn sm" onclick="ClubAud.regenerar(\'' + a.id + '\',\'' + esc(a.nombre) + '\')">nuevo código</button> ' : '')
         + (a.activo ? '<button class="btn sm dan" onclick="ClubAud.quitar(\'' + a.id + '\',\'' + esc(a.nombre) + '\')">quitar</button>' : '')
         + '</td></tr>';
     };
@@ -36,8 +37,7 @@ const ClubAud = {
 
     cont.innerHTML =
       '<div class="card"><div style="font-size:19px;font-weight:700">🛡️ Auditoría del club</div>'
-      + '<div class="note">Seguimiento de acceso de los alumnos: cada codigo queda ligado a una sola computadora. '
-      + 'Si un codigo se usa en otro equipo, se bloquea y queda marcado como sospechoso.</div></div>'
+      + '<div class="note">Cada código queda ligado a una computadora. El administrador puede liberar el equipo o generar un código nuevo sin borrar el avance del alumno.</div></div>'
       + '<h3>Alumnos del club y su acceso</h3>'
       + '<div id="ca-msg"></div>'
       + '<div class="card" style="overflow:auto"><table>'
@@ -56,12 +56,30 @@ const ClubAud = {
       + '</table></div>';
   },
   async liberar(id, nombre){
-    if(!confirm('Liberar el equipo registrado de ' + nombre + '? Va a poder entrar desde otra computadora.')) return;
+    if(!confirm('Liberar el equipo registrado de ' + nombre + '? Va a poder entrar desde otra computadora con el mismo código.')) return;
     const { error } = await db.rpc('club_liberar_dispositivo', { p_student: id });
     if(error){ alert(error.message); return; }
-    this.vAuditoria();
+    await this.vAuditoria();
     const m = document.getElementById('ca-msg');
-    if(m) m.innerHTML = '<div class="alert ok">Equipo liberado. ' + esc(nombre) + ' puede entrar desde una nueva computadora.</div>';
+    if(m) m.innerHTML = '<div class="alert ok">Equipo liberado. ' + esc(nombre) + ' puede entrar desde una nueva computadora con el mismo código.</div>';
+  },
+  async regenerar(id, nombre){
+    if(!confirm('Generar un código nuevo para ' + nombre + '? El código anterior dejará de funcionar, se liberará el equipo y el avance se conservará.')) return;
+    const { data, error } = await db.rpc('club_regenerar_codigo', { p_student: id });
+    if(error){ alert(error.message); return; }
+    await this.vAuditoria();
+    const m = document.getElementById('ca-msg');
+    if(m) m.innerHTML = '<div class="alert ok"><b>Nuevo código para ' + esc(data.nombre||nombre) + ':</b> '
+      + '<span class="code" style="display:inline-block;font-size:25px;margin:4px 10px">' + esc(data.codigo) + '</span>'
+      + '<button class="btn sm" onclick="ClubAud.copiarCodigo(\'' + esc(data.codigo) + '\')">copiar código</button>'
+      + '<div class="note">El código anterior ya no funciona. El alumno mantiene todas sus misiones, puntos y evidencias.</div></div>';
+  },
+  copiarCodigo(codigo){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(codigo).then(() => alert('Código copiado: ' + codigo));
+    }else{
+      prompt('Copiá el nuevo código:', codigo);
+    }
   },
   editar(id, nombre, activo){
     const m = document.getElementById('ca-msg');
@@ -90,7 +108,6 @@ const ClubAud = {
   }
 };
 
-/* Pestaña "Auditoría club" para admin y dirección */
 (function(){
   if(typeof UI === 'undefined') return;
   const menus = UI.menus.bind(UI);
