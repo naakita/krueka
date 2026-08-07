@@ -3,7 +3,7 @@
 > Documento de referencia obligatoria antes de modificar el proyecto.
 > Si cambiás módulos, dependencias, tablas o funciones de servidor, **actualizá este archivo en el mismo commit**.
 >
-> Última verificación contra el código: 06/08/2026 (rama `main`).
+> Última verificación contra el código: 07/08/2026 (rama `main`).
 
 ---
 
@@ -19,145 +19,64 @@ de servidor**, no el código del cliente.
 
 ## 2. Grafo de carga (dependencia real entre archivos)
 
-`app.html` contiene el HTML, todo el CSS y los tres contenedores de pantalla
-(`#screen-login`, `#screen-app`, `#screen-alu`), y carga los scripts en este
-orden base:
+`app.html` contiene las pantallas principales y carga `js/core.js` antes de los módulos de rol. No hay `import`/`export`: los módulos usan objetos globales. Todo dato insertado en HTML debe pasar por `esc()`.
 
-```
-supabase-js@2 (CDN)
-  └── js/core.js          ← base: db, estado, Auth, UI, Centinela, Kiosco
-        ├── js/docente.js       (Docente.*)
-        ├── js/direccion.js     (Direccion.*)
-        ├── js/admin.js         (Admin.*)
-        ├── js/taller.js
-        ├── js/editor.js
-        ├── js/trabajos.js
-        ├── js/inclusion.js
-        ├── js/gestion.js
-        ├── js/primaria.js
-        ├── js/grado.js
-        ├── js/club.js
-        └── js/alumno.js        (Alumno.*)
-```
+Reglas:
 
-Reglas que se derivan del grafo:
+- `core.js` siempre se carga primero.
+- Los handlers generados en HTML deben apuntar a funciones globales existentes.
+- Evitar nombres globales repetidos.
+- Cambiar `?v=AAAAMMDD` al modificar JavaScript para romper caché.
 
-- **No hay `import`/`export`.** Todo son objetos globales (`St`, `Auth`, `UI`,
-  `Docente`, `Direccion`, `Admin`, `Alumno`, `Centinela`, `Kiosco`, …).
-  Un nombre repetido en dos archivos se sobreescribe silenciosamente.
-- `core.js` debe cargarse primero. Cualquier archivo nuevo va **después** de él.
-- Los handlers están en `onclick="..."` dentro del HTML generado, así que toda
-  función invocada desde la vista tiene que ser global. Renombrar un método
-  rompe la vista sin error de compilación.
-- Los `<script>` llevan `?v=AAAAMMDD` para romper caché.
-  **Al modificar cualquier JS hay que cambiar esa versión**, si no los
-  navegadores del aula siguen con el archivo viejo.
+## 3. Núcleo escolar
 
-## 3. Qué contiene `core.js` (nada se toca sin leer esto)
+`core.js` contiene la marca, el cliente de Supabase, utilidades, estado global, autenticación, menús, asignaciones, Centinela y Kiosco. Los módulos `docente.js`, `direccion.js`, `admin.js`, `gestion.js`, `primaria.js`, `grado.js`, `alumno.js` y relacionados amplían ese núcleo.
 
-| Bloque | Responsabilidad |
-| --- | --- |
-| `LOGO`, `#favicon` | marca, se aplica a todo `img.marca` |
-| `SUPABASE_URL`, `SUPABASE_KEY`, `db` | único cliente Supabase de toda la app |
-| `ETAPAS` | las 4 etapas de la clase: tema → actividad → entrega → resultado |
-| `esc()`, `$()`, `hoy()`, `aviso()` | utilidades. `esc()` es la **única** defensa contra XSS en el HTML generado |
-| `St` | estado global: user, perfil, asignaciones, csActual, planes, sesion, alumnos, asis, tab |
-| `Auth` | login por correo/contraseña, carga de perfil, `ultimo_acceso`, logout |
-| `UI` | menús por rol y `UI.ir()` con la tabla de despacho hacia los módulos |
-| `cargarAsignaciones()`, `selectorCurso()`, `cargarAlumnos()`, `asignacionActual()` | datos compartidos entre módulos |
-| `deviceId()` | identificador de PC guardado en `localStorage` |
-| `Centinela` | telemetría de foco del alumno |
-| `Kiosco` | pantalla completa forzada, bloqueo de teclas y pedido de permiso |
+RLS está activo en las tablas escolares. Docentes acceden solo a sus cursos; dirección y administración acceden dentro de su institución.
 
-### Menús por rol
+## 4. Zonas de riesgo
 
-- **docente:** clase, planificación, alumnos, centinela, entregas, registro anecdótico, taller, mis cursos
-- **director:** control docente, alumnos, planificaciones
-- **admin:** control docente, usuarios y roles, cursos y materias
+1. `core.js`, porque lo usa toda la plataforma.
+2. La frontera entre el sistema escolar y el Club.
+3. Funciones `SECURITY DEFINER`: deben validar rol, institución o credencial privada.
+4. Cualquier contenido dinámico sin `esc()`.
+5. Caché de GitHub Pages después de publicar.
 
-Agregar una entrada de menú exige la tupla y la entrada correspondiente en la
-tabla de despacho de `UI.ir()`.
+## 5. Plan B
 
-## 4. Dependencias hacia la base de datos
+La plataforma requiere internet (Supabase y CDN). Toda clase debe conservar un Plan B en papel o archivo local.
 
-Tablas leídas o escritas desde `core.js`:
+## 6. Club privado B.E.I.
 
-- `profiles` (id, nombre, role, ultimo_acceso)
-- `course_subjects` con relación a `courses` y `subjects`
-- `enrollments` con relación a `students`
+El Club es exclusivo de la institución `88c4af03-bdce-48e6-b548-b6904fe704bd`. `/club/` es `noindex` y redirige a `app.html?club=bei`; no publica grupos, horarios, cuotas ni formulario general. `club_grupos()` y `club_inscribir(jsonb)` no son ejecutables por `anon`.
 
-Funciones de servidor compartidas:
+### Cliente
 
-- `registrar_evento_foco(p_codigo, p_student_id, p_tipo, p_detalle, p_segundos)`
-- `pedir_salida(p_codigo, p_student_id, p_motivo)`
-- `estado_kiosco(p_codigo, p_student_id)`
-
-**RLS activado en todas las tablas.** Cada docente ve solo sus cursos; dirección
-y administración ven toda la institución. Un cambio de consulta que no funciona
-suele ser una política o un permiso, no un bug de JavaScript.
-
-## 5. Zonas de riesgo
-
-1. **`core.js`** — lo usa todo.
-2. **Archivos globales grandes** — leerlos completos antes de editar.
-3. **Frontera escolar ↔ Club** — verificar siempre que asistencia, planificaciones y entregas normales sigan funcionando.
-4. **Nombres globales** — colisión silenciosa entre archivos.
-5. **Versión de caché** — actualizarla en cada despliegue.
-
-## 6. Plan B y aula sin internet
-
-La plataforma **requiere internet** (Supabase + CDN de supabase-js). Toda clase
-planificada en Krueka necesita su Plan B en papel o en archivo local.
-
-## 7. Club privado B.E.I. (06/08/2026)
-
-El Club es exclusivo de la institución
-`88c4af03-bdce-48e6-b548-b6904fe704bd` (B.E.I. — Betesda Educación Integral).
-`/club/` no publica inscripción, grupos, horarios ni cuotas: es una página
-`noindex` que redirige a `app.html?club=bei`. La home pública oculta el módulo.
-`club_grupos()` y `club_inscribir(jsonb)` no son ejecutables por `anon`.
-
-### Carga del cliente
-
-`app.html` mantiene `js/club-juego.js` como punto compatible. Ese archivo carga,
-con versión `20260806f`, los cuatro fragmentos del juego y luego:
-
-- `js/club-mejoras.js`: integración B.E.I., normalización del avatar y tema.
-- `js/club-entregas.js`: evidencia, revisión directiva y equipos.
+- `js/club-juego.js`: cargador compatible.
+- `js/club-juego-1.js` a `club-juego-4.js`: experiencia base.
+- `js/club-mejoras.js`: integración B.E.I. y avatar.
+- `js/club-entregas.js`: evidencias, revisión y equipos.
 - `js/club-retos.js`: ordenar, respuesta abierta y decisión justificada.
-- `js/club-pausas.js`: pausa lúdica de memoria cada diez minutos.
-- `club/club-mejoras.css`: temas crema/tierra y azul-gris, sin negro ni blanco intenso.
+- `js/club-pausas.js`: pausa lúdica cada diez minutos.
+- `club/club-mejoras.css`: temas claros crema/tierra y azul-gris.
 
-La home carga `css/home-soft.css` desde `js/home.js` y usa un azul pizarra medio.
+### Evidencias y colaboración
 
-### Datos nuevos
+- `club_project_files`: hasta 3 archivos por misión, máximo 4 MB; JPEG, PNG, WebP, PDF o texto.
+- `club_challenge_teams`: equipos por misión.
+- `club_challenge_members`: integrantes y aporte individual.
 
-- `club_project_files`: hasta 3 archivos por misión, 4 MB cada uno; JPEG, PNG,
-  WebP, PDF o texto. El contenido se almacena en `bytea`.
-- `club_challenge_teams`: equipos de 2 a 4 por misión.
-- `club_challenge_members`: membresía y aporte individual.
+Las tablas tienen RLS sin acceso directo. Estudiantes usan funciones validadas por código B.E.I.; revisión, descarga y calificación requieren sesión de dirección o administración.
 
-Las tres tablas tienen RLS sin políticas de acceso directo y permisos de tabla
-revocados. Solo se accede mediante RPC con validación institucional.
+Las 112 actividades se distribuyen en 28 de elección, 28 de ordenar, 28 de respuesta abierta y 28 de decisión justificada. El orden correcto no se envía al navegador.
 
-### RPC nuevas y modificadas
+## 7. Inscripción privada por invitación
 
-Flujo del estudiante (rol anónimo por código personal B.E.I.):
+La ruta `club/inscripcion.html` es `noindex`, no muestra información pública del Club y necesita un token largo en `?t=`. El token no se guarda en el repositorio: Supabase conserva únicamente su hash SHA-256 en `club_invite_links`.
 
-- `club_entregar_archivo`
-- `club_archivos_mision`
-- `club_descargar_archivo`
-- `club_equipo_estado`, `club_equipo_crear`, `club_equipo_unirse`, `club_equipo_aportar`
-- `club_entrar`, `club_leccion`, `club_responder`, `club_entregar_proyecto`, `club_terminar`
-
-Revisión solo para sesión autenticada con rol administración/dirección:
-
-- `club_entregas_revision`
-- `club_descargar_archivo_admin`
-- `club_calificar_entrega`
-
-Las 112 actividades se distribuyen ahora en 28 de elección, 28 de ordenar, 28
-de respuesta abierta y 28 de decisión con justificación. `club_leccion` elimina
-`correct_order` antes de responder al navegador; la validación ocurre en el servidor.
-Una misión nueva no se completa sin archivo o enlace de evidencia. Los progresos
-ya aprobados antes de la migración se conservan.
+- El enlace vigente vence el 31/12/2026 y admite hasta 100 solicitudes.
+- `club_inscribir_bei(text,jsonb)` valida invitación, pertenencia declarada a B.E.I., edad de 7 a 17 años, datos mínimos y duplicados pendientes.
+- El grupo se asigna en servidor según la edad; el cliente no recibe horarios, cuotas ni IDs de grupos.
+- `club_invite_links` tiene RLS y todos los permisos directos revocados.
+- Los datos se insertan en `club_requests` y siguen el flujo existente de aprobación por dirección.
+- El formulario usa `no-referrer`, no persiste sesión y elimina el token de la barra después de enviar.

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es-PY">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src https://janebfpnknapvntfqolf.supabase.co; style-src 'self' 'unsafe-inline'; img-src 'self' data:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+<meta name="theme-color" content="#43576a">
+<title>Inscripción al Club B.E.I. · Krueka</title>
+<link rel="icon" href="../logo.svg">
+<style>
+:root{--bg:#dce4e5;--panel:#f3f1e9;--ink:#26343d;--muted:#637079;--line:#bac7c9;--primary:#5263bd;--ok:#1e7c65;--err:#b34050}
+*{box-sizing:border-box}body{margin:0;min-width:320px;background:radial-gradient(700px 500px at 80% 0,#edf0e8,transparent),linear-gradient(145deg,#d8e2e4,#e8e2d6);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{width:min(760px,calc(100% - 28px));margin:28px auto 64px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}.brand img{width:52px;height:52px;padding:5px;border-radius:13px;background:#fff}.brand b{display:block;font-size:21px}.brand span,.sub,.note{color:var(--muted)}.card{background:rgba(247,245,238,.96);border:1px solid var(--line);border-radius:20px;padding:clamp(20px,4vw,34px);box-shadow:0 22px 60px rgba(41,57,65,.14)}.kicker{display:inline-block;padding:5px 10px;border-radius:20px;background:#d9e1f7;color:#4053a6;font-size:12px;font-weight:800;letter-spacing:.06em}h1{font-size:clamp(28px,5vw,42px);line-height:1.08;margin:14px 0 10px}h2{margin:0 0 6px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.full{grid-column:1/-1}label{display:block;margin:15px 0 5px;font-size:13px;font-weight:750}input,textarea,select{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:11px;background:#fffefa;color:var(--ink);font:inherit}textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:3px solid rgba(82,99,189,.18);border-color:var(--primary)}.check{display:flex;align-items:flex-start;gap:9px;margin-top:16px}.check input{width:18px;height:18px;margin-top:3px}.check label{margin:0;font-weight:600}.privacy{margin:20px 0;padding:13px;border-radius:12px;background:#e4e9e5;color:#526169;font-size:13px}.btn{width:100%;padding:13px 18px;border:0;border-radius:11px;background:var(--primary);color:#fff;font:inherit;font-weight:800;cursor:pointer}.btn:disabled{opacity:.55;cursor:wait}.msg{margin:15px 0 0;padding:12px;border-radius:10px;display:none}.msg.on{display:block}.msg.err{background:#fae5e8;color:var(--err)}.msg.ok{background:#dff0e9;color:var(--ok)}.success{text-align:center;padding:30px 8px}.success .icon{font-size:54px}.back{display:inline-block;margin-top:18px;color:#4053a6;font-weight:750;text-decoration:none}@media(max-width:620px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.wrap{margin-top:16px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="brand"><img src="../logo.svg" alt=""><div><b>Krueka</b><span>Plataforma educativa de B.E.I.</span></div></div>
+  <section class="card">
+    <div id="form-box">
+      <span class="kicker">INVITACIÓN PRIVADA B.E.I.</span>
+      <h1>Inscripción al Club</h1>
+      <p class="sub">Formulario exclusivo para estudiantes de Betesda Educación Integral de 7 a 17 años. El grupo se asigna automáticamente según la edad.</p>
+      <form id="club-form" novalidate>
+        <div class="grid">
+          <div><label for="alumno">Nombre y apellido del estudiante *</label><input id="alumno" maxlength="120" autocomplete="name" required></div>
+          <div><label for="nacimiento">Fecha de nacimiento *</label><input id="nacimiento" type="date" required></div>
+          <div><label for="grado">Grado o curso *</label><input id="grado" maxlength="60" required></div>
+          <div><label for="tutor">Padre, madre o responsable *</label><input id="tutor" maxlength="120" autocomplete="name" required></div>
+          <div><label for="parentesco">Parentesco</label><input id="parentesco" maxlength="40" placeholder="Madre, padre, tutor…"></div>
+          <div><label for="telefono">Teléfono de contacto *</label><input id="telefono" type="tel" maxlength="30" autocomplete="tel" required></div>
+          <div class="full"><label for="email">Correo electrónico</label><input id="email" type="email" maxlength="160" autocomplete="email"></div>
+          <div class="full"><label for="salud">Condición de salud, alergia o apoyo que debamos conocer</label><textarea id="salud" maxlength="600"></textarea></div>
+          <div class="full"><label for="comentario">Comentario adicional</label><textarea id="comentario" maxlength="1000"></textarea></div>
+        </div>
+        <div class="check"><input id="confirma" type="checkbox" required><label for="confirma">Confirmo que el estudiante pertenece a B.E.I. *</label></div>
+        <div class="check"><input id="fotos" type="checkbox"><label for="fotos">Autorizo el uso institucional de fotografías de las actividades del Club.</label></div>
+        <div class="privacy">Los datos serán visibles únicamente para dirección y administración de B.E.I. La inscripción queda pendiente de revisión antes de generar el código personal del estudiante.</div>
+        <button id="enviar" class="btn" type="submit">Enviar inscripción</button>
+        <div id="msg" class="msg" role="alert" aria-live="polite"></div>
+      </form>
+    </div>
+    <div id="success" class="success" hidden><div class="icon">✅</div><h2>Inscripción recibida</h2><p id="success-text" class="sub"></p><a class="back" href="../app.html?club=bei">Ir a la plataforma B.E.I. →</a></div>
+  </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/club-inscripcion.js?v=20260807a"></script>
+</body>
+</html>
