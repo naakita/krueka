@@ -46,6 +46,8 @@ El Club es exclusivo de la institución `88c4af03-bdce-48e6-b548-b6904fe704bd`. 
 - `js/club-retos.js`: ordenar, respuesta abierta y decisión justificada.
 - `js/club-pausas.js`: pausa cada diez minutos.
 - `js/club-auditoria.js`: dispositivos, accesos y regeneración de código.
+- `js/club-pc-lab.js`: simulador de armado, diagnóstico y encendido de computadora para Juniors.
+- `club/club-pc-lab.css`: interfaz clara, adaptable y táctil del taller de hardware.
 
 ### Evidencias y colaboración
 
@@ -66,3 +68,15 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - `club_liberar_dispositivo(uuid)` también valida la institución y permite conservar el mismo código.
 - En **Auditoría club**, cada alumno activo tiene las opciones **liberar equipo** y **nuevo código**. El nuevo código se muestra y puede copiarse.
 - Toda regeneración queda registrada en la auditoría sin guardar el código nuevo dentro del detalle del registro.
+
+## 8. Laboratorio de armado de PC para Juniors
+
+- Disponible únicamente cuando `Club.alumno.nivel === 'mayores'`.
+- Presenta 18 piezas separadas y un interruptor de fuente: gabinete, fuente, placa madre, CPU, disipador, RAM, SSD, cables ATX/CPU/SATA/PWR SW, monitor, video, energía y periféricos.
+- Admite arrastrar y soltar o seleccionar y tocar; funciona también en pantallas táctiles.
+- Las dependencias impiden montajes físicamente imposibles, pero el alumno puede intentar encender en cualquier momento.
+- El diagnóstico de servidor distingue: sin energía, sin imagen, sin sistema de arranque, sin controles y encendido correcto.
+- Cada pieza puede desconectarse; también existe **Desarmar todo** para comenzar de nuevo.
+- El progreso, los intentos y el último armado se guardan en `club_pc_lab_progress`, con RLS y sin lectura directa.
+- `club_pc_lab_estado(uuid)` y `club_pc_lab_probar(uuid,jsonb)` validan estudiante activo, institución B.E.I. y nivel Junior.
+- Migraciones relacionadas: `038_laboratorio_armado_pc_juniors` y `039_laboratorio_pc_monitor_y_corriente`.
