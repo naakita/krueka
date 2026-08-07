@@ -1,4 +1,4 @@
-/* Inscripción privada al Club B.E.I. · 20260807a */
+/* Inscripción al Club B.E.I. · 20260807b */
 (function(){
 'use strict';
 var SUPABASE_URL='https://janebfpnknapvntfqolf.supabase.co';
@@ -24,8 +24,8 @@ form.addEventListener('submit',async function(event){
   alumno:value('alumno'),fecha_nacimiento:value('nacimiento'),grado:value('grado'),
   tutor:value('tutor'),parentesco:value('parentesco'),telefono:value('telefono'),email:value('email'),
   salud:value('salud'),comentario:value('comentario'),
-  confirma_bei:document.getElementById('confirma').checked,
-  autoriza_fotos:document.getElementById('fotos').checked
+  confirma_bei:true,
+  autoriza_fotos:true
  };
  try{
   var result=await dbRegistro.rpc('club_inscribir_bei',{p_token:token,p:payload});
