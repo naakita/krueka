@@ -1,0 +1,67 @@
+name: Krueka Crea checks
+
+on:
+  pull_request:
+    paths:
+      - 'js/club-crea*.js'
+      - 'club/club-crea.css'
+      - 'sql/040_krueka_crea_foundation.sql'
+      - 'js/club-juego.js'
+      - 'app.html'
+      - '.github/workflows/krueka-crea-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: node --check js/club-crea.js
+  game-syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: node --check js/club-crea-game.js
+  design-syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: node --check js/club-crea-design.js
+  storage-syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: node --check js/club-crea-storage.js
+  loader-syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: node --check js/club-juego.js
+  security-guardrails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check browser sandbox
+        run: |
+          grep -F 'allow-scripts' js/club-crea.js
+          grep -F 'default-src' js/club-crea.js
+          grep -F 'allow-same-origin' ARQUITECTURA.md
+          ! grep -F 'allow-same-origin' js/club-crea.js
+      - name: Reject private credentials
+        run: |
+          ! grep -E '(service_role|SUPABASE_SERVICE|BEGIN (RSA|OPENSSH) PRIVATE KEY)' js/club-crea*.js club/club-crea.css sql/040_krueka_crea_foundation.sql
+      - name: Check migration hardening
+        run: |
+          test "$(grep -c 'force row level security' sql/040_krueka_crea_foundation.sql)" -eq 4
+          test "$(grep -o "set search_path=''" sql/040_krueka_crea_foundation.sql | wc -l)" -eq 14
+          grep -F 'revoke all on table public.club_creator_projects from public,anon,authenticated' sql/040_krueka_crea_foundation.sql
+          grep -F 'club-crea-storage.js' js/club-juego.js
