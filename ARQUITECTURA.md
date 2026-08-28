@@ -53,6 +53,7 @@ El Club es exclusivo de la institución `88c4af03-bdce-48e6-b548-b6904fe704bd`. 
 - `js/club-crea.js`: lanzador, proyectos, guardado local/remoto, editor web y revisión de dirección.
 - `js/club-crea-game.js`: constructor de juegos por eventos y acciones, controles táctiles y exportación HTML.
 - `js/club-crea-design.js`: píxel art 16×16, paletas, deshacer, teclado, PNG y transferencia al juego.
+- `js/club-crea-storage.js`: elige la copia más nueva entre Supabase y el equipo para preservar borradores sin conexión.
 - `club/club-crea.css`: interfaz adaptable, foco visible y soporte para movimiento reducido.
 
 ### Evidencias y colaboración
@@ -89,7 +90,7 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 
 ## 9. Krueka Crea
 
-Krueka Crea es el estudio creativo privado del Club. La primera base ofrece tres modos funcionales: juegos, páginas web y diseño de personajes. Cada proyecto se guarda primero en el equipo para tolerar cortes de conexión y luego se sincroniza con Supabase.
+Krueka Crea es el estudio creativo privado del Club. La primera base ofrece tres modos funcionales: juegos, páginas web y diseño de personajes. Cada proyecto se guarda primero en el equipo para tolerar cortes de conexión y luego se sincroniza con Supabase; si existen dos copias, se conserva como editable la de fecha más reciente.
 
 ### Aislamiento del código infantil
 
