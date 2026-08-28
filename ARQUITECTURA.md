@@ -3,7 +3,7 @@
 > Documento de referencia obligatoria antes de modificar el proyecto.
 > Si cambiás módulos, dependencias, tablas o funciones de servidor, **actualizá este archivo en el mismo commit**.
 >
-> Última verificación contra el código: 07/08/2026 (rama `main`).
+> Última verificación contra el código: 28/08/2026 (rama `feat/krueka-crea-foundation`).
 
 ---
 
@@ -21,6 +21,7 @@ No hay backend propio: el navegador habla directo con Supabase usando la clave *
 - Los handlers generados deben apuntar a funciones globales existentes.
 - Evitar nombres globales repetidos.
 - Cambiar `?v=AAAAMMDD` al modificar JavaScript.
+- `js/club-juego.js` es el cargador secuencial del Club; Krueka Crea se carga después del laboratorio de PC.
 
 ## 3. Núcleo escolar
 
@@ -33,6 +34,7 @@ No hay backend propio: el navegador habla directo con Supabase usando la clave *
 3. Funciones `SECURITY DEFINER`: deben validar rol, institución o credencial privada.
 4. Contenido dinámico sin `esc()`.
 5. Caché de GitHub Pages.
+6. Código escrito por estudiantes: nunca debe ejecutarse fuera del `iframe` aislado de Krueka Crea.
 
 ## 5. Club privado B.E.I.
 
@@ -48,6 +50,10 @@ El Club es exclusivo de la institución `88c4af03-bdce-48e6-b548-b6904fe704bd`. 
 - `js/club-auditoria.js`: dispositivos, accesos y regeneración de código.
 - `js/club-pc-lab.js`: simulador de armado, diagnóstico y encendido de computadora para Juniors.
 - `club/club-pc-lab.css`: interfaz clara, adaptable y táctil del taller de hardware.
+- `js/club-crea.js`: lanzador, proyectos, guardado local/remoto, editor web y revisión de dirección.
+- `js/club-crea-game.js`: constructor de juegos por eventos y acciones, controles táctiles y exportación HTML.
+- `js/club-crea-design.js`: píxel art 16×16, paletas, deshacer, teclado, PNG y transferencia al juego.
+- `club/club-crea.css`: interfaz adaptable, foco visible y soporte para movimiento reducido.
 
 ### Evidencias y colaboración
 
@@ -80,3 +86,41 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - El progreso, los intentos y el último armado se guardan en `club_pc_lab_progress`, con RLS y sin lectura directa.
 - `club_pc_lab_estado(uuid)` y `club_pc_lab_probar(uuid,jsonb)` validan estudiante activo, institución B.E.I. y nivel Junior.
 - Migraciones relacionadas: `038_laboratorio_armado_pc_juniors` y `039_laboratorio_pc_monitor_y_corriente`.
+
+## 9. Krueka Crea
+
+Krueka Crea es el estudio creativo privado del Club. La primera base ofrece tres modos funcionales: juegos, páginas web y diseño de personajes. Cada proyecto se guarda primero en el equipo para tolerar cortes de conexión y luego se sincroniza con Supabase.
+
+### Aislamiento del código infantil
+
+- El HTML/CSS/JavaScript del estudiante se ejecuta únicamente en un `iframe sandbox="allow-scripts"`, sin `allow-same-origin`, formularios, navegación superior ni ventanas emergentes.
+- Cada vista previa incorpora CSP con `default-src 'none'`; solo permite estilos y scripts internos y recursos `data:`/`blob:`.
+- El contenido infantil nunca se concatena en el DOM principal salvo valores tratados con `esc()`.
+- Los juegos y páginas pueden exportarse como HTML autocontenido; los diseños se exportan como PNG.
+
+### Persistencia y revisión
+
+Migración: `sql/040_krueka_crea_foundation.sql` / `040_krueka_crea_foundation`.
+
+Tablas sin acceso directo para `anon` ni `authenticated`, con RLS habilitado y forzado:
+
+- `club_creator_projects`: proyecto, estado privado y revisión.
+- `club_creator_versions`: hasta 100 versiones por proyecto.
+- `club_creator_assets`: sprites, fondos, sonidos y paletas estructurados.
+- `club_creator_templates`: plantillas aprobadas para Peques, Juniors o ambos.
+
+RPC infantiles — ejecutables con la clave pública, pero cada llamada exige estudiante activo de B.E.I. y coincidencia exacta con `club_students.device_id`:
+
+- `club_crea_listar`, `club_crea_cargar`, `club_crea_guardar` y `club_crea_archivar`.
+- `club_crea_versiones` y `club_crea_restaurar`.
+- `club_crea_plantillas`.
+- `club_crea_assets_listar`, `club_crea_asset_guardar` y `club_crea_asset_borrar`.
+- `club_crea_solicitar_revision`.
+
+RPC de revisión:
+
+- `club_crea_revision()` y `club_crea_revisar(uuid,text,text)` requieren sesión autenticada, perfil activo, rol `admin` o `director` y la misma institución.
+- Aprobar o pedir mejoras registra una acción mínima en `audit_log`; no se registran pulsaciones ni contenido de trabajo innecesario.
+- Un cambio posterior al proyecto vuelve su estado a borrador. No existe galería pública en esta etapa.
+
+Límites iniciales: 30 proyectos activos por estudiante, 300 KB por proyecto, 60 recursos estructurados, 160 KB por recurso y 100 versiones conservadas por proyecto.
