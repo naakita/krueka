@@ -1,0 +1,38 @@
+name: Krueka Crea checks
+
+on:
+  pull_request:
+    paths:
+      - 'js/club-crea*.js'
+      - 'club/club-crea.css'
+      - 'sql/040_krueka_crea_foundation.sql'
+      - 'js/club-juego.js'
+      - 'app.html'
+      - '.github/workflows/krueka-crea-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax-and-guardrails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: |
+          node --check js/club-crea.js
+          node --check js/club-crea-game.js
+          node --check js/club-crea-design.js
+          node --check js/club-juego.js
+      - name: Check browser sandbox guardrails
+        run: |
+          grep -F 'sandbox="allow-scripts"' js/club-crea.js
+          grep -F "default-src 'none'" js/club-crea.js
+          ! grep -E '(service_role|SUPABASE_SERVICE|BEGIN (RSA|OPENSSH) PRIVATE KEY)' js/club-crea*.js club/club-crea.css sql/040_krueka_crea_foundation.sql
+      - name: Check migration hardening markers
+        run: |
+          test "$(grep -c 'force row level security' sql/040_krueka_crea_foundation.sql)" -eq 4
+          test "$(grep -o "set search_path=''" sql/040_krueka_crea_foundation.sql | wc -l)" -eq 14
+          grep -F 'revoke all on table public.club_creator_projects from public,anon,authenticated' sql/040_krueka_crea_foundation.sql
