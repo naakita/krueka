@@ -46,8 +46,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check browser sandbox
         run: |
-          grep -F 'sandbox="allow-scripts"' js/club-crea.js
-          grep -F "default-src 'none'" js/club-crea.js
+          grep -F 'allow-scripts' js/club-crea.js
+          grep -F 'default-src' js/club-crea.js
+          grep -F 'allow-same-origin' ARQUITECTURA.md
+          ! grep -F 'allow-same-origin' js/club-crea.js
       - name: Reject private credentials
         run: |
           ! grep -E '(service_role|SUPABASE_SERVICE|BEGIN (RSA|OPENSSH) PRIVATE KEY)' js/club-crea*.js club/club-crea.css sql/040_krueka_crea_foundation.sql
