@@ -3,7 +3,7 @@
 > Documento de referencia obligatoria antes de modificar el proyecto.
 > Si cambiás módulos, dependencias, tablas o funciones de servidor, **actualizá este archivo en el mismo commit**.
 >
-> Última verificación contra el código: 07/08/2026 (rama `main`).
+> Última verificación contra el código: 07/09/2026 (rama `main`).
 
 ---
 
@@ -80,3 +80,10 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - El progreso, los intentos y el último armado se guardan en `club_pc_lab_progress`, con RLS y sin lectura directa.
 - `club_pc_lab_estado(uuid)` y `club_pc_lab_probar(uuid,jsonb)` validan estudiante activo, institución B.E.I. y nivel Junior.
 - Migraciones relacionadas: `038_laboratorio_armado_pc_juniors` y `039_laboratorio_pc_monitor_y_corriente`.
+
+## 9. Portal Familia y Comunicados
+
+- `js/familia.js` (carga última en `app.html`): tercer tab de login "Soy familia" (curso + nombre, sin contraseña), ficha del alumno (asistencia, promedio, conducta, comunicados, descarga en Word vía `KG.word`) y sección "Comunicados" en el menú de docente/director/admin.
+- Reutiliza vistas y tablas existentes (`v_alumno_resumen`, `attendance`, `class_sessions`, `courses`, `enrollments`); no cambia el flujo de etapas ni el acceso del alumno.
+- Tabla nueva `comunicados` (`supabase_familia.sql`, migración 040): `institution_id`, `autor_id`, `titulo`, `cuerpo`, `course_id` (nulo = toda la escuela). RLS activado; lectura pública (el Portal Familia usa clave anon sin sesión), escritura solo `docente`/`director`/`admin` autenticados.
+- Sin la tabla, el módulo trabaja en modo demo (comunicados en `localStorage` de esa PC) y no rompe nada.
