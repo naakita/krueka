@@ -1,0 +1,100 @@
+/* Krueka home — tema claro, coherente con la app (#F9F8F7, tarjetas blancas).
+   Se carga en lugar de home-soft.css desde js/home.js. */
+
+/* ---------- base ---------- */
+:root{
+  --bg:#F9F8F7;--bg-soft:#F0EFED;--panel:#FFFFFF;--panel-strong:#FFFFFF;
+  --line:#E6E5E3;--line-strong:#CFCBC6;
+  --text:#2C2C2B;--muted:#7D7A75;--blue:#2783DE;--cyan:#1F74C4;--violet:#7C8CFF;--green:#46A171;
+}
+html,body{background:#F9F8F7!important}
+body{background:radial-gradient(1000px 620px at 80% -40px,rgba(39,131,222,.08),transparent 62%),radial-gradient(760px 560px at -8% 38%,rgba(70,161,113,.07),transparent 65%),linear-gradient(180deg,#FBFAF8,#F9F8F7 42%,#F2EFEA)!important;color:var(--text)}
+body::selection{background:rgba(39,131,222,.22)}
+.site-grid{background-image:linear-gradient(rgba(44,44,43,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(44,44,43,.055) 1px,transparent 1px)}
+.site-grid::after{background:radial-gradient(900px 600px at 74% 0,rgba(39,131,222,.09),transparent 68%),radial-gradient(700px 600px at -10% 45%,rgba(70,161,113,.08),transparent 70%)}
+
+/* ---------- navegacion ---------- */
+.nav{background:rgba(255,255,255,.84)!important;border-color:var(--line)!important;box-shadow:0 10px 34px rgba(44,44,43,.07)}
+.nav.scrolled{background:rgba(255,255,255,.96)!important;border-color:var(--line)!important;box-shadow:0 18px 50px rgba(44,44,43,.10)}
+.links a{color:var(--muted)}
+.links a:hover{color:var(--text);background:rgba(39,131,222,.08)}
+.menu-button{background:var(--bg-soft)!important}
+.menu-button span{background:#2C2C2B}
+
+/* ---------- botones y titulos ---------- */
+.btn-primary{color:#fff;background:linear-gradient(135deg,#3b97e8 0%,#2783DE 55%,#1F74C4 100%);box-shadow:0 10px 28px rgba(39,131,222,.28)}
+.btn-primary:hover{box-shadow:0 14px 36px rgba(39,131,222,.38)}
+.btn-ghost{background:var(--bg-soft);border-color:var(--line);color:var(--text)}
+.btn-ghost:hover{background:#E7E3DE;border-color:var(--line-strong)}
+.btn:focus-visible,.links a:focus-visible,.text-link:focus-visible{outline-color:var(--blue)}
+.eyebrow{color:#1F74C4}
+h2 em{background:linear-gradient(100deg,#1F74C4 0%,#2783DE 45%,#46A171 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* ---------- hero ---------- */
+.hero h1 em{background:linear-gradient(100deg,#1F74C4 0%,#2783DE 45%,#46A171 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-sub{color:#5C5955}
+.hero-trust{color:#7D7A75}
+.hero-trust li span{color:var(--green)}
+.scroll-cue{color:rgba(44,44,43,.5)}
+.scroll-cue span{background:rgba(44,44,43,.22)}
+.scroll-cue span::after{background:var(--blue)}
+
+/* Sin video oscuro: fondo claro con destellos suaves + tarjetas flotantes blancas */
+.hero-media{background:radial-gradient(640px 480px at 76% 30%,rgba(39,131,222,.14),transparent 68%),radial-gradient(480px 380px at 92% 78%,rgba(70,161,113,.12),transparent 66%),radial-gradient(500px 420px at 55% 100%,rgba(245,200,120,.14),transparent 65%),linear-gradient(180deg,#FBFAF8,#F4F1EC)}
+.hero-video,.hero-noise{display:none!important}
+.hero-media-scrim{background:linear-gradient(90deg,#F9F8F7 0%,rgba(249,248,247,.94) 30%,rgba(249,248,247,.35) 58%,rgba(249,248,247,0) 78%),linear-gradient(0deg,#F9F8F7 0%,transparent 26%)!important}
+.hero-media::after{background:radial-gradient(560px 460px at 76% 40%,rgba(39,131,222,.10),transparent 70%);mix-blend-mode:normal}
+
+.signal-card{background:rgba(255,255,255,.94);border-color:var(--line);box-shadow:0 22px 55px rgba(44,44,43,.12)}
+.signal-top{color:#7D7A75}
+.signal-top b{color:#2E7D52}
+.signal-class>small{color:var(--muted)}
+.progress{background:#ECEAE7}
+.progress i{background:linear-gradient(90deg,var(--blue),var(--green))}
+.signal-attendance small{color:var(--muted)}
+.signal-attendance strong span{color:#A09C96}
+.signal-attendance em{color:#2E7D52}
+.signal-icon{color:var(--green)}
+.signal-plan small{color:var(--muted)}
+.verified{color:#fff;background:linear-gradient(135deg,#5cb982,#2E7D52)}
+
+/* ---------- cinta ---------- */
+.signal-strip{background:rgba(255,255,255,.65)}
+.signal-strip span{color:#6E6A64}
+.signal-strip i{background:#2783DE;box-shadow:none}
+
+/* ---------- bento / plataforma ---------- */
+.bento-card{background:#fff;border-color:var(--line);box-shadow:0 18px 50px rgba(44,44,43,.07)}
+.bento-card:hover{border-color:var(--line-strong)}
+.bento-card::before{background:radial-gradient(circle,rgba(39,131,222,.10),transparent 68%)}
+.card-label{color:#1F74C4}
+.metric-grid>div{background:var(--bg-soft);border-color:var(--line)}
+.metric-grid span{color:#A09C96}
+.metric-grid .up{color:#2E7D52}
+.bars i{background:linear-gradient(#5ea9ec,#2783DE)}
+.code-demo span{background:#E5F2FC;border-color:#BFDDF5;color:#2C2C2B}
+.bento-manage li{border-top-color:var(--line);color:#4A4642}
+.bento-manage li span{color:#7D7A75}
+.bento-icon{color:rgba(39,131,222,.45)}
+/* La consola de clase queda oscura a proposito: parece captura del producto */
+.class-console{border-color:#2C2C2B;box-shadow:0 24px 60px rgba(44,44,43,.22)}
+
+/* ---------- flujo ---------- */
+.step{border-left-color:rgba(39,131,222,.28)}
+.step>span{background:#fff;border-color:rgba(39,131,222,.4);color:#1F74C4;box-shadow:0 8px 26px rgba(39,131,222,.14)}
+
+/* ---------- confianza y contacto ---------- */
+.trust-section{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.trust-points article{border-left-color:rgba(39,131,222,.3)}
+.trust-points span{color:#1F74C4}
+.contact-card{background:#fff;border-color:var(--line);box-shadow:0 24px 70px rgba(44,44,43,.10)}
+.contact-glow{background:radial-gradient(circle,rgba(39,131,222,.14),transparent 68%)}
+.text-link{color:#1F74C4}
+
+/* ---------- pie ---------- */
+.footer{background:#fff}
+.footer-links a:hover{color:var(--text)}
+.footer-inner>small{color:#A09C96}
+
+/* ---------- movil ---------- */
+.links{background:#fff!important;border-color:var(--line)!important;box-shadow:0 18px 50px rgba(44,44,43,.12)}
