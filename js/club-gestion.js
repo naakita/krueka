@@ -47,6 +47,7 @@ const ClubG = {
     v.innerHTML =
       '<h1>Alumnos del club</h1>'
       + '<p class="sub">Cambiá nombres, mudá de grupo, desactivá, fusioná duplicados o eliminá definitivo. Todo queda registrado en la auditoría.</p>'
+      + '<div class="row" style="margin-bottom:12px"><button class="btn" onclick="ClubG.formCrear()">＋ Carga directa de alumno</button></div>'
       + '<div class="card"><div class="row">'
       + '<div style="flex:2;min-width:200px"><label>Buscar</label><input id="cg-q" value="' + esc(this.filtro) + '" placeholder="Nombre del alumno" oninput="ClubG.filtro=this.value;ClubG.refresca()"></div>'
       + '<div style="flex:1;min-width:160px"><label>Grupo</label><select onchange="ClubG.grupo=this.value;ClubG.pintaAlumnos()"><option value="">Todos</option>'
@@ -107,6 +108,39 @@ const ClubG = {
     if(q2){ q2.focus(); try{ q2.setSelectionRange(pos, pos); }catch(e){} }
   },
   msg(html){ const m = document.getElementById("cg-msg"); if(m) m.innerHTML = html; },
+  formCrear(){
+    const ops = (this.grupos || []).map(g=>'<option value="' + g.id + '">' + esc(g.nombre) + ' (' + gs(g.cuota) + '/mes)</option>').join("");
+    this.msg('<div class="card" style="background:var(--blue-bg)"><div style="font-weight:700">Carga directa de alumno</div>'
+      + '<p class="sub">Sin formulario público: el alumno queda activo con su código en el acto. Pasáselo a la familia.</p>'
+      + '<div class="row"><div style="flex:2;min-width:200px"><label>Nombre y apellido *</label><input id="cn-n"></div>'
+      + '<div style="flex:1;min-width:160px"><label>Grupo *</label><select id="cn-g">' + ops + '</select></div></div>'
+      + '<div class="row" style="margin-top:8px"><div style="flex:1;min-width:180px"><label>Tutor (padre/madre) *</label><input id="cn-t"></div>'
+      + '<div style="flex:1;min-width:140px"><label>Teléfono *</label><input id="cn-tel"></div>'
+      + '<div style="flex:1;min-width:160px"><label>Correo (opcional)</label><input id="cn-m" type="email"></div>'
+      + '<div style="min-width:90px"><label>Edad</label><input id="cn-e" type="number" min="3" max="99"></div></div>'
+      + '<div style="margin-top:10px;display:flex;gap:8px"><button class="btn" onclick="ClubG.crear()">Crear y generar código</button>'
+      + '<button class="btn sec" onclick="ClubG.msg(\'\')">Cancelar</button></div></div>');
+    const n = document.getElementById("cn-n");
+    if(n){ n.focus(); }
+    document.getElementById("cg-msg").scrollIntoView();
+  },
+  async crear(){
+    const v = id=>((document.getElementById(id) || {}).value || "").trim();
+    const nom = v("cn-n"), gid = v("cn-g"), tut = v("cn-t"), tel = v("cn-tel");
+    if(nom.length < 3){ alert("Escribí el nombre y apellido del alumno."); return; }
+    if(!gid){ alert("Elegí el grupo."); return; }
+    if(!tut){ alert("Escribí el tutor (padre, madre o encargado)."); return; }
+    if(!tel){ alert("Escribí el teléfono de contacto."); return; }
+    const { data, error } = await db.rpc("club_alumno_crear", {
+      p_nombre: nom, p_group: gid, p_tutor: tut, p_telefono: tel,
+      p_email: v("cn-m") || null,
+      p_edad: (document.getElementById("cn-e").value || "") === "" ? null : Number(document.getElementById("cn-e").value)
+    });
+    if(error){ alert(error.message); return; }
+    await this.vAlumnos();
+    this.msg('<div class="alert ok">Alumno creado: <b>' + esc((data || {}).nombre || nom) + '</b>. Su código es '
+      + '<b style="letter-spacing:3px">' + esc((data || {}).codigo || "") + '</b> — pasáselo a la familia.</div>');
+  },
   porId(id){ return (this.alumnos || []).find(a=>a.id === id) || {}; },
   grupoId(nombre){
     const g = (this.grupos || []).find(x=>x.nombre === nombre);
