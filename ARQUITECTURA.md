@@ -98,3 +98,9 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 
 - `index.html` + `css/home*.css`: landing estática (hero, cinta, bento plataforma, flujo, confianza, contacto). Estructura y textos intactos; `js/home.js` oculta `#clubes` y "Clubes internos" por privacidad del Club B.E.I. y carga el tema.
 - `css/home-claro.css` (carga desde `home.js`, reemplaza a `home-soft.css`): paleta clara coherente con la app (`#F9F8F7`, tarjetas blancas, azul `#2783DE` / verde `#46A171`). El video oscuro del hero queda oculto por CSS (se muestra gradiente claro + tarjetas flotantes); la consola de clase del bento se deja oscura a propósito como mockup del producto.
+
+## 12. Club: gestión de alumnos y finanzas
+
+- `js/club-gestion.js` (`ClubG`, pestañas "👥 Alumnos club" y "💰 Finanzas club" solo admin/dirección): renombrar, mudar de grupo (usa `club_alumno_guardar(p_group)` existente), desactivar/reactivar, mini-cuenta de 12 meses por alumno, detector de duplicados (normaliza tildes/espacios), fusión de duplicados y eliminación definitiva con doble confirmación.
+- Finanzas vía `club_finanzas(anio, mes)`: KPIs (activos, cobrado vs cuota, % , deudores, al día), deudores del mes actual y del anterior (con contacto), cobro por grupo, altas (creados en el mes), bajas (de `audit_log`), historial 6 meses y descarga a Excel (CSV `;`, vía `KG.bajar`).
+- Migración 041 (`supabase_club_gestion.sql`): `club_alumno_eliminar` (borrado real, todo en CASCADE + auditoría con foto de pagos), `club_alumno_fusionar` (mueve pagos al que queda y borra el duplicado), `club_finanzas`. Mismas convenciones: `SECURITY DEFINER`, `search_path` fijo, control `is_admin()/is_direccion()`, auditoría.
