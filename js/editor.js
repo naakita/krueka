@@ -7,8 +7,8 @@ const OFICINA = {
   diapositivas: { t:"Diapositivas", d:"Presentacion con laminas", ico:"\u25B6" }
 };
 
-const COLS = ["A","B","C","D","E","F","G","H"];
-const FILAS = 24;
+const COLS = ["A","B","C","D","E","F","G","H","I","J"];
+const FILAS = 48;
 
 const Oficina = {
   tipo:null, datos:null, slide:0, timer:null, sel:"A1",
@@ -86,9 +86,14 @@ const Oficina = {
     }
     if(Oficina.tipo==="diapositivas"){
       const t = document.getElementById("ofi-s-tit"), x = document.getElementById("ofi-s-txt");
+      const im = document.getElementById("ofi-s-img"), fo = document.getElementById("ofi-s-fondo"),
+            al = document.getElementById("ofi-s-al");
       const s = Oficina.datos.contenido.slides[Oficina.slide];
       if(s && t) s.titulo = t.value;
       if(s && x) s.texto = x.value;
+      if(s && im) s.img = im.value.trim();
+      if(s && fo) s.fondo = fo.value;
+      if(s && al) s.al = al.value;
     }
   },
   async guardar(silencioso){
@@ -106,12 +111,14 @@ const Oficina = {
 
   /* ---------- documento ---------- */
   verDocumento(){
+    try{ document.execCommand("styleWithCSS", false, true); }catch(e){}
     const barra = [
       ["bold","","<b>N</b>","Negrita"], ["italic","","<i>C</i>","Cursiva"], ["underline","","<u>S</u>","Subrayado"],
-      ["formatBlock","h2","T\u00edtulo","T\u00edtulo"], ["formatBlock","h3","Subt\u00edtulo","Subt\u00edtulo"], ["formatBlock","p","Normal","Texto normal"],
+      ["formatBlock","h1","T\u00edtulo grande","T\u00edtulo grande"], ["formatBlock","h2","T\u00edtulo","T\u00edtulo"], ["formatBlock","h3","Subt\u00edtulo","Subt\u00edtulo"], ["formatBlock","p","Normal","Texto normal"],
       ["insertUnorderedList","","\u2022 Lista","Lista"], ["insertOrderedList","","1. Lista","Lista numerada"],
-      ["justifyLeft","","\u2261","Alinear a la izquierda"], ["justifyCenter","","\u2261","Centrar"],
-      ["undo","","Deshacer","Deshacer"], ["redo","","Rehacer","Rehacer"]
+      ["justifyLeft","","\u2261 Izq.","Alinear a la izquierda"], ["justifyCenter","","\u2261 Centro","Centrar"],
+      ["justifyRight","","\u2261 Der.","Alinear a la derecha"], ["justifyFull","","\u2261 Just.","Justificar"],
+      ["undo","","Deshacer","Deshacer"], ["redo","","Rehacer","Rehacer"], ["removeFormat","","Limpiar","Quitar formato"]
     ];
     document.getElementById("ofi-cuerpo").innerHTML =
       '<div style="display:flex;gap:16px;align-items:flex-start">' + Oficina.guia() +
@@ -119,6 +126,15 @@ const Oficina = {
         '<div style="background:#fff;border:1px solid #E6E5E3;border-radius:12px;padding:8px;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' +
           barra.map(b=>'<button title="'+b[3]+'" onclick="Oficina.cmd(\''+b[0]+'\',\''+b[1]+'\')" style="padding:6px 10px;border:1px solid #E6E5E3;border-radius:8px;background:#F9F8F7;font:inherit;cursor:pointer">'+b[2]+'</button>').join("") +
           '<span id="ofi-pal" style="margin-left:auto;align-self:center;font-size:13px;color:#7D7A75"></span>' +
+        '</div>' +
+        '<div style="background:#fff;border:1px solid #E6E5E3;border-radius:12px;padding:8px;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;align-items:center">' +
+          '<label title="Color de letra" style="display:flex;align-items:center;gap:4px;font-size:13px;color:#7D7A75">A<input type="color" value="#2C2C2B" onchange="Oficina.cmd(\'foreColor\',this.value)" style="width:34px;height:28px;padding:0;border:1px solid #E6E5E3;border-radius:6px"></label>' +
+          '<label title="Resaltar" style="display:flex;align-items:center;gap:4px;font-size:13px;color:#7D7A75">Resaltar<input type="color" value="#FFF3B0" onchange="Oficina.cmd(\'hiliteColor\',this.value)" style="width:34px;height:28px;padding:0;border:1px solid #E6E5E3;border-radius:6px"></label>' +
+          '<select title="Tipo de letra" onchange="Oficina.cmd(\'fontName\',this.value);this.selectedIndex=0" style="padding:6px;border:1px solid #E6E5E3;border-radius:8px;font:inherit">' +
+            '<option value="">Letra</option><option>Arial</option><option>Verdana</option><option>Georgia</option><option>Courier New</option><option>Times New Roman</option><option>Comic Sans MS</option></select>' +
+          '<select title="Tama\u00f1o de letra" onchange="Oficina.cmd(\'fontSize\',this.value);this.selectedIndex=0" style="padding:6px;border:1px solid #E6E5E3;border-radius:8px;font:inherit">' +
+            '<option value="">Tama\u00f1o</option><option value="2">Peque\u00f1o</option><option value="3">Normal</option><option value="4">Mediano</option><option value="5">Grande</option><option value="6">Muy grande</option></select>' +
+          '<button title="Poner una imagen de internet" onclick="Oficina.imagenDoc()" style="padding:6px 10px;border:1px solid #E6E5E3;border-radius:8px;background:#F9F8F7;font:inherit;cursor:pointer">Imagen</button>' +
         '</div>' +
         '<div id="ofi-doc" contenteditable="true" style="background:#fff;border:1px solid #E6E5E3;border-radius:12px;min-height:60vh;padding:34px 40px;outline:none"></div>' +
         '<p style="font-size:13px;color:#7D7A75">Escrib\u00ed ac\u00e1 tu trabajo. Se guarda solo cada unos segundos y el profesor lo ve desde su panel.</p>' +
@@ -133,6 +149,13 @@ const Oficina = {
     document.getElementById("ofi-doc").focus();
     document.execCommand(c, false, v || null);
     Oficina.marcar();
+  },
+  imagenDoc(){
+    const u = prompt("Peg\u00e1 la direcci\u00f3n (URL) de la imagen:");
+    if(!u) return;
+    const url = String(u).trim();
+    if(!/^https?:\/\//i.test(url)){ alert("La direcci\u00f3n tiene que empezar con http:// o https://"); return; }
+    Oficina.cmd("insertImage", url);
   },
   palabras(){
     const d = document.getElementById("ofi-doc"), p = document.getElementById("ofi-pal");
@@ -195,6 +218,8 @@ const Oficina = {
           '<button onclick="Oficina.fmt(\'al\',\'center\')" style="'+bs+'">Centrar</button>' +
           '<button onclick="Oficina.fmt(\'al\',\'right\')" style="'+bs+'">Derecha</button>' +
           '<button onclick="Oficina.fmt(\'bd\')" style="'+bs+'">Bordes</button>' +
+          '<button onclick="Oficina.fmt(\'pc\')" title="Mostrar como porcentaje" style="'+bs+'">%</button>' +
+          '<button onclick="Oficina.ordenar()" title="Ordenar las filas con datos de A a Z según la columna escrita en Aplicar a" style="'+bs+'">Ordenar A→Z</button>' +
           '<label style="display:flex;align-items:center;gap:4px;color:#7D7A75">Relleno <input type="color" value="#E5F2FC" onchange="Oficina.fmt(\'bg\',this.value)" style="width:34px;height:28px;padding:0;border:1px solid #E6E5E3;border-radius:6px"></label>' +
           '<label style="display:flex;align-items:center;gap:4px;color:#7D7A75">Letra <input type="color" value="#2C2C2B" onchange="Oficina.fmt(\'fg\',this.value)" style="width:34px;height:28px;padding:0;border:1px solid #E6E5E3;border-radius:6px"></label>' +
           '<select onchange="Oficina.fmt(\'ff\',this.value)" style="padding:6px;border:1px solid #E6E5E3;border-radius:8px;font:inherit">' +
@@ -208,8 +233,8 @@ const Oficina = {
           '<button onclick="Oficina.fmt(\'limpiar\')" style="'+bs+'">Quitar formato</button>' +
         '</div>' +
         '<div style="margin-top:8px;font-size:12px;color:#7D7A75">' +
-          'Escrib\u00ed la celda o el rango en <b>Aplicar a</b> (por ejemplo <code>A1</code> o <code>A1:D6</code>) y toc\u00e1 el bot\u00f3n de formato. ' +
-          'Para calcular, empez\u00e1 la celda con <b>=</b> : <code>=A1+B1</code>, <code>=SUMA(A1:A10)</code>, <code>=PROMEDIO(B1:B8)</code>, <code>=MAX(C1:C5)</code>, <code>=MIN(C1:C5)</code>, <code>=CONTAR(A1:A20)</code>.' +
+          'Escrib\u00ed la celda o el rango en <b>Aplicar a</b> (por ejemplo <code>A1</code> o <code>A1:J40</code>) y toc\u00e1 el bot\u00f3n de formato. ' +
+          'Para calcular, empez\u00e1 la celda con <b>=</b> : <code>=A1+B1</code>, <code>=A1^2</code>, <code>=SUMA(A1:A40)</code>, <code>=PROMEDIO(B1:B30)</code>, <code>=MAX(C1:C20)</code>, <code>=MIN(C1:C20)</code>, <code>=CONTAR(A1:A40)</code>, <code>=CONTAR.SI(B1:B30;&quot;&gt;6&quot;)</code>, <code>=SI(B2&gt;=6;&quot;Aprobado&quot;;&quot;Debe mejorar&quot;)</code>, <code>=REDONDEAR(C4;2)</code>, <code>=POTENCIA(A2;3)</code>, <code>=RAIZ(B5)</code>.' +
           '<button onclick="Oficina.grafico()" style="'+bs+'margin-left:8px">Gr\u00e1fico de barras (A: nombres, B: n\u00fameros)</button>' +
         '</div>' +
       '</div>' +
@@ -238,7 +263,7 @@ const Oficina = {
   altos(){ return Oficina.datos.contenido.altos || (Oficina.datos.contenido.altos = {}); },
   refs(txt){
     const t = String(txt||"").toUpperCase().replace(/\s/g,"");
-    const m = t.match(/^([A-H])([0-9]{1,2})(?::([A-H])([0-9]{1,2}))?$/);
+    const m = t.match(/^([A-J])([0-9]{1,2})(?::([A-J])([0-9]{1,2}))?$/);
     if(!m) return [];
     const c1 = COLS.indexOf(m[1]), c2 = m[3] ? COLS.indexOf(m[3]) : c1;
     const f1 = parseInt(m[2],10), f2 = m[4] ? parseInt(m[4],10) : parseInt(m[2],10);
@@ -258,7 +283,7 @@ const Oficina = {
     if(!rs.length){ alert("Escrib\u00ed la celda o el rango en Aplicar a, por ejemplo A1 o A1:D6."); return; }
     const fs = Oficina.formatos();
     if(prop === "limpiar"){ rs.forEach(r=>{ delete fs[r]; }); }
-    else if(prop==="b" || prop==="i" || prop==="u" || prop==="bd"){
+    else if(prop==="b" || prop==="i" || prop==="u" || prop==="bd" || prop==="pc"){
       const encender = !rs.every(r=>fs[r] && fs[r][prop]);
       rs.forEach(r=>{
         const o = fs[r] || (fs[r] = {});
@@ -340,7 +365,7 @@ const Oficina = {
     return typeof r === "number" ? r : 0;
   },
   rango(a, b, visto){
-    const m1 = a.match(/^([A-H])(\d+)$/i), m2 = b.match(/^([A-H])(\d+)$/i);
+    const m1 = a.match(/^([A-J])(\d+)$/i), m2 = b.match(/^([A-J])(\d+)$/i);
     if(!m1 || !m2) return [];
     const c1 = COLS.indexOf(m1[1].toUpperCase()), c2 = COLS.indexOf(m2[1].toUpperCase());
     const f1 = Number(m1[2]), f2 = Number(m2[2]);
@@ -351,8 +376,9 @@ const Oficina = {
     return out;
   },
   evaluar(formula, visto){
-    let e = formula.slice(1).toUpperCase().replace(/,/g, ".");
-    e = e.replace(/(SUMA|PROMEDIO|MAX|MIN|CONTAR)\(([A-H]\d+):([A-H]\d+)\)/g, (t, fn, a, b)=>{
+    let e = formula.slice(1).replace(/,/g, ".");
+    e = e.replace(/(SUMA|PROMEDIO|MAX|MIN|CONTAR)\(([A-J]\d+):([A-J]\d+)\)/gi, (t, fn, a, b)=>{
+      fn = fn.toUpperCase(); a = a.toUpperCase(); b = b.toUpperCase();
       const v = Oficina.rango(a, b, visto);
       if(fn==="SUMA") return v.reduce((s,x)=>s+x, 0);
       if(fn==="PROMEDIO") return v.length ? (v.reduce((s,x)=>s+x, 0) / v.length) : 0;
@@ -361,19 +387,184 @@ const Oficina = {
       if(fn==="CONTAR") return v.filter(x=>x!==0).length;
       return 0;
     });
-    e = e.replace(/([A-H]\d+)/g, (t, ref)=>{
+    e = Oficina.contarSi(e, visto);
+    e = Oficina.sustituirSI(e, visto);
+    e = Oficina.fnSimple(e, visto);
+    e = e.replace(/([A-J]\d+)/gi, (t, ref)=>{
+      ref = ref.toUpperCase();
       if(visto.indexOf(ref) >= 0) return 0;
       return Oficina.valor(ref, visto.concat([ref]));
     });
-    if(/[^0-9+\-*/(). ]/.test(e)) return "\u00a1Error!";
+    e = e.replace(/(-?[\d.]+)\^(-?[\d.]+)/g, (t, a, b)=>Math.pow(Number(a), Number(b)));
+    const solo = e.trim();
+    if(solo.length > 1 && solo.charAt(0) === '"' && solo.charAt(solo.length-1) === '"') return solo.slice(1, -1);
+    if(/[^0-9+\-*/(). ]/.test(e)) return "¡Error!";
     try{
       const r = Function('"use strict";return (' + (e || "0") + ')')();
-      if(typeof r !== "number" || !isFinite(r)) return "\u00a1Error!";
+      if(typeof r !== "number" || !isFinite(r)) return "¡Error!";
       return Math.round(r * 10000) / 10000;
-    }catch(err){ return "\u00a1Error!"; }
+    }catch(err){ return "¡Error!"; }
+  },
+  /* Divide argumentos de nivel superior separados por ; (respeta parentesis y comillas) */
+  partirArgs(s){
+    const out = []; let d = 0, q = false, cur = "";
+    for(let i=0; i<s.length; i++){
+      const ch = s[i];
+      if(ch === '"') q = !q;
+      else if(!q && ch === "(") d++;
+      else if(!q && ch === ")") d--;
+      if(!q && d === 0 && ch === ";"){ out.push(cur); cur = ""; continue; }
+      cur += ch;
+    }
+    out.push(cur);
+    return out.map(x=>x.trim());
+  },
+  /* Resuelve un operando: numero, "texto", referencia o expresion simple */
+  operando(s, visto){
+    s = String(s == null ? "" : s).trim();
+    if(!s) return 0;
+    if(s.charAt(0) === '"' && s.charAt(s.length-1) === '"' && s.length > 1){
+      const adentro = s.slice(1, -1);
+      if(adentro !== "" && !isNaN(Number(adentro))) return Number(adentro);
+      return adentro;
+    }
+    if(/^[A-J]\d+$/i.test(s)){
+      s = s.toUpperCase();
+      if((visto || []).indexOf(s) >= 0) return 0;
+      const cs = Oficina.celdas();
+      if(!(s in cs)) return 0;
+      const crudo = cs[s];
+      if(typeof crudo === "string" && crudo.charAt(0) !== "="){
+        const nn = Number(crudo.replace(",", "."));
+        if(isNaN(nn)) return String(crudo);
+      }
+      return Oficina.valor(s, (visto || []).concat([s]));
+    }
+    const n = Number(s);
+    if(!isNaN(n)) return n;
+    const r = Oficina.evaluar("=" + s, visto || []);
+    return (typeof r === "number" || typeof r === "string") ? r : 0;
+  },
+  /* Evalua condicion tipo A1>10, B2="SI", 5<=C3. Devuelve 1 o 0. */
+  evalCond(cond, visto){
+    const c = String(cond || "").trim();
+    if(/^(SI|Y|O)\(/i.test(c)){
+      const r = Oficina.sustituirSI(c, visto);
+      if(r === c) return Oficina.operando(c, visto) ? 1 : 0;
+      const t = String(r).trim();
+      if(t.length > 1 && t.charAt(0) === '"' && t.charAt(t.length-1) === '"') return t.length > 2 ? 1 : 0;
+      return Number(t) ? 1 : 0;
+    }
+    const m = c.match(/^(.*?)(>=|<=|<>|>|<|=)(.*)$/);
+    if(!m) return Oficina.operando(cond, visto) ? 1 : 0;
+    const iz = Oficina.operando(m[1], visto), de = Oficina.operando(m[3], visto), op = m[2];
+    const ambosNum = typeof iz === "number" && typeof de === "number";
+    if(!ambosNum){
+      const a = String(iz).toUpperCase(), b = String(de).toUpperCase();
+      if(op === "=") return a === b ? 1 : 0;
+      if(op === "<>") return a !== b ? 1 : 0;
+      return 0;
+    }
+    if(op === ">") return iz > de ? 1 : 0;
+    if(op === "<") return iz < de ? 1 : 0;
+    if(op === "=") return iz === de ? 1 : 0;
+    if(op === ">=") return iz >= de ? 1 : 0;
+    if(op === "<=") return iz <= de ? 1 : 0;
+    if(op === "<>") return iz !== de ? 1 : 0;
+    return 0;
+  },
+  /* Reemplaza SI(cond;vVerdadero;vFalso), Y(..;..) y O(..;..), incluso anidados */
+  sustituirSI(e, visto){
+    for(let vuelta=0; vuelta<20; vuelta++){
+      const m0 = e.match(/\b(SI|Y|O)\(/i);
+      if(!m0) return e;
+      const i = m0.index, fn = m0[1].toUpperCase();
+      let d = 0, j = -1;
+      for(let k=i+fn.length; k<e.length; k++){
+        if(e[k] === "(") d++;
+        else if(e[k] === ")"){ d--; if(d === 0){ j = k; break; } }
+      }
+      if(j < 0) return e;
+      const args = Oficina.partirArgs(e.slice(i + fn.length + 1, j));
+      let val = 0;
+      if(fn === "SI" && args.length === 3){
+        val = Oficina.evalCond(args[0], visto)
+          ? Oficina.operando(args[1], visto)
+          : Oficina.operando(args[2], visto);
+        if(typeof val === "string"){ e = e.slice(0, i) + '"' + val.replace(/"/g, "") + '"' + e.slice(j+1); continue; }
+      } else if(fn === "Y" && args.length){
+        val = args.every(a=>Oficina.evalCond(a, visto)) ? 1 : 0;
+      } else if(fn === "O" && args.length){
+        val = args.some(a=>Oficina.evalCond(a, visto)) ? 1 : 0;
+      }
+      e = e.slice(0, i) + val + e.slice(j+1);
+    }
+    return e;
+  },
+  /* REDONDEAR(x;dec), POTENCIA(x;y), RAIZ(x) */
+  fnSimple(e, visto){
+    e = e.replace(/REDONDEAR\(([^()]+)\)/gi, (t, ad)=>{
+      const a = Oficina.partirArgs(ad);
+      const x = Oficina.operando(a[0], visto), d = Math.max(0, Math.min(6, Math.round(Oficina.operando(a[1] || 0, visto))));
+      const f = Math.pow(10, d);
+      return Math.round(Number(x) * f) / f;
+    });
+    e = e.replace(/POTENCIA\(([^()]+)\)/gi, (t, ad)=>{
+      const a = Oficina.partirArgs(ad);
+      return Math.pow(Number(Oficina.operando(a[0], visto)) || 0, Number(Oficina.operando(a[1], visto)) || 0);
+    });
+    e = e.replace(/RAIZ\(([^()]+)\)/gi, (t, ad)=>{
+      const x = Number(Oficina.operando(ad, visto)) || 0;
+      return x < 0 ? 0 : Math.round(Math.sqrt(x) * 10000) / 10000;
+    });
+    return e;
+  },
+  /* CONTAR.SI(rango;criterio) con criterio ">10", 5 o "texto" */
+  contarSi(e, visto){
+    return e.replace(/CONTAR\.SI\(([A-J]\d+):([A-J]\d+);([^()]+)\)/gi, (t, a, b, crit)=>{
+      a = a.toUpperCase(); b = b.toUpperCase();
+      crit = crit.trim();
+      let textoPlano = null;
+      if(crit.length > 1 && crit.charAt(0) === '"' && crit.charAt(crit.length-1) === '"'){
+        const dentro = crit.slice(1, -1);
+        if(/^(>=|<=|<>|>|<|=)/.test(dentro)) crit = dentro;
+        else textoPlano = dentro;
+      }
+      const m1 = a.match(/^([A-J])(\d+)$/), m2 = b.match(/^([A-J])(\d+)$/);
+      const c1 = COLS.indexOf(m1[1]), c2 = COLS.indexOf(m2[1]);
+      const f1 = Number(m1[2]), f2 = Number(m2[2]);
+      let n = 0;
+      const mc = crit.match(/^(>=|<=|<>|>|<|=)(.*)$/);
+      for(let c=Math.min(c1,c2); c<=Math.max(c1,c2); c++)
+        for(let f=Math.min(f1,f2); f<=Math.max(f1,f2); f++){
+          const ref = COLS[c]+f, cs = Oficina.celdas();
+          if(!(ref in cs)) continue;
+          const crudo = String(cs[ref]);
+          if(mc){
+            const v = Oficina.valor(ref, visto), lim = Number(mc[2]);
+            if(isNaN(lim)) continue;
+            const op = mc[1];
+            if(op === ">" && v > lim) n++;
+            else if(op === "<" && v < lim) n++;
+            else if(op === "=" && v === lim) n++;
+            else if(op === ">=" && v >= lim) n++;
+            else if(op === "<=" && v <= lim) n++;
+            else if(op === "<>" && v !== lim) n++;
+          } else if(textoPlano !== null){
+            if(crudo.toUpperCase() === textoPlano.toUpperCase()) n++;
+          } else {
+            if(Oficina.valor(ref, visto) === Number(crit)) n++;
+          }
+        }
+      return n;
+    });
   },
   recalcular(){
     const cs = Oficina.celdas();
+    const fmtNum = n=>{
+      const r = Math.round(Number(n) * 100) / 100;
+      return String(r).replace(".", ",");
+    };
     for(const c of COLS) for(let f=1; f<=FILAS; f++){
       const ref = c+f, td = document.getElementById("c-"+ref);
       if(!td || td === document.activeElement) continue;
@@ -381,15 +572,56 @@ const Oficina = {
       if(bruto == null || bruto === ""){ td.textContent = ""; if(!fo.al) td.style.textAlign = "left"; if(!fo.bg) td.style.background = ""; continue; }
       if(String(bruto).charAt(0) === "="){
         const r = Oficina.evaluar(String(bruto), [ref]);
-        td.textContent = r;
+        td.textContent = (typeof r === "number" && fo.pc) ? fmtNum(r * 100) + " %" : r;
         if(!fo.al) td.style.textAlign = "right";
         if(!fo.bg) td.style.background = "#E5F2FC";
+      } else if(fo.pc && !isNaN(Number(String(bruto).replace(",",".")))){
+        td.textContent = fmtNum(Number(String(bruto).replace(",",".")) * 100) + " %";
+        if(!fo.bg) td.style.background = "";
+        if(!fo.al) td.style.textAlign = "right";
       } else {
         td.textContent = bruto;
         if(!fo.bg) td.style.background = "";
         if(!fo.al) td.style.textAlign = isNaN(Number(String(bruto).replace(",","."))) ? "left" : "right";
       }
     }
+  },
+  ordenar(){
+    const i = document.getElementById("ofi-rango");
+    const col = String((i && i.value) || Oficina.sel || "A").toUpperCase().charAt(0);
+    if(COLS.indexOf(col) < 0){ alert("Elegí la columna en Aplicar a, por ejemplo B."); return; }
+    const cs = Oficina.celdas();
+    const filas = [];
+    for(let f=1; f<=FILAS; f++){
+      if(COLS.some(c=>(cs[c+f]||"") !== "")) filas.push(f);
+    }
+    if(filas.length < 2){ alert("No hay filas para ordenar."); return; }
+    const clave = f=>{
+      const v = cs[col+f];
+      if(v == null || v === "") return "\uffff";
+      const n = Number(String(v).replace(",","."));
+      if(!isNaN(n)) return "\u0000" + (100000000 + n);
+      return String(v).toUpperCase();
+    };
+    filas.sort((a,b)=>clave(a) < clave(b) ? -1 : clave(a) > clave(b) ? 1 : 0);
+    const copia = {};
+    Object.keys(cs).forEach(k=>{ copia[k] = cs[k]; });
+    const todas = [];
+    for(let f=1; f<=FILAS; f++) todas.push(f);
+    const libres = todas.filter(f=>filas.indexOf(f) < 0);
+    const destino = filas.concat(libres);
+    const nueva = {};
+    Object.keys(copia).forEach(ref=>{
+      const m = ref.match(/^([A-J])(\d+)$/);
+      if(!m){ nueva[ref] = copia[ref]; return; }
+      const idx = filas.indexOf(Number(m[2]));
+      nueva[m[1] + (idx >= 0 ? destino[idx] : m[2])] = copia[ref];
+    });
+    Object.keys(cs).forEach(k=>{ delete cs[k]; });
+    Object.keys(nueva).forEach(k=>{ cs[k] = nueva[k]; });
+    Oficina.recalcular();
+    Oficina.marcar();
+    alert("Filas ordenadas de A a Z según la columna " + col + ".");
   },
   grafico(){
     const cs = Oficina.celdas(), datos = [];
@@ -420,12 +652,29 @@ const Oficina = {
             '<div style="font-size:12px;color:#7D7A75">L\u00e1mina '+(i+1)+'</div>' +
             '<div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(Oficina.esc(x.titulo)||"Sin t\u00edtulo")+'</div></div>').join("") +
           '<button onclick="Oficina.nuevaSlide()" style="'+Oficina.btn("#F0EFED","#2C2C2B")+'width:100%;margin-bottom:8px">+ Nueva l\u00e1mina</button>' +
+          '<button onclick="Oficina.duplicarSlide()" style="'+Oficina.btn("#F0EFED","#2C2C2B")+'width:100%;margin-bottom:8px">Duplicar</button>' +
+          '<div style="display:flex;gap:6px;margin-bottom:8px">' +
+            '<button onclick="Oficina.moverSlide(-1)" title="Subir esta l\u00e1mina" style="'+Oficina.btn("#F0EFED","#2C2C2B")+'flex:1">\u2191</button>' +
+            '<button onclick="Oficina.moverSlide(1)" title="Bajar esta l\u00e1mina" style="'+Oficina.btn("#F0EFED","#2C2C2B")+'flex:1">\u2193</button>' +
+          '</div>' +
           (ss.length>1?'<button onclick="Oficina.borrarSlide()" style="'+Oficina.btn("#FCE9E7","#E56458")+'width:100%;margin-bottom:8px">Borrar esta l\u00e1mina</button>':"") +
           '<button onclick="Oficina.presentar()" style="'+Oficina.btn("#46A171","#fff")+'width:100%">Presentar</button>' +
         '</div>' +
         '<div style="flex:1;min-width:280px;background:#fff;border:1px solid #E6E5E3;border-radius:12px;padding:20px">' +
           '<label style="font-size:13px;color:#7D7A75">T\u00edtulo de la l\u00e1mina</label>' +
           '<input id="ofi-s-tit" value="'+Oficina.esc(s.titulo)+'" style="width:100%;padding:10px;border:1px solid #E6E5E3;border-radius:8px;font:inherit;font-size:20px;font-weight:700;margin-bottom:12px">' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
+            '<div style="flex:1;min-width:140px"><label style="font-size:13px;color:#7D7A75">Color de fondo</label>' +
+            '<select id="ofi-s-fondo" style="width:100%;padding:8px;border:1px solid #E6E5E3;border-radius:8px;font:inherit">' +
+              [["","Oscuro"],["blanco","Blanco"],["crema","Crema"],["azul","Celeste"],["verde","Verde"]].map(o=>'<option value="'+o[0]+'"'+(s.fondo===(o[0]||undefined)||(!s.fondo&&!o[0])?" selected":"")+'>'+o[1]+'</option>').join("") +
+            '</select></div>' +
+            '<div style="flex:1;min-width:140px"><label style="font-size:13px;color:#7D7A75">Texto</label>' +
+            '<select id="ofi-s-al" style="width:100%;padding:8px;border:1px solid #E6E5E3;border-radius:8px;font:inherit">' +
+              [["","A la izquierda"],["center","Centrado"]].map(o=>'<option value="'+o[0]+'"'+(s.al===o[0]?" selected":"")+'>'+o[1]+'</option>').join("") +
+            '</select></div>' +
+          '</div>' +
+          '<label style="font-size:13px;color:#7D7A75">Imagen (direcci\u00f3n URL, opcional)</label>' +
+          '<input id="ofi-s-img" value="'+Oficina.esc(s.img||"")+'" placeholder="https://..." style="width:100%;padding:8px;border:1px solid #E6E5E3;border-radius:8px;font:inherit;margin-bottom:12px">' +
           '<label style="font-size:13px;color:#7D7A75">Contenido (una idea por l\u00ednea)</label>' +
           '<textarea id="ofi-s-txt" style="width:100%;min-height:40vh;padding:12px;border:1px solid #E6E5E3;border-radius:8px;font:inherit">'+Oficina.esc(s.texto)+'</textarea>' +
         '</div>' +
@@ -433,8 +682,28 @@ const Oficina = {
     const t = document.getElementById("ofi-s-tit"), x = document.getElementById("ofi-s-txt");
     t.oninput = ()=>{ s.titulo = t.value; Oficina.marcar(); };
     x.oninput = ()=>{ s.texto = x.value; Oficina.marcar(); };
+    const im = document.getElementById("ofi-s-img"), fo = document.getElementById("ofi-s-fondo"),
+          al = document.getElementById("ofi-s-al");
+    if(im) im.oninput = ()=>{ s.img = im.value.trim(); Oficina.marcar(); };
+    if(fo) fo.onchange = ()=>{ s.fondo = fo.value; Oficina.marcar(); };
+    if(al) al.onchange = ()=>{ s.al = al.value; Oficina.marcar(); };
   },
   irSlide(i){ Oficina.recoger(); Oficina.slide = i; Oficina.verDiapositivas(); },
+  duplicarSlide(){
+    Oficina.recoger();
+    const ss = Oficina.datos.contenido.slides, s = ss[Oficina.slide] || {};
+    ss.splice(Oficina.slide + 1, 0, { titulo:s.titulo||"", texto:s.texto||"", img:s.img||"", fondo:s.fondo||"", al:s.al||"" });
+    Oficina.slide = Oficina.slide + 1;
+    Oficina.verDiapositivas(); Oficina.marcar();
+  },
+  moverSlide(d){
+    Oficina.recoger();
+    const ss = Oficina.datos.contenido.slides, j = Oficina.slide + d;
+    if(j < 0 || j >= ss.length) return;
+    const t = ss[Oficina.slide]; ss[Oficina.slide] = ss[j]; ss[j] = t;
+    Oficina.slide = j;
+    Oficina.verDiapositivas(); Oficina.marcar();
+  },
   nuevaSlide(){
     Oficina.recoger();
     Oficina.datos.contenido.slides.push({ titulo:"", texto:"" });
@@ -451,13 +720,25 @@ const Oficina = {
   presentar(){
     Oficina.recoger();
     const ss = Oficina.datos.contenido.slides;
+    const temas = {
+      "":        { bg:"#2C2C2B", fg:"#fff" },
+      blanco:    { bg:"#FFFFFF", fg:"#2C2C2B" },
+      crema:     { bg:"#FFF8E7", fg:"#2C2C2B" },
+      azul:      { bg:"#E5F2FC", fg:"#2C2C2B" },
+      verde:     { bg:"#E8F1EC", fg:"#2C2C2B" }
+    };
     let i = 0;
     const caja = document.createElement("div");
-    caja.setAttribute("style", "position:fixed;inset:0;z-index:70;background:#2C2C2B;color:#fff;display:flex;flex-direction:column;justify-content:center;padding:8vh 8vw;font:20px/1.6 system-ui,sans-serif");
+    caja.setAttribute("style", "position:fixed;inset:0;z-index:70;display:flex;flex-direction:column;justify-content:center;padding:8vh 8vw;font:20px/1.6 system-ui,sans-serif");
     const pintar = ()=>{
-      const s = ss[i];
-      caja.innerHTML = '<h1 style="font-size:44px;margin:0 0 24px">' + (Oficina.esc(s.titulo)||"") + '</h1>' +
+      const s = ss[i], tm = temas[s.fondo] || temas[""];
+      caja.style.background = tm.bg; caja.style.color = tm.fg;
+      const ali = s.al === "center" ? "text-align:center;" : "";
+      caja.innerHTML = '<div style="'+ali+'">' +
+        '<h1 style="font-size:44px;margin:0 0 24px">' + (Oficina.esc(s.titulo)||"") + '</h1>' +
+        (s.img ? '<div style="margin:0 0 20px"><img src="' + Oficina.esc(s.img) + '" alt="" style="max-width:100%;max-height:38vh;border-radius:12px"></div>' : "") +
         String(s.texto||"").split("\n").filter(Boolean).map(l=>'<p style="margin:8px 0">\u2022 ' + Oficina.esc(l) + '</p>').join("") +
+        '</div>' +
         '<div style="position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:10px;align-items:center">' +
           '<button id="pr-a" style="'+Oficina.btn("#7D7A75","#fff")+'">Anterior</button>' +
           '<span style="font-size:14px">' + (i+1) + ' / ' + ss.length + '</span>' +
@@ -468,6 +749,13 @@ const Oficina = {
       caja.querySelector("#pr-s").onclick = ()=>{ if(i<ss.length-1){ i++; pintar(); } };
       caja.querySelector("#pr-x").onclick = ()=>caja.remove();
     };
+    const teclas = (ev)=>{
+      if(!document.body.contains(caja)){ document.removeEventListener("keydown", teclas); return; }
+      if(ev.key === "ArrowRight" || ev.key === " "){ if(i<ss.length-1){ i++; pintar(); } ev.preventDefault(); }
+      else if(ev.key === "ArrowLeft"){ if(i>0){ i--; pintar(); } ev.preventDefault(); }
+      else if(ev.key === "Escape"){ caja.remove(); }
+    };
+    document.addEventListener("keydown", teclas);
     pintar();
     document.body.appendChild(caja);
   },
