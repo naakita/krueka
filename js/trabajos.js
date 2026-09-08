@@ -14,7 +14,15 @@ Docente.verTrabajo = async function(sessionId, studentId){
       bloque = '<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px">' + (c.html || "<i>Sin texto</i>") + '</div>';
     } else if(d.tipo === "planilla"){
       const cs = c.celdas || {}, fo = c.formatos || {}, an = c.anchos || {}, al = c.altos || {};
-      const cols = ["A","B","C","D","E","F","G","H"];
+      const letras = ["A","B","C","D","E","F","G","H","I","J"];
+      const cols = letras.filter(L=>L <= "H" || Object.keys(cs).concat(Object.keys(fo)).some(k=>k.charAt(0)===L));
+      const maxF = Math.max.apply(null, Object.keys(cs).concat(Object.keys(fo)).map(k=>Number(k.slice(1)) || 0).concat([0]));
+      const hasta = Math.max(1, Math.min(48, maxF));
+      const porc = v=>{
+        const n = Number(String(v).replace(",","."));
+        if(isNaN(n)) return esc(v);
+        return esc(String(Math.round(n * 100 * 100) / 100).replace(".", ",")) + " %";
+      };
       const est = ref=>{
         const o = fo[ref] || {};
         return (o.bd ? "border:2px solid #2C2C2B;" : "") +
@@ -23,19 +31,27 @@ Docente.verTrabajo = async function(sessionId, studentId){
           (o.bg ? "background:" + o.bg + ";" : "") + (o.fg ? "color:" + o.fg + ";" : "") +
           (o.fs ? "font-size:" + o.fs + "px;" : "") + (o.ff ? "font-family:" + o.ff + ";" : "");
       };
+      const celda = ref=>{
+        const v = cs[ref];
+        if(v == null || v === "") return "";
+        if((fo[ref] || {}).pc && String(v).charAt(0) !== "=" && !isNaN(Number(String(v).replace(",",".")))) return porc(v);
+        return esc(v);
+      };
       let filas = "";
-      for(let f=1; f<=24; f++){
+      for(let f=1; f<=hasta; f++){
         if(!cols.some(x=>cs[x+f] || fo[x+f])) continue;
         filas += '<tr style="' + (al[f] ? "height:" + al[f] + "px" : "") + '"><th>' + f + "</th>" +
-          cols.map(x=>'<td style="' + est(x+f) + (an[x] ? "min-width:" + an[x] + "px;" : "") + '">' + esc(cs[x+f] || "") + "</td>").join("") + "</tr>";
+          cols.map(x=>'<td style="' + est(x+f) + (an[x] ? "min-width:" + an[x] + "px;" : "") + '">' + celda(x+f) + "</td>").join("") + "</tr>";
       }
       bloque = filas
         ? '<table><thead><tr><th></th>' + cols.map(x=>"<th>"+x+"</th>").join("") + '</tr></thead><tbody>' + filas + '</tbody></table>'
         : '<p class="note">Planilla vac\u00eda.</p>';
     } else {
+      const fondos = { blanco:"#FFFFFF", crema:"#FFF8E7", azul:"#E5F2FC", verde:"#E8F1EC" };
       bloque = (c.slides||[]).map((s,i)=>
-        '<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:8px">' +
+        '<div style="background:' + (fondos[s.fondo]||"var(--panel)") + ';border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:8px' + (s.al==="center"?";text-align:center":"") + '">' +
         '<div class="note">L\u00e1mina ' + (i+1) + '</div><b>' + esc(s.titulo||"") + '</b>' +
+        (s.img ? '<div style="margin:8px 0"><img src="' + esc(s.img) + '" alt="" style="max-width:100%;max-height:220px;border-radius:8px"></div>' : "") +
         String(s.texto||"").split("\n").filter(Boolean).map(l=>'<p style="margin:4px 0">\u2022 ' + esc(l) + '</p>').join("") +
         '</div>').join("") || '<p class="note">Sin l\u00e1minas.</p>';
     }
