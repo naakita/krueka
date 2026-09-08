@@ -3,7 +3,7 @@
 > Documento de referencia obligatoria antes de modificar el proyecto.
 > Si cambiás módulos, dependencias, tablas o funciones de servidor, **actualizá este archivo en el mismo commit**.
 >
-> Última verificación contra el código: 07/09/2026 (rama `main`).
+> Última verificación contra el código: 08/09/2026 (rama `main`).
 
 ---
 
@@ -87,3 +87,9 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - Reutiliza vistas y tablas existentes (`v_alumno_resumen`, `attendance`, `class_sessions`, `courses`, `enrollments`); no cambia el flujo de etapas ni el acceso del alumno.
 - Tabla nueva `comunicados` (`supabase_familia.sql`, migración 040): `institution_id`, `autor_id`, `titulo`, `cuerpo`, `course_id` (nulo = toda la escuela). RLS activado; lectura pública (el Portal Familia usa clave anon sin sesión), escritura solo `docente`/`director`/`admin` autenticados.
 - Sin la tabla, el módulo trabaja en modo demo (comunicados en `localStorage` de esa PC) y no rompe nada.
+
+## 10. Oficina Krueka (Word/Excel/PowerPoint internos)
+
+- `js/editor.js` (`Oficina`): Documento (contenteditable + execCommand: negrita/cursiva/subrayado, H1–H3, listas, 4 alineaciones, colores de letra y resaltado, 7 fuentes, 5 tamaños, imagen por URL, limpiar formato, contador de palabras), Planilla (A–J × 48, formatos, anchos/altos, % , ordenar A→Z, gráfico de barras A:B) y Diapositivas (nueva/duplicar/reordenar/borrar, tema de fondo, alineación, imagen por URL, modo presentación con teclado ←/→/Esc). Autoguardado 4 s + botón Guardar; panel "Tu tarea, paso a paso" con la consigna de la clase.
+- Motor de fórmulas ES (coma decimal, `;` como separador): aritmética, `^`, referencias, `SUMA/PROMEDIO/MAX/MIN/CONTAR`, `CONTAR.SI`, `SI/Y/O` (anidados, devuelven número o texto), `REDONDEAR/POTENCIA/RAIZ`, antirrecursión por ciclos, `¡Error!` controlado. Sin `eval` de entrada cruda: tras sustituir funciones y referencias solo admite `0-9+-*/(). `.
+- Persistencia en `student_docs` (JSONB) vía RPCs `guardar_doc` / `mis_docs` (validados por sesión y alumno; el alumno los ve en su entrega con `Oficina.resumen()` y el docente en `Docente.verTrabajo` / `panelTrabajos` de `js/trabajos.js`). Claves nuevas (`pc`, `img`, `fondo`, `al`, celdas I–J / filas 25–48) compatibles hacia atrás: documentos viejos se abren igual.
