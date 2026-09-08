@@ -1,7 +1,7 @@
 /* Krueka — home pública: navegación, reveal y detalles de interfaz. */
 (function () {
   'use strict';
-  var soft=document.createElement('link');soft.rel='stylesheet';soft.href='css/home-soft.css?v=20260806f';document.head.appendChild(soft);
+  var soft=document.createElement('link');soft.rel='stylesheet';soft.href='css/home-claro.css?v=20260908a';document.head.appendChild(soft);
   document.querySelectorAll('a[href="#clubes"], #clubes').forEach(function(el){el.remove();});
   document.querySelectorAll('.signal-strip span').forEach(function(el){if(el.textContent.trim()==='Clubes internos')el.remove();});
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
