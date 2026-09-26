@@ -47,6 +47,7 @@ El Club es exclusivo de la institución `88c4af03-bdce-48e6-b548-b6904fe704bd`. 
 - `js/club-pausas.js`: pausa cada diez minutos.
 - `js/club-auditoria.js`: dispositivos, accesos y regeneración de código.
 - `js/club-pc-lab.js`: simulador de armado, diagnóstico y encendido de computadora para Juniors.
+- `js/mentor.js`: chat de pistas en las misiones prácticas Junior. Conserva los últimos turnos solo durante la sesión de la página; el alumno pega voluntariamente el fragmento de código que quiere revisar. La interfaz no contiene clave OpenAI.
 - `club/club-pc-lab.css`: interfaz clara, adaptable y táctil del taller de hardware.
 
 ### Evidencias y colaboración
@@ -55,6 +56,12 @@ El Club es exclusivo de la institución `88c4af03-bdce-48e6-b548-b6904fe704bd`. 
 - `club_challenge_teams` y `club_challenge_members`: equipos y aportes.
 
 Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 28 de elección, 28 de ordenar, 28 de respuesta abierta y 28 de decisión justificada.
+
+### Mentor de programación (preparado, sin activar en producción)
+
+`supabase/functions/mentor-krueka/index.ts` valida código personal y dispositivo con `club_entrar` antes de llamar a OpenAI. Verifica edad en `club_requests`, reserva hasta 15 preguntas por alumno y día mediante `club_mentor_reservar` (`supabase_mentor.sql`), modera texto de entrada y salida y usa Responses API con `store:false`. El modelo recibe la pregunta, el fragmento pegado, el título de la misión y como máximo seis turnos; nunca recibe nombre, teléfono ni correo desde la base. Las instrucciones del servidor exigen una pista y una pregunta de seguimiento, sin entregar proyectos completos. El prompt reduce respuestas resueltas, pero no las puede impedir con certeza absoluta.
+
+La función necesita los secretos `OPENAI_API_KEY` y, opcionalmente, `OPENAI_MODEL`; usa `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` solo en servidor. Se despliega con verificación JWT de gateway desactivada porque el alumno entra por código; la función comprueba código y dispositivo. **No aplicar la SQL ni desplegar en un proyecto distinto** del `janebfpnknapvntfqolf` usado por `core.js`. Antes de activar: verificar esquema real, respaldar, confirmar la política de retención y edad, probar permisos entre alumnos y límite de uso, cargar el secreto sin subirlo al repositorio y medir el coste de API. Con edad desconocida o menor de 13, el servidor niega acceso; extenderlo exige la configuración de protección de datos correspondiente. El módulo no graba conversaciones en Supabase.
 
 ## 6. Inscripción privada por invitación
 
