@@ -47,6 +47,7 @@ El Club es exclusivo de la institución `88c4af03-bdce-48e6-b548-b6904fe704bd`. 
 - `js/club-pausas.js`: pausa cada diez minutos.
 - `js/club-auditoria.js`: dispositivos, accesos y regeneración de código.
 - `js/club-pc-lab.js`: simulador de armado, diagnóstico y encendido de computadora para Juniors.
+- `js/mentor.js`: chat de pistas en las misiones prácticas Junior. Conserva los últimos turnos solo durante la sesión de la página; el alumno pega voluntariamente el fragmento de código que quiere revisar. La interfaz no contiene clave OpenAI.
 - `club/club-pc-lab.css`: interfaz clara, adaptable y táctil del taller de hardware.
 
 ### Evidencias y colaboración
@@ -55,6 +56,12 @@ El Club es exclusivo de la institución `88c4af03-bdce-48e6-b548-b6904fe704bd`. 
 - `club_challenge_teams` y `club_challenge_members`: equipos y aportes.
 
 Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 28 de elección, 28 de ordenar, 28 de respuesta abierta y 28 de decisión justificada.
+
+### Mentor de programación (preparado, sin activar en producción)
+
+`supabase/functions/mentor-krueka/index.ts` valida código personal y dispositivo con `club_entrar` antes de llamar a OpenAI. Verifica edad en `club_requests`, reserva hasta 15 preguntas por alumno y día mediante `club_mentor_reservar` (`supabase_mentor.sql`), modera texto de entrada y salida y usa Responses API con `store:false`. El modelo recibe la pregunta, el fragmento pegado, el título de la misión y como máximo seis turnos; nunca recibe nombre, teléfono ni correo desde la base. Las instrucciones del servidor exigen una pista y una pregunta de seguimiento, sin entregar proyectos completos. El prompt reduce respuestas resueltas, pero no las puede impedir con certeza absoluta.
+
+La función necesita los secretos `OPENAI_API_KEY` y, opcionalmente, `OPENAI_MODEL`; usa `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` solo en servidor. Se despliega con verificación JWT de gateway desactivada porque el alumno entra por código; la función comprueba código y dispositivo. **No aplicar la SQL ni desplegar en un proyecto distinto** del `janebfpnknapvntfqolf` usado por `core.js`. Antes de activar: verificar esquema real, respaldar, confirmar la política de retención y edad, probar permisos entre alumnos y límite de uso, cargar el secreto sin subirlo al repositorio y medir el coste de API. Con edad desconocida o menor de 13, el servidor niega acceso; extenderlo exige la configuración de protección de datos correspondiente. El módulo no graba conversaciones en Supabase.
 
 ## 6. Inscripción privada por invitación
 
@@ -93,6 +100,13 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - `js/editor.js` (`Oficina`): Documento (contenteditable + execCommand: negrita/cursiva/subrayado, H1–H3, listas, 4 alineaciones, colores de letra y resaltado, 7 fuentes, 5 tamaños, imagen por URL, limpiar formato, contador de palabras), Planilla (A–J × 48, formatos, anchos/altos, % , ordenar A→Z, gráfico de barras A:B) y Diapositivas (nueva/duplicar/reordenar/borrar, tema de fondo, alineación, imagen por URL, modo presentación con teclado ←/→/Esc). Autoguardado 4 s + botón Guardar; panel "Tu tarea, paso a paso" con la consigna de la clase.
 - Motor de fórmulas ES (coma decimal, `;` como separador): aritmética, `^`, referencias, `SUMA/PROMEDIO/MAX/MIN/CONTAR`, `CONTAR.SI`, `SI/Y/O` (anidados, devuelven número o texto), `REDONDEAR/POTENCIA/RAIZ`, antirrecursión por ciclos, `¡Error!` controlado. Sin `eval` de entrada cruda: tras sustituir funciones y referencias solo admite `0-9+-*/(). `.
 - Persistencia en `student_docs` (JSONB) vía RPCs `guardar_doc` / `mis_docs` (validados por sesión y alumno; el alumno los ve en su entrega con `Oficina.resumen()` y el docente en `Docente.verTrabajo` / `panelTrabajos` de `js/trabajos.js`). Claves nuevas (`pc`, `img`, `fondo`, `al`, celdas I–J / filas 25–48) compatibles hacia atrás: documentos viejos se abren igual.
+- El editor espera el resultado del guardado antes de cerrar, serializa las escrituras y no abre un documento vacío si falla `mis_docs`. Permite descargar una copia CSV de la planilla o HTML del documento y las diapositivas. No produce archivos `.docx`, `.xlsx` ni `.pptx`. El HTML de documentos se depura al abrirlo y al mostrarlo al docente.
+
+### Ampliación pendiente: espacio de trabajo permanente
+
+La base real configurada en `core.js` es el proyecto `janebfpnknapvntfqolf`; no confundirlo con otros proyectos llamados Krueka. Antes de cambiar el acceso o el esquema hay que obtener acceso administrativo a **ese proyecto**, inspeccionar las definiciones vigentes de `guardar_doc`, `mis_docs`, `reclamar_alumno`, `aula_por_codigo`, `club_entregar_archivo` y sus políticas, y hacer respaldo verificable. El código de aula y la vinculación al dispositivo actuales no son una credencial personal permanente: no deben reutilizarse para abrir trabajos históricos desde cualquier equipo.
+
+Orden de implementación propuesto: (1) identidad individual recuperable del alumno sin cambiar el ingreso a la clase abierta; (2) cursos, tareas y borradores independientes de `class_sessions`, con autorización de alumno y docente por matrícula y asignación; (3) almacenamiento privado de archivos con cuotas, tipos y tamaños permitidos, lectura autorizada y copias de seguridad; (4) panel de tareas y entregas del Club, editor HTML/CSS/JS aislado y revisión docente con rúbrica y devolución; (5) importación y exportación real de formatos Office, si se requiere fidelidad de esos formatos. Validar en un entorno de pruebas con dos alumnos de cursos distintos y un docente: login, edición, guardado, reapertura en otro dispositivo, entrega, calificación y denegación de acceso cruzado.
 
 ## 11. Home pública (tema claro)
 

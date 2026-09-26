@@ -11,19 +11,23 @@ const COLS = ["A","B","C","D","E","F","G","H","I","J"];
 const FILAS = 48;
 
 const Oficina = {
-  tipo:null, datos:null, slide:0, timer:null, sel:"A1",
+  tipo:null, datos:null, slide:0, timer:null, sel:"A1", guardando:null, cambios:0, guardados:0,
 
   /* ---------- abrir y cerrar ---------- */
   async abrir(tipo){
     if(!OFICINA[tipo]) return;
     if(!(typeof Alumno !== "undefined" && Alumno.yo && Alumno.codigo)){ Oficina.abrirSuelto(tipo); return; }
+    if(Oficina.guardando) await Oficina.guardando;
     Oficina.tipo = tipo;
-    Oficina.datos = await Oficina.cargar(tipo);
+    try{ Oficina.datos = await Oficina.cargar(tipo); }
+    catch(e){ alert("No se pudo recuperar el trabajo. Reintentá cuando haya conexión para evitar sobrescribirlo."); return; }
+    Oficina.cambios = Oficina.guardados = 0;
     Oficina.pintar();
   },
   abrirSuelto(tipo){
     Oficina.tipo = tipo;
     Oficina.datos = Oficina.vacio(tipo);
+    Oficina.cambios = Oficina.guardados = 0;
     Oficina.pintar(true);
   },
   vacio(tipo){
@@ -33,15 +37,18 @@ const Oficina = {
   },
   async cargar(tipo){
     try{
-      const { data } = await db.rpc("mis_docs", { p_codigo:Alumno.codigo, p_student_id:Alumno.yo.id });
+      const { data, error } = await db.rpc("mis_docs", { p_codigo:Alumno.codigo, p_student_id:Alumno.yo.id });
+      if(error) throw error;
       const d = (data||[]).find(x=>x.tipo===tipo);
       if(d) return { titulo:d.titulo||"", contenido:d.contenido||Oficina.vacio(tipo).contenido };
-    }catch(e){}
+    }catch(e){ throw e; }
     return Oficina.vacio(tipo);
   },
-  cerrar(){
+  async cerrar(){
     Oficina.recoger();
-    Oficina.guardar(true);
+    if(Oficina.timer) clearTimeout(Oficina.timer);
+    const ok = await Oficina.guardar();
+    if(!ok) return;
     const p = document.getElementById("ofi"); if(p) p.remove();
     Oficina.tipo = null;
   },
@@ -60,6 +67,7 @@ const Oficina = {
           'style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #E6E5E3;border-radius:8px;font:inherit">' +
         '<span id="ofi-est" style="font-size:13px;color:#7D7A75">' + (suelto?"Modo de prueba":"Se guarda solo") + '</span>' +
         '<button onclick="Oficina.guardar()" style="' + Oficina.btn("#2783DE","#fff") + '">Guardar</button>' +
+        '<button onclick="Oficina.exportar()" style="' + Oficina.btn("#46A171","#fff") + '">Descargar copia</button>' +
         '<button onclick="Oficina.cerrar()" style="' + Oficina.btn("#F0EFED","#2C2C2B") + '">Volver a la actividad</button>' +
       '</div>' +
       '<div id="ofi-cuerpo" style="flex:1;overflow:auto;padding:16px"></div>';
@@ -73,6 +81,7 @@ const Oficina = {
   esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); },
   estado(txt){ const e = document.getElementById("ofi-est"); if(e) e.textContent = txt; },
   marcar(){
+    Oficina.cambios++;
     Oficina.estado("Cambios sin guardar\u2026");
     if(Oficina.timer) clearTimeout(Oficina.timer);
     Oficina.timer = setTimeout(()=>Oficina.guardar(true), 4000);
@@ -98,15 +107,85 @@ const Oficina = {
   },
   async guardar(silencioso){
     Oficina.recoger();
-    if(!(typeof Alumno !== "undefined" && Alumno.yo && Alumno.codigo)){ Oficina.estado("Modo de prueba: no se guarda"); return; }
-    Oficina.estado("Guardando\u2026");
-    const { error } = await db.rpc("guardar_doc", {
-      p_codigo: Alumno.codigo, p_student_id: Alumno.yo.id, p_tipo: Oficina.tipo,
-      p_titulo: Oficina.datos.titulo || null, p_contenido: Oficina.datos.contenido
-    });
-    if(error){ Oficina.estado("No se pudo guardar"); if(!silencioso) alert("No se pudo guardar: "+error.message); return; }
-    const hora = new Date().toLocaleTimeString("es-PY", { hour:"2-digit", minute:"2-digit" });
-    Oficina.estado("Guardado a las " + hora);
+    if(!(typeof Alumno !== "undefined" && Alumno.yo && Alumno.codigo)){ Oficina.estado("Modo de prueba: descargá una copia"); return true; }
+    if(Oficina.guardando) return Oficina.guardando;
+    if(Oficina.guardados === Oficina.cambios) return true;
+    Oficina.guardando = (async()=>{
+      while(Oficina.guardados !== Oficina.cambios){
+        const version = Oficina.cambios;
+        const contenido = JSON.parse(JSON.stringify(Oficina.datos.contenido));
+        const titulo = Oficina.datos.titulo || null, tipo = Oficina.tipo;
+        Oficina.estado("Guardando\u2026");
+        try{
+          const { error } = await db.rpc("guardar_doc", {
+            p_codigo: Alumno.codigo, p_student_id: Alumno.yo.id, p_tipo: tipo,
+            p_titulo: titulo, p_contenido: contenido
+          });
+          if(error) throw error;
+        }catch(error){
+          Oficina.estado("No se pudo guardar. Reintentá o descargá una copia.");
+          if(!silencioso) alert("No se pudo guardar: "+error.message);
+          return false;
+        }
+        Oficina.guardados = version;
+      }
+      const hora = new Date().toLocaleTimeString("es-PY", { hour:"2-digit", minute:"2-digit" });
+      Oficina.estado("Guardado a las " + hora);
+      return true;
+    })();
+    try{ return await Oficina.guardando; }
+    finally{ Oficina.guardando = null; }
+  },
+  exportar(){
+    Oficina.recoger();
+    const nombre = (Oficina.datos.titulo || "Trabajo Krueka").replace(/[\\/:*?"<>|\x00-\x1f]/g,"_").slice(0,80);
+    let contenido, tipo, extension;
+    if(Oficina.tipo === "planilla"){
+      const cs = Oficina.celdas();
+      const csv = v=>'"'+String(v == null ? "" : v).replace(/"/g,'""')+'"';
+      contenido = '\uFEFF' + Array.from({length:FILAS},(_,i)=>COLS.map(c=>csv(cs[c+(i+1)])).join(';')).join('\r\n');
+      tipo = 'text/csv;charset=utf-8'; extension = 'csv';
+    } else {
+      const cuerpo = Oficina.tipo === "documento" ? Oficina.limpiarHtml(Oficina.datos.contenido.html || "") :
+        (Oficina.datos.contenido.slides || []).map(s=>'<section style="min-height:85vh;page-break-after:always;padding:3rem;background:'+({blanco:'#fff',crema:'#fff8e7',azul:'#e5f2fc',verde:'#e8f1ec'}[s.fondo]||'#fff')+'"><h1>'+Oficina.esc(s.titulo)+'</h1>'+(Oficina.urlImagen(s.img)?'<img alt="" style="max-width:90%;max-height:45vh" src="'+Oficina.esc(s.img)+'">':'')+'<p style="white-space:pre-line">'+Oficina.esc(s.texto)+'</p></section>').join('');
+      contenido = '<!doctype html><html lang="es"><meta charset="utf-8"><title>'+Oficina.esc(nombre)+'</title><body style="font:16px/1.5 Arial,sans-serif;max-width:900px;margin:40px auto">'+cuerpo+'</body></html>';
+      tipo = 'text/html;charset=utf-8'; extension = 'html';
+    }
+    const url = URL.createObjectURL(new Blob([contenido],{type:tipo}));
+    const a = document.createElement('a'); a.href=url; a.download=nombre+'.'+extension; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  },
+  urlImagen(u){ try{ return /^https?:$/.test(new URL(u).protocol); }catch(e){ return false; } },
+  limpiarHtml(html){
+    const doc = new DOMParser().parseFromString(String(html), 'text/html');
+    const permitidos = new Set(['P','DIV','BR','B','STRONG','I','EM','U','H1','H2','H3','UL','OL','LI','SPAN','BLOCKQUOTE','IMG']);
+    function limpiar(n){
+      for(const hijo of Array.from(n.children)){
+        if(['SCRIPT','STYLE','TEMPLATE','IFRAME','OBJECT','SVG','MATH','FORM'].includes(hijo.tagName)){
+          hijo.remove(); continue;
+        }
+        if(!permitidos.has(hijo.tagName)){
+          limpiar(hijo);
+          hijo.replaceWith(...hijo.childNodes);
+          continue;
+        }
+        const src = hijo.getAttribute('src'), style = hijo.style;
+        const seguro = {};
+        for(const propiedad of ['color','background-color','font-size','font-family','text-align','font-weight','font-style','text-decoration']){
+          const valor = style.getPropertyValue(propiedad).trim();
+          if(valor && valor.length < 80 && /^[#\w\s(),.%\-]+$/.test(valor)) seguro[propiedad] = valor;
+        }
+        for(const a of Array.from(hijo.attributes)) hijo.removeAttribute(a.name);
+        for(const [propiedad,valor] of Object.entries(seguro)) hijo.style.setProperty(propiedad,valor);
+        if(hijo.tagName==='IMG'){
+          if(!Oficina.urlImagen(src)) { hijo.remove(); continue; }
+          hijo.setAttribute('src',src); hijo.setAttribute('alt','Imagen del trabajo');
+        }
+        limpiar(hijo);
+      }
+    }
+    limpiar(doc.body);
+    return doc.body.innerHTML;
   },
 
   /* ---------- documento ---------- */
@@ -140,7 +219,7 @@ const Oficina = {
         '<p style="font-size:13px;color:#7D7A75">Escrib\u00ed ac\u00e1 tu trabajo. Se guarda solo cada unos segundos y el profesor lo ve desde su panel.</p>' +
       '</div></div>';
     const d = document.getElementById("ofi-doc");
-    d.innerHTML = Oficina.datos.contenido.html || "";
+    d.innerHTML = Oficina.limpiarHtml(Oficina.datos.contenido.html || "");
     d.oninput = ()=>{ Oficina.palabras(); Oficina.marcar(); };
     Oficina.palabras();
     d.focus();
