@@ -11,7 +11,7 @@ Docente.verTrabajo = async function(sessionId, studentId){
     const c = d.contenido || {};
     let bloque = "";
     if(d.tipo === "documento"){
-      bloque = '<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px">' + (c.html || "<i>Sin texto</i>") + '</div>';
+      bloque = '<div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px">' + (c.html ? Oficina.limpiarHtml(c.html) : "<i>Sin texto</i>") + '</div>';
     } else if(d.tipo === "planilla"){
       const cs = c.celdas || {}, fo = c.formatos || {}, an = c.anchos || {}, al = c.altos || {};
       const letras = ["A","B","C","D","E","F","G","H","I","J"];
@@ -55,7 +55,7 @@ Docente.verTrabajo = async function(sessionId, studentId){
         String(s.texto||"").split("\n").filter(Boolean).map(l=>'<p style="margin:4px 0">\u2022 ' + esc(l) + '</p>').join("") +
         '</div>').join("") || '<p class="note">Sin l\u00e1minas.</p>';
     }
-    cuerpo += '<div class="card"><h3>' + (nombre[d.tipo]||d.tipo) + (d.titulo ? " \u00b7 " + esc(d.titulo) : "") + '</h3>' +
+    cuerpo += '<div class="card"><h3>' + esc(nombre[d.tipo]||d.tipo) + (d.titulo ? " \u00b7 " + esc(d.titulo) : "") + '</h3>' +
               '<p class="note">\u00daltima edici\u00f3n: ' + new Date(d.actualizado_at).toLocaleString("es-PY") + '</p>' + bloque + '</div>';
   });
   if(!cuerpo) cuerpo = '<div class="card"><p class="note">Este alumno no us\u00f3 las herramientas de Krueka en esa clase.</p></div>';
@@ -94,7 +94,7 @@ Docente.panelTrabajos = async function(){
       return '<tr><td><b>' + esc((d.students&&d.students.nombre)||"") + '</b></td>' +
         '<td>' + (se.fecha ? new Date(se.fecha + "T00:00:00").toLocaleDateString("es-PY") : "\u2014") +
         '<div class="note">' + esc(lp.titulo || "") + '</div></td>' +
-        '<td><span class="tag blue">' + (nombre[d.tipo]||d.tipo) + '</span>' +
+        '<td><span class="tag blue">' + esc(nombre[d.tipo]||d.tipo) + '</span>' +
         (d.titulo ? '<div class="note">' + esc(d.titulo) + '</div>' : "") + '</td>' +
         '<td class="note">' + new Date(d.actualizado_at).toLocaleString("es-PY") + '</td>' +
         '<td><button class="btn sec sm" onclick="Docente.verTrabajo(\'' + d.session_id + '\',\'' + d.student_id + '\')">Ver trabajo</button></td></tr>';
