@@ -48,6 +48,7 @@ El Club es exclusivo de la institución `88c4af03-bdce-48e6-b548-b6904fe704bd`. 
 - `js/club-auditoria.js`: dispositivos, accesos y regeneración de código.
 - `js/club-pc-lab.js`: simulador de armado, diagnóstico y encendido de computadora para Juniors.
 - `js/guia-club.js`: guía local en el paso de construcción Junior. Da pistas sobre HTML, CSS y JavaScript a partir de la pregunta y del fragmento que pega el alumno. Es un diálogo de reglas preparadas, no IA generativa. El historial queda en memoria y se borra al cerrar; no usa servicios externos, claves, tablas ni RPC nuevas.
+- `js/club-estudio.js`: estudio 2D local de juegos para Junior en la fase Construir. Editor de casillas, personaje, tema, obstáculos, tesoros y meta; permite probar con teclado o controles táctiles. Conserva el borrador solo en `localStorage` de ese equipo y permite descargar/abrir JSON. No guarda en Supabase ni permite al docente revisar desde otro equipo; para eso se necesita acceso al proyecto real y un diseño de RLS y almacenamiento.
 - `club/club-pc-lab.css`: interfaz clara, adaptable y táctil del taller de hardware.
 
 ### Evidencias y colaboración
