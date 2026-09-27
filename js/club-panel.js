@@ -70,6 +70,7 @@ Object.assign(Club, {
       + '<div><div style="font-size:19px;font-weight:700">🎮 Club de informatica</div>'
       + '<div class="note">Datos separados del registro escolar. Mes en curso: ' + MESES[(this.mesNum||1)-1] + ' ' + this.anio + '</div></div>'
       + '<div><span class="tag blue">Inscripcion: ' + location.origin + location.pathname.replace(/[^/]*\.html?$/,'').replace(/\/$/,'') + '/club</span></div></div>'
+      + '<div class="card"><button class="btn" onclick="Club.vCreaJuegos()">🎮 Revisar juegos de los alumnos</button></div>'
       + '<div class="row">' + grupos + '</div>'
       + '<h3 style="margin-top:18px">Inscripciones pendientes (' + pend.length + ')</h3>'
       + (pend.length ? pend.map(fInsc).join('') : '<div class="note">No hay inscripciones pendientes.</div>')
