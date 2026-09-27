@@ -1,6 +1,6 @@
-/* Estudio de juegos 2D del Club: editor y juego local, sin servicios externos. */
+/* Estudio de juegos 2D del Club: borrador local y copia privada en Supabase. */
 const EstudioClub = {
-  ancho:12, alto:8, juego:null, jugando:false, jugador:{x:1,y:1}, recogidos:0,
+  ancho:12, alto:8, juego:null, jugando:false, jugador:{x:1,y:1}, recogidos:0, cola:Promise.resolve(), temporizador:null,
   colores:{bosque:['#dff2dd','#346847','#89bb72'],espacio:['#171c3c','#8998ff','#4c568e'],oceano:['#d7f4fb','#246c96','#69b8cf']},
   iniciar(){
     const original=Club.proyecto;
@@ -26,16 +26,44 @@ const EstudioClub = {
     for(const p of [...raw.muros,...raw.tesoros,raw.salida]){const k=p.join(',');if(usados.has(k))throw new Error('Dos objetos ocupan la misma casilla.');usados.add(k);}
     return {titulo:raw.titulo,tema:raw.tema,personaje:raw.personaje,muros:raw.muros.map(p=>[...p]),tesoros:raw.tesoros.map(p=>[...p]),salida:[...raw.salida]};
   },
-  abrir(){
+  async abrir(){
     if(!Club.alumno||Club.alumno.nivel!=='mayores'||!Club.lec)return;
+    await this.cola.catch(()=>{});
+    const leccion=Club.lec.id, alumno=Club.alumno.student_id;
+    const boton=document.querySelector('#club-box button[onclick="EstudioClub.abrir()"]');
+    if(boton) boton.disabled=true;
     let guardado=null;
     try{guardado=localStorage.getItem(this.clave());}catch(_e){}
     try{this.juego=guardado?this.validar(JSON.parse(guardado)):this.nuevo();}catch(_e){this.juego=this.nuevo();}
+    let aviso='';this.proyectoId=null;this.estadoNube=null;
+    try{
+      const acceso={p_student:alumno,p_device:deviceId()};
+      const r=await db.rpc('club_crea_listar',acceso);
+      if(r.error)throw r.error;
+      let encontrado=null;
+      for(const item of (Array.isArray(r.data)?r.data:[]).filter(p=>p.type==='game')){
+        const detalle=await db.rpc('club_crea_cargar',{...acceso,p_project:item.id});
+        if(detalle.error)throw detalle.error;
+        if(detalle.data?.content?.lesson_id===leccion){encontrado=detalle.data;break;}
+      }
+      if(encontrado){
+        this.proyectoId=encontrado.id;this.estadoNube=encontrado.status;
+        const nube=this.validar(encontrado.content.game);
+        if(!guardado||JSON.stringify(this.juego)===JSON.stringify(nube)||
+          confirm('Hay un proyecto en Krueka y otro en este equipo. ¿Querés abrir el guardado en Krueka?')){
+          this.juego=nube;
+          try{localStorage.setItem(this.clave(),JSON.stringify(nube));}catch(_e){}
+          aviso='Proyecto recuperado de Krueka. '+(encontrado.review_note?'Observación del profe: '+encontrado.review_note:'');
+        }else aviso='Estás usando la copia de este equipo. Guardá para subirla a Krueka.';
+      }else aviso='Proyecto nuevo. Tus cambios se guardarán en Krueka.';
+    }catch(_e){aviso='Sin conexión con Krueka: trabajá acá y descargá una copia antes de cerrar.';}
+    if(boton)boton.disabled=false;
+    if(!Club.alumno||Club.alumno.student_id!==alumno||!Club.lec||Club.lec.id!==leccion)return;
     this.jugando=false;this.jugador={x:1,y:1};this.recogidos=0;
     const viejo=document.getElementById('estudio-panel');if(viejo)viejo.remove();
     const panel=document.createElement('div');panel.id='estudio-panel';
     panel.style.cssText='position:fixed;inset:0;z-index:101;background:var(--bg);color:var(--tx);overflow:auto;padding:16px';
-    panel.innerHTML='<main style="max-width:1050px;margin:auto"><header style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><h1>Estudio de juegos · Club Junior</h1><p class="note">Diseñá → Probá → Mejorá. Tu borrador se guarda solo en este equipo.</p></div><button class="btn sec" type="button" id="es-volver">Volver</button></header><div class="grid2"><section class="card"><h2>1. Imaginá tu juego</h2><label for="es-titulo">Nombre</label><input id="es-titulo" maxlength="50"><label for="es-tema">Escenario</label><select id="es-tema"><option value="bosque">Bosque</option><option value="espacio">Espacio</option><option value="oceano">Océano</option></select><label for="es-personaje">Personaje</label><select id="es-personaje"><option value="explorador">Explorador</option><option value="robot">Robot</option><option value="nave">Nave</option></select><h2 style="margin-top:18px">2. Construí el nivel</h2><p class="note">Elegí una pieza y tocá una casilla. El inicio está en la esquina superior izquierda.</p><div style="display:flex;gap:6px;flex-wrap:wrap" id="es-herramientas"><button class="btn sm" type="button" data-pieza="muro">🧱 Obstáculo</button><button class="btn sec sm" type="button" data-pieza="tesoro">⭐ Tesoro</button><button class="btn sec sm" type="button" data-pieza="salida">🏁 Meta</button><button class="btn sec sm" type="button" data-pieza="borrar">Borrar</button></div><p id="es-pieza" class="note" role="status">Pieza elegida: obstáculo</p><h2>3. Probá y explicá</h2><p class="note">¿Se puede llegar a la meta y recoger los tesoros? Probá distintas rutas y cambiá lo que no funcione.</p><button class="btn" id="es-probar" type="button">▶ Probar juego</button> <button class="btn sec" id="es-editar" type="button">✏️ Editar</button><p id="es-estado" role="status" aria-live="polite"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec sm" id="es-descargar" type="button">Descargar proyecto</button><button class="btn sec sm" id="es-cargar" type="button">Abrir proyecto</button><input id="es-archivo" type="file" accept="application/json,.json" hidden></div></section><section class="card"><h2>Tu escenario</h2><canvas id="es-lienzo" width="600" height="400" style="display:block;width:100%;max-width:600px;border-radius:10px;touch-action:none" aria-label="Tablero del juego de doce columnas y ocho filas"></canvas><p class="note">Para jugar: flechas o W A S D. En celular, usá los botones.</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn sec" type="button" data-mover="0,-1">↑</button><button class="btn sec" type="button" data-mover="-1,0">←</button><button class="btn sec" type="button" data-mover="0,1">↓</button><button class="btn sec" type="button" data-mover="1,0">→</button></div><p class="note" id="es-contador"></p></section></div></main>';
+    panel.innerHTML='<main style="max-width:1050px;margin:auto"><header style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><h1>Estudio de juegos · Club Junior</h1><p class="note">Diseñá → Probá → Mejorá. Guardado en Krueka y copia en este equipo.</p></div><button class="btn sec" type="button" id="es-volver">Volver</button></header><div class="grid2"><section class="card"><h2>1. Imaginá tu juego</h2><label for="es-titulo">Nombre</label><input id="es-titulo" maxlength="50"><label for="es-tema">Escenario</label><select id="es-tema"><option value="bosque">Bosque</option><option value="espacio">Espacio</option><option value="oceano">Océano</option></select><label for="es-personaje">Personaje</label><select id="es-personaje"><option value="explorador">Explorador</option><option value="robot">Robot</option><option value="nave">Nave</option></select><h2 style="margin-top:18px">2. Construí el nivel</h2><p class="note">Elegí una pieza y tocá una casilla. El inicio está en la esquina superior izquierda.</p><div style="display:flex;gap:6px;flex-wrap:wrap" id="es-herramientas"><button class="btn sm" type="button" data-pieza="muro">🧱 Obstáculo</button><button class="btn sec sm" type="button" data-pieza="tesoro">⭐ Tesoro</button><button class="btn sec sm" type="button" data-pieza="salida">🏁 Meta</button><button class="btn sec sm" type="button" data-pieza="borrar">Borrar</button></div><p id="es-pieza" class="note" role="status">Pieza elegida: obstáculo</p><h2>3. Probá y explicá</h2><p class="note">¿Se puede llegar a la meta y recoger los tesoros? Probá distintas rutas y cambiá lo que no funcione.</p><button class="btn" id="es-probar" type="button">▶ Probar juego</button> <button class="btn sec" id="es-editar" type="button">✏️ Editar</button><p id="es-estado" role="status" aria-live="polite"></p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="es-guardar" type="button">Guardar en Krueka</button><button class="btn sec" id="es-entregar" type="button">Enviar al profe</button><button class="btn sec sm" id="es-descargar" type="button">Descargar proyecto</button><button class="btn sec sm" id="es-cargar" type="button">Abrir proyecto</button><input id="es-archivo" type="file" accept="application/json,.json" hidden></div></section><section class="card"><h2>Tu escenario</h2><canvas id="es-lienzo" width="600" height="400" style="display:block;width:100%;max-width:600px;border-radius:10px;touch-action:none" aria-label="Tablero del juego de doce columnas y ocho filas"></canvas><p class="note">Para jugar: flechas o W A S D. En celular, usá los botones.</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn sec" type="button" data-mover="0,-1">↑</button><button class="btn sec" type="button" data-mover="-1,0">←</button><button class="btn sec" type="button" data-mover="0,1">↓</button><button class="btn sec" type="button" data-mover="1,0">→</button></div><p class="note" id="es-contador"></p></section></div></main>';
     document.body.appendChild(panel);
     this.pieza='muro';
     panel.querySelector('#es-titulo').value=this.juego.titulo;
@@ -57,6 +85,8 @@ const EstudioClub = {
     panel.querySelector('#es-probar').onclick=()=>this.probar();
     panel.querySelector('#es-editar').onclick=()=>{this.jugando=false;this.estado('Podés seguir editando y volver a probar.');this.dibujar();};
     panel.querySelector('#es-descargar').onclick=()=>this.descargar();
+    panel.querySelector('#es-guardar').onclick=()=>this.guardarNube();
+    panel.querySelector('#es-entregar').onclick=()=>this.entregar();
     panel.querySelector('#es-cargar').onclick=()=>panel.querySelector('#es-archivo').click();
     panel.querySelector('#es-archivo').onchange=e=>this.cargar(e.target.files[0]);
     panel.querySelectorAll('[data-mover]').forEach(b=>b.onclick=()=>this.mover(...b.dataset.mover.split(',').map(Number)));
@@ -67,9 +97,49 @@ const EstudioClub = {
     };
     window.addEventListener('keydown',this.teclas);
     this.dibujar();
+    this.estado(aviso);
   },
-  cerrar(){window.removeEventListener('keydown',this.teclas);document.getElementById('estudio-panel')?.remove();this.jugando=false;this.juego=null;},
-  guardar(){try{localStorage.setItem(this.clave(),JSON.stringify(this.juego));this.estado('Borrador guardado en este equipo.');}catch(_e){this.estado('No se pudo guardar en este equipo. Descargá una copia.');}},
+  cerrar(){
+    if(this.temporizador){clearTimeout(this.temporizador);this.temporizador=null;this.guardarNube();}
+    window.removeEventListener('keydown',this.teclas);document.getElementById('estudio-panel')?.remove();this.jugando=false;this.juego=null;
+  },
+  guardar(){
+    try{localStorage.setItem(this.clave(),JSON.stringify(this.juego));this.estado('Guardado en este equipo. Sincronizando…');}
+    catch(_e){this.estado('No se pudo guardar en este equipo. Descargá una copia.');}
+    clearTimeout(this.temporizador);
+    this.temporizador=setTimeout(()=>{this.temporizador=null;this.guardarNube();},2500);
+  },
+  guardarNube(enviar=false){
+    if(!this.juego||!Club.alumno||!Club.lec)return Promise.resolve(false);
+    let juego;
+    try{juego=this.validar(this.juego);if(!juego.titulo.trim())throw new Error('Poné un nombre al juego.');}
+    catch(e){this.estado(e.message);return Promise.resolve(false);}
+    const args={p_student:Club.alumno.student_id,p_device:deviceId(),
+      p_project:this.proyectoId,p_type:'game',p_title:juego.titulo,
+      p_content:{lesson_id:Club.lec.id,game:juego}};
+    this.cola=this.cola.catch(()=>{}).then(async()=>{
+      args.p_project=this.proyectoId;
+      const r=await db.rpc('club_crea_guardar',args);
+      if(r.error){this.estado('No se guardó en Krueka: '+r.error.message+' Descargá una copia.');return false;}
+      this.proyectoId=r.data.id;this.estadoNube=r.data.status;
+      if(enviar&&this.estadoNube==='draft'){
+        const envio=await db.rpc('club_crea_solicitar_revision',{
+          p_student:args.p_student,p_device:args.p_device,p_project:this.proyectoId});
+        if(envio.error){this.estado('Juego guardado, pero no enviado: '+envio.error.message);return false;}
+        this.estadoNube='review';
+      }
+      this.estado(enviar?'Juego enviado al profe para revisión.':'Juego guardado en Krueka. Podés abrirlo desde otro equipo.');
+      return true;
+    });
+    return this.cola;
+  },
+  async entregar(){
+    clearTimeout(this.temporizador);this.temporizador=null;
+    const boton=document.getElementById('es-entregar');if(boton)boton.disabled=true;
+    const ok=await this.guardarNube(true);
+    if(boton)boton.disabled=false;
+    return ok;
+  },
   estado(msg){const el=document.getElementById('es-estado');if(el)el.textContent=msg;},
   colocar(e){
     if(this.jugando){this.estado('Tocá Editar para cambiar el nivel.');return;}
