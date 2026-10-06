@@ -2,7 +2,8 @@
    Copiloto de construcción para Juniors: prompt -> cambios -> vista previa -> guardar en nube. */
 (function(){
 'use strict';
-const StudioIA={
+if(window.StudioIA&&window.StudioIA.__loaded)return;
+const StudioIA={__loaded:true,
   files:{},history:[],current:'index.html',preview:'index.html',mode:'build',busy:false,dirty:false,saveTimer:null,
   sid(){return Club.alumno&&(Club.alumno.student_id||Club.alumno.id)},
   did(){return typeof deviceId==='function'?deviceId():'browser'},
