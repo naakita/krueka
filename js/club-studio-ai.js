@@ -61,21 +61,35 @@ const StudioIA={
     if(old&&!old._studio){
       const wrapped=function(){
         const r=old.apply(this,arguments);
-        setTimeout(()=>StudioIA.addEntry(),0);
+        setTimeout(()=>StudioIA.addEntry(),80);
         return r;
       }; wrapped._studio=true; Club.mapa=wrapped;
     }
-    setTimeout(()=>this.addEntry(),1000);
+    setTimeout(()=>this.addEntry(),500);
+    this.entryTimer=setInterval(()=>this.addEntry(),1500);
   },
   addEntry(){
-    if(!Club.alumno||Club.alumno.nivel!=='mayores'||document.getElementById('studio-ia-entry'))return;
-    const box=document.getElementById('club-box'); if(!box)return;
-    const anchor=box.querySelector('.club-dashboard-hero')||box.firstElementChild;
-    const card=document.createElement('section');card.id='studio-ia-entry';
-    card.style.cssText='margin:16px 0;padding:20px;border:1px solid rgba(39,131,222,.28);border-radius:18px;background:linear-gradient(135deg,rgba(39,131,222,.12),rgba(155,112,210,.10));display:flex;align-items:center;gap:16px;flex-wrap:wrap';
-    card.innerHTML='<div style="font-size:42px">✨</div><div style="flex:1;min-width:230px"><span class="club-kicker">NUEVO · SIN INSTALAR NADA</span><h2 style="margin:3px 0">Krueka Studio IA</h2><p style="margin:0;color:var(--tx2)">Construí videojuegos en el navegador: pedí un cambio, mirá el resultado y seguí mejorando. Tu proyecto queda guardado en Krueka.</p></div><button class="club-primary" type="button">Abrir Studio →</button>';
-    card.querySelector('button').onclick=()=>this.open();
-    if(anchor&&anchor.parentNode)anchor.insertAdjacentElement('afterend',card);else box.prepend(card);
+    if(!Club.alumno||Club.alumno.nivel!=='mayores'||document.getElementById('krueka-studio'))return;
+    const box=document.getElementById('club-box');
+    const dashboard=box&&box.querySelector('.club-dashboard');
+    if(!box||!dashboard)return;
+
+    if(!document.getElementById('studio-ia-entry')){
+      const anchor=box.querySelector('.club-dashboard-hero')||box.firstElementChild;
+      const card=document.createElement('section');card.id='studio-ia-entry';
+      card.style.cssText='margin:16px 0;padding:22px;border:2px solid rgba(39,131,222,.48);border-radius:18px;background:linear-gradient(135deg,rgba(39,131,222,.18),rgba(155,112,210,.13));display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 10px 30px rgba(28,75,120,.12)';
+      card.innerHTML='<div style="font-size:46px">✨</div><div style="flex:1;min-width:230px"><span class="club-kicker">NUEVO · CREÁ JUEGOS CON IA</span><h2 style="margin:3px 0">Krueka Studio IA</h2><p style="margin:0;color:var(--tx2)">Pedí un cambio, mirá el resultado y seguí construyendo. Funciona desde el navegador y guarda tu proyecto en Krueka.</p></div><button class="club-primary" type="button" style="min-height:44px;padding:10px 16px">Abrir Studio IA →</button>';
+      card.querySelector('button').onclick=()=>this.open();
+      if(anchor&&anchor.parentNode)anchor.insertAdjacentElement('afterend',card);else box.prepend(card);
+    }
+
+    if(!document.getElementById('studio-ia-float')){
+      const float=document.createElement('button');float.id='studio-ia-float';float.type='button';
+      float.textContent='✨ Studio IA';
+      float.style.cssText='position:fixed;right:22px;bottom:22px;z-index:120;border:0;border-radius:999px;background:#2783de;color:white;font-weight:800;padding:13px 18px;box-shadow:0 10px 30px rgba(0,0,0,.28);cursor:pointer';
+      float.onclick=()=>this.open();
+      document.getElementById('club-ov')?.appendChild(float);
+    }
   },
   async request(body){
     const res=await fetch(SUPABASE_URL+'/functions/v1/krueka-studio-ai',{
