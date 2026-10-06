@@ -1,0 +1,14 @@
+name: Create test student once
+on:
+  push:
+    branches: [temp-create-test-student]
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create student
+        run: |
+          set -e
+          echo "Calling Krueka test endpoint..."
+          curl -fsS "https://janebfpnknapvntfqolf.supabase.co/functions/v1/krueka-test-student?run=1"
+          echo
