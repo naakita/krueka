@@ -8,7 +8,5 @@ jobs:
     steps:
       - name: Create student
         run: |
-          set -e
           echo "Calling Krueka test endpoint..."
-          curl -fsS "https://janebfpnknapvntfqolf.supabase.co/functions/v1/krueka-test-student?run=1"
-          echo
+          curl -sS -w "\nHTTP_STATUS:%{http_code}\n" "https://janebfpnknapvntfqolf.supabase.co/functions/v1/krueka-test-student?run=1"
