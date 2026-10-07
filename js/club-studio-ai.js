@@ -4,7 +4,7 @@
 'use strict';
 if(window.StudioIA&&window.StudioIA.__loaded)return;
 const StudioIA={__loaded:true,
-  files:{},history:[],current:'index.html',preview:'index.html',mode:'build',busy:false,dirty:false,saveTimer:null,
+  files:{},history:[],current:'index.html',preview:'index.html',mode:'build',busy:false,dirty:false,saveTimer:null,cloudReady:false,saveQueue:Promise.resolve(),
   sid(){return Club.alumno&&(Club.alumno.student_id||Club.alumno.id)},
   did(){return typeof deviceId==='function'?deviceId():'browser'},
   initial(){
@@ -57,7 +57,7 @@ const StudioIA={__loaded:true,
     };
   },
   install(){
-    if(!window.Club)return;
+    if(typeof Club==='undefined')return;
     const old=Club.mapa;
     if(old&&!old._studio){
       const wrapped=function(){
@@ -95,7 +95,7 @@ const StudioIA={__loaded:true,
   async request(body){
     const res=await fetch(SUPABASE_URL+'/functions/v1/krueka-studio-ai',{
       method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY},
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
       body:JSON.stringify(Object.assign({studentId:this.sid(),deviceId:this.did()},body))
     });
     let data={};try{data=await res.json()}catch(_e){}
@@ -104,6 +104,10 @@ const StudioIA={__loaded:true,
   },
   async open(){
     if(!this.sid())return alert('Entrá al Club con tu código para usar el Studio.');
+    if(Club.alumno.nivel!=='mayores')return;
+    if(document.getElementById('krueka-studio'))return;
+    await this.saveQueue;
+    clearTimeout(this.saveTimer);this.cloudReady=false;this.dirty=false;this.busy=false;
     this.files=this.initial();this.history=[];this.current='index.html';this.preview='index.html';
     const old=document.getElementById('krueka-studio');if(old)old.remove();
     const panel=document.createElement('div');panel.id='krueka-studio';
@@ -117,7 +121,7 @@ const StudioIA={__loaded:true,
       .ks-save{font-size:11px;color:#99a8bf}.ks-model{font-size:10px;color:#7dd3fc}.ks-onboard{padding:12px;border:1px dashed #45658a;border-radius:12px;background:#0d1725;margin-bottom:12px}.ks-onboard b{display:block;margin-bottom:5px}.ks-chip{display:inline-block;margin:4px 3px 0 0;padding:5px 7px;border-radius:8px;background:#ffffff0d;color:#bcd0ea;font-size:11px}
       @media(max-width:780px){.ks-main{grid-template-columns:1fr;grid-template-rows:48% 52%}.ks-left{border-right:0;border-bottom:1px solid #ffffff17}.ks-top .ks-hide-small{display:none}.ks-code.on{grid-template-columns:130px 1fr}}
       </style>
-      <header class="ks-top"><div class="ks-brand">✨ Krueka Studio IA</div><span class="ks-badge">JUNIORS</span><span id="ks-model" class="ks-model"></span><span class="ks-spacer"></span><span id="ks-save" class="ks-save">Cargando…</span><button id="ks-code-btn" class="ks-btn ks-hide-small">Ver archivos</button><button id="ks-close" class="ks-btn">Salir</button></header>
+      <header class="ks-top"><div class="ks-brand">✨ Krueka Studio IA</div><span class="ks-badge">JUNIORS</span><span id="ks-model" class="ks-model"></span><span class="ks-spacer"></span><span id="ks-save" class="ks-save">Cargando…</span><button id="ks-save-btn" class="ks-btn">Guardar</button><button id="ks-code-btn" class="ks-btn ks-hide-small">Ver archivos</button><button id="ks-close" class="ks-btn">Salir</button></header>
       <main class="ks-main">
         <section class="ks-left">
           <div class="ks-modes"><button class="ks-btn ks-mode" data-mode="plan" aria-pressed="false">🧠 Planear</button><button class="ks-btn ks-mode" data-mode="build" aria-pressed="true">🛠️ Construir</button><span class="ks-tip">Una instrucción = un cambio</span></div>
@@ -131,6 +135,7 @@ const StudioIA={__loaded:true,
       </main>`;
     document.body.appendChild(panel);
     panel.querySelector('#ks-close').onclick=()=>this.close();
+    panel.querySelector('#ks-save-btn').onclick=()=>this.save();
     panel.querySelector('#ks-refresh').onclick=()=>this.renderPreview();
     panel.querySelector('#ks-code-btn').onclick=()=>this.toggleCode();
     panel.querySelectorAll('.ks-mode').forEach(b=>b.onclick=()=>this.setMode(b.dataset.mode));
@@ -138,17 +143,22 @@ const StudioIA={__loaded:true,
     panel.querySelector('#ks-preview-file').onchange=e=>{this.preview=e.target.value;this.renderPreview()};
     panel.querySelector('#ks-editor').addEventListener('input',e=>{this.files[this.current]=e.target.value;this.dirty=true;this.scheduleSave();this.renderPreview()});
     window.addEventListener('message',this.messageHandler=this.onMessage.bind(this));
+    this.lock(true);
     this.renderChat();
     try{
       const d=await this.request({action:'load'});
+      if(!panel.isConnected)return;
+      this.cloudReady=true;
       if(d.project&&d.project.files&&Object.keys(d.project.files).length){
         this.files=d.project.files;this.history=Array.isArray(d.project.history)?d.project.history:[];
         this.say('sys','Proyecto recuperado de Krueka. Podés continuar desde cualquier computadora.');
       }else this.say('sys','Proyecto inicial listo. Empezá describiendo qué querés cambiar.');
-    }catch(e){this.say('sys','No se pudo recuperar la nube. Podés trabajar igual y volver a intentar más tarde.');}
-    this.refreshAll();this.scheduleSave();
+    }catch(e){this.say('sys','No se pudo recuperar el proyecto: '+e.message+'. Salí y volvé a abrir el Studio para reintentar.');}
+    if(!panel.isConnected)return;
+    this.refreshAll();this.lock(false);
+    panel.querySelector('#ks-save').textContent=this.cloudReady?'Proyecto listo':'⚠ No se recuperó la nube';
   },
-  close(){if(this.dirty)this.save();window.removeEventListener('message',this.messageHandler);document.getElementById('krueka-studio')?.remove();},
+  async close(){if(this.busy)return;clearTimeout(this.saveTimer);if(this.dirty&&this.cloudReady)await this.save();window.removeEventListener('message',this.messageHandler);document.getElementById('krueka-studio')?.remove();},
   setMode(m){this.mode=m==='plan'?'plan':'build';document.querySelectorAll('#krueka-studio .ks-mode').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===this.mode)));},
   say(role,text){this.history.push({role,text:String(text||'')});this.history=this.history.slice(-30);this.renderChat();},
   renderChat(){
@@ -171,9 +181,9 @@ const StudioIA={__loaded:true,
       this.dirty=true;this.refreshAll();await this.save();
     }catch(e){
       this.history.pop();this.say('ai','No pude completar ese cambio. '+(e.message||e)+'\n\nProbá otra vez con una instrucción más corta. Si vuelve a fallar, avisá al profe.');
-    }finally{this.busy=false;this.lock(false)}
+    }finally{this.busy=false;this.lock(false);if(this.dirty)this.scheduleSave()}
   },
-  lock(v){const b=document.getElementById('ks-send');if(b){b.disabled=v;b.textContent=v?'Trabajando…':'Enviar →'}},
+  lock(v){const b=document.getElementById('ks-send');if(b){b.disabled=v||!this.cloudReady;b.textContent=v?'Trabajando…':'Enviar →'}document.querySelectorAll('#ks-close,#ks-save-btn,#ks-editor,#ks-prompt,.ks-mode').forEach(el=>el.disabled=v||(!this.cloudReady&&el.id!=='ks-close'));},
   refreshAll(){this.renderFileList();this.renderPreviewOptions();this.renderEditor();this.renderPreview();},
   renderFileList(){
     const el=document.getElementById('ks-files');if(!el)return;
@@ -217,10 +227,15 @@ const StudioIA={__loaded:true,
   },
   scheduleSave(){clearTimeout(this.saveTimer);this.saveTimer=setTimeout(()=>this.save(),1600)},
   async save(){
-    if(!this.sid()||this.busy)return;
+    if(!this.sid()||!this.cloudReady)return;
     clearTimeout(this.saveTimer);const el=document.getElementById('ks-save');if(el)el.textContent='Guardando…';
-    try{const d=await this.request({action:'save',files:this.files,history:this.history});this.dirty=false;if(el)el.textContent='✓ Guardado en Krueka'}
-    catch(e){if(el)el.textContent='⚠ Sin guardar en nube'}
+    const body={action:'save',studentId:this.sid(),deviceId:this.did(),files:{...this.files},history:this.history.map(m=>({...m}))};
+    const snapshot=JSON.stringify(body.files);
+    this.saveQueue=this.saveQueue.then(async()=>{
+      try{await this.request(body);if(JSON.stringify(this.files)===snapshot)this.dirty=false;if(el&&el.isConnected)el.textContent=this.dirty?'Cambios pendientes':'✓ Guardado en Krueka';return true}
+      catch(e){this.dirty=true;if(el&&el.isConnected)el.textContent='⚠ Sin guardar: '+e.message;return false}
+    });
+    return this.saveQueue;
   }
 };
 window.StudioIA=StudioIA;
