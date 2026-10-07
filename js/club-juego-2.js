@@ -15,11 +15,16 @@ Object.assign(Club,{mapa(){
         + '<div class="club-mission-grid">' + cards + '</div></section>';
     }).join('');
 
+    const studio = junior
+      ? '<section id="studio-ia-entry" class="club-panel" style="margin:16px 0;padding:20px;border:2px solid #2783de55;border-radius:18px;background:linear-gradient(135deg,#2783de18,#9b70d218);display:flex;align-items:center;gap:16px;flex-wrap:wrap">'
+        + '<div style="font-size:46px">✨</div><div style="flex:1;min-width:230px"><span class="club-kicker">NUEVO · CREÁ JUEGOS CON IA</span><h2 style="margin:3px 0">Krueka Studio IA</h2><p style="margin:0">Construí, probá y mejorá videojuegos desde el navegador, sin instalar nada.</p></div>'
+        + '<button class="club-primary" type="button" onclick="window.StudioIA?StudioIA.open():alert(\'Studio IA todavía no cargó. Actualizá la página una vez.\')">Abrir Studio IA →</button></section>'
+      : '';
     this.pinta('<main class="club-dashboard">'
       + '<header class="club-dashboard-top">'
       + '<div><span class="club-brand-dot"></span><b>KRUEKA LAB</b><small>' + esc(this.etiquetaNivel()) + '</small></div>'
       + '<button class="club-ghost" onclick="Club.abrir()">Salir</button></header>'
-      + '<section class="club-dashboard-hero">'
+      + studio + '<section class="club-dashboard-hero">'
       + '<div class="club-avatar">' + (a.avatar || (junior?'🧑‍💻':'🦊')) + '</div>'
       + '<div class="club-hero-copy"><span class="club-kicker">' + (junior?'LABORATORIO DE PROYECTOS':'EXPEDICIÓN CREATIVA') + '</span>'
       + '<h1>' + (junior?'Construí algo que importe, ':'¡Hola, ') + esc(a.nombre||'') + (junior?'':'!') + '</h1>'
