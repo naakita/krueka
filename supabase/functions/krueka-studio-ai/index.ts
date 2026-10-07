@@ -6,6 +6,13 @@ const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status
 const allowed=/\.(html|css|js|json|svg|txt|md)$/i;
 const badPersonal=(s:string)=>/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/.test(s)||/(?:\+?595\s*)?0?9\d{2}[\s.-]?\d{3}[\s.-]?\d{3}/.test(s)||/\b(?:contrase(?:ñ|n)a|password|c[eé]dula|tarjeta de cr[eé]dito)\b/i.test(s);
 const size=(files:Record<string,string>)=>Object.values(files).reduce((n,v)=>n+String(v||"").length,0);
+class ProviderSetupError extends Error {}
+async function providerError(r:Response,model:string,keyConfigured:boolean){
+  console.warn("Studio IA provider",{model,status:r.status,keyConfigured});
+  let data:any={};try{data=await r.json()}catch(_e){}
+  if(data?.error?.type==="FreeTierError")throw new ProviderSetupError("OpenCode solo permite su IA gratuita dentro de OpenCode. El administrador debe conectar una API de IA autorizada en el servidor de Krueka.");
+  if(r.status===401)throw new ProviderSetupError("La clave del proveedor de IA falta o no es válida. El administrador debe configurarla en los secretos del servidor de Krueka.");
+}
 function cleanFiles(raw:any){
   const out:Record<string,string>={};
   if(!raw||typeof raw!=="object")return out;
@@ -33,7 +40,7 @@ async function muse(system:string,user:string){
   const headers:Record<string,string>={"Content-Type":"application/json"};
   if(key)headers["Authorization"]="Bearer "+key;
   const r=await fetch("https://opencode.ai/zen/v1/responses",{method:"POST",headers,body:JSON.stringify({model:"muse-spark-1.3-contributor-free",instructions:system,input:user,max_output_tokens:12000})});
-  if(!r.ok){console.warn("Studio IA provider",{model:"muse-spark-1.3-contributor-free",status:r.status,keyConfigured:!!key});throw new Error("Muse Spark "+r.status);}
+  if(!r.ok){await providerError(r,"muse-spark-1.3-contributor-free",!!key);throw new Error("Muse Spark "+r.status);}
   return {data:await r.json(),model:"Muse Spark 1.3 Contributor Free"};
 }
 async function fallback(system:string,user:string){
@@ -43,9 +50,9 @@ async function fallback(system:string,user:string){
   for(const model of ["nemotron-3.5-lightning-free","mimo-v2.6-flash-free","ling-3.1-flash-free"]){
     const r=await fetch("https://opencode.ai/zen/v1/chat/completions",{method:"POST",headers,body:JSON.stringify({model,messages:[{role:"system",content:system},{role:"user",content:user}],max_tokens:12000,temperature:.2})});
     if(r.ok)return {data:await r.json(),model};
-    console.warn("Studio IA provider",{model,status:r.status,keyConfigured:!!key});
+    await providerError(r,model,!!key);
   }
-  throw new Error("Los modelos gratuitos de IA no respondieron.");
+  throw new Error("El proveedor de IA no respondió. Intentá de nuevo más tarde.");
 }
 async function clients(){
   const url=Deno.env.get("SUPABASE_URL")!;
@@ -126,9 +133,9 @@ En PLANEAR files debe ser {}.`;
     const project=Object.keys(files).sort().map(n=>`\n--- FILE: ${n} ---\n${String(files[n]).slice(0,60000)}`).join("");
     const recent=history.map((m:any)=>`${m?.role==="user"?"ALUMNO":"IA"}: ${String(m?.text||"").slice(0,1000)}`).join("\n");
     const user=`MODO: ${mode==="plan"?"PLANEAR":"CONSTRUIR"}\nINSTRUCCIÓN: ${prompt}\n\nHISTORIAL:\n${recent||"(vacío)"}\n\nPROYECTO:${project}`;
-    let result;try{result=await muse(system,user)}catch(_e){result=await fallback(system,user)}
+    let result;try{result=await muse(system,user)}catch(e){if(e instanceof ProviderSetupError)throw e;result=await fallback(system,user)}
     const raw=extract(result.data);if(!raw)throw new Error("La IA respondió sin contenido utilizable.");
     const p=parse(raw);
     return reply({ok:true,model:result.model,summary:String(p?.summary||"Listo.").slice(0,1000),test:String(p?.test||"Abrí la vista previa y comprobá el cambio.").slice(0,800),files:mode==="build"?cleanFiles(p?.files):{}});
-  }catch(e){return reply({ok:false,error:String(e instanceof Error?e.message:e).slice(0,600)},500)}
+  }catch(e){return reply({ok:false,error:String(e instanceof Error?e.message:e).slice(0,600),setupRequired:e instanceof ProviderSetupError},e instanceof ProviderSetupError?503:500)}
 });

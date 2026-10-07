@@ -99,7 +99,7 @@ const StudioIA={__loaded:true,
       body:JSON.stringify(Object.assign({studentId:this.sid(),deviceId:this.did()},body))
     });
     let data={};try{data=await res.json()}catch(_e){}
-    if(!res.ok||data.ok===false)throw new Error(data.error||('Error '+res.status));
+    if(!res.ok||data.ok===false){const e=new Error(data.error||('Error '+res.status));e.setupRequired=data.setupRequired===true;throw e;}
     return data;
   },
   async open(){
@@ -180,7 +180,7 @@ const StudioIA={__loaded:true,
       const model=document.getElementById('ks-model');if(model)model.textContent=d.model||'';
       this.dirty=true;this.refreshAll();await this.save();
     }catch(e){
-      this.history.pop();this.say('ai','No pude completar ese cambio. '+(e.message||e)+'\n\nProbá otra vez con una instrucción más corta. Si vuelve a fallar, avisá al profe.');
+      this.history.pop();this.say('ai','No pude completar ese cambio. '+(e.message||e)+(e.setupRequired?'\n\nAvisá al profe para conectar la IA. Tu proyecto sigue disponible en Ver archivos.':'\n\nProbá otra vez con una instrucción más corta. Si vuelve a fallar, avisá al profe.'));
     }finally{this.busy=false;this.lock(false);if(this.dirty)this.scheduleSave()}
   },
   lock(v){const b=document.getElementById('ks-send');if(b){b.disabled=v||!this.cloudReady;b.textContent=v?'Trabajando…':'Enviar →'}document.querySelectorAll('#ks-close,#ks-save-btn,#ks-editor,#ks-prompt,.ks-mode').forEach(el=>el.disabled=v||(!this.cloudReady&&el.id!=='ks-close'));},
