@@ -1,0 +1,59 @@
+/* Taller de creación: escritorio, equipos del aula y pantallas táctiles. */
+#krueka-studio{--ks-muted:#a2b3ce;--ks-line:#ffffff19}
+#krueka-studio .ks-top{height:58px}
+#krueka-studio .ks-projectbar{height:60px;display:flex;align-items:center;gap:7px;padding:9px 14px;overflow-x:auto;border-bottom:1px solid var(--ks-line);background:#101726;white-space:nowrap}
+#krueka-studio .ks-projectbar input{width:185px;min-width:120px;border:1px solid var(--ks-line);border-radius:9px;background:#090e18;color:#fff;padding:10px}
+#krueka-studio .ks-projectbar button{flex-shrink:0;font-size:12px}
+#krueka-studio .ks-main{height:calc(100% - 118px);grid-template-columns:minmax(290px,32%) minmax(0,1fr)}
+#krueka-studio .ks-left{grid-template-rows:auto minmax(0,1fr)}
+#krueka-studio .ks-tabs{display:flex;gap:7px;padding:12px;border-bottom:1px solid var(--ks-line)}
+#krueka-studio .ks-tabs button{flex:1;font-size:12px}
+#krueka-studio .ks-tabs button[aria-pressed=true]{background:#254967;border-color:#67c0f9}
+#krueka-studio .ks-work{overflow:auto;min-height:0}
+#krueka-studio .ks-tool{padding:22px 16px}
+#krueka-studio .ks-tool h2{font-size:25px;line-height:1.15;letter-spacing:-.025em;margin:12px 0}
+#krueka-studio .ks-tool p,#krueka-studio .ks-tool li{font-size:13px;line-height:1.6;color:var(--ks-muted)}
+#krueka-studio .ks-tool li{margin-bottom:15px}
+#krueka-studio .ks-section-label{color:#81d4f7;font-size:10px;letter-spacing:.16em;font-weight:800}
+#krueka-studio .ks-kit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:20px 0}
+#krueka-studio .ks-kit{display:flex;flex-direction:column;align-items:flex-start;gap:9px;min-height:142px;border:1px solid #426189;background:linear-gradient(140deg,#162b43,#15192b);color:#fff;text-align:left;padding:15px 12px;border-radius:15px;cursor:pointer;transition:transform .15s,border-color .15s}
+#krueka-studio .ks-kit:hover{transform:translateY(-2px);border-color:#7bd4ff}
+#krueka-studio .ks-kit span{display:block;width:100%}#krueka-studio .ks-kit svg{display:block;width:100%;height:56px}
+#krueka-studio .ks-kit b{font-size:13px}
+#krueka-studio .ks-kit small{font-size:11px;line-height:1.4;color:var(--ks-muted)}
+#krueka-studio .ks-settings{padding:17px 13px;margin:20px 0;background:#131e2d;border:1px solid var(--ks-line);border-radius:15px}
+#krueka-studio .ks-settings h3{font-size:16px;margin:0 0 16px}
+#krueka-studio .ks-settings label{display:block;font-size:11px;color:var(--ks-muted);margin:0 0 12px}
+#krueka-studio .ks-settings input,#krueka-studio .ks-settings select{display:block;width:100%;margin-top:6px;padding:9px;border:1px solid #ffffff28;border-radius:8px;background:#080f1b;color:#fff;font:inherit;font-size:13px}
+#krueka-studio .ks-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 10px}
+#krueka-studio .ks-right{grid-template-rows:auto minmax(0,1fr) auto}
+#krueka-studio .ks-previewbar{flex-wrap:wrap;min-height:52px}
+#krueka-studio .ks-previewbar select{min-width:90px;max-width:180px;flex:1}
+#krueka-studio .ks-previewbar button{font-size:12px;padding:7px 10px}
+#krueka-studio .ks-preview{overflow:hidden;background:radial-gradient(ellipse at top,#263d53,#0a101b);position:relative;min-width:0}
+#krueka-studio.ks-mobile .ks-preview iframe{width:min(390px,100%);justify-self:center;box-shadow:0 0 0 6px #354052;border-radius:18px}
+#krueka-studio .ks-code aside{min-height:0;overflow:auto;border-right:1px solid var(--ks-line)}
+#krueka-studio .ks-code{grid-template-columns:155px minmax(0,1fr);min-height:0}
+#krueka-studio .ks-file-actions{display:flex;gap:6px;padding:8px;border-bottom:1px solid var(--ks-line)}
+#krueka-studio .ks-file-actions button{min-width:40px}
+#krueka-studio .ks-files{border:0}
+#krueka-studio .ks-editor{font:13px/1.65 Consolas,monospace}
+#krueka-studio .ks-console{border-top:1px solid var(--ks-line);background:#101725;padding:9px 12px;font-size:11px;color:var(--ks-muted)}
+#krueka-studio .ks-console summary{cursor:pointer}
+#krueka-studio .ks-console pre{white-space:pre-wrap;max-height:100px;overflow:auto;color:#ffd1b6;margin:8px 0}
+#krueka-studio .ks-notice{border:1px solid #5e89a64a;background:#142535;color:#bdd9ef;padding:13px;font-size:12px;line-height:1.6;border-radius:12px;margin:12px}
+#krueka-studio .ks-tool .ks-notice{margin:16px 0}
+#krueka-studio .ks-check{display:flex;gap:9px;font-size:12px;line-height:1.5;margin:12px 0;color:#c4d8ed}
+#krueka-studio .ks-check input{width:17px;flex-shrink:0;accent-color:#46a171}
+#krueka-studio .ks-dialog{position:absolute;inset:0;background:#030711c9;z-index:5;display:grid;place-items:center;padding:20px;backdrop-filter:blur(5px)}
+#krueka-studio .ks-dialog>section{width:min(650px,100%);max-height:90vh;overflow:auto;border:1px solid #6083ab70;border-radius:22px;background:#101a2b;padding:25px;box-shadow:0 30px 100px #0008}
+#krueka-studio .ks-dialog header{display:flex;align-items:center;justify-content:space-between;gap:20px}
+#krueka-studio .ks-dialog h2{font-size:25px;margin:0}
+#krueka-studio .ks-dialog p{color:var(--ks-muted);font-size:13px;line-height:1.6}
+#krueka-studio .ks-project-card{display:flex;justify-content:space-between;gap:15px;width:100%;padding:18px;margin:9px 0;border-radius:12px;border:1px solid var(--ks-line);background:#18273b;color:#fff;cursor:pointer;text-align:left}
+#krueka-studio .ks-project-card small{color:#88c3e6}
+#krueka-studio button:focus-visible,#krueka-studio input:focus-visible,#krueka-studio textarea:focus-visible{outline:2px solid #7bd4ff;outline-offset:2px}
+#krueka-studio [hidden]{display:none!important}
+@media(max-width:780px){#krueka-studio .ks-main{grid-template-columns:1fr;grid-template-rows:minmax(200px,44%) minmax(180px,56%)}#krueka-studio .ks-tool{padding:14px}#krueka-studio .ks-kit-grid{margin:10px 0}#krueka-studio .ks-kit{min-height:110px}#krueka-studio .ks-top{gap:7px;padding:8px}#krueka-studio .ks-top .ks-badge{display:none}#krueka-studio .ks-code{grid-template-columns:115px minmax(0,1fr)}#krueka-studio .ks-save{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#krueka-studio .ks-brand{font-size:14px}}
+
+#krueka-studio.ks-play-only .ks-main{display:block}#krueka-studio.ks-play-only .ks-left{display:none}#krueka-studio.ks-play-only .ks-right{height:100%}
