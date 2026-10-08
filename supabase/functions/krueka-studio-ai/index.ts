@@ -237,7 +237,7 @@ Siempre incluí files y patches. En PLANEAR o al hacer una pregunta, ambos deben
     let ai;try{if(statusContext)ai=await aiStatus(statusContext.admin,statusContext.studentId,statusContext.deviceId)}catch(_e){}
     // Solo registrar categorías: jamás mensajes del alumno, código, archivos o secretos.
     const errorCode=e instanceof ProviderSetupError?'setup':e instanceof QuotaError?e.code:e instanceof InvalidChangeError?'invalid_change':e instanceof Error&&['TimeoutError','AbortError'].includes(e.name)?'timeout':'studio_error';
-    if(errorCode!=='setup'&&!(e instanceof QuotaError))console.warn('studio-ai',action,errorCode);
+    if(errorCode!=='setup'&&!(e instanceof QuotaError))console.warn('studio-ai',errorCode);
     return reply({ok:false,error:String(e instanceof Error?e.message:e).slice(0,600),setupRequired:e instanceof ProviderSetupError,...(ai?{ai}:{}),code:errorCode},e instanceof ProviderSetupError?503:e instanceof QuotaError?429:e instanceof InvalidChangeError?422:errorCode==='timeout'?504:500);
   }
 });
