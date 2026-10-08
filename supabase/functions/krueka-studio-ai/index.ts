@@ -21,6 +21,7 @@ async function aiStatus(admin:any,studentId:string,deviceId:string){
 function cleanHistory(raw:any){
   return (Array.isArray(raw)?raw:[]).filter((m:any)=>m&&["user","ai","sys"].includes(m.role)).slice(-40).map((m:any)=>({role:m.role,text:String(m.text||"").slice(0,1400),at:String(m.at||"").slice(0,30),pending:m.pending===true,...(m.artifact?{artifact:{title:String(m.artifact.title||"Tu juego").slice(0,80),files:(Array.isArray(m.artifact.files)?m.artifact.files:[]).map((x:any)=>String(x).slice(0,150)).slice(0,8)}}:{})}));
 }
+class InvalidChangeError extends Error {}
 class QuotaError extends Error {code:string;constructor(message:string,code:string){super(message);this.code=code}}
 async function generate(admin:any,studentId:string,deviceId:string,system:string,user:string){
   if(!Deno.env.get("OPENAI_API_KEY")||Deno.env.get("STUDIO_AI_ENABLED")!=="true")throw new ProviderSetupError("La conexión de IA todavía está pendiente. Guardá tu idea y seguí trabajando con las bases.");
@@ -66,15 +67,16 @@ function cleanFiles(raw:any){
 }
 // Cada fragmento debe existir exactamente una vez; no se devuelven cambios parciales.
 function applyChanges(files:Record<string,string>,complete:Record<string,string>,patches:any[]){
-  if(patches.length>32)throw new Error("La IA propuso demasiados cambios. Pedí una mejora a la vez.");
+  if(patches.length>32)throw new InvalidChangeError("La IA propuso demasiados cambios. Pedí una mejora a la vez.");
+  for(const [path] of Object.entries(complete))if(Object.hasOwn(files,path)&&files[path].length>6000)throw new InvalidChangeError('La IA intentó reemplazar un archivo grande. Pedí una mejora más pequeña para conservar el motor del juego.');
   const out={...complete};
   for(const patch of patches){
-    if(!patch||typeof patch.path!=="string"||typeof patch.find!=="string"||typeof patch.replace!=="string"||!patch.find)throw new Error("El cambio contiene un fragmento inválido.");
+    if(!patch||typeof patch.path!=="string"||typeof patch.find!=="string"||typeof patch.replace!=="string"||!patch.find)throw new InvalidChangeError("El cambio contiene un fragmento inválido.");
     cleanFiles({[patch.path]:patch.replace});
-    if(!Object.hasOwn(files,patch.path)||Object.hasOwn(complete,patch.path))throw new Error("El fragmento no corresponde a un archivo existente del proyecto.");
+    if(!Object.hasOwn(files,patch.path)||Object.hasOwn(complete,patch.path))throw new InvalidChangeError("El fragmento no corresponde a un archivo existente del proyecto.");
     const original=Object.hasOwn(out,patch.path)?out[patch.path]:files[patch.path];
     const at=original.indexOf(patch.find);
-    if(at<0||original.lastIndexOf(patch.find)!==at)throw new Error("No se pudo ubicar el cambio con precisión. El juego se conserva; pedí un cambio más concreto.");
+    if(at<0||original.lastIndexOf(patch.find)!==at)throw new InvalidChangeError("No se pudo ubicar el cambio con precisión. El juego se conserva; pedí un cambio más concreto.");
     out[patch.path]=original.slice(0,at)+patch.replace+original.slice(at+patch.find.length);
   }
   return cleanFiles(out);
@@ -233,6 +235,9 @@ Siempre incluí files y patches. En PLANEAR o al hacer una pregunta, ambos deben
     return reply({ok:true,ai:await aiStatus(admin,studentId,deviceId),model:result.model,summary:String(p?.summary||"Listo.").slice(0,1000),test:String(p?.test||"Abrí la vista previa y comprobá el cambio.").slice(0,800),files:edits});
   }catch(e){
     let ai;try{if(statusContext)ai=await aiStatus(statusContext.admin,statusContext.studentId,statusContext.deviceId)}catch(_e){}
-    return reply({ok:false,error:String(e instanceof Error?e.message:e).slice(0,600),setupRequired:e instanceof ProviderSetupError,...(ai?{ai}:{}),...(e instanceof QuotaError?{code:e.code}:{})},e instanceof ProviderSetupError?503:e instanceof QuotaError?429:500);
+    // Solo registrar categorías: jamás mensajes del alumno, código, archivos o secretos.
+    const errorCode=e instanceof ProviderSetupError?'setup':e instanceof QuotaError?e.code:e instanceof InvalidChangeError?'invalid_change':e instanceof Error&&['TimeoutError','AbortError'].includes(e.name)?'timeout':'studio_error';
+    if(errorCode!=='setup'&&!(e instanceof QuotaError))console.warn('studio-ai',action,errorCode);
+    return reply({ok:false,error:String(e instanceof Error?e.message:e).slice(0,600),setupRequired:e instanceof ProviderSetupError,...(ai?{ai}:{}),code:errorCode},e instanceof ProviderSetupError?503:e instanceof QuotaError?429:e instanceof InvalidChangeError?422:errorCode==='timeout'?504:500);
   }
 });

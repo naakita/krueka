@@ -33,7 +33,7 @@ const call=async b=>{const r=await handler(new Request('https://test.invalid',{m
  for(const mode of ['partial','invalid']){replyMode=mode;const d=await call({action:'ai',prompt:'Cambiá color',files});assert.equal(d.ok,false);assert.equal(d.files,undefined);assert.equal(d.ai.usedToday,2);assert.equal(settled.at(-1).p_actual_micros,1100)}
 
  for(const mode of ['patch','sequence']){replyMode=mode;const d=await call({action:'ai',prompt:'Cambiá color',files});assert.equal(d.files['style.css'],'body{color:red}');assert.equal(files['style.css'],'body{}');}
- for(const mode of ['missing','blank','atomic','too-many']){replyMode=mode;const d=await call({action:'ai',prompt:'Cambiá color',files});assert.equal(d.ok,false);assert.equal(d.files,undefined);assert.equal(files['style.css'],'body{}');assert.equal(d.ai.usedToday,2);}
+ for(const mode of ['missing','blank','atomic','too-many']){replyMode=mode;const d=await call({action:'ai',prompt:'Cambiá color',files});assert.equal(d.status,422);assert.equal(d.code,'invalid_change');assert.equal(d.ok,false);assert.equal(d.files,undefined);assert.equal(files['style.css'],'body{}');assert.equal(d.ai.usedToday,2);}
  replyMode='patch';const ambiguous=await call({action:'ai',prompt:'Cambiá color',files:{...files,'style.css':'body{}body{}'}});assert.equal(ambiguous.ok,false);assert.equal(ambiguous.files,undefined);
  const plan=await call({action:'ai',mode:'plan',prompt:'Qué mejorarías',files});assert.equal(plan.ok,true);assert.equal(Object.keys(plan.files).length,0);
 

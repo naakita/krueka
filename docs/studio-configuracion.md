@@ -30,6 +30,10 @@ Las tablas privadas de contabilidad tienen RLS y no permiten acceso de alumnos n
 
 La IA devuelve fragmentos exactos para modificar archivos existentes, evitando copiar completo el motor 3D en cada respuesta. El servidor valida coincidencias únicas y aplica el conjunto de forma atómica; una respuesta incompleta o un fragmento ambiguo no modifica el juego. Ante pedidos amplios como «dame el mejor cambio del juego», el asistente elige una mejora pequeña y visible. Los comentarios preliminares del asistente no se interpretan como JSON: se lee el mensaje final y se unen sus fragmentos. Una negativa o una salida inválida conserva el proyecto y permite volver a escribir. Probar inicia la partida 3D y enfoca sus controles con un solo clic. No hay reintentos automáticos que generen cargos adicionales. Los errores también actualizan el contador de intentos.
 
+## Recuperación ante errores de conexión y respuesta
+
+Las solicitudes de IA tienen un tope de 88 segundos desde el navegador (75 segundos en el proveedor); guardar y cargar, 18 segundos. Ante un corte se desbloquea el chat y el texto queda listo para volver a enviar. La aplicación no interpreta una respuesta HTTP 200 sin `ok:true` como un éxito. El servidor devuelve 422 ante parches inválidos y protege de reemplazos completos los archivos existentes de más de 6.000 caracteres. El motor y los proyectos siguen guardables sin la IA; no hay reintentos automáticos con cobros adicionales.
+
 ## Comprobación antes de la clase
 
 - Entrar al Club, abrir Studio y comprobar Chat junto a Tu juego.
