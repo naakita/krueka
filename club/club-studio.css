@@ -57,3 +57,37 @@
 @media(max-width:780px){#krueka-studio .ks-main{grid-template-columns:1fr;grid-template-rows:minmax(200px,44%) minmax(180px,56%)}#krueka-studio .ks-tool{padding:14px}#krueka-studio .ks-kit-grid{margin:10px 0}#krueka-studio .ks-kit{min-height:110px}#krueka-studio .ks-top{gap:7px;padding:8px}#krueka-studio .ks-top .ks-badge{display:none}#krueka-studio .ks-code{grid-template-columns:115px minmax(0,1fr)}#krueka-studio .ks-save{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#krueka-studio .ks-brand{font-size:14px}}
 
 #krueka-studio.ks-play-only .ks-main{display:block}#krueka-studio.ks-play-only .ks-left{display:none}#krueka-studio.ks-play-only .ks-right{height:100%}
+
+/* Conversación y juego comparten el taller; el cuadro para escribir queda visible. */
+#krueka-studio .ks-main{grid-template-columns:minmax(330px,37%) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+#krueka-studio .ks-left{min-height:0}
+#krueka-studio .ks-work{overflow:hidden;display:grid;grid-template-rows:minmax(0,1fr)}
+#krueka-studio .ks-tool{overflow:auto;min-height:0}
+#krueka-studio #ks-ai{display:grid;grid-template-rows:auto auto auto minmax(0,1fr) auto;min-height:0;height:100%}
+#krueka-studio #ks-ai-status{margin:10px 12px 4px;padding:9px 12px;font-size:11px}
+#krueka-studio .ks-usage{font-size:10px;color:var(--ks-muted);padding:4px 14px}
+#krueka-studio .ks-modes{padding:7px 12px;align-items:center;flex-wrap:wrap}
+#krueka-studio .ks-modes .ks-btn{font-size:12px;min-height:34px}
+#krueka-studio .ks-chat{min-height:0;overflow:auto;overscroll-behavior:contain}
+#krueka-studio .ks-msg{overflow-wrap:anywhere;font-size:13px;white-space:normal}
+#krueka-studio .ks-msg>div:first-of-type{white-space:pre-wrap}
+#krueka-studio .ks-author{display:block;font-size:10px;color:#abc1d8;margin-bottom:5px;font-weight:800}
+#krueka-studio .ks-msg.sys .ks-author{color:#85cba2}
+#krueka-studio .ks-artifact{margin-top:12px;padding:12px;border:1px solid #4a9ce855;border-radius:11px;background:#0d1725;display:flex;flex-direction:column;gap:8px;white-space:normal}
+#krueka-studio .ks-artifact small,#krueka-studio .ks-artifact span{font-size:10px;color:var(--ks-muted)}
+#krueka-studio .ks-msg>[data-reuse]{margin-top:10px;font-size:11px}
+#krueka-studio .ks-suggestions{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+#krueka-studio .ks-suggestions .ks-btn{font-size:11px;padding:6px 9px;min-height:32px}
+#krueka-studio .ks-onboard{font-size:12px;line-height:1.6}
+#krueka-studio .ks-compose{background:#0d1420}
+#krueka-studio .ks-compose label{color:#bbd6f0;margin:0 0 7px;font-size:12px}
+#krueka-studio .ks-compose textarea{min-height:70px;height:76px;margin:0}
+#krueka-studio .ks-preview-label{font-size:12px;color:#b7d8f1}
+@media(max-width:780px){
+  #krueka-studio .ks-main{display:flex;flex-direction:column;overflow:auto;overscroll-behavior:contain}
+  #krueka-studio .ks-left{height:480px;min-height:480px;flex-shrink:0}
+  #krueka-studio .ks-right{height:440px;min-height:440px;flex-shrink:0}
+  #krueka-studio .ks-chat{padding:10px}
+  #krueka-studio .ks-previewbar{gap:5px}
+  #krueka-studio.ks-play-only .ks-right{min-height:0}
+}

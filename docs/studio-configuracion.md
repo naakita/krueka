@@ -1,32 +1,40 @@
-# Activar la IA del Studio
+# Krueka Studio: conexión pendiente de API
 
-El taller, las bases, el editor, el guardado y la revisión funcionan sin un proveedor de IA. Para activar generación, el docente configura una cuenta de proveedor en el servidor. Los alumnos conservan su código del Club.
+La infraestructura está preparada para usar el Chat y probar el juego en el mismo taller desde el navegador. No requiere instalar OpenCode ni alquilar una VPS adicional. Conserva los proyectos, hasta 40 mensajes y el borrador en la nube. Las bases, el editor y la revisión funcionan mientras la API está desconectada: Guardar idea conserva un pedido pendiente sin generar una respuesta de IA ni cambiar el código.
 
-## Cloudflare Workers AI
+## Conexión que se preparará después
 
-1. En la cuenta del docente, abrir Workers AI → Use REST API.
-2. Crear un token específico de Workers AI con permisos Read/Edit y copiar el Account ID.
-3. En Supabase → proyecto Krueka → Edge Functions → Secrets, guardar `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_API_TOKEN`.
-4. El modelo inicial es `@cf/qwen/qwen2.5-coder-32b-instruct`. Opcionalmente cambiar `CLOUDFLARE_AI_MODEL` por otro modelo compatible de texto.
-5. Mantener el plan gratuito si se desea que el proveedor corte al agotar la cuota en lugar de cobrar excedentes. El cupo es compartido, no por alumno.
+La función de servidor `krueka-studio-ai` usa OpenAI Responses con `gpt-6-luna`, fijo en el código. Los alumnos no pueden seleccionar modelos más caros ni necesitan una cuenta de OpenAI. La clave queda en los secretos del servidor, nunca en navegador, repositorio ni proyectos.
 
-Documentación oficial: https://developers.cloudflare.com/workers-ai/get-started/rest-api/
+Para habilitar solicitudes deben existir `OPENAI_API_KEY` y `STUDIO_AI_ENABLED=true`. La ausencia de cualquiera mantiene generación desactivada. Esta entrega no configura credenciales ni realiza solicitudes reales a OpenAI. Al conectar después, comprobar modelo, tarifas y límites de facturación de la cuenta antes de habilitar la generación.
 
-## Groq como alternativa
+## Consumo inicial
 
-1. Crear una clave en la cuenta del docente.
-2. Guardar `GROQ_API_KEY` en los secretos de Supabase. No pegar claves en el chat del alumno ni en archivos del repositorio.
-3. El modelo inicial es `openai/gpt-oss-20b`. La variable opcional `GROQ_MODEL` admite otro modelo compatible con chat y JSON.
-4. Comprobar las cuotas de la cuenta. Si ambos proveedores están configurados, el servidor intenta Groq cuando Cloudflare no completa la respuesta.
+| Control | Valor |
+|---|---|
+| Presupuesto compartido | US$5 por mes calendario, zona America/Asuncion |
+| Pedidos por alumno | 12 intentos al día |
+| Espera entre pedidos | 10 segundos |
+| Solicitudes simultáneas | Una por alumno; tres en todo el taller |
+| Salida máxima por pedido | 6.000 tokens |
+| Código enviado por pedido | Hasta 65.000 caracteres |
+| Modelo | gpt-6-luna, sin alternativas automáticas |
 
-Documentación oficial: https://console.groq.com/docs/openai
+El servidor reserva presupuesto antes de llamar a OpenAI y liquida con el uso informado. Si una interrupción deja costo desconocido, conserva la reserva para evitar exceder el presupuesto. Los intentos fallidos reservados también cuentan en el límite diario; los bloqueados antes de reservar no consumen pedidos.
+
+La fórmula inicial usa US$0,10 por millón de tokens de entrada y US$0,50 por millón de salida; verificar precios vigentes al activar. Este control corresponde al Studio: otros usos de la misma clave, cambios de tarifa y cargos ajenos al Studio requieren controles de facturación propios. US$5 es un límite de uso configurado, no un cargo fijo mensual.
+
+Las tablas privadas de contabilidad tienen RLS y no permiten acceso de alumnos ni clientes públicos. No almacenan prompts, código ni nombres. La función valida alumno y equipo antes de guardar o consultar; a OpenAI se envían instrucciones, código y mensajes recientes necesarios, sin incluir identificadores del alumno. Se rechazan patrones evidentes de datos personales antes de enviar, sin pretender detectar todos los casos.
 
 ## Comprobación antes de la clase
 
-- Abrir el Club con el alumno de prueba y entrar al Studio.
-- Abrir una base, cambiar una regla, guardar, salir y recuperar el mismo proyecto.
-- En IA, pedir un cambio pequeño. Revisar el resultado y usar Deshacer si hace falta.
-- Probar el juego con teclado y controles táctiles.
-- Enviar al profe y revisar desde una cuenta de dirección/administración de la institución.
+- Entrar al Club, abrir Studio y comprobar Chat junto a Tu juego.
+- Guardar una idea y un borrador, salir y recuperarlos con el mismo proyecto.
+- Elegir una base, personalizar reglas y probar teclado y controles táctiles.
+- Abrir otro proyecto y comprobar su conversación independiente.
+- Enviar al profe y revisar juego, código y conversación desde dirección/administración.
+- Después de conectar la API: pedir un cambio pequeño, comprobar resultado, consumo y Deshacer. Probar también que un error conserve el código y permita reintentar el pedido.
 
-`status` informa configuración presente, no una prueba de validez. Un error de clave exige revisar el secreto/permisos; un error de cupo permite continuar con el editor y las bases. No usar Gemini API para esta integración dirigida a menores ni reutilizar el acceso gratuito de OpenCode fuera de OpenCode.
+Si se agota el cupo, se puede seguir con las bases, el editor y las ideas pendientes. Si falla una clave, la generación se pausa y se revisa la conexión sin perder el proyecto.
+
+Documentación oficial: [Responses API](https://developers.openai.com/api/reference/resources/responses/methods/create), [salidas estructuradas](https://developers.openai.com/api/docs/guides/structured-outputs) y [precios](https://openai.com/api/pricing/).
