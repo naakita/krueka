@@ -137,7 +137,7 @@ const StudioIA={__loaded:true,
     document.body.appendChild(panel);
     panel.querySelector('#ks-close').onclick=()=>this.close();
     panel.querySelector('#ks-save-btn').onclick=()=>this.save();
-    panel.querySelector('#ks-refresh').onclick=()=>this.renderPreview();
+    panel.querySelector('#ks-refresh').onclick=()=>this.playCurrent();
     panel.querySelector('#ks-code-btn').onclick=()=>this.toggleCode();
     panel.querySelector('#ks-projects').onclick=()=>this.showProjects();
     panel.querySelector('#ks-new').onclick=()=>this.showKits();
@@ -200,7 +200,7 @@ const StudioIA={__loaded:true,
     el.querySelectorAll('button').forEach(b=>b.disabled=this.busy||!this.cloudReady);
     el.scrollTop=el.scrollHeight;
   },
-  playCurrent(){const panel=document.getElementById('krueka-studio');panel.classList.remove('ks-play-only');if(document.getElementById('ks-code').classList.contains('on'))this.toggleCode();this.renderPreview();panel.querySelector('.ks-right').scrollIntoView({block:'nearest',behavior:'smooth'});document.getElementById('ks-frame').focus();},
+  playCurrent(){const panel=document.getElementById('krueka-studio');panel.classList.remove('ks-play-only');if(document.getElementById('ks-code').classList.contains('on'))this.toggleCode();this.renderPreview(true);panel.querySelector('.ks-right').scrollIntoView({block:'nearest',behavior:'smooth'});document.getElementById('ks-frame').focus();},
   async send(){
     if(this.busy||!this.cloudReady)return;
     const q=document.getElementById('ks-prompt'),text=q.value.trim();if(!text)return;
@@ -258,12 +258,12 @@ const StudioIA={__loaded:true,
     html=html.replace(/<(img|source)\b([^>]*?)src=["']([^"']+)["']([^>]*)>/gi,(m,tag,a,src,b)=>{
       const p=self.resolve(base,src),v=self.files[p];if(v!=null&&/\.svg$/i.test(p)){const data='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(v);return '<'+tag+a+'src="'+data+'"'+b+'>'}return m;
     });
-    const bridge='<script>(function(){addEventListener("error",function(e){parent.postMessage({type:"krueka-studio-error",text:e.message+" (línea "+e.lineno+")"},"*")});addEventListener("unhandledrejection",function(e){parent.postMessage({type:"krueka-studio-error",text:String(e.reason)},"*")});document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var h=a.getAttribute("href");if(!h||h[0]==="#")return;e.preventDefault();parent.postMessage({type:"krueka-studio-nav",href:h},"*")});})();<\/script>';
+    const bridge='<script>(function(){addEventListener("message",function(e){if(e.source!==parent||!e.data||e.data.type!=="krueka-preview-play")return;var m=document.getElementById("mode"),c=document.getElementById("arena");if(m&&m.textContent.indexOf("Jugar")!==-1)m.click();if(c)c.focus();});addEventListener("error",function(e){parent.postMessage({type:"krueka-studio-error",text:e.message+" (línea "+e.lineno+")"},"*")});addEventListener("unhandledrejection",function(e){parent.postMessage({type:"krueka-studio-error",text:String(e.reason)},"*")});document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var h=a.getAttribute("href");if(!h||h[0]==="#")return;e.preventDefault();parent.postMessage({type:"krueka-studio-nav",href:h},"*")});})();<\/script>';
     const policy='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; media-src data: blob:; connect-src \'none\'; font-src data:; base-uri \'none\'; form-action \'none\'">';
     if(/<head\b[^>]*>/i.test(html))return html.replace(/<head\b[^>]*>/i,m=>m+policy+bridge);
     return policy+bridge+html;
   },
-  renderPreview(){const f=document.getElementById('ks-frame');if(f&&!f.classList.contains('off')){this.errors=[];this.renderErrors();f.srcdoc=this.buildPreview(this.preview)}},
+  renderPreview(play=false){const f=document.getElementById('ks-frame');if(f&&!f.classList.contains('off')){this.errors=[];this.renderErrors();f.onload=play?()=>{f.focus();f.contentWindow.postMessage({type:'krueka-preview-play'},'*')}:null;f.srcdoc=this.buildPreview(this.preview)}},
   renderErrors(){const p=document.getElementById('ks-errors'),t=document.getElementById('ks-console-title');if(p)p.textContent=this.errors.join('\n')||'Probá tu juego. Los errores aparecerán acá.';if(t)t.textContent='Consola · '+(this.errors.length?this.errors.length+' error(es)':'sin errores');},
   onMessage(e){
     if(e.source!==document.getElementById('ks-frame')?.contentWindow||!e.data)return;

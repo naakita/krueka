@@ -80,15 +80,26 @@ function applyChanges(files:Record<string,string>,complete:Record<string,string>
   return cleanFiles(out);
 }
 function extract(data:any){
+  // Responses puede incluir comentarios previos. El esquema corresponde al mensaje final.
+  if(Array.isArray(data?.output)){
+    const messages=data.output.filter((item:any)=>item&&(!item.type||item.type==="message")&&(!item.role||item.role==="assistant")&&Array.isArray(item.content));
+    const final=messages.filter((item:any)=>item.channel==="final");
+    const candidates=final.length?final:messages.filter((item:any)=>!item.channel);
+    for(let i=candidates.length-1;i>=0;i--){
+      if(candidates[i].content.some((c:any)=>c.type==="refusal"))throw new Error("La IA no pudo ayudar con ese pedido. Probá una idea de juego apta para la clase.");
+      const text=candidates[i].content.filter((c:any)=>(!c.type||c.type==="output_text")&&typeof c.text==="string").map((c:any)=>c.text).join("");
+      if(text)return text;
+    }
+    if(messages.length)return "";
+  }
   if(typeof data?.output_text==="string")return data.output_text;
-  if(Array.isArray(data?.output))for(const item of data.output)if(Array.isArray(item?.content))for(const c of item.content)if(typeof c?.text==="string")return c.text;
   if(typeof data?.choices?.[0]?.message?.content==="string")return data.choices[0].message.content;
   return "";
 }
 function parse(raw:string){
   let t=String(raw||"").trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/i,"");
   const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a>=0&&b>a)t=t.slice(a,b+1);
-  return JSON.parse(t);
+  try{return JSON.parse(t)}catch(_e){throw new Error("No se pudo leer el cambio de la IA. Tu juego sigue guardado; reenviá el pedido.")}
 }
 async function clients(){
   const url=Deno.env.get("SUPABASE_URL")!;

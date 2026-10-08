@@ -28,7 +28,7 @@ Las tablas privadas de contabilidad tienen RLS y no permiten acceso de alumnos n
 
 ## Cambios breves y recuperación
 
-La IA devuelve fragmentos exactos para modificar archivos existentes, evitando copiar completo el motor 3D en cada respuesta. El servidor valida coincidencias únicas y aplica el conjunto de forma atómica; una respuesta incompleta o un fragmento ambiguo no modifica el juego. Ante pedidos amplios como «dame el mejor cambio del juego», el asistente elige una mejora pequeña y visible. No hay reintentos automáticos que generen cargos adicionales. Los errores también actualizan el contador de intentos.
+La IA devuelve fragmentos exactos para modificar archivos existentes, evitando copiar completo el motor 3D en cada respuesta. El servidor valida coincidencias únicas y aplica el conjunto de forma atómica; una respuesta incompleta o un fragmento ambiguo no modifica el juego. Ante pedidos amplios como «dame el mejor cambio del juego», el asistente elige una mejora pequeña y visible. Los comentarios preliminares del asistente no se interpretan como JSON: se lee el mensaje final y se unen sus fragmentos. Una negativa o una salida inválida conserva el proyecto y permite volver a escribir. Probar inicia la partida 3D y enfoca sus controles con un solo clic. No hay reintentos automáticos que generen cargos adicionales. Los errores también actualizan el contador de intentos.
 
 ## Comprobación antes de la clase
 
