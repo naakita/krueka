@@ -93,14 +93,31 @@ const StudioIA={__loaded:true,
     }
   },
   async request(body){
-    const res=await fetch(SUPABASE_URL+'/functions/v1/krueka-studio-ai',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
-      body:JSON.stringify(Object.assign({studentId:this.sid(),deviceId:this.did()},body))
-    });
-    let data={};try{data=await res.json()}catch(_e){}
-    if(!res.ok||data.ok===false){const e=new Error(data.error||('Error '+res.status));e.setupRequired=data.setupRequired===true;e.ai=data.ai;e.code=data.code;throw e;}
-    return data;
+    // Un corte de red nunca debe dejar el chat bloqueado indefinidamente.
+    const controller=new AbortController(),isAI=body.action==='ai';
+    const timeout=setTimeout(()=>controller.abort(),isAI?88000:18000);
+    try{
+      const res=await fetch(SUPABASE_URL+'/functions/v1/krueka-studio-ai',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
+        signal:controller.signal,
+        body:JSON.stringify(Object.assign({studentId:this.sid(),deviceId:this.did()},body))
+      });
+      let data=null;try{data=await res.json()}catch(_e){}
+      if(!res.ok||data?.ok===false){
+        const e=new Error(data?.error||('La conexión respondió con error '+res.status+'.'));
+        e.setupRequired=data?.setupRequired===true;e.ai=data?.ai;e.code=data?.code;throw e;
+      }
+      if(!data||data.ok!==true)throw new Error('El servidor no devolvió una respuesta válida. Tu juego no se modificó.');
+      return data;
+    }catch(e){
+      if(controller.signal.aborted){
+        const error=new Error(isAI?'La IA tardó demasiado en responder. El juego sigue intacto; guardá tu trabajo y probá con un cambio más pequeño.':'La conexión con Krueka tardó demasiado. Comprobá internet y volvé a intentar.');
+        error.code='timeout';throw error;
+      }
+      if(e?.name==='TypeError')throw new Error('No se pudo conectar con Krueka. Comprobá tu conexión a internet y volvé a intentar.');
+      throw e;
+    }finally{clearTimeout(timeout);}
   },
   async open(){
     if(!this.sid())return alert('Entrá al Club con tu código para usar el Studio.');
