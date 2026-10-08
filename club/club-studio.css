@@ -91,3 +91,18 @@
   #krueka-studio .ks-previewbar{gap:5px}
   #krueka-studio.ks-play-only .ks-right{min-height:0}
 }
+
+/* Inspector del mundo 3D. */
+#krueka-studio .ks-light-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:15px 0}
+#krueka-studio .ks-light{font-size:11px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding:12px 9px}
+#krueka-studio .ks-light span{height:8px;width:100%;border-radius:6px;background:#67e8f9;box-shadow:0 0 16px #67e8f955}
+#krueka-studio .ks-light.alert span{background:#fb7185;box-shadow:0 0 16px #fb718555}
+#krueka-studio .ks-light.sunset span{background:#fbbf24;box-shadow:0 0 16px #fbbf2455}
+#krueka-studio .ks-light[aria-pressed=true],#krueka-studio .ks-scene-list [aria-pressed=true]{border-color:#67e8f9;background:#254967}
+#krueka-studio .ks-scene-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:200px;overflow:auto;margin:12px 0}
+#krueka-studio .ks-scene-list button{text-align:left;font-size:11px;overflow-wrap:anywhere}
+#krueka-studio .ks-scene-list small{display:block;color:var(--ks-muted);font-size:9px}
+#krueka-studio .ks-scene-actions,#krueka-studio .ks-scene-add{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+#krueka-studio .ks-scene-actions button,#krueka-studio .ks-scene-add button{font-size:11px}
+#krueka-studio .ks-scene-add select{flex:1;min-width:90px;background:#080f1b;color:#fff;border:1px solid #ffffff28;border-radius:8px;padding:8px}
+#krueka-studio .ks-settings input[type=color]{height:38px;padding:3px;cursor:pointer}
