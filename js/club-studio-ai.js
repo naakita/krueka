@@ -108,7 +108,7 @@ const StudioIA={__loaded:true,
     if(document.getElementById('krueka-studio'))return;
     await this.saveQueue;
     clearTimeout(this.saveTimer);this.cloudReady=false;this.dirty=false;this.busy=false;
-    this.files=this.initial();this.history=[];this.current='index.html';this.preview='index.html';this.projectId='legacy';this.title='Mi portal de juegos';this.undo=[];this.errors=[];this.aiReady=false;
+    this.files=StudioKits.create('stars');this.history=[];this.current='index.html';this.preview='index.html';this.projectId='legacy';this.title='Misión estelar';this.undo=[];this.errors=[];this.aiReady=false;
     const old=document.getElementById('krueka-studio');if(old)old.remove();
     const panel=document.createElement('div');panel.id='krueka-studio';
     panel.style.cssText='position:fixed;inset:0;z-index:180;background:#080b12;color:#eef3ff;overflow:hidden;font-family:Inter,system-ui,sans-serif';
@@ -172,7 +172,7 @@ const StudioIA={__loaded:true,
       if(d.project&&d.project.files&&Object.keys(d.project.files).length){
         this.adopt(d.project);
         this.say('sys','Proyecto recuperado de Krueka. Podés continuar desde cualquier computadora.');
-      }else this.say('sys','Proyecto inicial listo. Empezá describiendo qué querés cambiar.');
+      }else this.say('sys','Tu primer juego está listo para probar. Personalizalo desde Crear y guardá tus cambios.');
     }catch(e){this.say('sys','No se pudo recuperar el proyecto: '+e.message+'. Salí y volvé a abrir el Studio para reintentar.');}
     if(!panel.isConnected)return;
     this.refreshAll();this.showTab('create');this.lock(false);
