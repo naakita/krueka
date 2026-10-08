@@ -1,12 +1,12 @@
-# Krueka Studio: conexión pendiente de API
+# Krueka Studio: conexión de API
 
 La infraestructura está preparada para usar el Chat y probar el juego en el mismo taller desde el navegador. No requiere instalar OpenCode ni alquilar una VPS adicional. Conserva los proyectos, hasta 40 mensajes y el borrador en la nube. Las bases, el editor y la revisión funcionan mientras la API está desconectada: Guardar idea conserva un pedido pendiente sin generar una respuesta de IA ni cambiar el código.
 
-## Conexión que se preparará después
+## Conexión del servidor
 
 La función de servidor `krueka-studio-ai` usa OpenAI Responses con `gpt-6-luna`, fijo en el código. Los alumnos no pueden seleccionar modelos más caros ni necesitan una cuenta de OpenAI. La clave queda en los secretos del servidor, nunca en navegador, repositorio ni proyectos.
 
-Para habilitar solicitudes deben existir `OPENAI_API_KEY` y `STUDIO_AI_ENABLED=true`. La ausencia de cualquiera mantiene generación desactivada. Esta entrega no configura credenciales ni realiza solicitudes reales a OpenAI. Al conectar después, comprobar modelo, tarifas y límites de facturación de la cuenta antes de habilitar la generación.
+Para habilitar solicitudes deben existir `OPENAI_API_KEY` y `STUDIO_AI_ENABLED=true`. La ausencia de cualquiera mantiene generación desactivada. La conexión se habilitó y verificó con una solicitud real el 08/10/2026. Las tarifas estándar se comprobaron al activar; los límites de facturación de la cuenta se gestionan por separado.
 
 ## Consumo inicial
 
@@ -25,6 +25,10 @@ El servidor reserva presupuesto antes de llamar a OpenAI y liquida con el uso in
 La fórmula inicial usa US$0,10 por millón de tokens de entrada y US$0,50 por millón de salida; verificar precios vigentes al activar. Este control corresponde al Studio: otros usos de la misma clave, cambios de tarifa y cargos ajenos al Studio requieren controles de facturación propios. US$5 es un límite de uso configurado, no un cargo fijo mensual.
 
 Las tablas privadas de contabilidad tienen RLS y no permiten acceso de alumnos ni clientes públicos. No almacenan prompts, código ni nombres. La función valida alumno y equipo antes de guardar o consultar; a OpenAI se envían instrucciones, código y mensajes recientes necesarios, sin incluir identificadores del alumno. Se rechazan patrones evidentes de datos personales antes de enviar, sin pretender detectar todos los casos.
+
+## Cambios breves y recuperación
+
+La IA devuelve fragmentos exactos para modificar archivos existentes, evitando copiar completo el motor 3D en cada respuesta. El servidor valida coincidencias únicas y aplica el conjunto de forma atómica; una respuesta incompleta o un fragmento ambiguo no modifica el juego. Ante pedidos amplios como «dame el mejor cambio del juego», el asistente elige una mejora pequeña y visible. No hay reintentos automáticos que generen cargos adicionales. Los errores también actualizan el contador de intentos.
 
 ## Comprobación antes de la clase
 
