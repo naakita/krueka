@@ -106,3 +106,18 @@
 #krueka-studio .ks-scene-actions button,#krueka-studio .ks-scene-add button{font-size:11px}
 #krueka-studio .ks-scene-add select{flex:1;min-width:90px;background:#080f1b;color:#fff;border:1px solid #ffffff28;border-radius:8px;padding:8px}
 #krueka-studio .ks-settings input[type=color]{height:38px;padding:3px;cursor:pointer}
+
+/* Hero Lab: moldes y colección accesibles desde el taller de los Juniors. */
+#krueka-studio .kh-collection{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+#krueka-studio .kh-collection .ks-btn[aria-pressed="true"]{background:#2b5a72;border-color:#7de2ed;color:#e6fbff}
+#krueka-studio .kh-molds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+#krueka-studio .kh-mold{border:1px solid #355c75;border-radius:10px;cursor:pointer;background:radial-gradient(ellipse at 48% 20%,#2b3e58,#0d1c2f 80%);color:#e8f2fa;min-height:152px;display:flex;flex-direction:column;align-items:center;overflow:hidden;padding:5px 5px 9px;font:inherit}
+#krueka-studio .kh-mold:hover{border-color:#78d8ec}
+#krueka-studio .kh-mold:disabled{cursor:not-allowed;opacity:.4}
+#krueka-studio .kh-mold span{height:112px;width:105px;overflow:hidden;flex:none}
+#krueka-studio .kh-mold svg{height:151px;width:100%}
+#krueka-studio .kh-mold b{font-size:11px;line-height:1.4;text-align:center}
+#krueka-studio .kh-mold small{color:#78d9ee;font-size:10px;margin:3px}
+#krueka-studio .kh-live{height:320px;background:radial-gradient(ellipse at 50% 55%,#2a4d65,#0b192d 70%);border:1px solid #355f76;border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;margin:12px 0}
+#krueka-studio .kh-live svg{height:100%;width:100%;filter:drop-shadow(0 10px 9px #0008)}
+#krueka-studio .ks-settings textarea#kh-story{width:100%;background:#101e2c;color:#eef5ff;border:1px solid #45617a;border-radius:7px;padding:10px;font:inherit;resize:vertical}
