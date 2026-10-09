@@ -61,7 +61,12 @@ function protagonistFiles(studio,heroId,modelId,portrait){
  if(original.startsWith('/* Motor autónomo del gestor;')){
   const start=original.indexOf('window.HERO_ART='),end=original.indexOf(';\nwindow.HERO_CHOICES=',start);
   if(start>=0&&end>start){
-   files['hero.js']=original.slice(0,start)+'window.HERO_ART='+StudioHeroes.art.toString()+original.slice(end);
+   let updated=original.slice(0,start)+'window.HERO_ART='+StudioHeroes.art.toString()+original.slice(end);
+   const beginClean=updated.indexOf('function cleanHero(');
+   const beginArt=updated.indexOf('window.HERO_ART=',beginClean);
+   if(beginClean>=0&&beginArt>beginClean)updated=updated.slice(0,beginClean)+StudioHeroes.cleanHero.toString()+'\n'+updated.slice(beginArt);
+   else throw Error('No se pudo actualizar la ficha anterior sin riesgo. Descargá una copia del proyecto.');
+   files['hero.js']=updated;
   }else throw Error('El motor del héroe tiene un formato desconocido. Guardá una copia del proyecto antes de actualizarlo.');
  }
  if(typeof studio.validFiles==='function')studio.validFiles(files);
