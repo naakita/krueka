@@ -32,7 +32,7 @@ function template(which,id){
  primary:t.primary,secondary:t.secondary,accent:t.accent,skin:'#ba937a',
  role:t.role,element:t.element,rarity:t.rarity,level:1,
  stats:{hp:t.stats[0],attack:t.stats[1],defense:t.stats[2],speed:t.stats[3]},
- skills:[...t.skills],story:'El viaje de este héroe está por comenzar.',anim:{idle:'breath',move:'run',attack:t.weapon==='bow'?'shot':t.weapon==='staff'?'cast':t.weapon==='axe'?'smash':'slash'},fx:t.element};
+ skills:[...t.skills],story:'El viaje de este héroe está por comenzar.',renderModel:({knight:'warrior',ranger:'ranger',mage:'wizard',guardian:'warrior',rogue:'rogue',tech:'monk'})[t.id]||'warrior',portrait:'',anim:{idle:'breath',move:'run',attack:t.weapon==='bow'?'shot':t.weapon==='staff'?'cast':t.weapon==='axe'?'smash':'slash'},fx:t.element};
 }
 function cleanHero(raw,i=0){
  const x=raw&&typeof raw==='object'?raw:{},d=template('knight','hero-'+i),s=x.stats||{};
@@ -48,6 +48,8 @@ function cleanHero(raw,i=0){
  defense:cl(s.defense,10,500,185),speed:cl(s.speed,10,500,79)},
  skills:Array.from({length:4},(_,n)=>tx(Array.isArray(x.skills)?x.skills[n]:'',38,'Habilidad '+(n+1))),
  story:tx(x.story,300,'Una historia por descubrir.'),
+ renderModel:choice(x.renderModel,{warrior:1,ranger:1,wizard:1,rogue:1,cleric:1,monk:1},({knight:'warrior',ranger:'ranger',mage:'wizard',guardian:'warrior',rogue:'rogue',tech:'monk'})[x.base]||'warrior'),
+ portrait:/^data:image\/webp;base64,[a-zA-Z0-9+/=]{1,40000}$/.test(String(x.portrait||''))?String(x.portrait):'',
  anim:{idle:choice(x.anim?.idle,{breath:1,guard:1,focus:1},'breath'),move:choice(x.anim?.move,{walk:1,run:1,dash:1},'run'),attack:choice(x.anim?.attack,{slash:1,shot:1,cast:1,smash:1},'slash')},
  fx:choice(x.fx,{none:1,glow:1,fire:1,ice:1,shadow:1,arcane:1},'glow')};
 }
@@ -57,11 +59,12 @@ function clean(raw){
   const x=cleanHero(h,i);if(ids.has(x.id))x.id='hero-'+i+'-copy';ids.add(x.id);return x;
  });
  if(!heroes.length)heroes=[template('knight','hero-1')];
- return {kind:'hero-manager',title:tx(r.title,64,'Mi colección RPG'),
+ return {...(r.world&&typeof r.world==='object'?{world:r.world}:{}),...(r.combat&&typeof r.combat==='object'?{combat:r.combat}:{}),kind:'hero-manager',title:tx(r.title,64,'Mi colección RPG'),
  active:heroes.some(x=>x.id===r.active)?r.active:heroes[0].id,heroes};
 }
 function art(raw){
  const h=cleanHero(raw),tag='hr'+h.id.replace(/[^a-z0-9]/g,''),a=h.accent,s=h.secondary,p=h.primary;
+ if(h.portrait)return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 540" role="img" aria-label="Retrato importado del héroe"><image width="320" height="540" preserveAspectRatio="xMidYMid slice" href="'+h.portrait+'"/></svg>';
  const metal='url(#'+tag+'m)';
  const cape=h.cape==='none'?'':h.cape==='short'?
  '<path d="M113 154 L80 269 Q158 301 230 268 L198 151Z" fill="'+p+'" stroke="#121a2b" stroke-width="5"/>':
