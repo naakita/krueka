@@ -160,6 +160,10 @@ function inject(game){
  'dx=dx/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;dz=dz/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;');
  game=game.replace('reset();bindCanvas();function frame(now)', 'reset();bindCanvas();cinematicSetup();function frame(now)');
  game=game.replace("hud.textContent='Cristales '","hud.textContent='Registros '");
+ game=game.replace("box(p.x,0,p.z,s,.15,s,palette.edge);crystal(p.x,1+Math.sin(elapsed*2+o.x)*.12,p.z,s*.45,o.color);",
+ "box(p.x,0,p.z,s*.75,1.25,s*.65,'#344953');box(p.x,1.27,p.z+s*.34,s*.59,.42,.05,o.color,0,true);");
+ game=game.replace("'¡Abriste el portal! Llegá al arco del fondo.'","'Acceso habilitado. Avanzá hacia el punto de extracción.'");
+ game=game.replace("'¡Misión cumplida! Construiste, probaste y exploraste tu mundo 3D.'","'Operación completada: registros recuperados y extracción realizada.'");
  game=game.replace("'Cristal encontrado. Buscá el siguiente.'","'Registro recuperado. Continuá tu misión.'");
  return game;
 }
