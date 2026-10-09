@@ -49,6 +49,21 @@ function clean(raw){
  result.theme='station';result.lighting=result.environment.light;
  return result;
 }
+function ellipsoid(cx,cy,cz,rx,ry,rz,color){
+ const v=[],f=[],rings=7,segments=10;
+ for(let j=0;j<=rings;j++){
+  const a=Math.PI*j/rings;
+  for(let k=0;k<=segments;k++){
+   const b=2*Math.PI*k/segments;
+   v.push([cx+rx*Math.sin(a)*Math.cos(b),cy+ry*Math.cos(a),cz+rz*Math.sin(a)*Math.sin(b)]);
+  }
+ }
+ for(let j=0;j<rings;j++)for(let k=0;k<segments;k++){
+  const p=j*(segments+1)+k;
+  f.push([p,p+segments+1,p+segments+2,p+1]);
+ }
+ mesh(v,f,color);
+}
 function humanoid(person,x,y,z,angle,walk,motion){
  const correct=safeColor,skin=correct(person.skin,'#ad8469'),coat=correct(person.jacket,'#384b51'),pants=correct(person.pants,'#263040'),hair=correct(person.hair,'#241f25');
  const s=safeNumber(person.height,.86,1.17,1),stride=Math.sin(motion*8.5)*.19*walk;
@@ -66,8 +81,8 @@ function humanoid(person,x,y,z,angle,walk,motion){
  box(x+.45*s,y+.76*s+rise+Math.max(0,arm),z+arm*.35,.19*s,.64*s,.24*s,coat);
  box(x-.45*s,y+.73*s+rise+Math.max(0,-arm),z-arm*.35,.2*s,.15*s,.24*s,skin);
  box(x+.45*s,y+.73*s+rise+Math.max(0,arm),z+arm*.35,.2*s,.15*s,.24*s,skin);
- box(x,y+1.64*s+rise,z,.48*s,.39*s,.43*s,skin);
- box(x,y+1.95*s+rise,z-.06,.5*s,.12*s,.48*s,hair);
+ ellipsoid(x,y+1.81*s+rise,z,.24*s,.265*s,.225*s,skin);
+ ellipsoid(x,y+2.015*s+rise,z-.06*s,.255*s,.10*s,.23*s,hair);
  box(x,y+1.75*s+rise,z+.218*s,.17*s,.075*s,.04*s,'#382a2b');
  box(x-.12*s,y+1.82*s+rise,z+.224*s,.06*s,.045*s,.04*s,'#182126');
  box(x+.12*s,y+1.82*s+rise,z+.224*s,.06*s,.045*s,.04*s,'#182126');
@@ -148,7 +163,7 @@ function inject(game){
  const end=game.indexOf('function project(',start);
  if(!game.includes(insert)||start<0||end<0)throw new Error('El motor 3D cambió: no se puede preparar la base sin verificarlo.');
  const helpers='   let cinemaVoice=false,cinematicGesture=0,cinematicDialogueStep=0;\n'+safeColor.toString()+'\n'+safeNumber.toString()+'\n'+
- humanoid.toString()+'\n'+cinemaScene.toString()+'\n'+interact.toString()+'\n'+cinematicSetup.toString()+'\n';
+ ellipsoid.toString()+'\n'+humanoid.toString()+'\n'+cinemaScene.toString()+'\n'+interact.toString()+'\n'+cinematicSetup.toString()+'\n';
  game=game.replace(insert,helpers+insert);
  // Conservar colisiones, luces, WebGL y Canvas alternativo del motor existente.
  const a=game.indexOf('const x=player.x,y=player.y,z=player.z,walk=');
