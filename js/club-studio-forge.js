@@ -126,14 +126,17 @@ function interact(){
  const d=Math.hypot(player.x-4.5,player.z-(-7.5+Math.sin(elapsed*.7)*(cfg.motions?.patrol||1)*1.3));
  const caption=document.getElementById('dialogue');
  if(d>3.8){caption.textContent='Acercate a Mara para conversar (tecla E o Hablar).';return;}
- const guide=cfg.characters?.guide?.name||'Mara',message=String(cfg.story?.dialogue||'La zona está vigilada.').slice(0,240);
- caption.textContent=guide+': '+message;
+ const guide=cfg.characters?.guide?.name||'Mara',hero=cfg.characters?.hero?.name||'Alex';
+ const answer=cinematicDialogueStep++%2===1;
+ const message=String(answer?(cfg.story?.reply||'Entendido.'):(cfg.story?.dialogue||'La zona está vigilada.')).slice(0,240);
+ caption.textContent=(answer?hero:guide)+': '+message;
  if(cinemaVoice&&typeof speechSynthesis!=='undefined'&&typeof SpeechSynthesisUtterance!=='undefined'){
   try{speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(message);speech.lang='es-ES';speech.rate=.93;speech.pitch=.9;speechSynthesis.speak(speech);}catch(_e){}
  }
 }
 function cinematicSetup(){
  const btn=document.getElementById('interact'),voice=document.getElementById('voice'),gesture=document.getElementById('gesture');
+ document.getElementById('mission').textContent='MISIÓN · '+String(cfg.story?.objective||'Recuperá los registros.').slice(0,150);
  btn.onclick=interact;
  gesture.onclick=()=>{cinematicGesture=elapsed+1.6;document.getElementById('dialogue').textContent=(cfg.characters?.hero?.name||'Tu personaje')+' hace una señal al equipo.';};
  voice.onclick=()=>{cinemaVoice=!cinemaVoice;voice.textContent=cinemaVoice?'Voces: activadas':'Voces: apagadas';};
@@ -144,7 +147,7 @@ function inject(game){
  const start=game.indexOf('const x=player.x,y=player.y,z=player.z,walk=');
  const end=game.indexOf('function project(',start);
  if(!game.includes(insert)||start<0||end<0)throw new Error('El motor 3D cambió: no se puede preparar la base sin verificarlo.');
- const helpers='   let cinemaVoice=false,cinematicGesture=0;\n'+safeColor.toString()+'\n'+safeNumber.toString()+'\n'+
+ const helpers='   let cinemaVoice=false,cinematicGesture=0,cinematicDialogueStep=0;\n'+safeColor.toString()+'\n'+safeNumber.toString()+'\n'+
  humanoid.toString()+'\n'+cinemaScene.toString()+'\n'+interact.toString()+'\n'+cinematicSetup.toString()+'\n';
  game=game.replace(insert,helpers+insert);
  // Conservar colisiones, luces, WebGL y Canvas alternativo del motor existente.
@@ -176,8 +179,8 @@ function create(){
  base['index.html']=base['index.html']
   .replace('MI MUNDO 3D','FORGE · PROTOTIPO CINEMÁTICO')
   .replace('CREÁ TU PROPIO RECORRIDO','HORIZON · DEMOSTRACIÓN EDITABLE')
-  .replace('</div><p id="status"', '</div><div class="dialogbar"><button id="interact">E · Hablar</button><button id="gesture">F · Gesto</button><button id="voice">Voces: apagadas</button></div><p id="dialogue" aria-live="polite">Acercate a Mara para conversar. Podés girar la cámara arrastrando la escena.</p><p id="status"');
- base['style.css']+='\nbody{background:#111825;color:#dae3ee;font-family:system-ui,sans-serif}main{max-width:1120px}header h1{letter-spacing:.035em;font-weight:750} .stage{border:1px solid #7d99ad55;border-radius:10px;box-shadow:0 24px 60px #0008}.badge{background:#17202aaf;padding:7px;letter-spacing:.19em}.dialogbar{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin:8px 0}.dialogbar button{background:#172935;border:1px solid #527080;color:#dcf5ee}#dialogue{padding:12px;border:1px solid #475f7090;background:#14212d;border-radius:9px;font-size:12px;color:#dbe8e7;line-height:1.5}';
+  .replace('</div><p id="status"', '</div><div class="dialogbar"><button id="interact">E · Hablar</button><button id="gesture">F · Gesto</button><button id="voice">Voces: apagadas</button></div><p id="mission" role="status"></p><p id="dialogue" aria-live="polite">Acercate a Mara para conversar. Podés girar la cámara arrastrando la escena.</p><p id="status"');
+ base['style.css']+='\n#mission{padding:9px 12px;border-left:3px solid #b9a17c;background:#132131;color:#d3ddde;font-size:12px;line-height:1.55;border-radius:4px}body{background:#111825;color:#dae3ee;font-family:system-ui,sans-serif}main{max-width:1120px}header h1{letter-spacing:.035em;font-weight:750} .stage{border:1px solid #7d99ad55;border-radius:10px;box-shadow:0 24px 60px #0008}.badge{background:#17202aaf;padding:7px;letter-spacing:.19em}.dialogbar{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin:8px 0}.dialogbar button{background:#172935;border:1px solid #527080;color:#dcf5ee}#dialogue{padding:12px;border:1px solid #475f7090;background:#14212d;border-radius:9px;font-size:12px;color:#dbe8e7;line-height:1.5}';
  base['LEEME.md']='# HORIZON FORGE · Operación Umbral\n\nEtapa 1: PERSONAJES. Creá tres figuras adultas (protagonista, guía y vigilante), personalizá nombre, ropa, piel y proporciones.\nEtapa 2: ESCENARIO. Construí una ciudad, fábrica o puerto; cambiá iluminación y clima.\nEtapa 3: MOVIMIENTO. Probá caminar, correr (Shift), saltar (Espacio), gesto (F) y patrulla NPC.\nEtapa 4: DIÁLOGOS. Editá la frase de Mara. E para conversar; botón Voces para activar síntesis de voz cuando esté disponible.\nEtapa 5: INTEGRACIÓN. Recuperá tres registros, evitá drones y llegá al punto de extracción.\n\nSe trata de un prototipo 3D procedural de proporciones humanas, no de gráficos fotorrealistas ni captura de movimientos. WebGL con respaldo Canvas en navegadores sin aceleración. La voz es opcional, depende del navegador y puede no estar disponible.\n\n**Capacidad:** combinar personajes, entorno, animaciones y narrativa en un videojuego funcional. **Indicadores:** caracterizo un personaje; personalizo ambiente; compruebo acciones y diálogo; guardo y pruebo el proyecto.\n';
  return base;
 }
