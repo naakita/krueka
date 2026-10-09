@@ -201,3 +201,66 @@
 #krueka-studio .ks-alt-detail .ks-btn{font-size:10px;margin-top:5px}
 #krueka-studio .ks-alt-feedback{color:#99e9c3!important;font-size:10px!important}
 @media(max-width:780px){#krueka-studio .ks-alt-help{margin:7px 5px 10px;padding:9px}#krueka-studio .ks-alt-actions .ks-btn{min-width:105px}}
+
+/* Krueka Chat individual: conversación por proyecto, interfaz clara inspirada en un editor de chat moderno.
+   No incrusta ChatGPT ni comparte sesiones o chats externos. */
+#krueka-studio #ks-focus-open{font-size:11px;min-height:35px;border-radius:20px;border-color:#5983a7;color:#c8ecff;background:#122638}
+#krueka-studio #ks-focus-open[aria-pressed="true"]{background:#1c628b;color:#fff;border-color:#78d8ff}
+#krueka-studio #ks-focus-toolbar,#krueka-studio #ks-focus-empty{display:none}
+#krueka-studio.ks-chat-focus{--ks-focus-ink:#16212c;--ks-focus-muted:#5d6d80}
+#krueka-studio.ks-chat-focus .ks-top{background:#131c28;border-bottom-color:#364b62}
+#krueka-studio.ks-chat-focus .ks-projectbar{display:none}
+#krueka-studio.ks-chat-focus .ks-main{height:calc(100% - 58px);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);background:#fff}
+#krueka-studio.ks-chat-focus .ks-left{width:100%;height:100%;min-height:0;border:0;grid-template-rows:minmax(0,1fr);background:#fff}
+#krueka-studio.ks-chat-focus .ks-tabs{display:none}
+#krueka-studio.ks-chat-focus .ks-work{overflow:hidden;height:100%;min-height:0;display:block}
+#krueka-studio.ks-chat-focus #ks-ai{display:flex!important;flex-direction:column;min-height:0;height:100%;width:100%;background:#fff;color:var(--ks-focus-ink)}
+#krueka-studio.ks-chat-focus #ks-focus-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px max(16px,calc((100% - 1020px)/2));width:100%;min-height:73px;border-bottom:1px solid #e4e9ef;background:#f9fafb;flex-shrink:0}
+#krueka-studio.ks-chat-focus .ks-focus-meta{display:grid;gap:3px;min-width:0}
+#krueka-studio.ks-chat-focus .ks-focus-brand{font-size:10px;font-weight:900;letter-spacing:.16em;color:#1976a3}
+#krueka-studio.ks-chat-focus .ks-focus-meta strong{font-size:14px;color:#172536;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:350px}
+#krueka-studio.ks-chat-focus .ks-focus-meta small{font-size:10px;color:#607587}
+#krueka-studio.ks-chat-focus .ks-focus-tools{display:flex;flex-wrap:wrap;gap:7px}
+#krueka-studio.ks-chat-focus .ks-focus-tools .ks-btn{color:#273b4c;background:#fff;border-color:#d4dfe8;font-size:11px;min-height:36px;border-radius:19px}
+#krueka-studio.ks-chat-focus .ks-focus-tools .ks-btn:hover{background:#e8f4fc}
+#krueka-studio.ks-chat-focus .ks-focus-empty:not([hidden]){display:block;width:min(770px,94%);margin:22px auto 4px;text-align:center;padding:8px 16px}
+#krueka-studio.ks-chat-focus .ks-focus-spark{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:14px;background:#e7f4ff;color:#197cb5;font-size:25px;margin-bottom:9px}
+#krueka-studio.ks-chat-focus .ks-focus-empty h2{margin:5px 0 10px;color:#1a2430;font-size:clamp(22px,3vw,29px);line-height:1.2;font-weight:600}
+#krueka-studio.ks-chat-focus .ks-focus-empty p{font-size:12px;line-height:1.6;color:#54677a;margin:0 auto 11px;max-width:450px}
+#krueka-studio.ks-chat-focus .ks-focus-quick{display:flex;justify-content:center;gap:9px;flex-wrap:wrap}
+#krueka-studio.ks-chat-focus .ks-focus-quick .ks-btn{font-size:11px;border-color:#cbd9e4;background:#f2f7fb;color:#234a68;min-height:34px;border-radius:20px}
+#krueka-studio.ks-chat-focus #ks-ai-status{color:#536677;background:#f0f6fa;padding:7px 16px;text-align:center;font-size:10px;line-height:1.5;flex-shrink:0}
+#krueka-studio.ks-chat-focus #ks-usage{color:#738394;text-align:center;padding:4px 12px;background:white;font-size:10px;flex-shrink:0}
+#krueka-studio.ks-chat-focus .ks-modes{margin:4px auto 0;max-width:440px;border:0;padding:5px;display:flex;gap:7px;justify-content:center;flex-shrink:0}
+#krueka-studio.ks-chat-focus .ks-modes .ks-btn{min-height:30px;border:1px solid #dbe3ec;border-radius:18px;background:#fff;color:#395367;font-size:10px;padding:4px 11px}
+#krueka-studio.ks-chat-focus .ks-modes .ks-btn[aria-pressed="true"]{background:#deeffb;border-color:#89c4df;color:#16456a}
+#krueka-studio.ks-chat-focus .ks-modes #ks-repair{display:none}
+#krueka-studio.ks-chat-focus .ks-modes #ks-model{font-size:10px;align-self:center;color:#4886a9}
+#krueka-studio.ks-chat-focus #ks-chat{width:min(900px,100%);flex:1;min-height:0;overflow:auto;padding:10px 25px 14px;margin:0 auto;color:#1e2936;background:#fff}
+#krueka-studio.ks-chat-focus #ks-chat .ks-onboard{display:none}
+#krueka-studio.ks-chat-focus #ks-chat .ks-msg{display:block;width:fit-content;max-width:min(88%,740px);margin:10px 0;padding:12px 16px;border:0;border-radius:18px;color:#253342;background:#f0f3f6;white-space:pre-wrap;font-size:13px;line-height:1.6;box-shadow:none}
+#krueka-studio.ks-chat-focus #ks-chat .ks-msg.user{margin-left:auto;background:#e4f2ff;color:#173e5c}
+#krueka-studio.ks-chat-focus #ks-chat .ks-msg.sys{margin-inline:auto;background:#f2f6f2;color:#3f6652;font-size:11px;border:1px solid #e0e9df;max-width:95%}
+#krueka-studio.ks-chat-focus #ks-chat .ks-msg.ai{background:#f0f3f6}
+#krueka-studio.ks-chat-focus #ks-chat .ks-author{display:block;color:#577183;font-size:10px;font-weight:800;margin-bottom:5px}
+#krueka-studio.ks-chat-focus .ks-compose{width:min(900px,94%);flex-shrink:0;align-self:center;padding:10px 12px 9px;margin:0 auto 8px;border:1px solid #d7e0e9;background:#fff;border-radius:24px;box-shadow:0 5px 30px #17334c18;color:#253342}
+#krueka-studio.ks-chat-focus .ks-compose label{display:none}
+#krueka-studio.ks-chat-focus .ks-compose textarea{width:100%;border:0;outline:0;background:#fff;color:#263545;min-height:46px;max-height:104px;padding:10px 10px 2px;resize:vertical;font:13px/1.5 inherit}
+#krueka-studio.ks-chat-focus .ks-compose textarea::placeholder{color:#758596}
+#krueka-studio.ks-chat-focus .ks-compose .ks-actions{margin:0;gap:8px;padding:1px 8px 3px}
+#krueka-studio.ks-chat-focus .ks-compose .ks-actions .ks-tip{font-size:10px;color:#8190a1}
+#krueka-studio.ks-chat-focus .ks-compose #ks-send{border-radius:100px;min-height:34px;background:#1c75ba;color:#fff;font-size:11px}
+#krueka-studio.ks-chat-focus #ks-alternative-help{display:none}
+#krueka-studio.ks-chat-focus.ks-focus-quota #ks-alternative-help{display:block;width:min(900px,94%);padding:9px 12px;max-height:140px;overflow:auto;flex-shrink:0;margin:0 auto 7px;background:#f2f7fa;color:#334c60;border-color:#bcd4e2}
+#krueka-studio.ks-chat-focus.ks-focus-quota #ks-alternative-help p{color:#586d7f}
+#krueka-studio.ks-chat-focus.ks-focus-quota #ks-alternative-help .ks-alt-head>b{color:#295272}
+#krueka-studio.ks-chat-focus.ks-focus-quota #ks-alternative-help .ks-alt-actions .ks-btn{color:#244b66;background:#fff;border-color:#bfd5e7}
+#krueka-studio.ks-chat-focus .ks-right{display:none}
+#krueka-studio.ks-chat-focus.ks-focus-game .ks-main{grid-template-columns:minmax(310px,52%) minmax(0,48%)}
+#krueka-studio.ks-chat-focus.ks-focus-game .ks-right{display:grid;border-left:1px solid #dee7ef}
+#krueka-studio.ks-chat-focus.ks-focus-game .ks-previewbar{background:#edf2f7}
+#krueka-studio.ks-chat-focus.ks-focus-game .ks-previewbar .ks-preview-label{color:#1e2f41}
+#krueka-studio.ks-chat-focus.ks-focus-game #ks-focus-toolbar{padding-inline:12px}
+#krueka-studio.ks-chat-focus.ks-focus-game .ks-focus-meta strong{max-width:230px}
+@media(max-width:900px){#krueka-studio.ks-chat-focus.ks-focus-game .ks-main{grid-template-columns:1fr;grid-template-rows:minmax(0,60%) minmax(0,40%)}#krueka-studio.ks-chat-focus.ks-focus-game .ks-right{min-height:0}}
+@media(max-width:600px){#krueka-studio.ks-chat-focus .ks-top{gap:5px;padding:6px}#krueka-studio.ks-chat-focus .ks-top .ks-badge{display:none}#krueka-studio.ks-chat-focus .ks-top #ks-save{max-width:100px;font-size:9px}#krueka-studio.ks-chat-focus #ks-focus-toolbar{padding:9px 10px;gap:7px;flex-wrap:wrap}#krueka-studio.ks-chat-focus .ks-focus-tools .ks-btn{min-height:29px;font-size:10px;padding:4px 9px}#krueka-studio.ks-chat-focus #ks-chat{padding:8px 10px 12px}#krueka-studio.ks-chat-focus #ks-focus-empty:not([hidden]){margin:10px auto 2px}#krueka-studio.ks-chat-focus .ks-focus-empty h2{font-size:21px}}

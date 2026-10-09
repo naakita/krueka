@@ -42,3 +42,12 @@ En **Chat** aparece «Otras formas de avanzar»: **Guía sin IA** (instrucciones
 - No se permite insertar una URL privada como `https://chatgpt.com/c/…` ni compartir la sesión del docente, ni usar la suscripción Plus como si fuese el crédito de la API. Los enlaces a conversaciones no autorizan integración, y los términos de OpenAI prohíben compartir credenciales.
 - El uso externo no modifica el presupuesto diario de la API ni soluciona directamente un error 429 del proveedor; simplemente permite seguir trabajando con el editor y, a quienes son elegibles, con una cuenta propia fuera de Krueka.
 - Más adelante puede solicitarse acceso como socio de «Sign in with ChatGPT»; hoy no está disponible como integración de Krueka y no debe simularse.
+
+
+### Chat individual sin chats ajenos (10/2026)
+
+- La interfaz de Krueka Studio carga la conversación **privada del alumno para el proyecto seleccionado**. El botón **◉ Chat individual** alterna a un modo de conversación centrado y limpio, visualmente comparable a un chat moderno. Al entrar al Studio se activa automáticamente después de cargar el proyecto desde la nube.
+- En el modo de conversación, **◧ Ver mi juego** enseña la vista previa junto al chat, **← Volver al Studio** permite regresar al editor. **🎨 Editar mi juego** abre las herramientas y **💡 Planear una mejora** cambia al modo pedagógico.
+- El nombre del proyecto y el estado de la IA son visibles en la cabecera. Al cambiar de proyecto, la conversación se actualiza desde el historial del proyecto. Los mensajes se guardan mediante el backend existente asociado al alumno y proyecto (hasta 40 mensajes).
+- **No es chatgpt.com incrustado:** no hay iframe de ChatGPT, uso compartido de credenciales ni acceso a chats de la cuenta Plus del docente. Las respuestas IA siguen sometidas al cupo/costo de la API configurada en Krueka; si la API no está disponible, se guarda la idea y se ofrecen ayudas locales.
+- La nueva presentación no altera funciones, claves, RLS, RPC ni reglas de seguridad; utiliza únicamente el aislamiento y guardado ya existentes en Krueka Studio. No garantiza un resultado de IA sin cuota ni suscripción distinta.
