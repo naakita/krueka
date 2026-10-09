@@ -39,6 +39,49 @@ function compress(image){
  }
  throw Error('La imagen es demasiado grande para el proyecto. Probá con otra.');
 }
+/* Promueve un render del héroe a personaje principal sin modificar la lógica del alumno.
+   El GLB sigue en Render Pro: su captura WebP es la imagen del juego 2D. */
+function protagonistFiles(studio,heroId,modelId,portrait){
+ if(!window.StudioHeroes||!window.StudioKits)throw Error('Abrí primero un proyecto Gestor de Héroes.');
+ if(!validPortrait(String(portrait||'')))throw Error('Todavía no hay una captura válida del personaje 3D.');
+ if(!names.includes(modelId))throw Error('Elegí un modelo 3D de la biblioteca.');
+ const cfg=StudioHeroes.clean(StudioKits.read(studio.files));
+ const hero=cfg.heroes.find(h=>h.id===heroId);
+ if(!hero)throw Error('No se encontró el personaje en la colección.');
+ hero.renderModel=modelId;hero.portrait=portrait;cfg.active=hero.id;
+ const world=cfg.world&&typeof cfg.world==='object'?{...cfg.world}:{};
+ const fallback=window.KruekaGameBuilder?.normalise(cfg)?.world?.map||[];
+ const map=(Array.isArray(world.map)&&world.map.length?world.map:fallback).map(o=>({...o}));
+ const main=map.find(o=>o.type==='hero');
+ if(main)main.name=hero.name;
+ else map.push({id:'hero-main',type:'hero',x:2,y:4,rot:0,scale:1,name:hero.name});
+ cfg.world={...world,map};
+ const files={...studio.files,'game-config.js':StudioKits.configFile(cfg)};
+ const original=String(files['hero.js']||'');
+ if(original.startsWith('/* Motor autónomo del gestor;')){
+  const start=original.indexOf('window.HERO_ART='),end=original.indexOf(';\nwindow.HERO_CHOICES=',start);
+  if(start>=0&&end>start){
+   files['hero.js']=original.slice(0,start)+'window.HERO_ART='+StudioHeroes.art.toString()+original.slice(end);
+  }else throw Error('El motor del héroe tiene un formato desconocido. Guardá una copia del proyecto antes de actualizarlo.');
+ }
+ if(typeof studio.validFiles==='function')studio.validFiles(files);
+ return {files,hero,cfg};
+}
+function activateProtagonist(studio,heroId,modelId,portrait){
+ if(studio.busy||!studio.cloudReady)throw Error('Esperá a que Krueka termine de cargar y guardar.');
+ const result=protagonistFiles(studio,heroId,modelId,portrait);
+ studio.checkpoint();studio.files=result.files;studio.heroSelected=heroId;
+ studio.changed();studio.refreshAll();studio.lock(false);
+ return result;
+}
+async function capturePortrait(viewer){
+ if(!viewer||typeof viewer.toDataURL!=='function')throw Error('Primero activá Render 3D y esperá a que aparezca el personaje.');
+ const shot=viewer.toDataURL('image/png');
+ if(!/^data:image\/(?:png|webp);base64,[a-zA-Z0-9+/=]+$/.test(String(shot)))throw Error('No se pudo capturar el modelo. Guardá una captura PNG y volvé a importarla como retrato HD.');
+ const image=new Image();
+ await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error('La captura no pudo procesarse.'));image.src=shot;});
+ return compress(image);
+}
 function decorate(studio,el,raw){
  if(!studio||!el||!window.StudioHeroes||el.querySelector('.kr-render-pro'))return;
  const cfg=StudioHeroes.clean(raw);
@@ -53,6 +96,7 @@ function decorate(studio,el,raw){
  '<label>Iluminación<select id="kr-rp-light"><option value="studio">Estudio cinematográfico</option><option value="sunset">Atardecer cálido</option><option value="dark">Fantasia oscura</option></select></label></div>'+
  '<div class="kr-rp-frame"><div class="kr-rp-fallback" id="kr-rp-fallback">'+StudioHeroes.art(hero)+'</div><div class="kr-rp-view" id="kr-rp-view" hidden></div><p class="kr-rp-state" id="kr-rp-state" role="status">Vista ligera disponible. Activá Render 3D cuando tengas conexión y una computadora compatible.</p></div>'+
  '<div class="kr-rp-toolbar"><button class="ks-btn primary" type="button" id="kr-rp-load">◈ Activar Render 3D</button><button class="ks-btn" type="button" id="kr-rp-spin" disabled>⟳ Girar</button><button class="ks-btn" type="button" id="kr-rp-shot" disabled>↓ Guardar PNG</button></div>'+
+ '<div class="kr-rp-promotion"><button class="ks-btn primary" type="button" id="kr-rp-main" disabled>★ Usar este 3D como protagonista</button><p>Al seleccionarlo, Krueka lo pondrá como héroe principal, mostrará su render en la colección y lo representará en el mapa. La animación 3D jugable todavía no está integrada.</p></div>'+
  '<p class="ks-tip">En modo 3D podés arrastrar para girar y usar la rueda para acercar. Los colores y accesorios del editor SVG no alteran automáticamente la geometría del modelo 3D; podés elegir otro molde y guardar esa elección.</p>'+
  '<div class="kr-rp-import"><h3>Retrato de ilustración HD</h3><p>Para conseguir el acabado de fantasía detallada que buscás, usá una ilustración propia o con permiso. Krueka la comprime y la guarda dentro de <b>tu proyecto privado</b>, sin enviarla a servicios públicos de generación.</p>'+
  '<label class="kr-rp-upload">Seleccionar imagen (PNG, JPG, WebP)<input type="file" id="kr-rp-file" accept="image/png,image/jpeg,image/webp"></label>'+
@@ -92,8 +136,8 @@ function decorate(studio,el,raw){
     viewer.setAttribute('reveal','auto');
     viewer.setAttribute('camera-target','auto auto auto');
     viewer.setAttribute('alt','Héroe 3D de fantasía gratuito');
-    viewer.addEventListener('load',()=>{setStatus('Modelo 3D listo: girá para examinarlo. Los modelos son estilizados.');$('kr-rp-spin').disabled=false;$('kr-rp-shot').disabled=false;light();});
-    viewer.addEventListener('error',()=>{setStatus('El modelo 3D no pudo descargarse. La ficha 2D sigue disponible.');view.hidden=true;fallback.hidden=false;});
+    viewer.addEventListener('load',()=>{setStatus('Modelo 3D listo. Ahora podés usarlo como protagonista.');$('kr-rp-spin').disabled=false;$('kr-rp-shot').disabled=false;$('kr-rp-main').disabled=false;light();});
+    viewer.addEventListener('error',()=>{setStatus('El modelo 3D no pudo descargarse. La ficha 2D sigue disponible.');$('kr-rp-main').disabled=true;view.hidden=true;fallback.hidden=false;});
     view.appendChild(viewer);
    }
    fallback.hidden=true;view.hidden=false;
@@ -103,9 +147,22 @@ function decorate(studio,el,raw){
   finally{$('kr-rp-load').disabled=false;}
  };
  $('kr-rp-load').onclick=loadModel;
- modelChoice.addEventListener('change',()=>{if(viewer){viewer.src=modelSrc(modelChoice.value);setStatus('Cambiando modelo 3D…');}});
+ modelChoice.addEventListener('change',()=>{$('kr-rp-main').disabled=true;if(viewer){viewer.src=modelSrc(modelChoice.value);setStatus('Cambiando modelo 3D…');}});
  $('kr-rp-light').onchange=light;
  $('kr-rp-spin').onclick=()=>{if(!viewer)return;orbit=!orbit;viewer.autoRotate=orbit;$('kr-rp-spin').textContent=orbit?'■ Parar giro':'⟳ Girar';};
+ $('kr-rp-main').onclick=async()=>{
+  const button=$('kr-rp-main');
+  if(!viewer||button.disabled)return;
+  button.disabled=true;
+  setStatus('Capturando el render 3D y configurando a tu protagonista…');
+  try{
+   const portrait=await capturePortrait(viewer);
+   activateProtagonist(studio,hero.id,modelChoice.value,portrait);
+   const info=document.getElementById('ks-save');
+   if(info)info.textContent='Protagonista listo · Guardando…';
+   // El nuevo editor se recrea; el render ya aparece en Mi colección y en el mapa.
+  }catch(err){setStatus(err.message||'No se pudo establecer el protagonista.');button.disabled=false;}
+ };
  $('kr-rp-shot').onclick=()=>{
   if(!viewer||typeof viewer.toDataURL!=='function')return setStatus('La captura no está disponible en este navegador.');
   try{const a=document.createElement('a');a.download=(hero.name||'heroe').replace(/[^a-z0-9_-]/gi,'-').slice(0,40)+'-3d.png';a.href=viewer.toDataURL('image/png');a.click();setStatus('Se preparó la captura PNG del modelo 3D.');}
@@ -146,7 +203,7 @@ function install(){
  };
  installed=true;return true;
 }
-window.StudioRenderPro={NAMES,SOURCE,LIB,validPortrait,compress,decorate,install};
+window.StudioRenderPro={NAMES,SOURCE,LIB,validPortrait,compress,decorate,install,protagonistFiles,activateProtagonist,capturePortrait};
 if(!install()){
  let n=0;const timer=setInterval(()=>{if(install()||++n>30)clearInterval(timer)},100);
 }
