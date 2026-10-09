@@ -47,7 +47,9 @@ function cleanHero(raw,i=0){
  stats:{hp:cl(s.hp,100,3000,940),attack:cl(s.attack,10,500,128),
  defense:cl(s.defense,10,500,185),speed:cl(s.speed,10,500,79)},
  skills:Array.from({length:4},(_,n)=>tx(Array.isArray(x.skills)?x.skills[n]:'',38,'Habilidad '+(n+1))),
- story:tx(x.story,300,'Una historia por descubrir.'),\n anim:{idle:choice(x.anim?.idle,{breath:1,guard:1,focus:1},'breath'),move:choice(x.anim?.move,{walk:1,run:1,dash:1},'run'),attack:choice(x.anim?.attack,{slash:1,shot:1,cast:1,smash:1},'slash')},\n fx:choice(x.fx,{none:1,glow:1,fire:1,ice:1,shadow:1,arcane:1},'glow')};
+ story:tx(x.story,300,'Una historia por descubrir.'),
+ anim:{idle:choice(x.anim?.idle,{breath:1,guard:1,focus:1},'breath'),move:choice(x.anim?.move,{walk:1,run:1,dash:1},'run'),attack:choice(x.anim?.attack,{slash:1,shot:1,cast:1,smash:1},'slash')},
+ fx:choice(x.fx,{none:1,glow:1,fire:1,ice:1,shadow:1,arcane:1},'glow')};
 }
 function clean(raw){
  const r=raw&&typeof raw==='object'?raw:{},ids=new Set();
