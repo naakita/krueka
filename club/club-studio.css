@@ -185,3 +185,19 @@
 #krueka-studio .kr-render-pro{scroll-margin-top:68px}
 #krueka-studio #kh-open-render{background:#236b98;color:#fff;border-color:#86ddf2}
 @media(max-width:900px){#krueka-studio .kg-head{align-items:stretch;flex-direction:column}#krueka-studio .kg-head .kg-actions{width:100%}#krueka-studio #kg-heroes-top{flex:1}}
+
+/* Continuar sin API: no comparte sesiones, no conecta chats privados y permite continuar el trabajo escolar. */
+#krueka-studio .ks-alt-help{margin:7px 10px 12px;padding:12px;border:1px solid #315a75;border-radius:12px;background:linear-gradient(160deg,#112638,#0e1e31);color:#dbeefa}
+#krueka-studio .ks-alt-head{display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap}
+#krueka-studio .ks-alt-head>b{font-size:12px;color:#e8f4ff}
+#krueka-studio .ks-alt-head>span{font-size:10px;font-weight:800;color:#9cffe5;border:1px solid #458c80;border-radius:20px;padding:4px 8px}
+#krueka-studio .ks-alt-help>p{font-size:11px;line-height:1.6;color:#b3c8d8;margin:8px 0}
+#krueka-studio .ks-alt-actions{display:flex;gap:6px;flex-wrap:wrap}
+#krueka-studio .ks-alt-actions .ks-btn{font-size:10px;padding:7px 9px;white-space:normal;flex:1;min-width:115px;min-height:38px}
+#krueka-studio .ks-alt-note{font-size:10px!important;color:#aabed0!important}
+#krueka-studio .ks-alt-detail{background:#101c2b;border:1px solid #365a71;padding:10px;border-radius:9px;margin-top:10px}
+#krueka-studio .ks-alt-detail h3{font-size:12px;margin:2px 0 8px;color:#adf2dd}
+#krueka-studio .ks-alt-detail ol{font-size:11px;color:#d9eaf4;line-height:1.7;padding-left:18px}
+#krueka-studio .ks-alt-detail .ks-btn{font-size:10px;margin-top:5px}
+#krueka-studio .ks-alt-feedback{color:#99e9c3!important;font-size:10px!important}
+@media(max-width:780px){#krueka-studio .ks-alt-help{margin:7px 5px 10px;padding:9px}#krueka-studio .ks-alt-actions .ks-btn{min-width:105px}}
