@@ -14,3 +14,15 @@ Hay seis moldes originales listos: caballero, arquera, hechicero, guardián, ase
 **Indicadores:** elige molde, combina cuatro piezas, completa ficha, prueba vista, guarda y recupera.
 
 **Alcance real:** SVG vectorial estilizado e interfaz de colección con aspecto de juego RPG; no renderiza modelos 3D hiperrealistas ni genera imágenes IA. Próximas fases: escenarios, animaciones y efectos, combate, historia e inventario. No modifica datos existentes, RLS ni la API.
+
+
+## Render Pro — mejorar la presentación de los héroes
+
+1. Studio IA → + Crear → Gestor de Héroes → Bases y reglas → Editar héroes.
+2. Seleccionar el héroe. Debajo de la vista de sus piezas aparece «Render Pro · Arte y 3D».
+3. Elegir uno de los seis moldes 3D y la iluminación. Presionar «Activar Render 3D» para descargar bajo demanda el motor gratuito y el modelo CC0. Arrastrar para girar, usar la rueda para zoom y tomar una captura si el navegador lo permite.
+4. Para obtener una ficha que se acerque a una ilustración de fantasía HD, seleccionar una imagen original propia/autorizada. Krueka la convierte a WebP reducido y guarda la imagen en el proyecto sin enviar el archivo a ningún servicio de generación. El retrato aparece en el héroe de la galería y en su preview. Guardar desde el botón superior.
+5. Volver al mundo con el botón correspondiente. Deshacer y Mis proyectos conservan los datos, sujeto al guardado exitoso de la nube.
+6. Si no carga 3D por WebGL, red o GPU, usar la vista vectorial. Quaternius es estilo 3D de videojuego estilizado: no promete el aspecto de la foto enviada por el docente.
+
+Guía de licencias y dependencias: `docs/render-pro-fuentes.md`.
