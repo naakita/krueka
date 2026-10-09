@@ -205,11 +205,13 @@ const StudioIA={__loaded:true,
   say(role,text,extra){this.history=this.cleanHistory([...this.history,{role,text:String(text||''),at:new Date().toISOString(),...extra}]);this.renderChat();},
   renderChat(){
     const el=document.getElementById('ks-chat');if(!el)return;
-    const welcome='<div class="ks-onboard"><b>De tu idea a un juego</b>Escribí un cambio. El resultado se prueba en la vista previa de este mismo taller.<div class="ks-suggestions"><button class="ks-btn" data-prompt="Agregá cinco monedas y un contador de puntos. Conservá los controles.">＋ Monedas</button><button class="ks-btn" data-prompt="Agregá un enemigo que se mueva. Conservá el resto del juego.">＋ Enemigo</button><button class="ks-btn" data-prompt="Explicame qué hace game-config.js con un ejemplo corto, sin cambiar archivos.">Entender mi juego</button></div><button class="ks-btn" id="ks-chat-bases">Elegir una base jugable</button></div>';
+    const welcome='<div class="ks-onboard"><b>De tu idea a un juego</b>Escribí un cambio. El resultado se prueba en la vista previa de este mismo taller.<div class="ks-suggestions"><button class="ks-btn" data-prompt="Agregá cinco monedas y un contador de puntos. Conservá los controles.">＋ Monedas</button><button class="ks-btn" data-prompt="Agregá un enemigo que se mueva. Conservá el resto del juego.">＋ Enemigo</button><button class="ks-btn" data-prompt="Explicame qué hace game-config.js con un ejemplo corto, sin cambiar archivos.">Entender mi juego</button></div><button class="ks-btn" id="ks-chat-space">＋ Misión espacial 3D</button> <button class="ks-btn" id="ks-chat-bases">Elegir otra base</button></div>';
     el.innerHTML=welcome+this.history.map((m,i)=>'<article class="ks-msg '+(m.role==='user'?'user':m.role==='sys'?'sys':'ai')+'"><small class="ks-author">'+(m.role==='user'?'Vos':m.role==='sys'?'Krueka':'Asistente')+(m.pending?' · Idea pendiente':'')+'</small><div>'+esc(m.text)+'</div>'+(m.pending?'<button class="ks-btn" data-reuse="'+i+'">Usar este pedido</button>':'')+(m.artifact?'<div class="ks-artifact"><b>🎮 '+esc(m.artifact.title)+'</b><small>'+esc(m.artifact.files.length?m.artifact.files.join(' · '):'Proyecto listo para probar')+'</small><button class="ks-btn primary" data-play="'+i+'">▶ Probar juego actual</button><span>La vista previa muestra la última versión de tu proyecto.</span></div>':'')+'</article>').join('');
     if(StudioKits.read(this.files)?.kind==='explore3d'){
       const suggestions=el.querySelectorAll('[data-prompt]');suggestions[0].textContent='＋ Cristales';suggestions[0].dataset.prompt='Agregá tres cristales al escenario 3D. Conservá los controles y el portal.';suggestions[1].textContent='Luces rojas';suggestions[1].dataset.prompt='Cambiá la iluminación del mundo 3D a alerta roja. Conservá el resto del juego.';
     }
+    if(StudioKits.read(this.files)?.kind==='space3d'){const suggestions=el.querySelectorAll('[data-prompt]');suggestions[0].textContent='＋ Energía';suggestions[0].dataset.prompt='Agregá una celda de energía en X 2, Z 10. Conservá el resto de la misión.';suggestions[1].textContent='Alerta roja';suggestions[1].dataset.prompt='Cambiá las luces de la estación a alerta roja. Conservá los controles y los objetivos.';}
+    el.querySelector('#ks-chat-space').onclick=()=>this.createKit('space3d');
     el.querySelector('#ks-chat-bases').onclick=()=>this.showTab('create');
     el.querySelectorAll('[data-prompt],[data-reuse]').forEach(b=>b.onclick=()=>{const q=document.getElementById('ks-prompt');this.draft=b.dataset.prompt||this.history[Number(b.dataset.reuse)].text;q.value=this.draft;this.changed();q.focus()});
     el.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>this.playCurrent());
@@ -285,8 +287,9 @@ const StudioIA={__loaded:true,
   onMessage(e){
     if(e.source!==document.getElementById('ks-frame')?.contentWindow||!e.data)return;
     if(e.data.type==='krueka-scene-select'){
-      const cfg=StudioKits.read(this.files);if(this.busy||!this.cloudReady||cfg?.kind!=='explore3d'||!window.Studio3D)return;
-      if(!Studio3D.normalise(cfg).objects.some(o=>o.id===e.data.id))return;
+      const cfg=StudioKits.read(this.files);const scene=cfg?.kind==='space3d'?window.StudioMissions:cfg?.kind==='explore3d'?window.Studio3D:null;
+      if(this.busy||!this.cloudReady||!scene)return;
+      if(!scene.normalise(cfg).objects.some(o=>o.id===e.data.id))return;
       this.selectedSceneObject=e.data.id;this.renderCreator();this.showTab('create');document.getElementById('ks-scene-objects')?.scrollIntoView({block:'nearest'});return;
     }
     if(e.data.type==='krueka-studio-error'){this.errors.push(String(e.data.text).slice(0,1000));this.errors=this.errors.slice(-10);this.renderErrors();return;}
@@ -317,6 +320,7 @@ const StudioIA={__loaded:true,
   },
   renderCreator(){
     const el=document.getElementById('ks-create');if(!el)return;const cfg=StudioKits.read(this.files);
+    if(cfg?.kind==='space3d'&&window.StudioMissions){StudioMissions.renderEditor(this,el,cfg);return;}
     if(cfg?.kind==='explore3d'&&window.Studio3D){Studio3D.renderEditor(this,el,cfg);return;}
      if(cfg?.kind==='cinematic3d'&&window.StudioForge){StudioForge.renderEditor(this,el,cfg);return;}
      if(cfg?.kind==='neon-rift'&&window.StudioShowcase){StudioShowcase.renderEditor(this,el,cfg);return;}
@@ -338,6 +342,12 @@ const StudioIA={__loaded:true,
     const web=!!this.files['script.js']&&!this.files['game.js']&&!Object.keys(this.files).some(n=>n.startsWith('games/'));
     el.innerHTML='<div class="ks-section-label">MISIÓN DE CREACIÓN · 60 MINUTOS</div><h2>Construí algo que puedas explicar.</h2><p><b>Tema:</b> Diseño y programación de un proyecto web.</p><p><b>Capacidad:</b> Modificar un programa, probar su funcionamiento y explicar las decisiones tomadas.</p><h3>Tu recorrido</h3><ol><li><b>10 min · Imaginá.</b> Elegí una base y poné nombre a tu proyecto.</li><li><b>15 min · Construí.</b> Cambiá dos reglas desde Crear. Abrí Código y encontrá esos valores.</li><li><b>15 min · Probá.</b> Jugá con teclado y controles táctiles. Revisá puntos, vidas y final del juego.</li><li><b>10 min · Mejorá.</b> Ajustá una regla a partir de la prueba.</li><li><b>10 min · Explicá.</b> Escribí tu decisión en LEEME.md y enviá el proyecto al profe.</li></ol><h3>Indicadores de logro</h3>'+['Personalizo un proyecto y conservo una versión propia.','Identifico dónde se configura una regla.','Pruebo la navegación o los controles y las reglas del juego.','Explico qué cambié y cómo mejoró mi proyecto.'].map(x=>'<label class="ks-check"><input type="checkbox">'+x+'</label>').join('')+(kit?'<div class="ks-notice"><b>Desafío extra</b><p>'+esc(kit.challenge)+'</p></div>':'')+'<p class="ks-tip">Marcá los indicadores al comprobarlos durante esta sesión.</p>';
     if(web)el.querySelector('ol').innerHTML='<li><b>10 min · Imaginá.</b> Elegí un tema y un nombre para tu sitio.</li><li><b>15 min · Construí.</b> Abrí Código → index.html. Cambiá el título, las tarjetas y los textos.</li><li><b>15 min · Probá.</b> Revisá los enlaces y el botón de tema. Probá el ancho de celular.</li><li><b>10 min · Mejorá.</b> Cambiá los colores en style.css y comprobá que los textos se lean bien.</li><li><b>10 min · Explicá.</b> Contá una decisión en LEEME.md y enviá el sitio al profe.</li>';
+    if(cfg?.kind==='space3d'){
+      el.querySelector('h2').textContent='Creá tu propia misión espacial.';
+      el.querySelector('h2').nextElementSibling.innerHTML='<b>Tema:</b> Escenarios 3D, eventos y objetivos de un videojuego.';
+      el.querySelector('h2').nextElementSibling.nextElementSibling.innerHTML='<b>Capacidad:</b> Diseñar una misión jugable, ajustar su dificultad y justificar cambios con pruebas.';
+      el.querySelector('ol').innerHTML='<li><b>10 min · Explorá.</b> Creá Misión espacial 3D. Pulsá Probar. Movete con flechas; arrastrá para mirar; F envía pulsos y E activa paneles.</li><li><b>15 min · Diseñá.</b> En Bases y reglas, compará dos luces y mové una caja. Abrí Código → game-config.js y encontrá esos valores.</li><li><b>15 min · Probá.</b> Juntá la energía, activá cada panel y llegá a la salida verde. Comprobá escudo, tiempo y final.</li><li><b>10 min · Mejorá con IA.</b> Pedí un solo cambio en el Chat. Pulsá Probar; si necesitás volver atrás, usá Deshacer.</li><li><b>10 min · Explicá.</b> En LEEME.md contá el cambio, la prueba y el resultado. Enviá al profe.</li>';
+    }
     if(cfg?.kind==='explore3d'){
       el.querySelector('h2').nextElementSibling.innerHTML='<b>Tema:</b> Escenarios 3D, iluminación y reglas de juego.';
       el.querySelector('h2').nextElementSibling.nextElementSibling.innerHTML='<b>Capacidad:</b> Construir y probar un recorrido 3D, explicando posiciones, luces y dificultad.';

@@ -1,7 +1,7 @@
 name: Studio IA - pruebas
 on:
   push:
-    branches: [main, 'fix/studio-ia-*', 'feat/neon-rift-*', 'feat/studio-forge-*']
+    branches: [main, 'fix/studio-ia-*', 'feat/neon-rift-*', 'feat/studio-forge-*', 'feat/studio-space-*']
   pull_request:
 permissions:
   contents: read
@@ -24,3 +24,6 @@ jobs:
       - run: node --check js/club-studio-forge.js
       - run: node tests/studio-forge.test.cjs
       - run: node tests/studio-forge-browser.test.cjs
+      - run: node --check js/club-studio-missions.js
+      - run: node tests/studio-missions.test.cjs
+      - run: node tests/studio-missions-browser.test.cjs
