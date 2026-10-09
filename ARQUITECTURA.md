@@ -151,3 +151,13 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - `StudioShowcase.renderEditor` ofrece controles claros de velocidad, vidas, daño y oleadas, y `renderLesson` contiene una guía autónoma de 60 minutos con capacidad e indicadores. La IA del chat existente puede proponer cambios, respetando sus límites de consumo; los archivos se guardan con las RPC privadas ya existentes.
 - `/ejemplos/neon-rift.html` deja jugar el ejemplo de forma pública en iframe aislado `sandbox=allow-scripts`, con CSP restrictiva y sin cuenta o acceso a datos de alumnos. No guarda estados ni recibe mensajes del proyecto escolar.
 - No se modificaron tablas, RLS, funciones de servidor ni credenciales. Los archivos del juego se ajustan a los límites existentes del Studio.
+
+
+## 16. HORIZON FORGE: videojuegos 3D desarrollados por etapas
+
+- Nuevo `js/club-studio-forge.js`: registra la plantilla `cinematic3d` después de `Studio3D` y antes de `StudioIA`; no modifica ni sustituye las bases anteriores.
+- Reutiliza los cinco archivos, la cámara, la geometría, la iluminación, los controles, las colisiones y la alternativa Canvas del motor 3D existente. Se añaden edificios y calles 3D, tres personajes adultos procedurales por segmentos, pasos y carrera, patrullas, gestos e interacción con subtítulos.
+- En Bases y reglas, el editor divide la creación en cinco etapas: personajes (tres fichas configurables), ambiente (distrito, iluminación, clima y calidad), movimientos, acciones/voces, integración. `game-config.js` conserva y versiona la definición conjunta, mientras `game.js` incorpora el motor de forma autónoma; no hay recursos ni solicitudes externas en el juego.
+- La voz se desactiva por defecto. El botón dentro del videojuego puede habilitar `speechSynthesis` local del navegador; cuando no existe esa API, el subtítulo sigue funcionando. No hay grabaciones, uso de micrófono ni voz generativa de pago.
+- Los proyectos usan las mismas RPC del Studio, con las protecciones existentes de alumno y dispositivo. Crear la plantilla o cambiar parámetros no consulta OpenAI; usar el chat con IA conserva las cuotas y las protecciones existentes. No hay migraciones, tablas, RLS, edge functions ni secretos nuevos.
+- El aspecto es un prototipo 3D procedural estilizado de escala humana, no fotorrealismo. Recursos GLB, esqueletos de animación avanzada, texturas PBR y voces narradas de calidad requieren fases posteriores y pruebas de rendimiento en hardware del Club.

@@ -1,0 +1,17 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HORIZON FORGE · Construcción 3D | Krueka</title><meta name="description" content="Primer prototipo de un videojuego 3D narrativo creado por etapas en Krueka Studio.">
+<style>*{box-sizing:border-box}body{margin:0;background:linear-gradient(#101827,#0b121b);color:#e8f0f2;font-family:system-ui;text-align:center}header{padding:15px 12px}h1{font-size:clamp(25px,4vw,42px);letter-spacing:.07em;margin:5px}p{font-size:13px;max-width:750px;margin:6px auto;color:#aebdc9}a{color:#9fc6cc}.stage{display:block;width:min(1130px,98vw);height:min(900px,calc(100svh - 135px));min-height:470px;margin:5px auto 15px;border:1px solid #687987;border-radius:12px;background:#091521}</style></head>
+<body><header><h1>HORIZON FORGE</h1><p>Personajes, escenario, movimiento y diálogos en un primer prototipo 3D procedural. Para modificar cada pieza, entrá a <a href="../app.html?club=bei">Krueka Studio IA</a>.</p></header>
+<iframe id="demo" class="stage" sandbox="allow-scripts" title="HORIZON, prototipo 3D narrativo"></iframe>
+<script src="../js/club-studio-kits.js?v=20261008a"></script><script src="../js/club-studio-3d.js?v=20261008d"></script><script src="../js/club-studio-forge.js?v=20261008a"></script>
+<script>
+(function(){
+ const files=window.StudioKits.create('cinematic3d'),close='</'+'script>',open='<script>';
+ const csp='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; connect-src \'none\'; font-src data:; base-uri \'none\'; form-action \'none\'">';
+ const html=files['index.html'].replace('<head>','<head>'+csp)
+ .replace('<link rel="stylesheet" href="style.css">','<style>'+files['style.css']+'</style>')
+ .replace('<script src="game-config.js">'+close,open+files['game-config.js']+close)
+ .replace('<script src="game.js">'+close,open+files['game.js']+close);
+ document.getElementById('demo').srcdoc=html;
+})();
+</script></body></html>
