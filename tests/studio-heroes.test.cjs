@@ -9,7 +9,7 @@ const files=kits.create('hero-manager');
 assert.deepEqual(Object.keys(files).sort(),['index.html','style.css','game-config.js','hero.js','LEEME.md'].sort());
 assert.ok(Object.values(files).every(v=>v.length<120000),'No hay archivos muy grandes');
 assert.ok(Object.values(files).reduce((n,x)=>n+x.length,0)<65000,'Cumple tamaño del chat IA');
-assert.ok(!Object.values(files).some(x=>/https?:\/\//.test(x)),'No usa CDNs ni recursos externos');
+assert.ok(!Object.values(files).some(x=>/https?:\/\/(?!www\.w3\.org\/2000\/svg)/.test(x)),'No usa CDNs ni recursos externos');
 new vm.Script(files['game-config.js']);new vm.Script(files['hero.js']);
 const cfg=kits.read(files);assert.equal(cfg.heroes.length,3);
 assert.equal(cfg.heroes[0].id,'hero-1');
