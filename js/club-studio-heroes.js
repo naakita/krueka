@@ -119,6 +119,7 @@ function previewRuntime(){
   $('roster').innerHTML=cfg.heroes.map(h=>'<button data-id="'+safe(h.id)+'" class="hero-card'+(h.id===active?' selected':'')+'" aria-pressed="'+(h.id===active)+'">'+
   '<span class="thumb">'+window.HERO_ART(h)+'</span><span><b>'+safe(h.name)+'</b><small>'+safe(opts.base[h.base])+' · Nv. '+h.level+'</small></span></button>').join('');
   $('portrait').innerHTML=window.HERO_ART(hero);
+  put('principal-tag',hero.id===cfg.active?'★ PROTAGONISTA DEL JUEGO':'HÉROE DE LA COLECCIÓN');
   put('name',hero.name);put('type',opts.base[hero.base]+' · '+opts.role[hero.role]);
   put('rank',opts.rarity[hero.rarity]+' · '+opts.element[hero.element]);put('lore',hero.story);
   $('stats').innerHTML=Object.entries(hero.stats).map(([k,v])=>'<div class="stat"><span>'+({hp:'VIDA',attack:'ATAQUE',defense:'DEFENSA',speed:'VELOCIDAD'}[k])+'</span><b>'+v+'</b><i style="width:'+Math.min(100,v/(k==='hp'?30:5))+'%"></i></div>').join('');
@@ -131,7 +132,7 @@ const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta nam
  '<div class="wrap"><header><div><small>KRUEKA STUDIO · BIBLIOTECA DE PERSONAJES</small><h1 id="title">Mi colección RPG</h1></div><span>HERO LAB · ORIGINAL</span></header>'+
  '<div class="pipeline"><b>01 PERSONAJES</b><span>02 ESCENARIOS · PRÓXIMAMENTE</span><span>03 HABILIDADES Y COMBATE · PRÓXIMAMENTE</span></div>'+
  '<div class="columns"><aside class="roster"><h3>MI COLECCIÓN</h3><div id="roster"></div><p>Para crear más héroes o modificar su equipamiento abrí <b>Bases y reglas</b> en Krueka Studio.</p></aside>'+
- '<main class="hero-spot"><div class="rings"></div><div id="portrait"></div><section><span>HÉROE SELECCIONADO</span><h2 id="name"></h2><p id="type"></p><strong id="rank"></strong></section></main>'+
+ '<main class="hero-spot"><div class="rings"></div><div id="portrait"></div><section><span id="principal-tag">HÉROE SELECCIONADO</span><h2 id="name"></h2><p id="type"></p><strong id="rank"></strong></section></main>'+
  '<aside class="details"><h3>ATRIBUTOS</h3><div id="stats"></div><h3>HABILIDADES</h3><ul id="skills"></ul><h3>HISTORIA</h3><p id="lore"></p></aside></div>'+
  '<footer>Personajes originales diseñados con moldes combinables en Krueka</footer></div><script src="game-config.js"></script><script src="hero.js"></script></body></html>';
 function create(){

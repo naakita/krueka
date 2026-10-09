@@ -1,7 +1,7 @@
 name: Studio IA - pruebas
 on:
   push:
-    branches: [main, 'fix/studio-ia-*', 'feat/neon-rift-*', 'feat/studio-forge-*', 'feat/studio-space-*', 'feat/studio-gestor-heroes-*', 'feat/studio-rpg-builder-*', 'feat/hero-render-pro-*', 'fix/hero-renderpro-access-*', 'feat/studio-alternative-chat-*', 'feat/studio-chat-individual-focus-*']
+    branches: [main, 'fix/studio-ia-*', 'feat/neon-rift-*', 'feat/studio-forge-*', 'feat/studio-space-*', 'feat/studio-gestor-heroes-*', 'feat/studio-rpg-builder-*', 'feat/hero-render-pro-*', 'fix/hero-renderpro-access-*', 'feat/studio-alternative-chat-*', 'feat/studio-chat-individual-focus-*', 'feat/hero-3d-to-protagonist-*']
   pull_request:
 permissions:
   contents: read
@@ -42,3 +42,5 @@ jobs:
       - run: node --check js/club-studio-focus-chat.js
       - run: node tests/studio-focus-chat.test.cjs
       - run: node tests/studio-focus-chat-browser.test.cjs
+      - run: node tests/studio-protagonist.test.cjs
+      - run: node tests/studio-protagonist-browser.test.cjs
