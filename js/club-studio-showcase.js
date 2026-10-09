@@ -252,5 +252,36 @@ StudioKits.catalog.unshift({id:'neon-rift',icon:'⚡',title:'NEON RIFT · Ejempl
 const oldCreate=StudioKits.create.bind(StudioKits),oldArt=StudioKits.art.bind(StudioKits);
 StudioKits.create=function(id){return id==='neon-rift'?create():oldCreate(id)};
 StudioKits.art=function(id){return id==='neon-rift'?'<svg viewBox="0 0 190 65" role="img" aria-label="Nave del juego NEON RIFT" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="188" height="63" rx="9" fill="#101936"/><path d="M0 55L190 11M0 18L190 64" stroke="#1c7099" stroke-width="2"/><path d="M95 8l23 47-23-13-23 13z" fill="#3edcf0" stroke="#e4fcff" stroke-width="2"/><circle cx="44" cy="28" r="12" fill="none" stroke="#ff4bc1" stroke-width="4"/><path d="M143 16l5 8-5 8-5-8z" fill="#ffe082"/></svg>':oldArt(id)};
-window.StudioShowcase={create,gameRuntime:runtime};
+function renderEditor(studio,el,cfg){
+const title=String(cfg.title||'NEON RIFT');
+el.innerHTML='<div class="ks-section-label">⭐ EJEMPLO COMPLETO · COPIA EDITABLE</div><h2>NEON RIFT: creá tu versión</h2><p>Este juego ya está terminado. Probalo, cambiá sus reglas y descubrí cómo se programa una experiencia completa.</p>'+
+'<section class="ks-settings"><h3>Configuración de la misión</h3><label>Nombre del juego<input id="nr-title" maxlength="55" value="'+esc(title)+'"></label><div class="ks-fields">'+
+'<label>Velocidad de la nave<input id="nr-speed" type="number" min="150" max="510" value="'+(Number(cfg.speed)||320)+'"></label>'+
+'<label>Vidas iniciales<input id="nr-lives" type="number" min="1" max="9" value="'+(Number(cfg.lives)||4)+'"></label>'+
+'<label>Daño de los disparos<input id="nr-damage" type="number" min="4" max="60" value="'+(Number(cfg.damage)||12)+'"></label>'+
+'<label>Cantidad de oleadas<input id="nr-waves" type="number" min="1" max="3" value="'+(Number(cfg.waves)||3)+'"></label></div>'+
+'<button class="ks-btn primary" id="nr-apply">Guardar reglas y jugar ▶</button></section>'+
+'<p class="ks-notice">Cambiá colores en game-config.js y el diseño en style.css. El motor completo está en game.js. No se modifica el ejemplo original; esta es tu copia.</p>'+
+'<button class="ks-btn" id="nr-files">Ver archivos del ejemplo</button>';
+el.querySelector('#nr-apply').onclick=()=>{
+const num=(id,min,max,def)=>{const n=Number(el.querySelector(id).value);return Number.isFinite(n)?Math.max(min,Math.min(max,Math.round(n))):def};
+const next={...cfg,title:el.querySelector('#nr-title').value.trim().slice(0,55)||'NEON RIFT',speed:num('#nr-speed',150,510,320),lives:num('#nr-lives',1,9,4),damage:num('#nr-damage',4,60,12),waves:num('#nr-waves',1,3,3)};
+studio.checkpoint();studio.files['game-config.js']=StudioKits.configFile(next);studio.changed();studio.refreshAll();studio.playCurrent();
+};
+el.querySelector('#nr-files').onclick=()=>{studio.current='game-config.js';if(!document.getElementById('ks-code').classList.contains('on'))studio.toggleCode();studio.renderFileList();studio.renderEditor();};
+}
+function renderLesson(el){
+el.innerHTML='<div class="ks-section-label">MISIÓN DE CREACIÓN · 60 MINUTOS</div>'+
+'<h2>Del ejemplo terminado a tu propio videojuego</h2><p><b>Tema:</b> Diseño y programación de juegos 2D con IA.</p>'+
+'<p><b>Capacidad:</b> Analizar un videojuego funcional, modificar parámetros, depurar resultados y explicar decisiones.</p>'+
+'<ol><li><b>10 min:</b> Jugá una misión. Identificá qué hacen el DASH, los enemigos y las mejoras.</li>'+
+'<li><b>15 min:</b> Cambiá dos valores en Bases y reglas (vidas, daño o velocidad) y probalos.</li>'+
+'<li><b>15 min:</b> Pedí a la IA una mejora pequeña y concreta; conservá una versión anterior con Deshacer.</li>'+
+'<li><b>10 min:</b> Jugá la nueva versión y comprobá si mejoró o empeoró.</li>'+
+'<li><b>10 min:</b> Registrá los cambios en LEEME.md y enviá el proyecto al profe.</li></ol>'+
+'<h3>Indicadores de logro</h3>'+
+['Inicio y finalizo una partida comprendiendo las reglas.','Modifico dos parámetros y observo resultados.','Describo qué código o regla cambié con la IA.','Guardo una versión y verifico que funciona.'].map(t=>'<label class="ks-check"><input type="checkbox">'+t+'</label>').join('')+
+'<p class="ks-tip">La base se crea sin gastar solicitudes de IA. Solo las preguntas al chat consumen el cupo.</p>';
+}
+window.StudioShowcase={create,gameRuntime:runtime,renderEditor,renderLesson};
 })();

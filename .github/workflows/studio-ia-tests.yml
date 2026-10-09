@@ -1,7 +1,7 @@
 name: Studio IA - pruebas
 on:
   push:
-    branches: [main, 'fix/studio-ia-*']
+    branches: [main, 'fix/studio-ia-*', 'feat/neon-rift-*']
   pull_request:
 permissions:
   contents: read
@@ -18,3 +18,5 @@ jobs:
       - run: node --check js/club-studio-ai.js
       - run: node supabase/functions/krueka-studio-ai/index.test.cjs
       - run: node tests/studio-client.test.cjs
+      - run: node --check js/club-studio-showcase.js
+      - run: node tests/studio-neon-rift.test.cjs
