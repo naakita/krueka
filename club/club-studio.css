@@ -121,3 +121,33 @@
 #krueka-studio .kh-live{height:320px;background:radial-gradient(ellipse at 50% 55%,#2a4d65,#0b192d 70%);border:1px solid #355f76;border-radius:10px;overflow:hidden;display:flex;justify-content:center;align-items:center;margin:12px 0}
 #krueka-studio .kh-live svg{height:100%;width:100%;filter:drop-shadow(0 10px 9px #0008)}
 #krueka-studio .ks-settings textarea#kh-story{width:100%;background:#101e2c;color:#eef5ff;border:1px solid #45617a;border-radius:7px;padding:10px;font:inherit;resize:vertical}
+
+/* Krueka Game Studio: editor visual de mundo inspirado en flujos profesionales, simplificado para alumnos. */
+#krueka-studio .kg-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+#krueka-studio .kg-head span{font-size:9px;letter-spacing:.18em;color:#6ee7f2;font-weight:900}
+#krueka-studio .kg-head h2{margin:3px 0 0;font-size:20px}
+#krueka-studio .kg-actions,#krueka-studio .kg-row{display:flex;gap:6px;flex-wrap:wrap}
+#krueka-studio .kg-studio{display:grid;grid-template-columns:155px minmax(360px,1fr) 190px;gap:8px;min-height:560px}
+#krueka-studio .kg-library,#krueka-studio .kg-inspector{background:#0b1724;border:1px solid #29465b;border-radius:10px;padding:10px;overflow:auto}
+#krueka-studio .kg-library>b,#krueka-studio .kg-inspector>b{display:block;font-size:11px;letter-spacing:.12em;color:#cde4f2;margin-bottom:9px}
+#krueka-studio .kg-cats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:9px}
+#krueka-studio .kg-cats button{font:inherit;font-size:9px;padding:5px 7px;color:#9fb9ca;background:#101f2e;border:1px solid #29465b;border-radius:6px;cursor:pointer}
+#krueka-studio .kg-cats button[aria-pressed=true]{color:#e9fcff;border-color:#63d7e5;background:#194459}
+#krueka-studio .kg-assets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+#krueka-studio .kg-assets button{min-height:76px;border:1px solid #29465b;background:#102131;color:#eaf5fa;border-radius:8px;cursor:pointer;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:inherit}
+#krueka-studio .kg-assets button[aria-pressed=true]{border-color:#6ee7f2;background:#173d51;box-shadow:inset 0 0 0 1px #6ee7f255}
+#krueka-studio .kg-assets i{font-style:normal;font-size:25px;color:#84d8df}.kg-assets span{font-size:9px;font-weight:800}.kg-assets small{font-size:8px;color:#7995a7}
+#krueka-studio .kg-stage{min-width:0;position:relative;background:#08121d;border:1px solid #29465b;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+#krueka-studio .kg-status{height:36px;padding:7px 10px;background:#0b1724;border-bottom:1px solid #29465b;display:flex;gap:13px;align-items:center;font-size:9px;color:#8ea9ba}
+#krueka-studio .kg-status span{color:#e9f6fb;font-weight:800;margin-right:auto}
+#krueka-studio #kg-canvas{display:block;width:100%;height:auto;max-height:500px;min-height:390px;object-fit:contain;cursor:crosshair;background:#233}
+#krueka-studio .kg-hint{font-size:9px;color:#89a7b9;padding:7px 10px;background:#0b1724;border-top:1px solid #29465b}
+#krueka-studio .kg-inspector label{display:block;font-size:9px;color:#9db7c8;margin:8px 0}
+#krueka-studio .kg-inspector input,#krueka-studio .kg-inspector select,#krueka-studio .kg-inspector textarea{width:100%;margin-top:4px;background:#08121d;border:1px solid #34546a;border-radius:6px;color:#eef8ff;padding:7px;font:inherit;font-size:10px}
+#krueka-studio .kg-inspector textarea{min-height:62px;resize:vertical}
+#krueka-studio .kg-inspector .ks-btn{width:100%;margin-top:6px;justify-content:center;font-size:10px}
+#krueka-studio .kg-inspector .kg-row .ks-btn{width:auto;flex:1}
+#krueka-studio .kg-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 6px}
+#krueka-studio .kg-inspector hr{border:0;border-top:1px solid #29465b;margin:12px 0}
+@media(max-width:1050px){#krueka-studio .kg-studio{grid-template-columns:130px minmax(300px,1fr)}#krueka-studio .kg-inspector{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.kg-inspector>b,.kg-inspector>hr{grid-column:1/-1}}
+@media(max-width:700px){#krueka-studio .kg-studio{display:block}.kg-library{margin-bottom:7px}#krueka-studio .kg-assets{grid-template-columns:repeat(5,minmax(65px,1fr));overflow-x:auto}#krueka-studio .kg-assets button{min-width:65px}.kg-stage{min-height:400px}.kg-inspector{margin-top:7px!important;display:block!important}}
