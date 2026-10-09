@@ -151,3 +151,25 @@
 #krueka-studio .kg-inspector hr{border:0;border-top:1px solid #29465b;margin:12px 0}
 @media(max-width:1050px){#krueka-studio .kg-studio{grid-template-columns:130px minmax(300px,1fr)}#krueka-studio .kg-inspector{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.kg-inspector>b,.kg-inspector>hr{grid-column:1/-1}}
 @media(max-width:700px){#krueka-studio .kg-studio{display:block}.kg-library{margin-bottom:7px}#krueka-studio .kg-assets{grid-template-columns:repeat(5,minmax(65px,1fr));overflow-x:auto}#krueka-studio .kg-assets button{min-width:65px}.kg-stage{min-height:400px}.kg-inspector{margin-top:7px!important;display:block!important}}
+
+/* Hero Render Pro: vista 3D opcional GLB / PBR y retrato HD privado. */
+#krueka-studio .kr-render-pro{background:linear-gradient(150deg,#112437,#0c1728 74%);border-color:#46718e}
+#krueka-studio .kr-rp-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#krueka-studio .kr-rp-title h3{margin:4px 0 0;font-size:18px}
+#krueka-studio .kr-rp-title span{border:1px solid #51886d;color:#8deab5;background:#133b2f;padding:6px 9px;border-radius:7px;font-size:10px;font-weight:bold}
+#krueka-studio .kr-rp-frame{position:relative;height:350px;margin:12px 0 9px;overflow:hidden;border:1px solid #446f8b;border-radius:13px;background:radial-gradient(ellipse at 45% 30%,#384c60,#071320 74%);display:grid;place-items:center}
+#krueka-studio .kr-rp-fallback{width:100%;height:100%;display:grid;place-items:center;overflow:hidden}
+#krueka-studio .kr-rp-fallback svg{max-height:100%;height:100%;width:100%}
+#krueka-studio .kr-rp-view{width:100%;height:100%;min-height:0}
+#krueka-studio .kr-rp-view model-viewer{display:block;width:100%;height:100%;--poster-color:transparent;background:radial-gradient(circle at 50% 25%,#394e68,#101c2e)}
+#krueka-studio .kr-rp-state{position:absolute;left:9px;right:9px;bottom:8px;background:#081525cf;color:#eaf6ff;border:1px solid #3f667b;border-radius:8px;margin:0;padding:8px 9px;font-size:10px;z-index:1;pointer-events:none}
+#krueka-studio .kr-rp-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;margin:8px 0}
+#krueka-studio .kr-rp-toolbar .ks-btn{font-size:11px}
+#krueka-studio .kr-rp-import{border-top:1px solid #52708453;margin-top:18px;padding-top:14px}
+#krueka-studio .kr-rp-import h3{margin:2px 0 7px}
+#krueka-studio .kr-rp-upload{padding:10px;border:1px dashed #7baabc;border-radius:9px;color:#b8eaf0!important;cursor:pointer;background:#153344;font-size:11px!important}
+#krueka-studio .kr-rp-upload input{background:transparent;margin-top:7px;padding:5px;width:100%;font-size:11px}
+#krueka-studio .kr-rp-credit{font-size:10px!important;color:#8fabbb}
+#krueka-studio .kr-rp-credit a{color:#8addf2}
+@media(min-width:1200px){#krueka-studio .kr-rp-frame{height:410px}}
+@media(max-width:620px){#krueka-studio .kr-rp-frame{height:300px}#krueka-studio .kr-rp-toolbar .ks-btn{flex:1}}

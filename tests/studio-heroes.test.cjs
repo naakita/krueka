@@ -20,6 +20,6 @@ assert.equal(bad.active,'x');assert.equal(bad.heroes[0].stats.hp,3000);assert.no
 assert.ok(!heroes.art(bad.heroes[0]).includes('javascript:bad'));
 assert.equal(heroes.clean({heroes:Array.from({length:20},(_,i)=>heroes.template('mage','h-'+i))}).heroes.length,8);
 assert.ok(kits.create('stars')['game.js']);assert.ok(kits.create('hero-manager')['hero.js']);
-assert.ok(read('app.html').includes('club-studio-heroes.js?v=20261009a'));
+assert.ok(read('app.html').includes('club-studio-heroes.js?v=20261009b'));
 assert.ok(read('js/club-studio-ai.js').includes("kind==='hero-manager'"));
 console.log('PASS: seis moldes, ocho héroes máx., SVG seguro, configuración, galería y compatibilidad Studio.');
