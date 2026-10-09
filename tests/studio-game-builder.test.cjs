@@ -1,0 +1,11 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const env={window:{},console,Math,Date,JSON,Object,Array,String,Number,setInterval:()=>0,clearInterval:()=>{}};env.window=env;vm.createContext(env);
+env.StudioHeroes={clean:x=>x};env.StudioKits={};env.StudioIA={renderCreator(){}};vm.runInContext(read('js/club-studio-game-builder.js'),env);
+const G=env.KruekaGameBuilder;assert.ok(G&&G.render&&G.normalise&&G.draw);
+const cfg=G.normalise({kind:'hero-manager',title:'Prueba',heroes:[],world:{map:[]}});
+assert.equal(cfg.world.map.length,4);assert.equal(cfg.world.map[0].type,'hero');
+const bad=G.normalise({world:{map:[{id:'x',type:'bad',x:99,y:-9,scale:99}]}});
+assert.equal(bad.world.map[0].type,'tree');assert.equal(bad.world.map[0].x,11);assert.equal(bad.world.map[0].y,0);assert.equal(bad.world.map[0].scale,1.8);
+assert.equal(Object.keys(G.TYPES).length,9);assert.ok(read('app.html').includes('club-studio-game-builder.js?v=20261009a'));assert.ok(read('club/club-studio.css').includes('.kg-studio'));
+console.log('PASS: Game Studio carga catálogo, mapa inicial, validación y conexión con app.');
