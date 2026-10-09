@@ -30,6 +30,6 @@ const files=K.create('hero-manager');
 const runtimeFiles={...files,'game-config.js':K.configFile(kept)};
 assert.ok(Object.values(runtimeFiles).reduce((n,s)=>n+s.length,0)<220000);
 new vm.Script(files['hero.js']);
-assert.ok(read('app.html').includes('club-studio-render-pro.js?v=20261009a'));
+assert.ok(read('app.html').includes('club-studio-render-pro.js?v=20261009b'));
 assert.ok(read('js/club-studio-heroes.js').includes('StudioRenderPro.decorate(studio,el,cfg)'));
 console.log('PASS: Render Pro, modelos GLB CC0, importación WebP validada, mundo preservado y exportación compatible.');

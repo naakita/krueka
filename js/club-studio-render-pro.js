@@ -59,7 +59,9 @@ function decorate(studio,el,raw){
  '<div class="kr-rp-toolbar"><button class="ks-btn" type="button" id="kr-rp-remove" '+(!hero.portrait?'disabled':'')+'>Quitar retrato</button><button class="ks-btn" type="button" id="kr-rp-back">← Volver al mundo</button></div>'+
  '<p id="kr-rp-import-state" class="ks-tip" role="status">El retrato aparecerá en la ficha y la colección cuando presiones Guardar en la parte superior.</p></div>'+
  '<p class="kr-rp-credit">Modelos 3D: Quaternius · licencia CC0. Motor: model-viewer · Apache-2.0. Herramienta libre para modelar: <a target="_blank" rel="noopener noreferrer" href="https://web.blockbench.net/">Blockbench web</a>.</p>';
- box.insertAdjacentElement('afterend',panel);
+ const firstSection=el.querySelector('.ks-settings');
+ if(firstSection)firstSection.insertAdjacentElement('beforebegin',panel);
+ else box.insertAdjacentElement('afterend',panel);
  const $=id=>panel.querySelector('#'+id),status=$('kr-rp-state'),importStatus=$('kr-rp-import-state');
  const setStatus=(x)=>{status.textContent=x;};
  const view=$('kr-rp-view'),fallback=$('kr-rp-fallback'),modelChoice=$('kr-rp-model');

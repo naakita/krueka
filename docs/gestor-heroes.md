@@ -26,3 +26,8 @@ Hay seis moldes originales listos: caballero, arquera, hechicero, guardián, ase
 6. Si no carga 3D por WebGL, red o GPU, usar la vista vectorial. Quaternius es estilo 3D de videojuego estilizado: no promete el aspecto de la foto enviada por el docente.
 
 Guía de licencias y dependencias: `docs/render-pro-fuentes.md`.
+
+
+### Acceso rápido a Render Pro desde Game Studio (9/10/2026)
+
+Cuando estés en Bases y reglas y veas el mapa y la biblioteca de objetos, **no busques Render Pro en la galería de la derecha**: la nueva barra superior del editor del mapa muestra directamente `⚔ Personajes · Render Pro`. Pulsá ese botón. El editor de héroes abre al principio, con `✦ Abrir Render Pro 3D` y `← Volver al mundo` en la cabecera; Render Pro aparece antes de los moldes y de los controles avanzados. Si el navegador muestra la versión anterior, refrescá con Ctrl + F5. Los proyectos guardados siguen intactos.
