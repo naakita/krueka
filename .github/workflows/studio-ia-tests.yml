@@ -30,3 +30,4 @@ jobs:
       - run: node --check js/club-studio-heroes.js
       - run: node tests/studio-heroes.test.cjs
       - run: node tests/studio-heroes-browser.test.cjs
+      - run: node tests/studio-heroes-editor-browser.test.cjs
