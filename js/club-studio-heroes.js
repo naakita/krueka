@@ -149,7 +149,7 @@ function renderEditor(studio,el,raw){
  const input=(label,id,type='text',extra='')=>'<label>'+label+'<input data-piece="'+id+'" type="'+type+'" value="'+esc(selected[id])+'" '+extra+'></label>';
  const statNames={hp:'Vida',attack:'Ataque',defense:'Defensa',speed:'Velocidad'};
  el.innerHTML='<div class="ks-section-label">KRUEKA · HERO LAB / ETAPA 1: PERSONAJES</div>'+
- '<h2>Gestor de Héroes</h2><p>Elegí un molde, agregalo a tu colección y combiná piezas preparadas. No tenés que dibujar ni programar para empezar.</p>'+
+ '<div class="kh-editor-toolbar"><button class="ks-btn" type="button" id="kh-back-world">← Volver al mundo</button><button class="ks-btn primary" type="button" id="kh-open-render">✦ Abrir Render Pro 3D</button></div><h2>Gestor de Héroes</h2><p>Elegí un molde, agregalo a tu colección y combiná piezas preparadas. No tenés que dibujar ni programar para empezar.</p>'+
  '<section class="ks-settings"><h3>Mi colección · '+cfg.heroes.length+' / 8</h3><div class="kh-collection">'+cfg.heroes.map(h=>'<button class="ks-btn" data-person="'+esc(h.id)+'" aria-pressed="'+(selected.id===h.id)+'">'+esc(h.name)+'</button>').join('')+'</div>'+
  '<div class="ks-scene-actions"><button class="ks-btn" id="kh-copy" '+(cfg.heroes.length>=8?'disabled':'')+'>Duplicar personaje</button><button class="ks-btn" id="kh-remove" '+(cfg.heroes.length<=1?'disabled':'')+'>Quitar personaje</button></div></section>'+
  '<section class="ks-settings"><h3>Moldes disponibles · '+molds.length+'</h3><p>Estos héroes ya incluyen apariencia, estadísticas y habilidades. Hacé clic en un molde para agregarlo.</p>'+
@@ -209,6 +209,9 @@ function renderEditor(studio,el,raw){
   prompt.value=studio.draft;studio.changed();prompt.focus();
  };
  if(window.StudioRenderPro)window.StudioRenderPro.decorate(studio,el,cfg);
+ el.querySelector('#kh-back-world').onclick=()=>{studio.builderView='world';studio.renderCreator();el.scrollTop=0;};
+ el.querySelector('#kh-open-render').onclick=()=>{const panel=el.querySelector('.kr-render-pro');if(panel)panel.scrollIntoView({block:'start',behavior:'auto'});else alert('Render Pro no terminó de cargar. Actualizá Krueka con Ctrl + F5.');};
+ el.scrollTop=0;
 }
 function renderLesson(el){
  el.innerHTML='<div class="ks-section-label">CLUB DE INFORMÁTICA · CLASE GUIADA DE 60 MINUTOS</div><h2>Diseño de héroes de videojuego RPG</h2>'+
