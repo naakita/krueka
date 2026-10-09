@@ -140,20 +140,22 @@ function cinematicSetup(){
  addEventListener('keydown',e=>{if(e.repeat)return;const name=e.key.length===1?e.key.toLowerCase():e.key;if(name==='e')interact();if(name==='f')gesture.click();});
 }
 function inject(game){
- const insert='   function geometry(){';
- const start=game.indexOf('     const x=player.x,y=player.y,z=player.z,walk=');
- const end=game.indexOf('\n   }\n   function project',start);
+ const insert='function geometry(){';
+ const start=game.indexOf('const x=player.x,y=player.y,z=player.z,walk=');
+ const end=game.indexOf('function project(',start);
  if(!game.includes(insert)||start<0||end<0)throw new Error('El motor 3D cambió: no se puede preparar la base sin verificarlo.');
- const helpers='   let cinemaVoice=false,cinematicGesture=0;\n'+
+ const helpers='   let cinemaVoice=false,cinematicGesture=0;\n'+safeColor.toString()+'\n'+safeNumber.toString()+'\n'+
  humanoid.toString()+'\n'+cinemaScene.toString()+'\n'+interact.toString()+'\n'+cinematicSetup.toString()+'\n';
  game=game.replace(insert,helpers+insert);
  // Conservar colisiones, luces, WebGL y Canvas alternativo del motor existente.
- const a=game.indexOf('     const x=player.x,y=player.y,z=player.z,walk=');
- const b=game.indexOf('\n   }\n   function project',a);
- game=game.slice(0,a)+'     cinemaScene();'+game.slice(b);
+ const a=game.indexOf('const x=player.x,y=player.y,z=player.z,walk=');
+ const project=game.indexOf('function project(',a);
+ const close=game.lastIndexOf('}',project);
+ if(project<0||close<a)throw new Error('No se pudo ubicar el cuerpo del personaje original.');
+ game=game.slice(0,a)+'cinemaScene();\n  '+game.slice(close);
  game=game.replace('dx=dx/length*cfg.speed*dt;dz=dz/length*cfg.speed*dt;',
  'dx=dx/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;dz=dz/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;');
- game=game.replace('   reset();bindCanvas();function frame(now)', '   reset();bindCanvas();cinematicSetup();function frame(now)');
+ game=game.replace('reset();bindCanvas();function frame(now)', 'reset();bindCanvas();cinematicSetup();function frame(now)');
  game=game.replace("hud.textContent='Cristales '","hud.textContent='Registros '");
  game=game.replace("'Cristal encontrado. Buscá el siguiente.'","'Registro recuperado. Continuá tu misión.'");
  return game;
