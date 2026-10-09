@@ -15,7 +15,7 @@ assert.ok(Object.values(files).every(x=>x.length<120000),'Archivos bajo límite'
 assert.ok(Object.values(files).reduce((a,v)=>a+v.length,0)<65000,'Límite de IA para código');
 new vm.Script(files['game-config.js']);new vm.Script(files['game.js']);
 const cfg=env.window.StudioKits.read(files);assert.equal(cfg.kind,'neon-rift');assert.equal(cfg.waves,3);
-function element(id){return {id,hidden:false,textContent:'',style:{},dataset:{},classList:{add(){},remove(){}},listeners:{},addEventListener(ev,fn){this.listeners[ev]=fn;},replaceChildren(){this.children=[];},appendChild(v){(this.children||(this.children=[])).push(v);},click(){this.onclick?.();},get offsetWidth(){return 100;},getBoundingClientRect(){return {left:0,top:0,width:960,height:540};}}}
+function element(id){return {id,hidden:false,textContent:'',style:{},dataset:{},classList:{add(){},remove(){}},listeners:{},addEventListener(ev,fn){this.listeners[ev]=fn;},replaceChildren(){this.children=[];},appendChild(v){(this.children||(this.children=[])).push(v);},click(){this.onclick?.();this.listeners.click?.({preventDefault(){}});},get offsetWidth(){return 100;},getBoundingClientRect(){return {left:0,top:0,width:960,height:540};}}}
 const els={};for(const id of ['arena','sheet','sheet-title','sheet-text','choices','mode','sound','pause','life','score','wave','dash','name','banner'])els[id]=element(id);
 const gradient={addColorStop(){}};const cx=new Proxy({createRadialGradient:()=>gradient,createLinearGradient:()=>gradient}, {get(t,k){if(k in t)return t[k];return ()=>{}},set(t,k,v){t[k]=v;return true;}});
 els.arena.getContext=()=>cx;els.arena.setPointerCapture=()=>{};
