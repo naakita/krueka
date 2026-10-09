@@ -142,3 +142,12 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - Inspector en Bases y reglas: estación, bosque o isla; tres iluminaciones; color del personaje, velocidad, tiempo, vidas, cámara y calidad. Hasta 32 objetos (cristal, bloque, columna, árbol, dron, baliza), con nombre, X/Z, tamaño, altura, color, duplicado y eliminación. `game-config.js` conserva los datos; los cambios son locales y guardables, sin consultas de IA.
 - La selección desde el iframe usa `krueka-scene-select` y se acepta solo desde el iframe actual, para una ID existente en el proyecto 3D y fuera de operaciones pendientes. La selección desde la lista usa `krueka-scene-highlight`; el motor acepta mensajes solo del padre. Ningún mensaje permite ejecutar código en Krueka ni cambiar archivos arbitrarios.
 - Se conserva sandbox, CSP, límites de archivos, código del alumno y validación de equipo. No hay tablas, RPC, políticas ni cambios del servidor nuevos. El chat distingue las ideas pendientes de una respuesta generativa; la API de OpenAI está habilitada con límites de consumo. La primera versión es un editor educativo de escenas y juegos propios, no una integración de Unity ni un editor completo de recursos de terceros.
+
+
+## 15. NEON RIFT: videojuego completo de demostración
+
+- `js/club-studio-showcase.js` se carga entre Studio3D y StudioIA en `app.html`; extiende `StudioKits.catalog`, `create` y `art` con `neon-rift`. Crea una copia independiente por alumno sin consumir API ni sobrescribir sus proyectos existentes.
+- Base con HTML/CSS/JS estándar, configuración editable `game-config.js` y motor Canvas 2D `game.js`: tres oleadas, jefe final, disparos, enemigos, DASH, escudos, objetos de recuperación, mejoras de nave, sonidos opcionales WebAudio y controles teclado/ratón/táctiles. Sin conexión externa ni imágenes/paquetes descargados.
+- `StudioShowcase.renderEditor` ofrece controles claros de velocidad, vidas, daño y oleadas, y `renderLesson` contiene una guía autónoma de 60 minutos con capacidad e indicadores. La IA del chat existente puede proponer cambios, respetando sus límites de consumo; los archivos se guardan con las RPC privadas ya existentes.
+- `/ejemplos/neon-rift.html` deja jugar el ejemplo de forma pública en iframe aislado `sandbox=allow-scripts`, con CSP restrictiva y sin cuenta o acceso a datos de alumnos. No guarda estados ni recibe mensajes del proyecto escolar.
+- No se modificaron tablas, RLS, funciones de servidor ni credenciales. Los archivos del juego se ajustan a los límites existentes del Studio.
