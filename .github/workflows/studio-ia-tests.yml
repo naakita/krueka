@@ -23,3 +23,4 @@ jobs:
       - run: node tests/studio-neon-rift-browser.cjs
       - run: node --check js/club-studio-forge.js
       - run: node tests/studio-forge.test.cjs
+      - run: node tests/studio-forge-browser.test.cjs
