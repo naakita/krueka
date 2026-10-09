@@ -31,3 +31,5 @@ jobs:
       - run: node tests/studio-heroes.test.cjs
       - run: node tests/studio-heroes-browser.test.cjs
       - run: node tests/studio-heroes-editor-browser.test.cjs
+      - run: node --check js/club-studio-game-builder.js
+      - run: node tests/studio-game-builder.test.cjs
