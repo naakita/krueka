@@ -32,7 +32,7 @@ function template(which,id){
  primary:t.primary,secondary:t.secondary,accent:t.accent,skin:'#ba937a',
  role:t.role,element:t.element,rarity:t.rarity,level:1,
  stats:{hp:t.stats[0],attack:t.stats[1],defense:t.stats[2],speed:t.stats[3]},
- skills:[...t.skills],story:'El viaje de este héroe está por comenzar.'};
+ skills:[...t.skills],story:'El viaje de este héroe está por comenzar.',anim:{idle:'breath',move:'run',attack:t.weapon==='bow'?'shot':t.weapon==='staff'?'cast':t.weapon==='axe'?'smash':'slash'},fx:t.element};
 }
 function cleanHero(raw,i=0){
  const x=raw&&typeof raw==='object'?raw:{},d=template('knight','hero-'+i),s=x.stats||{};
@@ -47,7 +47,7 @@ function cleanHero(raw,i=0){
  stats:{hp:cl(s.hp,100,3000,940),attack:cl(s.attack,10,500,128),
  defense:cl(s.defense,10,500,185),speed:cl(s.speed,10,500,79)},
  skills:Array.from({length:4},(_,n)=>tx(Array.isArray(x.skills)?x.skills[n]:'',38,'Habilidad '+(n+1))),
- story:tx(x.story,300,'Una historia por descubrir.')};
+ story:tx(x.story,300,'Una historia por descubrir.'),\n anim:{idle:choice(x.anim?.idle,{breath:1,guard:1,focus:1},'breath'),move:choice(x.anim?.move,{walk:1,run:1,dash:1},'run'),attack:choice(x.anim?.attack,{slash:1,shot:1,cast:1,smash:1},'slash')},\n fx:choice(x.fx,{none:1,glow:1,fire:1,ice:1,shadow:1,arcane:1},'glow')};
 }
 function clean(raw){
  const r=raw&&typeof raw==='object'?raw:{},ids=new Set();
@@ -218,7 +218,68 @@ function renderLesson(el){
  '<p class="ks-tip">Los moldes no gastan solicitudes de la API. El chat IA sí consume el cupo. En esta etapa las figuras son ilustraciones vectoriales intercambiables, no personajes 3D fotorrealistas.</p>';
 }
 
-window.StudioHeroes={categories,molds,template,clean,cleanHero,art,create,renderEditor,renderLesson};
+
+const worldDefaults={biome:'ruins',weather:'mist',time:'sunset',mission:'Recuperá el cristal antiguo y regresá al portal.',enemy:'shadow',difficulty:'normal',inventory:['Poción de vida','Llave antigua'],story:'Una energía desconocida despierta bajo las ruinas.'};
+function worldClean(raw){
+ const x=raw&&typeof raw==='object'?raw:{},w=x.world&&typeof x.world==='object'?x.world:{};
+ return {...clean(x),world:{
+  biome:choice(w.biome,{ruins:1,forest:1,city:1,desert:1,ice:1,space:1},worldDefaults.biome),
+  weather:choice(w.weather,{clear:1,mist:1,rain:1,storm:1,snow:1},worldDefaults.weather),
+  time:choice(w.time,{day:1,sunset:1,night:1},worldDefaults.time),
+  mission:tx(w.mission,150,worldDefaults.mission),enemy:choice(w.enemy,{shadow:1,robot:1,beast:1,bandit:1},worldDefaults.enemy),
+  difficulty:choice(w.difficulty,{easy:1,normal:1,hard:1},worldDefaults.difficulty),
+  inventory:(Array.isArray(w.inventory)?w.inventory:worldDefaults.inventory).slice(0,8).map(v=>tx(v,30,'Objeto')),
+  story:tx(w.story,300,worldDefaults.story)}};
+}
+function renderWorld(studio,el,raw){
+ const cfg=worldClean(raw),w=cfg.world;
+ const opts=(values,current)=>Object.entries(values).map(([v,l])=>'<option value="'+v+'" '+(v===current?'selected':'')+'>'+l+'</option>').join('');
+ el.innerHTML='<div class="ks-section-label">KRUEKA · RPG BUILDER / ETAPA 2: MUNDO</div><h2>Constructor de escenarios</h2><p>El héroe que creaste pasa a este mundo. Elegí ambiente, clima, misión y enemigos.</p>'+
+ '<section class="ks-settings"><div class="ks-fields"><label>Escenario<select id="kw-biome">'+opts({ruins:'Ruinas antiguas',forest:'Bosque encantado',city:'Ciudad futurista',desert:'Desierto',ice:'Reino helado',space:'Estación espacial'},w.biome)+'</select></label>'+
+ '<label>Clima<select id="kw-weather">'+opts({clear:'Despejado',mist:'Niebla',rain:'Lluvia',storm:'Tormenta',snow:'Nieve'},w.weather)+'</select></label>'+
+ '<label>Momento<select id="kw-time">'+opts({day:'Día',sunset:'Atardecer',night:'Noche'},w.time)+'</select></label>'+
+ '<label>Enemigos<select id="kw-enemy">'+opts({shadow:'Sombras',robot:'Robots',beast:'Bestias',bandit:'Bandidos'},w.enemy)+'</select></label>'+
+ '<label>Dificultad<select id="kw-difficulty">'+opts({easy:'Fácil',normal:'Normal',hard:'Difícil'},w.difficulty)+'</select></label></div>'+
+ '<label>Misión principal<textarea id="kw-mission" maxlength="150" rows="2">'+esc(w.mission)+'</textarea></label>'+
+ '<label>Historia del mundo<textarea id="kw-story" maxlength="300" rows="3">'+esc(w.story)+'</textarea></label>'+
+ '<h3>Inventario inicial · hasta 8 objetos</h3><div class="ks-fields">'+Array.from({length:8},(_,i)=>'<label>Objeto '+(i+1)+'<input data-item="'+i+'" maxlength="30" value="'+esc(w.inventory[i]||'')+'"></label>').join('')+'</div>'+
+ '<button class="ks-btn primary" id="kw-save">Guardar mundo →</button></section>'+
+ '<section class="ks-settings"><h3>Flujo del estudio</h3><p>01 Personajes ✅ · 02 Mundo 🟦 · 03 Movimiento/Efectos · 04 Combate · 05 Historia/Inventario · 06 Probar juego</p></section>';
+ el.querySelector('#kw-save').onclick=()=>{if(studio.busy||!studio.cloudReady)return;const world={biome:el.querySelector('#kw-biome').value,weather:el.querySelector('#kw-weather').value,time:el.querySelector('#kw-time').value,enemy:el.querySelector('#kw-enemy').value,difficulty:el.querySelector('#kw-difficulty').value,mission:el.querySelector('#kw-mission').value,story:el.querySelector('#kw-story').value,inventory:[...el.querySelectorAll('[data-item]')].map(x=>x.value).filter(Boolean)};studio.checkpoint();studio.files['game-config.js']=StudioKits.configFile(worldClean({...cfg,world}));studio.changed();studio.refreshAll();studio.lock(false);};
+}
+function renderMotion(studio,el,raw){
+ const cfg=worldClean(raw),h=cfg.heroes.find(x=>x.id===cfg.active)||cfg.heroes[0],a=h.anim||{},opt=(vals,cur)=>Object.entries(vals).map(([v,l])=>'<option value="'+v+'" '+(v===cur?'selected':'')+'>'+l+'</option>').join('');
+ el.innerHTML='<div class="ks-section-label">KRUEKA · RPG BUILDER / ETAPA 3: VIDA Y MOVIMIENTO</div><h2>Animaciones y efectos</h2><p>Definí cómo se comporta <b>'+esc(h.name)+'</b> dentro del juego.</p><section class="ks-settings"><div class="kh-live">'+art(h)+'</div><div class="ks-fields">'+
+ '<label>En reposo<select id="km-idle">'+opt({breath:'Respirar',guard:'Guardia',focus:'Concentración'},a.idle)+'</select></label>'+
+ '<label>Movimiento<select id="km-move">'+opt({walk:'Caminar',run:'Correr',dash:'Impulso rápido'},a.move)+'</select></label>'+
+ '<label>Ataque<select id="km-attack">'+opt({slash:'Espadazo',shot:'Disparo',cast:'Hechizo',smash:'Golpe fuerte'},a.attack)+'</select></label>'+
+ '<label>Efecto<select id="km-fx">'+opt({none:'Sin efecto',glow:'Aura',fire:'Fuego',ice:'Hielo',shadow:'Sombra',arcane:'Arcano'},h.fx)+'</select></label></div><button class="ks-btn primary" id="km-save">Guardar movimientos →</button></section>';
+ el.querySelector('#km-save').onclick=()=>{const hero=cleanHero({...h,anim:{idle:el.querySelector('#km-idle').value,move:el.querySelector('#km-move').value,attack:el.querySelector('#km-attack').value},fx:el.querySelector('#km-fx').value});studio.checkpoint();studio.files['game-config.js']=StudioKits.configFile(worldClean({...cfg,heroes:cfg.heroes.map(x=>x.id===h.id?hero:x)}));studio.changed();studio.refreshAll();studio.lock(false);};
+}
+function renderCombat(studio,el,raw){
+ const cfg=worldClean(raw),c=cfg.combat||{mode:'action',enemies:5,boss:true,reward:'Cristal del portal'};
+ el.innerHTML='<div class="ks-section-label">KRUEKA · RPG BUILDER / ETAPA 4: COMBATE</div><h2>Reglas de combate</h2><p>Elegí cómo se enfrentará el héroe a los enemigos del escenario.</p><section class="ks-settings"><div class="ks-fields"><label>Tipo<select id="kc-mode"><option value="action" '+(c.mode==='action'?'selected':'')+'>Acción en tiempo real</option><option value="turn" '+(c.mode==='turn'?'selected':'')+'>Por turnos</option></select></label><label>Cantidad de enemigos<input id="kc-count" type="number" min="1" max="20" value="'+cl(c.enemies,1,20,5)+'"></label><label>Jefe final<select id="kc-boss"><option value="yes" '+(c.boss!==false?'selected':'')+'>Sí</option><option value="no" '+(c.boss===false?'selected':'')+'>No</option></select></label><label>Recompensa<input id="kc-reward" maxlength="50" value="'+esc(c.reward||'Cristal del portal')+'"></label></div><button class="ks-btn primary" id="kc-save">Guardar combate →</button></section>';
+ el.querySelector('#kc-save').onclick=()=>{const combat={mode:el.querySelector('#kc-mode').value,enemies:cl(el.querySelector('#kc-count').value,1,20,5),boss:el.querySelector('#kc-boss').value==='yes',reward:tx(el.querySelector('#kc-reward').value,50,'Recompensa')};studio.checkpoint();studio.files['game-config.js']=StudioKits.configFile({...cfg,combat});studio.changed();studio.refreshAll();studio.lock(false);};
+}
+function renderStory(studio,el,raw){
+ const cfg=worldClean(raw),w=cfg.world;
+ el.innerHTML='<div class="ks-section-label">KRUEKA · RPG BUILDER / ETAPA 5: HISTORIA E INVENTARIO</div><h2>Historia jugable</h2><p>Uní el mundo, la misión y los objetos que el jugador deberá encontrar.</p><section class="ks-settings"><h3>Misión actual</h3><p>'+esc(w.mission)+'</p><label>Introducción<textarea id="ks-intro" maxlength="300" rows="4">'+esc(w.story)+'</textarea></label><h3>Objetos</h3><div class="kh-collection">'+w.inventory.map(v=>'<span class="ks-btn">'+esc(v)+'</span>').join('')+'</div><button class="ks-btn primary" id="ks-story-save">Guardar historia →</button></section>';
+ el.querySelector('#ks-story-save').onclick=()=>{studio.checkpoint();studio.files['game-config.js']=StudioKits.configFile(worldClean({...cfg,world:{...w,story:el.querySelector('#ks-intro').value}}));studio.changed();studio.refreshAll();studio.lock(false);};
+}
+function renderPlay(studio,el,raw){
+ const cfg=worldClean(raw),h=cfg.heroes.find(x=>x.id===cfg.active)||cfg.heroes[0],c=cfg.combat||{mode:'action',enemies:5,boss:true,reward:'Cristal del portal'},w=cfg.world;
+ el.innerHTML='<div class="ks-section-label">KRUEKA · RPG BUILDER / ETAPA 6: PROBAR JUEGO</div><h2>'+esc(cfg.title)+'</h2><p>Esta pantalla reúne todo lo construido hasta ahora. La vista de la derecha sigue mostrando la ficha RPG; acá comprobamos las reglas antes de pasar al motor jugable completo.</p><section class="ks-settings"><div class="kh-live">'+art(h)+'</div><h3>'+esc(h.name)+'</h3><p><b>Mundo:</b> '+esc(w.biome)+' · '+esc(w.weather)+' · '+esc(w.time)+'</p><p><b>Misión:</b> '+esc(w.mission)+'</p><p><b>Movimiento:</b> '+esc(h.anim.move)+' · <b>Ataque:</b> '+esc(h.anim.attack)+' · <b>Efecto:</b> '+esc(h.fx)+'</p><p><b>Combate:</b> '+esc(c.mode)+' · '+cl(c.enemies,1,20,5)+' enemigos · jefe '+(c.boss?'sí':'no')+'</p><p><b>Inventario:</b> '+w.inventory.map(esc).join(' · ')+'</p><p><b>Recompensa:</b> '+esc(c.reward||'Recompensa')+'</p><button class="ks-btn primary" id="kp-chat">Pedir a la IA una misión nueva</button></section>';
+ el.querySelector('#kp-chat').onclick=()=>{studio.showTab('ai');const p=document.getElementById('ks-prompt');studio.draft='Mejorá solamente la misión y la historia del mundo en game-config.js. Conservá mis héroes, sus piezas, movimientos, combate e inventario. Hacé una misión breve y jugable para chicos.';p.value=studio.draft;studio.changed();p.focus();};
+}
+function renderBuilder(studio,el,raw){
+ const step=studio.rpgStep||'hero';
+ const nav='<div class="kh-pipeline">'+[['hero','1 · Héroes'],['world','2 · Mundo'],['motion','3 · Vida'],['combat','4 · Combate'],['story','5 · Historia'],['play','6 · Probar']].map(([id,l])=>'<button data-rpg-step="'+id+'" class="ks-btn '+(step===id?'primary':'')+'">'+l+'</button>').join('')+'</div><div id="kh-stage"></div>';
+ el.innerHTML=nav;el.querySelectorAll('[data-rpg-step]').forEach(b=>b.onclick=()=>{studio.rpgStep=b.dataset.rpgStep;renderBuilder(studio,el,StudioKits.read(studio.files));});
+ const stage=el.querySelector('#kh-stage');
+ if(step==='world')renderWorld(studio,stage,raw);else if(step==='motion')renderMotion(studio,stage,raw);else if(step==='combat')renderCombat(studio,stage,raw);else if(step==='story')renderStory(studio,stage,raw);else if(step==='play')renderPlay(studio,stage,raw);else renderEditor(studio,stage,raw);
+}
+
+window.StudioHeroes={categories,molds,template,clean,cleanHero,art,create,renderEditor,renderLesson,renderBuilder,renderWorld,renderMotion,renderCombat,renderStory,renderPlay};
 StudioKits.catalog.unshift({id:'hero-manager',icon:'⚔️',title:'Gestor de Héroes · RPG Studio',tag:'PERSONAJES · EQUIPO · COLECCIÓN',description:'Armá héroes originales con moldes, armaduras, capas, armas y habilidades.',challenge:'Creá dos héroes distintos con cuatro piezas personalizadas.'});
 const oldCreate=StudioKits.create.bind(StudioKits),oldArt=StudioKits.art.bind(StudioKits);
 StudioKits.create=id=>id==='hero-manager'?create():oldCreate(id);
