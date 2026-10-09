@@ -106,7 +106,7 @@ function decorate(studio,el,raw){
  '<div class="kr-rp-import"><h3>Retrato de ilustración HD</h3><p>Para conseguir el acabado de fantasía detallada que buscás, usá una ilustración propia o con permiso. Krueka la comprime y la guarda dentro de <b>tu proyecto privado</b>, sin enviarla a servicios públicos de generación.</p>'+
  '<label class="kr-rp-upload">Seleccionar imagen (PNG, JPG, WebP)<input type="file" id="kr-rp-file" accept="image/png,image/jpeg,image/webp"></label>'+
  '<div class="kr-rp-toolbar"><button class="ks-btn" type="button" id="kr-rp-remove" '+(!hero.portrait?'disabled':'')+'>Quitar retrato</button><button class="ks-btn" type="button" id="kr-rp-back">← Volver al mundo</button></div>'+
- '<p id="kr-rp-import-state" class="ks-tip" role="status">El retrato aparecerá en la ficha y la colección cuando presiones Guardar en la parte superior.</p></div>'+
+ '<p id="kr-rp-import-state" class="ks-tip" role="status">Una imagen HD importada también se convierte en retrato del protagonista. Presioná Guardar arriba para confirmar en la nube.</p></div>'+
  '<p class="kr-rp-credit">Modelos 3D: Quaternius · licencia CC0. Motor: model-viewer · Apache-2.0. Herramienta libre para modelar: <a target="_blank" rel="noopener noreferrer" href="https://web.blockbench.net/">Blockbench web</a>.</p>';
  const firstSection=el.querySelector('.ks-settings');
  if(firstSection)firstSection.insertAdjacentElement('beforebegin',panel);
@@ -174,6 +174,7 @@ function decorate(studio,el,raw){
   catch(_e){setStatus('La captura PNG no está disponible; podés continuar usando la vista 3D.');}
  };
  function savePortrait(portrait){
+  if(portrait){activateProtagonist(studio,hero.id,modelChoice.value,portrait);return;}
   const current=StudioKits.read(studio.files),x=StudioHeroes.clean(current);
   const selected=x.heroes.find(h=>h.id===hero.id);
   if(!selected)throw Error('No se encontró el héroe seleccionado.');
