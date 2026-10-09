@@ -208,6 +208,7 @@ function renderEditor(studio,el,raw){
   studio.draft='Ayudame a mejorar el héroe '+selected.name+' en game-config.js. Cambiá SOLO el nombre de una de sus cuatro habilidades en su ficha, sin borrar ningún otro héroe. Conservá index.html, hero.js y style.css. Explicá cómo comprobar el cambio.';
   prompt.value=studio.draft;studio.changed();prompt.focus();
  };
+ if(window.StudioRenderPro)window.StudioRenderPro.decorate(studio,el,cfg);
 }
 function renderLesson(el){
  el.innerHTML='<div class="ks-section-label">CLUB DE INFORMÁTICA · CLASE GUIADA DE 60 MINUTOS</div><h2>Diseño de héroes de videojuego RPG</h2>'+
