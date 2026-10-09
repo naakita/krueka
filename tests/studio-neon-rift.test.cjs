@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),load=f=>fs.readFileSync(path.join(root,f),'utf8');
 const scripts=[load('js/club-studio-kits.js'),load('js/club-studio-showcase.js')];
-const env={window:{},console,JSON,Math,Number,String,Array,Object,Date};vm.createContext(env);
+const env={console,JSON,Math,Number,String,Array,Object,Date};env.window=env;vm.createContext(env);
 for(const code of scripts)vm.runInContext(code,env);
 const kits=env.window.StudioKits;
 assert.equal(kits.catalog[0].id,'neon-rift');assert.ok(kits.catalog.some(k=>k.id==='stars'));
