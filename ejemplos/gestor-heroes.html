@@ -1,0 +1,16 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gestor de Héroes · Krueka</title>
+<style>*{box-sizing:border-box}body{margin:0;background:linear-gradient(#101d2a,#070e18);color:#e4edf6;font-family:system-ui;text-align:center}header{padding:16px 10px 4px}h1{font-size:clamp(23px,3vw,39px);margin:4px}p{color:#a7c3d1;max-width:720px;margin:6px auto;font-size:13px}a{color:#78ddeb}.frame{width:min(1250px,98vw);height:min(920px,calc(100svh - 130px));min-height:480px;display:block;margin:12px auto;border-radius:11px;border:1px solid #476479;background:#081725}</style></head>
+<body><header><h1>KRUEKA · GESTOR DE HÉROES</h1><p>Ejemplo interactivo: seleccioná personajes y explorá su ficha. Para construir los tuyos con moldes y piezas, ingresá a <a href="../app.html?club=bei">Studio IA</a>.</p></header>
+<iframe class="frame" id="demo" sandbox="allow-scripts" title="Galería de héroes originales"></iframe>
+<script src="../js/club-studio-kits.js?v=20261008a"></script><script src="../js/club-studio-heroes.js?v=20261009a"></script>
+<script>
+(function(){
+ const files=StudioKits.create('hero-manager'),end='</'+'script>',begin='<script>';
+ const policy='<meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; script-src &apos;unsafe-inline&apos;; style-src &apos;unsafe-inline&apos;; img-src data: blob:; connect-src &apos;none&apos;; base-uri &apos;none&apos;; form-action &apos;none&apos;">';
+ const doc=files['index.html'].replace('<head>','<head>'+policy)
+ .replace('<link rel="stylesheet" href="style.css">','<style>'+files['style.css']+'</style>')
+ .replace('<script src="game-config.js">'+end,begin+files['game-config.js']+end)
+ .replace('<script src="hero.js">'+end,begin+files['hero.js']+end);
+ document.getElementById('demo').srcdoc=doc;
+})();
+</script></body></html>

@@ -1,0 +1,25 @@
+const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const env={Math,Date,JSON,Object,Array,String,Number,console};env.window=env;vm.createContext(env);
+for(const file of ['js/club-studio-kits.js','js/club-studio-heroes.js'])vm.runInContext(read(file),env);
+const heroes=env.StudioHeroes,kits=env.StudioKits;
+assert.equal(heroes.molds.length,6);
+assert.equal(kits.catalog[0].id,'hero-manager');
+const files=kits.create('hero-manager');
+assert.deepEqual(Object.keys(files).sort(),['index.html','style.css','game-config.js','hero.js','LEEME.md'].sort());
+assert.ok(Object.values(files).every(v=>v.length<120000),'No hay archivos muy grandes');
+assert.ok(Object.values(files).reduce((n,x)=>n+x.length,0)<65000,'Cumple tamaño del chat IA');
+assert.ok(!Object.values(files).some(x=>/https?:\/\/(?!www\.w3\.org\/2000\/svg)/.test(x)),'No usa CDNs ni recursos externos');
+new vm.Script(files['game-config.js']);new vm.Script(files['hero.js']);
+const cfg=kits.read(files);assert.equal(cfg.heroes.length,3);
+assert.equal(cfg.heroes[0].id,'hero-1');
+assert.equal(heroes.clean(cfg).heroes[0].stats.hp,940);
+for(const m of heroes.molds){const hero=heroes.template(m.id,'test-'+m.id);assert.ok(heroes.art(hero).includes('<svg'));assert.equal(heroes.cleanHero(hero).skills.length,4);}
+const bad=heroes.clean({kind:'hero-manager',active:'missing',heroes:[{id:'x',name:'<img src=x onerror=alert(1)>',primary:'url(javascript:bad)',armor:'bad',head:'bad',stats:{hp:999999},skills:['<script>']} ]});
+assert.equal(bad.active,'x');assert.equal(bad.heroes[0].stats.hp,3000);assert.notEqual(bad.heroes[0].primary,'url(javascript:bad)');
+assert.ok(!heroes.art(bad.heroes[0]).includes('javascript:bad'));
+assert.equal(heroes.clean({heroes:Array.from({length:20},(_,i)=>heroes.template('mage','h-'+i))}).heroes.length,8);
+assert.ok(kits.create('stars')['game.js']);assert.ok(kits.create('hero-manager')['hero.js']);
+assert.ok(read('app.html').includes('club-studio-heroes.js?v=20261009a'));
+assert.ok(read('js/club-studio-ai.js').includes("kind==='hero-manager'"));
+console.log('PASS: seis moldes, ocho héroes máx., SVG seguro, configuración, galería y compatibilidad Studio.');

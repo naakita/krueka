@@ -321,6 +321,7 @@ const StudioIA={__loaded:true,
   renderCreator(){
     const el=document.getElementById('ks-create');if(!el)return;const cfg=StudioKits.read(this.files);
     if(cfg?.kind==='space3d'&&window.StudioMissions){StudioMissions.renderEditor(this,el,cfg);return;}
+     if(cfg?.kind==='hero-manager'&&window.StudioHeroes){StudioHeroes.renderEditor(this,el,cfg);return;}
     if(cfg?.kind==='explore3d'&&window.Studio3D){Studio3D.renderEditor(this,el,cfg);return;}
      if(cfg?.kind==='cinematic3d'&&window.StudioForge){StudioForge.renderEditor(this,el,cfg);return;}
      if(cfg?.kind==='neon-rift'&&window.StudioShowcase){StudioShowcase.renderEditor(this,el,cfg);return;}
@@ -338,6 +339,7 @@ const StudioIA={__loaded:true,
   renderLesson(){
     const el=document.getElementById('ks-learn');if(!el)return;const cfg=StudioKits.read(this.files),kit=StudioKits.catalog.find(k=>k.id===cfg?.kind);
      if(cfg?.kind==='neon-rift'&&window.StudioShowcase){StudioShowcase.renderLesson(el);return;}
+     if(cfg?.kind==='hero-manager'&&window.StudioHeroes){StudioHeroes.renderLesson(el);return;}
      if(cfg?.kind==='cinematic3d'&&window.StudioForge){StudioForge.renderLesson(el);return;}
     const web=!!this.files['script.js']&&!this.files['game.js']&&!Object.keys(this.files).some(n=>n.startsWith('games/'));
     el.innerHTML='<div class="ks-section-label">MISIÓN DE CREACIÓN · 60 MINUTOS</div><h2>Construí algo que puedas explicar.</h2><p><b>Tema:</b> Diseño y programación de un proyecto web.</p><p><b>Capacidad:</b> Modificar un programa, probar su funcionamiento y explicar las decisiones tomadas.</p><h3>Tu recorrido</h3><ol><li><b>10 min · Imaginá.</b> Elegí una base y poné nombre a tu proyecto.</li><li><b>15 min · Construí.</b> Cambiá dos reglas desde Crear. Abrí Código y encontrá esos valores.</li><li><b>15 min · Probá.</b> Jugá con teclado y controles táctiles. Revisá puntos, vidas y final del juego.</li><li><b>10 min · Mejorá.</b> Ajustá una regla a partir de la prueba.</li><li><b>10 min · Explicá.</b> Escribí tu decisión en LEEME.md y enviá el proyecto al profe.</li></ol><h3>Indicadores de logro</h3>'+['Personalizo un proyecto y conservo una versión propia.','Identifico dónde se configura una regla.','Pruebo la navegación o los controles y las reglas del juego.','Explico qué cambié y cómo mejoró mi proyecto.'].map(x=>'<label class="ks-check"><input type="checkbox">'+x+'</label>').join('')+(kit?'<div class="ks-notice"><b>Desafío extra</b><p>'+esc(kit.challenge)+'</p></div>':'')+'<p class="ks-tip">Marcá los indicadores al comprobarlos durante esta sesión.</p>';
