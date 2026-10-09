@@ -31,3 +31,14 @@ Guía de licencias y dependencias: `docs/render-pro-fuentes.md`.
 ### Acceso rápido a Render Pro desde Game Studio (9/10/2026)
 
 Cuando estés en Bases y reglas y veas el mapa y la biblioteca de objetos, **no busques Render Pro en la galería de la derecha**: la nueva barra superior del editor del mapa muestra directamente `⚔ Personajes · Render Pro`. Pulsá ese botón. El editor de héroes abre al principio, con `✦ Abrir Render Pro 3D` y `← Volver al mundo` en la cabecera; Render Pro aparece antes de los moldes y de los controles avanzados. Si el navegador muestra la versión anterior, refrescá con Ctrl + F5. Los proyectos guardados siguen intactos.
+
+## Trabajo cuando el proveedor de IA alcanza sus límites
+
+En **Chat** aparece «Otras formas de avanzar»: **Guía sin IA** (instrucciones según la base elegida), **Copiar mi pedido** y **ChatGPT personal (13+)**. Estas ayudas no usan API de OpenAI.
+
+- El chat y los archivos del alumno se siguen almacenando en **su proyecto privado de Krueka**, no se mezclan con otros alumnos ni se exportan automáticamente a ChatGPT.
+- El botón de ChatGPT externo sólo abre **https://chatgpt.com/** en otra pestaña, tras confirmar los requisitos de edad; cada alumno que lo use debe contar con **su propia cuenta**, y si es menor de 18, consentimiento de su padre, madre o tutor. Menores de 13 no deben usar ChatGPT; usan la guía visual de Krueka.
+- La solicitud se copia al portapapeles **sólo al pulsar Copiar**; no envía mensajes ni archivos del proyecto a terceros. Si un estudiante decide pegarla en ChatGPT, debe evitar información personal. Las respuestas se evalúan y aplican manualmente dentro de Krueka, no hay sincronización automática.
+- No se permite insertar una URL privada como `https://chatgpt.com/c/…` ni compartir la sesión del docente, ni usar la suscripción Plus como si fuese el crédito de la API. Los enlaces a conversaciones no autorizan integración, y los términos de OpenAI prohíben compartir credenciales.
+- El uso externo no modifica el presupuesto diario de la API ni soluciona directamente un error 429 del proveedor; simplemente permite seguir trabajando con el editor y, a quienes son elegibles, con una cuenta propia fuera de Krueka.
+- Más adelante puede solicitarse acceso como socio de «Sign in with ChatGPT»; hoy no está disponible como integración de Krueka y no debe simularse.
