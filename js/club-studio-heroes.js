@@ -135,7 +135,89 @@ function create(){
  'hero.js':'/* Motor autónomo del gestor; editá las reglas en game-config.js. */\nwindow.HERO_ART='+art.toString()+';\nwindow.HERO_CHOICES='+JSON.stringify(categories)+';\n('+previewRuntime.toString()+')();',
  'LEEME.md':'# GESTOR DE HÉROES · KRUEKA\n\n1. Abrí Bases y reglas y elegí un molde (caballero, arquera, hechicero, guardián, asesino o tecnoguerrero).\n2. Creá un héroe y cambiá armadura, cabeza, capa, arma y colores.\n3. Escribí nombre, historia, estadísticas y cuatro habilidades.\n4. Presioná Guardar héroe y comprobá su ficha en la vista previa.\n5. Probá una mejora pequeña en el Chat; pedí que cambie solo game-config.js.\n6. Guardá tu proyecto, cerralo y volvé a abrirlo en Mis proyectos.\n\nCapacidad: diseñar personajes para un videojuego combinando moldes y equipamiento.\nIndicadores: crea dos personajes; personaliza cuatro piezas; registra cuatro habilidades; comprueba guardado.\n\nEl arte inicial es vectorial estilizado, no fotorrealista. Combinar moldes no consume pedidos de IA.\n'};
 }
-/*EDITOR_SLOT*/
+
+function renderEditor(studio,el,raw){
+ const cfg=clean(raw),selected=cfg.heroes.find(x=>x.id===(studio.heroSelected||cfg.active))||cfg.heroes[0];
+ studio.heroSelected=selected.id;
+ const option=(type,value)=>Object.entries(categories[type]).map(([key,label])=>'<option value="'+key+'" '+(value===key?'selected':'')+'>'+esc(label)+'</option>').join('');
+ const select=(label,type)=>'<label>'+label+'<select data-piece="'+type+'">'+option(type,selected[type])+'</select></label>';
+ const input=(label,id,type='text',extra='')=>'<label>'+label+'<input data-piece="'+id+'" type="'+type+'" value="'+esc(selected[id])+'" '+extra+'></label>';
+ const statNames={hp:'Vida',attack:'Ataque',defense:'Defensa',speed:'Velocidad'};
+ el.innerHTML='<div class="ks-section-label">KRUEKA · HERO LAB / ETAPA 1: PERSONAJES</div>'+
+ '<h2>Gestor de Héroes</h2><p>Elegí un molde, agregalo a tu colección y combiná piezas preparadas. No tenés que dibujar ni programar para empezar.</p>'+
+ '<section class="ks-settings"><h3>Mi colección · '+cfg.heroes.length+' / 8</h3><div class="kh-collection">'+cfg.heroes.map(h=>'<button class="ks-btn" data-person="'+esc(h.id)+'" aria-pressed="'+(selected.id===h.id)+'">'+esc(h.name)+'</button>').join('')+'</div>'+
+ '<div class="ks-scene-actions"><button class="ks-btn" id="kh-copy" '+(cfg.heroes.length>=8?'disabled':'')+'>Duplicar personaje</button><button class="ks-btn" id="kh-remove" '+(cfg.heroes.length<=1?'disabled':'')+'>Quitar personaje</button></div></section>'+
+ '<section class="ks-settings"><h3>Moldes disponibles · '+molds.length+'</h3><p>Estos héroes ya incluyen apariencia, estadísticas y habilidades. Hacé clic en un molde para agregarlo.</p>'+
+ '<div class="kh-molds">'+molds.map(m=>'<button class="kh-mold" data-mold="'+m.id+'" '+(cfg.heroes.length>=8?'disabled':'')+'><span>'+art(template(m.id,'thumbnail-'+m.id))+'</span><b>'+esc(m.name)+'</b><small>＋ Crear</small></button>').join('')+'</div></section>'+
+ '<section class="ks-settings"><h3>Tu héroe · piezas intercambiables</h3><div class="kh-live" aria-label="Vista del personaje seleccionado">'+art(selected)+'</div>'+
+ '<div class="ks-fields">'+input('Nombre','name','text','maxlength="40"')+select('Tipo de héroe','base')+select('Armadura / traje','armor')+
+ select('Cabeza','head')+select('Capa','cape')+select('Arma principal','weapon')+
+ input('Color principal','primary','color')+input('Metal secundario','secondary','color')+
+ input('Detalles brillantes','accent','color')+input('Tono de piel','skin','color')+
+ select('Rol','role')+select('Elemento','element')+select('Rareza','rarity')+
+ input('Nivel','level','number','min="1" max="99"')+'</div>'+
+ '<h3>Estadísticas</h3><div class="ks-fields">'+Object.entries(selected.stats).map(([key,value])=>'<label>'+statNames[key]+'<input data-stat="'+key+'" type="number" min="'+(key==='hp'?100:10)+'" max="'+(key==='hp'?3000:500)+'" value="'+value+'"></label>').join('')+'</div>'+
+ '<h3>Cuatro habilidades originales</h3><div class="ks-fields">'+selected.skills.map((value,i)=>'<label>Habilidad '+(i+1)+'<input data-skill="'+i+'" maxlength="38" value="'+esc(value)+'"></label>').join('')+'</div>'+
+ '<label>Historia del personaje<textarea id="kh-story" maxlength="300" rows="3">'+esc(selected.story)+'</textarea></label>'+
+ '<button class="ks-btn primary" id="kh-apply">Guardar este héroe y ver resultado →</button>'+
+ '<p class="ks-tip">Guardá también el proyecto desde el botón Guardar de arriba. Deshacer permite recuperar una versión anterior.</p></section>'+
+ '<section class="ks-settings"><h3>Próximos espacios del estudio</h3><p>01 Personajes ✅ · 02 Escenarios · 03 Habilidades y efectos · 04 Combate · 05 Historia e inventario. Las fichas de hoy se conservarán dentro del proyecto.</p>'+
+ '<button class="ks-btn" id="kh-chat">Preparar mejora con el Chat IA</button></section>';
+ const apply=(next,id)=>{if(studio.busy||!studio.cloudReady)return;
+  const cleanCfg=clean(next);studio.checkpoint();studio.files['game-config.js']=StudioKits.configFile(cleanCfg);
+  studio.heroSelected=id||cleanCfg.active;studio.changed();studio.refreshAll();studio.lock(false);
+ };
+ el.querySelectorAll('[data-person]').forEach(btn=>btn.onclick=()=>{studio.heroSelected=btn.dataset.person;renderEditor(studio,el,cfg);});
+ el.querySelectorAll('[data-mold]').forEach(btn=>btn.onclick=()=>{
+  if(cfg.heroes.length>=8)return;
+  const id='h-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
+  apply({...cfg,active:id,heroes:[...cfg.heroes,template(btn.dataset.mold,id)]},id);
+ });
+ el.querySelector('#kh-copy').onclick=()=>{if(cfg.heroes.length>=8)return;
+  const id='h-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
+  apply({...cfg,active:id,heroes:[...cfg.heroes,{...selected,id,name:tx(selected.name+' copia',40,'Mi héroe'),stats:{...selected.stats},skills:[...selected.skills]}]},id);
+ };
+ el.querySelector('#kh-remove').onclick=()=>{
+  if(cfg.heroes.length<=1||!confirm('¿Quitar a este héroe de la colección? Si te equivocás, podés usar Deshacer.'))return;
+  const heroes=cfg.heroes.filter(x=>x.id!==selected.id);apply({...cfg,heroes,active:heroes[0].id},heroes[0].id);
+ };
+ const readChanges=()=>{
+  const h={...selected,stats:{...selected.stats},skills:[...selected.skills]};
+  el.querySelectorAll('[data-piece]').forEach(x=>h[x.dataset.piece]=x.value);
+  el.querySelectorAll('[data-stat]').forEach(x=>h.stats[x.dataset.stat]=x.value);
+  el.querySelectorAll('[data-skill]').forEach(x=>h.skills[Number(x.dataset.skill)]=x.value);
+  h.story=el.querySelector('#kh-story').value;
+  return cleanHero(h,cfg.heroes.findIndex(x=>x.id===selected.id));
+ };
+ el.querySelectorAll('[data-piece],[data-stat],[data-skill],#kh-story').forEach(node=>{
+  node.addEventListener('input',()=>{el.querySelector('.kh-live').innerHTML=art(readChanges());});
+  node.addEventListener('change',()=>{el.querySelector('.kh-live').innerHTML=art(readChanges());});
+ });
+ el.querySelector('#kh-apply').onclick=()=>{
+  const h=readChanges(),heroes=cfg.heroes.map(x=>x.id===selected.id?h:x);
+  apply({...cfg,active:selected.id,heroes},selected.id);
+ };
+ el.querySelector('#kh-chat').onclick=()=>{
+  studio.showTab('ai');
+  const prompt=document.getElementById('ks-prompt');
+  studio.draft='Ayudame a mejorar el héroe '+selected.name+' en game-config.js. Cambiá SOLO el nombre de una de sus cuatro habilidades en su ficha, sin borrar ningún otro héroe. Conservá index.html, hero.js y style.css. Explicá cómo comprobar el cambio.';
+  prompt.value=studio.draft;studio.changed();prompt.focus();
+ };
+}
+function renderLesson(el){
+ el.innerHTML='<div class="ks-section-label">CLUB DE INFORMÁTICA · CLASE GUIADA DE 60 MINUTOS</div><h2>Diseño de héroes de videojuego RPG</h2>'+
+ '<p><b>Capacidad:</b> diseñar héroes originales mediante moldes, equipamiento, atributos, historia e IA.</p>'+
+ '<ol><li><b>5 min:</b> Abrí Gestor de Héroes y entrá en Bases y reglas.</li>'+
+ '<li><b>10 min:</b> Mirá los seis moldes preparados y creá un personaje nuevo.</li>'+
+ '<li><b>15 min:</b> Cambiá al menos cuatro piezas: cabeza, armadura, capa, arma o colores. Guardá el héroe.</li>'+
+ '<li><b>10 min:</b> Escribí su historia y poné nombres a cuatro habilidades.</li>'+
+ '<li><b>10 min:</b> Abrí Chat, seleccioná Planear y pedile ayuda para mejorar una habilidad. Luego Construir si querés aplicar un cambio pequeño.</li>'+
+ '<li><b>10 min:</b> Probá la galería, presioná Guardar, cerrá y recuperá desde Mis proyectos. Enviá al profe.</li></ol>'+
+ '<h3>Indicadores de logro</h3>'+
+ ['Creo un héroe nuevo a partir de un molde.','Combino cuatro piezas o colores diferentes.','Completo nombre, atributos, historia y cuatro habilidades.','Formulo un pedido claro a la IA y verifico el resultado.','Guardo y recupero mi colección.'].map(v=>'<label class="ks-check"><input type="checkbox">'+v+'</label>').join('')+
+ '<p class="ks-tip">Los moldes no gastan solicitudes de la API. El chat IA sí consume el cupo. En esta etapa las figuras son ilustraciones vectoriales intercambiables, no personajes 3D fotorrealistas.</p>';
+}
+
 window.StudioHeroes={categories,molds,template,clean,cleanHero,art,create,renderEditor,renderLesson};
 StudioKits.catalog.unshift({id:'hero-manager',icon:'⚔️',title:'Gestor de Héroes · RPG Studio',tag:'PERSONAJES · EQUIPO · COLECCIÓN',description:'Armá héroes originales con moldes, armaduras, capas, armas y habilidades.',challenge:'Creá dos héroes distintos con cuatro piezas personalizadas.'});
 const oldCreate=StudioKits.create.bind(StudioKits),oldArt=StudioKits.art.bind(StudioKits);
