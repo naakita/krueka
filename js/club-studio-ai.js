@@ -1,5 +1,5 @@
 /* Krueka Studio IA · navegador, sin instalación.
-   Copiloto de construcción para Juniors: prompt -> cambios -> vista previa -> guardar en nube. */
+   Copiloto de construcción del Club: prompt -> cambios -> vista previa -> guardar en nube. */
 (function(){
 'use strict';
 if(window.StudioIA&&window.StudioIA.__loaded)return;
@@ -70,7 +70,7 @@ const StudioIA={__loaded:true,
     this.entryTimer=setInterval(()=>this.addEntry(),1500);
   },
   addEntry(){
-    if(!Club.alumno||Club.alumno.nivel!=='mayores'||document.getElementById('krueka-studio'))return;
+    if(!Club.alumno||!['mayores','peques'].includes(Club.alumno.nivel)||document.getElementById('krueka-studio'))return;
     const box=document.getElementById('club-box');
     const dashboard=box&&box.querySelector('.club-dashboard');
     if(!box||!dashboard)return;
@@ -121,7 +121,7 @@ const StudioIA={__loaded:true,
   },
   async open(){
     if(!this.sid())return alert('Entrá al Club con tu código para usar el Studio.');
-    if(Club.alumno.nivel!=='mayores')return;
+    if(!['mayores','peques'].includes(Club.alumno.nivel))return;
     if(document.getElementById('krueka-studio'))return;
     await this.saveQueue;
     clearTimeout(this.saveTimer);this.cloudReady=false;this.dirty=false;this.busy=false;
@@ -185,21 +185,40 @@ const StudioIA={__loaded:true,
     this.lock(true);
     this.renderChat();
     try{
-      let last='legacy';try{last=localStorage.getItem('krueka-studio-last:'+this.sid())||'legacy'}catch(_e){}
+      let last=null;try{last=localStorage.getItem('krueka-studio-last:'+this.sid())}catch(_e){}
+      if(!last){
+        const list=await this.request({action:'list'});
+        last=(list.projects||[]).slice().sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')))[0]?.id||'legacy';
+      }
       const d=await this.request({action:'load',projectId:last});
       if(!panel.isConnected)return;
       this.cloudReady=true;this.updateAI(d.ai);
       if(d.project&&d.project.files&&Object.keys(d.project.files).length){
         this.adopt(d.project);
         this.say('sys','Proyecto recuperado de Krueka. Podés continuar desde cualquier computadora.');
-      }else this.say('sys','Tu primer juego está listo para probar. Personalizalo desde Crear y guardá tus cambios.');
+      }else{
+        this.projectId='new';
+        this.say('sys','Tu primer juego está listo. Probalo y cambiá sus reglas desde Bases y reglas.');
+        this.dirty=true;await this.save();
+      }
     }catch(e){this.cloudReady=false;this.say('sys','No se pudo recuperar el proyecto: '+e.message+'. Salí y volvé a abrir el Studio para reintentar.');}
     if(!panel.isConnected)return;
     this.refreshAll();this.showTab('ai');this.lock(false);
-    panel.querySelector('#ks-save').textContent=this.cloudReady?'Proyecto listo':'⚠ No se recuperó la nube';
+    panel.querySelector('#ks-save').textContent=this.cloudReady?(this.dirty?'⚠ Cambios pendientes de guardar':'✓ Proyecto guardado en Krueka'):'⚠ No se recuperó la nube';
   },
   async close(){if(this.busy)return;this.busy=true;this.lock(true);clearTimeout(this.saveTimer);clearTimeout(this.previewTimer);if(this.dirty&&this.cloudReady){const ok=await this.save();if(!ok&&!confirm('No se pudo guardar. Descargá una copia antes de salir. ¿Salir de todos modos?')){this.busy=false;this.lock(false);return;}}window.removeEventListener('message',this.messageHandler);document.getElementById('krueka-studio')?.remove();this.busy=false;},
   setMode(m){this.mode=m==='plan'?'plan':'build';document.querySelectorAll('#krueka-studio .ks-mode').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===this.mode)));},
+  async queuedAI(body){
+    for(let attempt=0;;attempt++){
+      try{return await this.request(body)}catch(e){
+        if(!['busy','cooldown'].includes(e.code)||attempt>=7)throw e;
+        const pending=document.querySelector('#ks-chat .ks-waiting');
+        if(pending)pending.textContent='Esperando turno de IA… Tu pedido sigue en cola y tu juego se conserva.';
+        await new Promise(resolve=>setTimeout(resolve,3500+Math.floor(Math.random()*1500)));
+        if(!document.getElementById('krueka-studio'))throw new Error('El taller se cerró antes de enviar el pedido.');
+      }
+    }
+  },
   updateAI(info){this.aiStatus=info||{};this.aiReady=this.aiStatus.ready===true;},
   cleanHistory(raw){return (Array.isArray(raw)?raw:[]).filter(m=>m&&['user','ai','sys'].includes(m.role)).slice(-40).map(m=>({role:m.role,text:String(m.text||'').slice(0,1400),at:String(m.at||'').slice(0,30),pending:m.pending===true,...(m.artifact?{artifact:{title:String(m.artifact.title||'Tu juego').slice(0,80),files:(Array.isArray(m.artifact.files)?m.artifact.files:[]).map(String).slice(0,8)}}:{})}));},
   say(role,text,extra){this.history=this.cleanHistory([...this.history,{role,text:String(text||''),at:new Date().toISOString(),...extra}]);this.renderChat();},
@@ -226,13 +245,13 @@ const StudioIA={__loaded:true,
     if(!this.aiReady){this.busy=true;this.lock(true);try{this.say('user',text,{pending:true});this.say('sys','Idea guardada como pendiente: todavía no se modificó el juego. Podés usar este pedido cuando la IA esté disponible.');this.draft='';q.value='';this.changed();await this.save();}finally{this.busy=false;this.lock(false);}return;}
     const mode=this.mode;this.say('user',text);this.draft='';q.value='';this.busy=true;this.waiting=true;this.lock(true);this.renderChat();
     try{
-      const d=await this.request({action:'ai',projectId:this.projectId,mode,prompt:text,files:this.files,history:this.history});
+      const d=await this.queuedAI({action:'ai',projectId:this.projectId,mode,prompt:text,files:this.files,history:this.history});
       if(d.files&&mode==='build'&&Object.keys(d.files).length){const merged=this.validFiles({...this.files,...d.files});if(!merged['index.html'])throw new Error('El cambio no conserva la entrada del juego.');this.checkpoint();this.files=merged;}
       this.say('ai',(d.summary||'Listo.')+'\n\nProbá: '+(d.test||'Revisá la vista previa.'),mode==='build'&&Object.keys(d.files||{}).length?{artifact:{title:this.title,files:Object.keys(d.files)}}:{});
       if(d.ai)this.updateAI(d.ai);this.changed();this.refreshAll();await this.save();
     }catch(e){
       if(e.ai)this.updateAI(e.ai);if(e.setupRequired)this.aiReady=false;
-      if(['budget','daily_limit'].includes(e.code)){this.aiReady=false;this.aiStatus.reason=e.code;}
+      if(['budget','daily_limit'].includes(e.code)||String(e.code||'').startsWith('provider_')){this.aiReady=false;this.aiStatus.reason=e.code;}
       this.draft=text;q.value=text;
       this.say('sys','No se completó el cambio. '+(e.message||e)+'\nTu pedido sigue en el cuadro para reintentarlo y el juego se conserva.');this.changed();await this.save();
     }finally{this.waiting=false;this.busy=false;this.renderChat();this.renderAIStatus();this.lock(false);if(this.dirty)this.scheduleSave()}
@@ -312,7 +331,7 @@ const StudioIA={__loaded:true,
   showTab(tab){this.tab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));for(const id of ['create','ai','learn']){const el=document.getElementById('ks-'+id);if(el)el.hidden=id!==tab;}},
   renderAIStatus(){
     const el=document.getElementById('ks-ai-status'),tip=document.getElementById('ks-compose-tip'),model=document.getElementById('ks-model');
-    const reason=this.aiStatus.reason,paused=reason==='budget'?'Se alcanzó el presupuesto del taller.':reason==='daily_limit'?'Completaste tus pedidos de IA por hoy.':'Conexión de IA pendiente.';
+    const reason=this.aiStatus.reason,paused=reason==='budget'?'Se alcanzó el presupuesto del taller.':reason==='daily_limit'?'Completaste tus pedidos de IA por hoy.':String(reason||'').startsWith('provider_')?'El proveedor de IA está pausado.':'Conexión de IA pendiente.';
     if(el)el.textContent=this.aiReady?'Conexión lista. Pedí un cambio y probá tu juego aquí.':paused+' Podés guardar ideas y trabajar con las bases y el código.';
     if(tip)tip.textContent=this.aiReady?'Un cambio por pedido · Ctrl + Enter para enviar.':'Guardar idea no consulta una IA ni modifica el juego.';
     if(model)model.textContent=this.aiReady?'Asistente conectado':'';

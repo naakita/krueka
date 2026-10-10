@@ -18,6 +18,10 @@ jobs:
       - run: node --check js/club-studio-ai.js
       - run: node supabase/functions/krueka-studio-ai/index.test.cjs
       - run: node tests/studio-client.test.cjs
+      - run: node --check js/club-studio-access.js
+      - run: node --check js/club-studio-classroom.js
+      - run: node tests/studio-classroom.test.cjs
+      - run: node tests/studio-classroom-browser.test.cjs
       - run: node --check js/club-studio-showcase.js
       - run: node tests/studio-neon-rift.test.cjs
       - run: node tests/studio-neon-rift-browser.cjs

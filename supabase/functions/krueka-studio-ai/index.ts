@@ -9,14 +9,25 @@ const size=(files:Record<string,string>)=>Object.values(files).reduce((n,v)=>n+S
 class ProviderSetupError extends Error {}
 // Modelo fijo: el navegador no puede seleccionar otro ni activar herramientas pagas.
 const OPENAI_MODEL="gpt-6-luna";
-const MAX_OUTPUT=6000;
+const MAX_OUTPUT=2000;
 const aiSchema={type:"object",additionalProperties:false,properties:{summary:{type:"string"},test:{type:"string"},files:{type:"array",items:{type:"object",additionalProperties:false,properties:{path:{type:"string"},content:{type:"string"}},required:["path","content"]}},patches:{type:"array",items:{type:"object",additionalProperties:false,properties:{path:{type:"string"},find:{type:"string"},replace:{type:"string"}},required:["path","find","replace"]}}},required:["summary","test","files","patches"]};
 async function aiStatus(admin:any,studentId:string,deviceId:string){
   const configured=!!Deno.env.get("OPENAI_API_KEY")&&Deno.env.get("STUDIO_AI_ENABLED")==="true";
   const r=await admin.rpc("club_studio_ai_status",{p_student:studentId,p_device:deviceId});
   if(r.error)return {ready:false,configured,provider:"OpenAI",model:OPENAI_MODEL,reason:"limits_setup"};
   const quota=r.data||{};
-  return {...quota,configured,provider:"OpenAI",model:OPENAI_MODEL,ready:configured&&quota.budgetAvailable!==false&&quota.usedToday<quota.dailyLimit,reason:!configured?"connection":quota.budgetAvailable===false?"budget":quota.usedToday>=quota.dailyLimit?"daily_limit":null};
+  const pause=await admin.from("club_studio_ai_provider").select("reason,paused_until").eq("id",true).maybeSingle();
+  if(pause.error)return {...quota,ready:false,configured,provider:"OpenAI",model:OPENAI_MODEL,reason:"limits_setup"};
+  const paused=pause.data&&Date.parse(pause.data.paused_until)>Date.now(),reason=!configured?"connection":quota.budgetAvailable===false?"budget":quota.usedToday>=quota.dailyLimit?"daily_limit":paused?pause.data.reason:null;
+  return {...quota,configured,provider:"OpenAI",model:OPENAI_MODEL,ready:configured&&!reason,reason,...(paused?{retryAt:pause.data.paused_until}:{})};
+}
+function providerMessage(code:string){
+  return code==="provider_credit_balance"?"La IA está pausada porque el proveedor no tiene créditos. El profe debe revisar la facturación; seguí con Ayuda local.":
+    code==="provider_spend_limit"?"La cuenta de IA alcanzó su límite de gasto. El profe debe revisar ese límite; seguí con Ayuda local.":
+    code==="provider_usage_limit"?"La cuenta de IA alcanzó su límite de uso. El profe debe revisarlo; seguí con Ayuda local.":
+    code==="provider_quota"?"La IA está pausada por saldo o cupo de la cuenta del proveedor. El profe debe revisarlo; seguí con Ayuda local.":
+    code==="provider_rate_limit"?"La IA recibió demasiados pedidos o tokens por minuto. Esperá un momento o seguí con Ayuda local.":
+    "El proveedor de IA alcanzó un límite. Seguís pudiendo crear, guardar y probar con Ayuda local.";
 }
 function cleanHistory(raw:any){
   return (Array.isArray(raw)?raw:[]).filter((m:any)=>m&&["user","ai","sys"].includes(m.role)).slice(-40).map((m:any)=>({role:m.role,text:String(m.text||"").slice(0,1400),at:String(m.at||"").slice(0,30),pending:m.pending===true,...(m.artifact?{artifact:{title:String(m.artifact.title||"Tu juego").slice(0,80),files:(Array.isArray(m.artifact.files)?m.artifact.files:[]).map((x:any)=>String(x).slice(0,150)).slice(0,8)}}:{})}));
@@ -38,7 +49,16 @@ async function generate(admin:any,studentId:string,deviceId:string,system:string
     if(!r.ok){
       if([400,401,403,404,429].includes(r.status))cost=0;
       if([401,403,404].includes(r.status))throw new ProviderSetupError("El profe debe revisar la conexión de IA y el acceso al modelo.");
-      throw new Error(r.status===429?"La IA alcanzó su cupo del proveedor. Esperá y probá más tarde.":"La IA no pudo completar el pedido. El juego se conserva.");
+      if(r.status===429){
+        let data;try{data=await r.json()}catch(_e){}
+        const code=String(data?.error?.code||""),type=String(data?.error?.type||"");
+        const reason=code==="credit_balance_exhausted"?"provider_credit_balance":/^(organization|project)_spend_limit_exceeded$/.test(code)?"provider_spend_limit":/^(organization_)?usage_limit_exceeded$/.test(code)?"provider_usage_limit":code==="insufficient_quota"||type==="insufficient_quota"?"provider_quota":["rate_limit_exceeded","slow_down"].includes(code)||type==="rate_limit_error"?"provider_rate_limit":"provider_limit";
+        const delay=reason==="provider_rate_limit"?Math.max(20,Math.min(120,Number(r.headers.get("retry-after"))||20)):reason==="provider_limit"?60:300;
+        const pause=await admin.from("club_studio_ai_provider").upsert({id:true,reason,paused_until:new Date(Date.now()+delay*1000).toISOString(),updated_at:new Date().toISOString()});
+        if(pause.error)console.warn("studio-ai provider_pause_pending");
+        throw new QuotaError(providerMessage(reason),reason);
+      }
+      throw new Error("La IA no pudo completar el pedido. El juego se conserva.");
     }
     const data=await r.json(),usage=data?.usage;
     if(Number.isInteger(usage?.input_tokens)&&usage.input_tokens>=0&&Number.isInteger(usage?.output_tokens)&&usage.output_tokens>=0)cost=Math.ceil(usage.input_tokens*.10+usage.output_tokens*.50);
@@ -197,6 +217,7 @@ Deno.serve(async(req:Request)=>{
 
     if(!ai.configured)throw new ProviderSetupError("La conexión de IA está pendiente. Podés guardar ideas, probar juegos y editar el código.");
     if(ai.reason==="limits_setup")throw new Error("El profe debe revisar los controles de consumo. No se envió el pedido a la IA.");
+    if(String(ai.reason||"").startsWith("provider_"))throw new QuotaError(providerMessage(ai.reason),ai.reason);
     if(!prompt)return reply({ok:false,error:"Escribí qué querés construir."},400);
     if(badPersonal(prompt))return reply({ok:false,error:"Quitá datos personales antes de consultar a la IA."},400);
     if(Object.keys(files).length>45||size(files)>220000)return reply({ok:false,error:"El proyecto es demasiado grande para esta versión."},413);
@@ -218,7 +239,7 @@ REGLAS:
 - CONSTRUIR: para modificar archivos existentes, usá patches con path, find y replace. Copiá find EXACTAMENTE del archivo, con suficiente contexto para que aparezca una sola vez. Usá fragmentos cortos y aplicalos en orden.
 - Nunca devuelvas completo un archivo grande existente, en particular game.js: devolvé únicamente los fragmentos a cambiar. Usá files solo para archivos nuevos o reemplazos de archivos pequeños (hasta 6.000 caracteres). No combines files y patches para la misma ruta.
 - Preferí game-config.js para cambiar reglas, personajes, objetos o escenas cuando esas opciones ya existen. No regeneres el motor para cambiar una configuración.
-- El total de la respuesta debe ser breve, como máximo 3.000 tokens. Si la idea necesita más, hacé una primera mejora funcional y explicá qué paso sigue.
+- El total de la respuesta debe ser breve, como máximo 1.500 tokens. Si la idea necesita más, hacé una primera mejora funcional y explicá qué paso sigue.
 - El resultado debe funcionar dentro de un navegador.
 DEVOLVÉ SOLO JSON válido:
 {"summary":"1-3 frases","test":"qué debe probar","files":[],"patches":[{"path":"ruta.ext","find":"fragmento exacto y único","replace":"fragmento modificado"}]}

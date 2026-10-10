@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Mi taller · Krueka</title>
+<link rel="icon" href="logo.svg">
+<link rel="stylesheet" href="club/club-studio.css?v=20261009f">
+<link rel="stylesheet" href="club/club-studio-access.css?v=20261010a">
+</head>
+<body class="studio-access">
+<main id="studio-entry" class="studio-entry">
+  <header class="studio-entry-top"><a href="index.html" aria-label="Krueka, inicio"><img src="logo.svg" alt="Krueka" width="140" height="58"></a><span>CLUB DE INFORMÁTICA</span></header>
+  <section class="studio-entry-card">
+    <div class="studio-entry-icon" aria-hidden="true">✦</div>
+    <p class="studio-entry-kicker">IMAGINÁ · CREÁ · PROBÁ</p>
+    <h1>Tu código abre tu taller.</h1>
+    <p>Creá juegos, pedí ayuda y probá tus cambios en esta misma pantalla. Tu trabajo se guarda en Krueka.</p>
+    <form id="studio-login-form">
+      <label for="studio-code">Código personal del alumno</label>
+      <input id="studio-code" name="code" maxlength="6" pattern="[A-Za-z0-9]{6}" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="6 letras o números" required aria-describedby="studio-login-message">
+      <button id="studio-login-button" type="submit" disabled>Preparando el taller…</button>
+    </form>
+    <p id="studio-login-message" class="studio-entry-message" role="status" aria-live="polite">Comprobando este navegador…</p>
+    <p id="studio-browser-state" class="studio-entry-small"></p>
+    <div class="studio-entry-features"><span>✓ Sin instalar programas</span><span>✓ PC, tablet o celular</span><span>✓ Continuá desde otro equipo</span></div>
+    <p class="studio-entry-small">El código es personal. Al terminar, usá <b>Salir</b> antes de que entre otro compañero. Necesitás conexión a internet para entrar y guardar en la nube.</p>
+  </section>
+  <footer>Una idea, un cambio, una prueba. Ese es tu desafío de hoy.</footer>
+</main>
+<noscript><p class="studio-entry-message">Activá JavaScript en este navegador para abrir tu taller.</p></noscript>
+<script src="js/club-studio-access.js?v=20261010a"></script>
+</body>
+</html>
