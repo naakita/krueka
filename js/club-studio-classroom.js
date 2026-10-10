@@ -61,7 +61,10 @@ function sync(studio){
  if(send&&!studio.busy)send.textContent=help==='local'?'Aplicar ayuda local →':'Enviar a IA →';
  if(tip&&help==='local')tip.textContent='Ayuda local, sin IA generativa: cambia reglas sencillas. Ctrl + Enter para aplicar.';
  const status=mounted.querySelector('#ks-ai-status');
- if(status&&help==='local')status.textContent=(studio.aiReady?'Elegiste ayuda local.':'La IA no está disponible ahora.')+' Podés cambiar reglas y seguir tu clase sin consumir IA.';
+ if(status&&help==='local'){
+  const retry=Date.parse(studio.aiStatus?.retryAt),provider=String(studio.aiStatus?.reason||'').startsWith('provider_');
+  status.textContent=!studio.aiReady&&provider&&retry>Date.now()?'IA pausada por el proveedor. Próxima revisión: '+new Date(retry).toLocaleString('es-PY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})+'. Seguí con Ayuda local, sin consumir IA.':(studio.aiReady?'Elegiste ayuda local.':'La IA no está disponible ahora.')+' Podés cambiar reglas y seguir tu clase sin consumir IA.';
+ }
 }
 function mount(studio){
  const panel=document.getElementById('krueka-studio');if(!panel)return;

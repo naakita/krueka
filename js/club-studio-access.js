@@ -35,7 +35,7 @@ var KruekaStudioAccess=(function(){
  function setBusy(value){api.busy=value;document.getElementById('studio-code').disabled=value;var b=document.getElementById('studio-login-button');b.disabled=value||!api.ready;b.textContent=value?'Abriendo tu taller…':'Entrar y empezar →';}
  function loadModule(i){
   if(i===modules.length)return Promise.resolve();
-  return new Promise(function(resolve,reject){var s=document.createElement('script');s.src='js/'+modules[i]+'?v=20261010a';s.onload=resolve;s.onerror=function(){reject(Error('No se pudo cargar una herramienta. Actualizá esta página y revisá internet.'));};document.head.appendChild(s);}).then(function(){return loadModule(i+1);});
+  return new Promise(function(resolve,reject){var s=document.createElement('script');s.src='js/'+modules[i]+'?v=20261010b';s.onload=resolve;s.onerror=function(){reject(Error('No se pudo cargar una herramienta. Actualizá esta página y revisá internet.'));};document.head.appendChild(s);}).then(function(){return loadModule(i+1);});
  }
  function open(session){
   api.session=session;Club.alumno=session.student;persist(session);

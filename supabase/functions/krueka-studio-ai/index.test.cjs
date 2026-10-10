@@ -38,6 +38,19 @@ const call=async b=>{const r=await handler(new Request('https://test.invalid',{m
  replyMode='patch';const ambiguous=await call({action:'ai',prompt:'Cambiá color',files:{...files,'style.css':'body{}body{}'}});assert.equal(ambiguous.ok,false);assert.equal(ambiguous.files,undefined);
  const plan=await call({action:'ai',mode:'plan',prompt:'Qué mejorarías',files});assert.equal(plan.ok,true);assert.equal(Object.keys(plan.files).length,0);
 
+ const configFiles={...files,'game-config.js':'window.KRUEKA_GAME = {"kind":"stars","lives":3};','game.js':'BIG_MOTOR'+('/* motor conservado */\n'.repeat(3200))};
+ const defaultFetch=context.fetch;let foreignChange=false;
+ context.fetch=async(_url,options)=>{upstreamCalls++;const body=JSON.parse(options.body);assert.equal(body.max_output_tokens,512);assert.equal(body.model,'gpt-6-luna');assert.ok(options.body.length<5000);assert.ok(!options.body.includes('BIG_MOTOR'));assert.ok(body.input[1].content.includes(configFiles['game-config.js']));
+  return new Response(JSON.stringify({status:'completed',usage:{input_tokens:400,output_tokens:200},output_text:JSON.stringify({summary:'Cinco vidas',test:'Probá',files:[],patches:[foreignChange?{path:'style.css',find:'body{}',replace:'body{color:red}'}:{path:'game-config.js',find:'"lives":3',replace:'"lives":5'}]})}),{status:200});};
+ const small=await call({action:'ai',prompt:'Cambiá las vidas a 5',files:configFiles});assert.equal(small.ok,true);assert.equal(small.files['game-config.js'],'window.KRUEKA_GAME = {"kind":"stars","lives":5};');assert.equal(small.files['game.js'],undefined);assert.ok(configFiles['game.js'].length>65000);
+ const smallPlan=await call({action:'ai',mode:'plan',prompt:'Cómo agrego un enemigo que persiga la nave',files:configFiles});assert.equal(smallPlan.ok,true);assert.equal(Object.keys(smallPlan.files).length,0);
+ foreignChange=true;assert.equal((await call({action:'ai',prompt:'Cambiá vidas a 5',files:configFiles})).code,'invalid_change');
+ const noPrivate=upstreamCalls;assert.equal((await call({action:'ai',prompt:'Cambiá vidas a 5',files:{...configFiles,'info.txt':'ejemplo@test.com'}})).status,400);assert.equal(upstreamCalls,noPrivate);
+ assert.equal((await call({action:'ai',prompt:'Agregá un enemigo con vidas',files:configFiles})).status,413);context.fetch=defaultFetch;
+ assert.equal(context.providerDelay(new Headers({'retry-after':'1800'})),1800,'Nunca adelantar un Retry-After largo');
+ assert.equal(context.providerDelay(new Headers({'x-ratelimit-remaining-tokens':'0','x-ratelimit-reset-tokens':'6m0s'})),360);
+ assert.equal(context.providerDelay(new Headers({'x-ratelimit-remaining-tokens':'100','x-ratelimit-reset-tokens':'6m0s'})),20);
+
  for(const mode of ['commentary','multiple','split']){replyMode=mode;const d=await call({action:'ai',prompt:'no se esta moviendo el personaje',files});assert.equal(d.ok,true);assert.equal(d.files['style.css'],'body{color:red}');}
  for(const mode of ['refusal','malformed']){replyMode=mode;const d=await call({action:'ai',prompt:'no se esta moviendo el personaje',files});assert.equal(d.ok,false);assert.equal(d.files,undefined);assert.ok(!/Unexpected token|JSON|SyntaxError/.test(d.error));assert.equal(d.ai.usedToday,2);}
  replyMode='timeout';assert.equal((await call({action:'ai',prompt:'Cambiá color',files})).ok,false);assert.equal(settled.at(-1).p_actual_micros,null);
