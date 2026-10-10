@@ -57,9 +57,13 @@ function sync(studio){
  const select=mounted.querySelector('#ks-help-mode');if(!select)return;
  if(!studio.aiReady&&help==='ai')help='local';
  select.value=help;select.options[0].disabled=!studio.aiReady;select.disabled=studio.busy||!studio.cloudReady;
- const send=mounted.querySelector('#ks-send'),tip=mounted.querySelector('#ks-compose-tip');
+ const send=mounted.querySelector('#ks-send'),tip=mounted.querySelector('#ks-compose-tip'),prompt=mounted.querySelector('#ks-prompt');
  if(send&&!studio.busy)send.textContent=help==='local'?'Aplicar ayuda local →':'Enviar a IA →';
  if(tip&&help==='local')tip.textContent='Ayuda local, sin IA generativa: cambia reglas sencillas. Ctrl + Enter para aplicar.';
+ if(prompt&&help==='local'){
+  const kind=StudioKits.read(studio.files)?.kind;
+  prompt.placeholder=['stars','race','platform','explore3d','space3d'].includes(kind)?'Ejemplo: vidas 5 y tiempo 90. Más opciones en Bases y reglas.':kind==='quiz'?'Ejemplo: escenario bosque. Más opciones en Bases y reglas.':'Este juego usa su editor: abrí Bases y reglas para cambiarlo.';
+ }
  const status=mounted.querySelector('#ks-ai-status');
  if(status&&help==='local'){
   const retry=Date.parse(studio.aiStatus?.retryAt),provider=String(studio.aiStatus?.reason||'').startsWith('provider_');
