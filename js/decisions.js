@@ -20,6 +20,10 @@ const DecisionEngine = {
   },
   run(message, context) {
     const text=" "+this.clean(message)+" ";
+    const hostile=["ignora instrucciones","ignora las instrucciones","entrega claves privadas","revela claves privadas","actua como administrador","omite las reglas"];
+    if(hostile.some(s=>text.includes(" "+this.clean(s)+" ")))
+      return {category:"revision",priority:"normal",evidence:[],rule_score:0,
+        explanation:"Mensaje con instrucciones dirigidas al motor: requiere revisión humana."};
     const groups=this.terms[context] || this.terms.comercio;
     const scores=Object.keys(groups).map(id=>{
       const hits=groups[id].filter(t=>text.includes(" "+this.clean(t)+" "));
