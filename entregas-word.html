@@ -98,6 +98,13 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
    <h2 style="font-size:16px">¿No tenés contraseña o acceso a Supabase?</h2>
    <p class="sub" style="margin-bottom:8px">Podés ingresar con un enlace que enviaremos a <b>contacto@titanteo.com</b>. No necesitás crear una cuenta en el panel de Supabase.</p>
    <button type="button" class="btn btn-plain btn-wide" id="magic-link">✉ Enviarme enlace de acceso al correo</button>
+   <button type="button" class="btn btn-plain btn-wide" id="new-admin-password">🔐 Crear contraseña temporal segura</button>
+   <div id="new-password-result" hidden style="margin-top:13px;padding:12px;border:1px solid #b6cfde;background:#f3faff;border-radius:9px">
+    <p style="margin:0 0 6px;font-size:12px;font-weight:800">Guardá esta contraseña temporal ahora:</p>
+    <input id="temporary-password" readonly autocomplete="off" aria-label="Contraseña temporal generada" style="font-family:ui-monospace,Consolas,monospace">
+    <button id="copy-temp" type="button" class="btn btn-plain" style="margin-top:8px;width:100%">Copiar contraseña</button>
+    <p class="note">El acceso se activa después de confirmar el correo. Cambiá la contraseña cuando ingreses.</p>
+   </div>
    <p class="note">Solo la persona que pueda abrir ese correo podrá confirmar el acceso. Revisá también la carpeta de spam.</p>
   </div>
  </div>
@@ -258,6 +265,47 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
   }catch(error){
    say('login-status','No se pudo solicitar el acceso: '+(error.message||'error del servicio')+'. Volvé a completar la verificación e intentá de nuevo.',false);
   }finally{resetCaptcha();button.disabled=false;button.textContent='✉ Enviarme enlace de acceso al correo';}
+ };
+ // Registro individual con contraseña fuerte generada en el navegador, no en el código fuente.
+ // Supabase envía confirmación al correo; la contraseña no se almacena en Krueka.
+ function temporaryPassword(){
+  const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#%-_';
+  const raw=new Uint8Array(24);
+  crypto.getRandomValues(raw);
+  return Array.from(raw,n=>alphabet[n%alphabet.length]).join('');
+ }
+ $('new-admin-password').onclick=async()=>{
+  clear('login-status');
+  const button=$('new-admin-password');
+  const captcha=captchaToken();
+  if(!captcha){say('login-status','Completá primero la verificación de seguridad.',false);return;}
+  button.disabled=true;button.textContent='Creando cuenta protegida…';
+  try{
+   const password=temporaryPassword();
+   const {data,error}=await db.auth.signUp({
+    email:'contacto@titanteo.com',
+    password,
+    options:{
+     emailRedirectTo:'https://www.krueka.com/entregas-word.html?docente=1',
+     captchaToken:captcha,
+     data:{nombre:'Responsable de Krueka'}
+    }
+   });
+   if(error)throw Error(error.message||'No pudimos registrar la cuenta.');
+   if(data?.user?.identities?.length===0)throw Error('Esta cuenta ya existe. Utilizá «Enviarme enlace de acceso al correo» para ingresar.');
+   $('temporary-password').value=password;
+   $('new-password-result').hidden=false;
+   say('login-status','Solicitud de registro recibida. Revisá contacto@titanteo.com y confirmá tu cuenta antes de iniciar sesión. Guardá la contraseña temporal que aparece debajo.',true);
+  }catch(error){
+   $('new-password-result').hidden=true;$('temporary-password').value='';
+   say('login-status','No se completó el registro: '+(error.message||'Error de autenticación')+'. Si ya recibiste un enlace, utilizalo para ingresar.',false);
+  }finally{
+   resetCaptcha();button.disabled=false;button.textContent='🔐 Crear contraseña temporal segura';
+  }
+ };
+ $('copy-temp').onclick=async()=>{
+  try{await navigator.clipboard.writeText($('temporary-password').value);$('copy-temp').textContent='✓ Copiada';}
+  catch(_){$('temporary-password').focus();$('temporary-password').select();$('copy-temp').textContent='Seleccionada · Ctrl+C';}
  };
  $('reload').onclick=load;
  $('logout').onclick=async()=>{await db.auth.signOut();$('teacher-board').hidden=true;$('teacher-login').hidden=false;clear('login-status');};
