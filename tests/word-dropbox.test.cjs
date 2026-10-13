@@ -32,4 +32,14 @@ assert.ok(fs.readFileSync(path.join(root,'index.html'),'utf8').includes('href="e
 const scripts=[...page.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]).filter(Boolean);
 assert.equal(scripts.length,1);
 new vm.Script(scripts[0]);
-console.log('PASS: Word público, revisión docente, storage privado y controles de tamaño/formato.');
+
+assert.match(page,/signInWithOtp/,'El acceso sin contraseña usa una verificación por correo');
+assert.match(page,/shouldCreateUser:true/,'La dirección puede registrarse desde el enlace oficial');
+assert.match(page,/id="magic-link"/,'Se muestra la acción de recibir correo');
+assert.match(page,/contacto@titanteo\.com/,'Sólo se ofrece el correo autorizado');
+assert.match(edge,/STAFF_EMAILS/,'El panel no confía ciegamente en el rol docente');
+assert.match(edge,/user\.email_confirmed_at/,'Se requiere correo verificado');
+assert.match(edge,/!STAFF_EMAILS\.has\(verifiedEmail\)/,'Se restringen los revisores');
+assert.doesNotMatch(edge,/generateLink|inviteUserByEmail/,'No existen atajos privilegiados');
+
+console.log('PASS: Word público, revisión docente con correo verificado, storage privado y límites.');

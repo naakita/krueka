@@ -2,6 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 const ORIGINS=new Set(["https://krueka.com","https://www.krueka.com"]);
 const BUCKET="krueka-word-entregas";
+// Allowlist de responsables habilitados para revisar documentos escolares.
+const STAFF_EMAILS=new Set(["admin@krueka.edu.py","contacto@titanteo.com"]);
 const WORD_MIME="application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const MAX_FILE=5*1024*1024;
 const url=Deno.env.get("SUPABASE_URL")||"";
@@ -32,6 +34,13 @@ async function teacher(req:Request){
  if(!token)return null;
  const {data:{user},error}=await admin.auth.getUser(token);
  if(error||!user)return null;
+ // No alcanza con poseer una cuenta o elegir el rol "docente" durante el registro.
+ // Requerimos dominio de una dirección expresamente habilitada y correo confirmado.
+ const verifiedEmail=(user.email||"").trim().toLowerCase();
+ if(!STAFF_EMAILS.has(verifiedEmail)||!user.email_confirmed_at)return null;
+ // Permiso acotado exclusivamente a la bandeja Word para la dirección propietaria
+ // verificada por correo; NO crea ni concede el rol global admin de Krueka.
+ if(verifiedEmail==="contacto@titanteo.com")return {id:user.id,role:"revisor_word"};
  const {data:profile,error:profileError}=await admin.from("profiles").select("role,activo").eq("id",user.id).maybeSingle();
  if(profileError||!profile||profile.activo!==true||!["docente","director","admin"].includes(profile.role))return null;
  return {id:user.id,role:profile.role};
