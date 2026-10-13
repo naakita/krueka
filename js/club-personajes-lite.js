@@ -116,7 +116,7 @@ function cloudLoad(){
   for(i=0;i<list.length;i++){
    p=list[i];if(p&&p.title&&p.title.indexOf("Personajes 2D ·")===0&&(choice===null||String(p.updated_at)>String(choice.updated_at)))choice=p;
   }
-  if(!choice){status("Proyecto nuevo. Creá y guardá tu equipo en Krueka.");return;}
+  if(!choice){dirty=true;status("Proyecto nuevo. Creá y guardá tu equipo en Krueka.");return;}
   projectId=choice.id;
   reqStudio("load",{projectId:projectId},function(e,d){
    if(e){status("No pude recuperar el proyecto anterior: "+e.message,"error");return;}
@@ -265,6 +265,22 @@ function init(){
  c.addEventListener("touchmove",applyPixel,{passive:false});
  c.addEventListener("touchend",function(){down=false;});
  el("save").onclick=saveCloud;
+ el("import").onclick=function(){el("import-file").click();};
+ el("import-file").onchange=function(){
+  var file=this.files&&this.files[0];this.value="";
+  if(!file)return;
+  if(file.size>100000){status("El respaldo es demasiado grande.","error");return;}
+  var reader=new FileReader();
+  reader.onload=function(){
+   try{var parsed=JSON.parse(String(reader.result||""));
+    if(!parsed.characters||!parsed.characters.hero||!parsed.characters.friend||!parsed.characters.enemy)throw Error("Formato de respaldo no válido");
+    if(!confirm("¿Abrir este respaldo? Reemplazará los personajes que estás viendo."))return;
+    state=clean(parsed);who="hero";syncUI();changed();status("Respaldo abierto. Guardá los personajes en Krueka.");
+   }catch(e){status("El archivo no es un respaldo válido de Krueka.","error");}
+  };
+  reader.onerror=function(){status("No se pudo leer el archivo.","error");};
+  reader.readAsText(file);
+ };
  el("download").onclick=function(){saveBackup("krueka-personajes-2d.json",JSON.stringify(state,null,2));status("Respaldo JSON descargado. Guardalo para volver a abrirlo.");};
  el("png").onclick=function(){saveBackup("personaje-"+who+".png",imgToData(who),"png");status("Imagen PNG del "+labels[who].toLowerCase()+" lista.");};
  var saved=null;try{saved=JSON.parse(sessionStorage.getItem("krueka2d-session")||"null");}catch(e){}
