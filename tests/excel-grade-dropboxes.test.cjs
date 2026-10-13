@@ -14,7 +14,7 @@ assert.match(page,/id="new-group-form"/);
 assert.match(page,/id="teacher-dashboard"/);
 assert.match(page,/id="email-link"/);
 assert.match(page,/captchaToken:proof/);
-assert.match(page,/action:'?create'?/);
+assert.match(page,/staff\('create'/);
 assert.match(page,/staff\('rotate'/);
 assert.match(page,/staff\('close'/);
 assert.match(page,/staff\('list'/);
