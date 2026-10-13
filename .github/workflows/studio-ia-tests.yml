@@ -1,7 +1,7 @@
 name: Studio IA - pruebas
 on:
   push:
-    branches: [main, 'fix/studio-ia-*', 'feat/neon-rift-*', 'feat/studio-forge-*', 'feat/studio-space-*', 'feat/studio-gestor-heroes-*', 'feat/studio-rpg-builder-*', 'feat/hero-render-pro-*', 'fix/hero-renderpro-access-*', 'feat/studio-alternative-chat-*', 'feat/studio-chat-individual-focus-*', 'feat/hero-3d-to-protagonist-*', 'feat/word-public-submissions-*', 'feat/word-teacher-email-access-*', 'fix/word-teacher-captcha-*']
+    branches: [main, 'fix/studio-ia-*', 'feat/neon-rift-*', 'feat/studio-forge-*', 'feat/studio-space-*', 'feat/studio-gestor-heroes-*', 'feat/studio-rpg-builder-*', 'feat/hero-render-pro-*', 'fix/hero-renderpro-access-*', 'feat/studio-alternative-chat-*', 'feat/studio-chat-individual-focus-*', 'feat/hero-3d-to-protagonist-*', 'feat/word-public-submissions-*', 'feat/word-teacher-email-access-*', 'fix/word-teacher-captcha-*', 'feat/excel-grade-dropboxes-*']
   pull_request:
 permissions:
   contents: read
@@ -51,3 +51,4 @@ jobs:
       - run: node tests/studio-protagonist.test.cjs
       - run: node tests/studio-protagonist-browser.test.cjs
       - run: node tests/word-dropbox.test.cjs
+      - run: node tests/excel-grade-dropboxes.test.cjs
