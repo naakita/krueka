@@ -38,6 +38,9 @@ async function teacher(req:Request){
  // Requerimos dominio de una dirección expresamente habilitada y correo confirmado.
  const verifiedEmail=(user.email||"").trim().toLowerCase();
  if(!STAFF_EMAILS.has(verifiedEmail)||!user.email_confirmed_at)return null;
+ // Permiso acotado exclusivamente a la bandeja Word para la dirección propietaria
+ // verificada por correo; NO crea ni concede el rol global admin de Krueka.
+ if(verifiedEmail==="contacto@titanteo.com")return {id:user.id,role:"revisor_word"};
  const {data:profile,error:profileError}=await admin.from("profiles").select("role,activo").eq("id",user.id).maybeSingle();
  if(profileError||!profile||profile.activo!==true||!["docente","director","admin"].includes(profile.role))return null;
  return {id:user.id,role:profile.role};
