@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#102e50">
+<title>Entregas Excel por grado · Krueka</title><meta name="description" content="Enviá trabajos Excel a tu grado mediante código, sin ver los archivos de otros alumnos.">
+<link rel="icon" href="logo.svg">
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:#f3f7fc;color:#142d45}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -10%,#d3e8fd,#f3f7fc 60%)}
+a{color:#2268a7;text-decoration:none}header{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:1150px;margin:auto;padding:17px 20px}
+.brand{font-weight:850;color:#13395e;font-size:19px;display:flex;gap:9px;align-items:center}.brand img{height:34px;width:34px}
+nav{display:flex;gap:14px;align-items:center;font-size:12px;font-weight:750}
+main{max-width:1100px;padding:15px 20px 55px;margin:auto}
+.hero{text-align:center;margin:25px 0 28px}.eyebrow{font-size:11px;color:#227eb7;text-transform:uppercase;letter-spacing:.15em;font-weight:900}
+h1{font-size:clamp(28px,5vw,45px);line-height:1.1;letter-spacing:-.04em;margin:9px 0;color:#0e2946}
+.hero p{max-width:660px;margin:10px auto;color:#617990;line-height:1.65;font-size:14px}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.85fr);gap:18px;align-items:start}
+.card{background:#fff;border:1px solid #d8e5f1;box-shadow:0 12px 42px #28557c0a;border-radius:19px;padding:25px}
+h2{font-size:19px;margin:0 0 9px;color:#13324f}h3{font-size:15px;color:#1a4669;margin:0 0 6px}
+p{line-height:1.55}.muted{color:#6a8095;font-size:12px}.field{margin-top:16px}
+label{display:block;font-weight:800;font-size:12px;color:#29455f;margin-bottom:8px}
+input,select{width:100%;min-height:45px;padding:11px 12px;border:1px solid #cddce9;border-radius:10px;font:inherit;font-size:14px;color:#244158;background:#fbfdff;outline-color:#187bd1}
+input::placeholder{color:#8c9faf}
+.code{font-size:20px;letter-spacing:.18em;font-weight:900;text-transform:uppercase;font-family:ui-monospace,Consolas,monospace}
+.drop{padding:19px;border:2px dashed #93bce0;background:#f0f8ff;text-align:center;border-radius:13px;margin-top:7px}
+.drop strong{display:block;color:#236b9d;font-size:13px}.drop small{display:block;color:#7990a5;font-size:11px;margin:6px auto}
+.drop input{border:0;background:transparent;padding:5px;min-height:0;font-size:12px;width:100%}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#247cba;color:#fff;border:1px solid #247cba;border-radius:10px;cursor:pointer;font-weight:800;font-family:inherit;font-size:12px;padding:10px 15px;min-height:42px}
+.btn:disabled{opacity:.5;cursor:wait}.btn:hover{filter:brightness(1.06)}
+.btn-outline{background:#fff;color:#27658c;border-color:#b8cbdc}.btn-red{background:#fff;color:#b34545;border-color:#ebc9c9}
+.btn-wide{width:100%;margin-top:15px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0}
+.alert{margin:14px 0 0;padding:11px 13px;border:1px solid #b5d3e7;border-radius:10px;font-size:12px;line-height:1.6;background:#edf8ff;color:#15537f;white-space:pre-wrap}
+.alert.error{border-color:#f0c0c0;background:#fff2f1;color:#8d3b39}.alert.success{border-color:#b6dfc8;background:#ebfaef;color:#215c3d}
+.steps{padding-left:18px;color:#4f6c85;font-size:13px;line-height:1.85}.steps li{margin-top:8px}
+.pill{display:inline-block;border-radius:20px;background:#d9efff;color:#17639a;padding:7px 10px;font-size:11px;font-weight:800;margin-bottom:13px}
+.groups{display:grid;gap:12px}.group{border:1px solid #d6e3ed;background:#fbfdff;border-radius:12px;padding:15px}
+.grouphead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}.grouphead h3{margin:0}
+.tag{display:inline-block;font-size:10px;font-weight:900;padding:5px 9px;border-radius:18px;background:#dff4e9;color:#196642}.tag.closed{background:#fce7e7;color:#954040}
+.code-result{padding:15px;margin:14px 0;background:#eaf5ff;border:1px solid #abd0ed;border-radius:12px}
+.code-result strong{display:block;font-size:23px;letter-spacing:.12em;word-break:break-all;font-family:ui-monospace,Consolas,monospace;color:#185d89}
+.docrow{background:#fff;border:1px solid #d5e4ef;border-radius:12px;padding:14px;margin-top:10px}
+.docrow .name{font-weight:850;font-size:13px;color:#224b69}.docrow .detail{font-size:11px;line-height:1.6;color:#72879b;margin:6px 0 10px}
+.docrow .buttons{display:flex;flex-wrap:wrap;gap:8px}.docrow select{max-width:160px;min-width:110px;flex:1}
+.docrow input{flex:2;min-width:170px}.docrow button{font-size:11px;min-height:35px;padding:7px 12px}
+.teacher{display:none}.teacher.visible{display:block}.student.hidden{display:none}
+#teacher-folder-view[hidden],#teacher-login[hidden],#teacher-dashboard[hidden],[hidden]{display:none!important}
+footer{text-align:center;color:#8397a9;font-size:11px;padding:14px}
+@media(max-width:740px){.layout{grid-template-columns:1fr}main{padding:8px 12px 45px}.hero{margin-top:8px}.card{padding:18px}header{padding:13px}.docrow .buttons{align-items:stretch}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+<header><a class="brand" href="/"><img src="logo.svg" alt="">Krueka <span style="font-size:11px;color:#6590ae">Excel</span></a>
+<nav><a href="/">Inicio</a><a href="entregas-excel.html?docente=1">Soy docente</a></nav></header>
+<main>
+<section id="student" class="student">
+ <div class="hero"><span class="eyebrow">Buzón privado · Actividades Excel</span><h1>Entregá tu trabajo de Excel</h1>
+ <p>Ingresá el código que te dio tu profesor, colocá tu nombre y subí tu archivo. No necesitás una cuenta, y no podrás ver trabajos de otros compañeros.</p></div>
+ <div class="layout">
+  <div class="card"><h2>Subir mi archivo</h2><p class="muted">Cada grado tiene un código diferente. Solo podés enviar archivos; no existe una lista pública de trabajos.</p>
+   <form id="student-form">
+    <div class="field"><label for="access-code">Código exclusivo de tu grado</label><input class="code" id="access-code" name="code" required minlength="12" maxlength="16" placeholder="XXXXXXXXXXXX" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="student-name">Nombre y apellido</label><input id="student-name" name="student" required minlength="3" maxlength="90" placeholder="Ej.: José Martínez" autocomplete="name"></div>
+    <div class="field"><label for="assignment">Nombre o tema de la actividad</label><input id="assignment" name="assignment" required minlength="2" maxlength="120" placeholder="Ej.: Ejercitario de Excel - Función SI"></div>
+    <div class="field"><label for="doc">Documento Excel</label><div class="drop"><strong>📊 Seleccioná tu archivo .xlsx</strong>
+     <small>Solo Excel .xlsx sin macros · hasta 10 MB</small><input id="doc" name="document" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required></div></div>
+    <button type="submit" id="send" class="btn btn-wide">⬆ Enviar al profesor</button>
+    <div id="student-message" role="status" aria-live="polite"></div>
+   </form>
+  </div>
+  <aside class="card"><span class="pill">✓ Solo entrega, sin acceso a carpetas</span><h2>¿Qué tenés que hacer?</h2>
+   <ol class="steps"><li>Pedile el código de tu grado al docente.</li><li>Realizá tu trabajo en Microsoft Excel y guardalo como <b>.xlsx</b>.</li><li>Completá tu nombre, tema y seleccioná el archivo.</li><li>Presioná <b>Enviar al profesor</b>.</li><li>Guardá el número de recepción que aparece al terminar.</li></ol>
+   <p class="muted">Los códigos no permiten abrir carpetas ni consultar documentos. Cada entrega queda almacenada de forma privada.</p>
+  </aside>
+ </div>
+</section>
+<section id="teacher" class="teacher">
+ <div class="hero"><span class="eyebrow">Acceso privado · Docente</span><h1>Carpetas de Excel por grado</h1>
+ <p>Creá un grado, compartí su código, revisá las entregas y descargá cada archivo desde tu bandeja. Los alumnos solamente pueden subir documentos.</p></div>
+ <div id="teacher-login" class="card" style="max-width:520px;margin:auto">
+  <h2>Entrar al panel docente</h2><p class="muted">Ingresá con una cuenta docente verificada de Krueka. Se admite contacto@titanteo.com una vez confirmado el correo.</p>
+  <form id="login-form"><div class="field"><label for="email">Correo de docente</label><input type="email" id="email" required autocomplete="username"></div>
+   <div class="field"><label for="password">Contraseña</label><input id="password" type="password" required autocomplete="current-password"></div>
+   <button id="login" type="submit" class="btn btn-wide">Entrar</button></form>
+  <div class="field"><div class="cf-turnstile" data-sitekey="0x4AAAAAAEIqJeQrYo8E9sKD" data-language="es" data-theme="light" data-size="flexible"></div></div>
+  <div class="toolbar"><button id="email-link" type="button" class="btn btn-outline">✉ Recibir enlace en contacto@titanteo.com</button></div>
+  <p class="muted">Completá la verificación de seguridad antes de solicitar el enlace. Si no recibís el mensaje, revisá Spam.</p>
+  <div id="login-message" role="status"></div>
+ </div>
+ <div id="teacher-dashboard" hidden>
+  <div class="card"><div class="grouphead"><div><h2>Mis carpetas por grado</h2><p class="muted" style="margin:0">Podés crear tantos grados o cursos como necesites, con códigos distintos.</p></div>
+   <div class="toolbar"><button id="reload" class="btn btn-outline" type="button">↻ Actualizar</button><button id="logout" class="btn btn-outline" type="button">Salir</button></div></div>
+   <form id="new-group-form" class="toolbar" style="align-items:end"><div style="flex:2;min-width:205px"><label for="new-group">Grado o curso</label><input id="new-group" required minlength="2" maxlength="80" placeholder="Ej.: Octavo grado - Informática"></div>
+    <button id="create-group" class="btn" type="submit">+ Crear carpeta y código</button></form>
+   <div id="code-notice" hidden class="code-result" role="status"><div class="muted">Código nuevo: compartilo únicamente con tu grupo</div>
+    <strong id="new-code"></strong><div class="toolbar"><button type="button" id="copy-code" class="btn">Copiar código</button><button type="button" class="btn btn-outline" id="hide-code">Ya lo guardé</button></div>
+    <p class="muted" style="margin:0">Por seguridad, el código no se muestra al volver a entrar. Podés generar otro cuando quieras.</p></div>
+   <div id="dashboard-message" role="status"></div>
+   <div id="groups" class="groups" style="margin-top:18px"></div>
+  </div>
+  <div id="teacher-folder-view" class="card" hidden style="margin-top:17px">
+   <div class="grouphead"><div><span class="eyebrow">Carpeta privada</span><h2 id="folder-name"></h2><p class="muted" id="folder-count"></p></div>
+    <button id="refresh-folder" class="btn btn-outline" type="button">↻ Actualizar entregas</button></div>
+   <div class="field"><label for="filter-student">Buscar alumno o trabajo</label><input id="filter-student" placeholder="Escribí el nombre…"></div>
+   <div id="files" style="margin-top:13px"></div><div id="folder-message" role="status"></div>
+  </div>
+ </div>
+</section></main><footer>Krueka · Plataforma educativa · Entregas privadas</footer>
+<script>
+(()=>{
+'use strict';
+const SUPA='https://janebfpnknapvntfqolf.supabase.co';
+const KEY='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
+const ENDPOINT=SUPA+'/functions/v1/krueka-excel-grados';
+const DOC_MIME='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+const $=id=>document.getElementById(id);
+const teacherMode=new URLSearchParams(location.search).get('docente')==='1';
+$('student').classList.toggle('hidden',teacherMode);$('teacher').classList.toggle('visible',teacherMode);
+let sb=null,groups=[],files=[],selected=null;
+function message(id,msg,error=false){const node=$(id);node.replaceChildren();if(!msg)return;const p=document.createElement('div');p.className='alert'+(error?' error':' success');p.textContent=msg;node.append(p);}
+async function api(data,token){
+ const form=data instanceof FormData;
+ const headers={apikey:KEY,...(token?{authorization:'Bearer '+token}:{})};
+ if(!form)headers['Content-Type']='application/json';
+ const res=await fetch(ENDPOINT,{method:'POST',headers,body:form?data:JSON.stringify(data)});
+ let payload;try{payload=await res.json();}catch{throw Error('El servidor no respondió correctamente.');}
+ if(!res.ok||!payload.ok)throw Error(payload.error||'No pudimos completar la solicitud.');
+ return payload;
+}
+$('access-code').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g,'').slice(0,16)});
+$('student-form').onsubmit=async e=>{
+ e.preventDefault();message('student-message','');
+ const f=$('doc').files[0],code=$('access-code').value.replace(/[\s-]/g,'');
+ if(code.length!==12){message('student-message','El código tiene que tener 12 caracteres.',true);return;}
+ if(!f||!/\.xlsx$/i.test(f.name)||f.size>10*1024*1024){message('student-message','Elegí un archivo Excel .xlsx de hasta 10 MB.',true);return;}
+ const button=$('send');button.disabled=true;button.textContent='Enviando archivo…';
+ try{const r=await api(new FormData($('student-form')));
+   message('student-message','✓ Trabajo enviado correctamente.\nNúmero de recepción: '+r.receipt+'\nAvisá al docente y guardá el comprobante.');
+   $('doc').value='';
+ }catch(err){message('student-message',err.message,true)}
+ finally{button.disabled=false;button.textContent='⬆ Enviar al profesor'}
+};
+if(!teacherMode)return;
+if(!window.supabase){message('login-message','No pudo cargarse el inicio de sesión de Krueka.',true);return;}
+sb=supabase.createClient(SUPA,KEY);
+const captcha=()=>document.querySelector('#teacher-login [name="cf-turnstile-response"]')?.value||window.turnstile?.getResponse?.()||'';
+const reset=()=>{try{window.turnstile?.reset?.()}catch(_err){}};
+async function token(){
+ const {data:{session},error}=await sb.auth.getSession();
+ if(error||!session)throw Error('Iniciá sesión como docente para ver los trabajos.');
+ return session.access_token;
+}
+async function staff(action,data={}){return api({action,...data},await token());}
+async function loadGroups(){
+ message('dashboard-message','');
+ try{const result=await staff('groups');groups=result.groups||[];paintGroups();}
+ catch(err){message('dashboard-message',err.message,true)}
+}
+function revealCode(code){
+ $('new-code').textContent=code;$('code-notice').hidden=false;
+ $('code-notice').scrollIntoView({behavior:'auto',block:'center'});
+}
+$('copy-code').onclick=async()=>{
+ try{await navigator.clipboard.writeText($('new-code').textContent);$('copy-code').textContent='✓ Copiado'}
+ catch(_){const range=document.createRange();range.selectNodeContents($('new-code'));window.getSelection().removeAllRanges();window.getSelection().addRange(range);$('copy-code').textContent='Seleccionado · Ctrl+C'}
+};
+$('hide-code').onclick=()=>{$('code-notice').hidden=true;$('new-code').textContent='';$('copy-code').textContent='Copiar código';};
+$('new-group-form').onsubmit=async e=>{
+ e.preventDefault();const btn=$('create-group');btn.disabled=true;
+ try{const r=await staff('create',{name:$('new-group').value.trim()});revealCode(r.code);$('new-group').value='';await loadGroups();}
+ catch(err){message('dashboard-message',err.message,true)}
+ finally{btn.disabled=false}
+};
+function elt(tag,cl,txt){const node=document.createElement(tag);if(cl)node.className=cl;if(txt!==undefined)node.textContent=txt;return node}
+function btn(txt,cl,handler){const node=elt('button','btn '+(cl||''),txt);node.type='button';node.onclick=handler;return node}
+function paintGroups(){
+ $('groups').replaceChildren();
+ if(!groups.length){$('groups').append(elt('p','muted','Todavía no hay carpetas. Creá tu primer grado arriba.'));return}
+ groups.forEach(g=>{
+  const card=elt('article','group'),header=elt('div','grouphead'),title=elt('h3','',g.name);
+  const tag=elt('span','tag'+(!g.accepting?' closed':''),g.accepting?'Recibiendo archivos':'Entrega cerrada');
+  header.append(title,tag);card.append(header);
+  const bar=elt('div','toolbar');
+  bar.append(btn('📂 Ver trabajos','',async()=>{
+   selected=g;$('folder-name').textContent=g.name;$('teacher-folder-view').hidden=false;
+   $('teacher-folder-view').scrollIntoView({behavior:'auto',block:'start'});await loadFolder();
+  }));
+  bar.append(btn(g.accepting?'Cerrar recepción':'Reabrir recepción','btn-outline',async()=>{
+   if(!confirm((g.accepting?'¿Cerrar':'¿Reabrir')+' el envío de trabajos de '+g.name+'?'))return;
+   try{await staff('close',{group_id:g.id,accepting:!g.accepting});await loadGroups();}
+   catch(err){message('dashboard-message',err.message,true)}
+  }));
+  bar.append(btn('Cambiar código','btn-red',async()=>{
+   if(!confirm('El código anterior de '+g.name+' dejará de funcionar. ¿Continuar?'))return;
+   try{const r=await staff('rotate',{group_id:g.id});revealCode(r.code);}
+   catch(err){message('dashboard-message',err.message,true)}
+  }));
+  card.append(bar);$('groups').append(card);
+ });
+}
+async function loadFolder(){
+ if(!selected)return;
+ message('folder-message','');$('folder-count').textContent='Cargando archivos…';
+ try{const result=await staff('list',{group_id:selected.id});files=result.items||[];paintFolder();}
+ catch(err){message('folder-message',err.message,true)}
+}
+function paintFolder(){
+ if(!selected)return;
+ const search=$('filter-student').value.toLocaleLowerCase('es').trim();
+ const view=files.filter(x=>!search||[x.student_name,x.assignment,x.original_filename].some(y=>String(y||'').toLocaleLowerCase('es').includes(search)));
+ $('folder-count').textContent=files.length+' trabajos recibidos · '+files.filter(x=>x.status==='pendiente').length+' pendientes';
+ $('files').replaceChildren();
+ if(!view.length){$('files').append(elt('p','muted',files.length?'No hay resultados para este filtro.':'Todavía no hay entregas en esta carpeta.'));return;}
+ view.forEach(f=>{
+  const box=elt('article','docrow'),name=elt('div','name',f.student_name);
+  const date=new Date(f.uploaded_at).toLocaleString('es-PY',{dateStyle:'short',timeStyle:'short'});
+  const detail=elt('div','detail',f.assignment+' · '+f.original_filename+' · '+(f.size_bytes/1024).toFixed(0)+' KB · '+date);
+  const actions=elt('div','buttons');
+  actions.append(btn('↓ Descargar Excel','btn-outline',async()=>{
+   try{const result=await staff('download',{group_id:selected.id,id:f.id});
+    if(!result.url.startsWith(SUPA+'/storage/v1/object/sign/'))throw Error('Dirección de descarga no válida.');
+    window.open(result.url,'_blank','noopener,noreferrer');
+   }catch(err){message('folder-message',err.message,true)}
+  }));
+  const select=elt('select');select.setAttribute('aria-label','Revisión de '+f.student_name);
+  [['pendiente','Pendiente'],['revisado','Revisado'],['corregir','Corregir']].forEach(([k,v])=>select.add(new Option(v,k)));
+  select.value=f.status;
+  const note=elt('input');note.value=f.teacher_note||'';note.maxLength=1000;note.placeholder='Comentario al corregir';note.setAttribute('aria-label','Comentario de '+f.student_name);
+  actions.append(select,note,btn('Guardar revisión','',async()=>{
+   try{await staff('review',{group_id:selected.id,id:f.id,status:select.value,note:note.value});f.status=select.value;f.teacher_note=note.value;message('folder-message','Revisión guardada.');paintFolder();}
+   catch(err){message('folder-message',err.message,true)}
+  }));
+  box.append(name,detail,actions);$('files').append(box);
+ });
+}
+$('filter-student').oninput=paintFolder;
+$('refresh-folder').onclick=loadFolder;$('reload').onclick=loadGroups;
+$('logout').onclick=async()=>{await sb.auth.signOut();$('teacher-dashboard').hidden=true;$('teacher-login').hidden=false;selected=null;files=[];};
+async function enter(){
+ await loadGroups();
+ $('teacher-login').hidden=true;$('teacher-dashboard').hidden=false;
+}
+$('login-form').onsubmit=async e=>{
+ e.preventDefault();message('login-message','');const button=$('login');button.disabled=true;
+ try{const proof=captcha();if(!proof)throw Error('Completá el CAPTCHA antes de ingresar.');
+  const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value,options:{captchaToken:proof}});
+  if(error)throw Error(error.message);
+  // Forzar autorización del servidor antes de mostrar el panel.
+  await staff('groups');$('password').value='';await enter();
+ }catch(err){message('login-message',err.message,true);reset()}
+ finally{button.disabled=false}
+};
+$('email-link').onclick=async()=>{
+ message('login-message','');const button=$('email-link');button.disabled=true;
+ try{const proof=captcha();if(!proof)throw Error('Completá el CAPTCHA antes de pedir el correo.');
+  const {error}=await sb.auth.signInWithOtp({email:'contacto@titanteo.com',
+   options:{shouldCreateUser:true,captchaToken:proof,emailRedirectTo:'https://www.krueka.com/entregas-excel.html?docente=1'}});
+  if(error)throw Error(error.message);
+  message('login-message','Si Supabase aceptó la solicitud, llegará un enlace de acceso a contacto@titanteo.com. Revisá también Spam.');
+ }catch(err){message('login-message',err.message,true)}
+ finally{reset();button.disabled=false}
+};
+sb.auth.getSession().then(async({data:{session}})=>{
+ if(!session)return;
+ try{await staff('groups');await enter()}catch(_){/* Inicio de sesión visible si no posee rol aprobado */}
+});
+})();
+</script></body></html>
