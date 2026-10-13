@@ -42,4 +42,9 @@ assert.match(edge,/user\.email_confirmed_at/,'Se requiere correo verificado');
 assert.match(edge,/!STAFF_EMAILS\.has\(verifiedEmail\)/,'Se restringen los revisores');
 assert.doesNotMatch(edge,/generateLink|inviteUserByEmail/,'No existen atajos privilegiados');
 
+assert.match(page,/challenges\.cloudflare\.com\/turnstile\/v0\/api\.js/,'Turnstile carga en la bandeja docente');
+assert.match(page,/data-sitekey="0x4AAAAAAEIqJeQrYo8E9sKD"/,'Usar la misma clave pública verificada de Krueka');
+assert.match(page,/function captchaToken\(\)/,'Los enlaces requieren CAPTCHA de la página');
+assert.match(page,/captchaToken:captcha/g,'Se envía token a Supabase Auth tanto para OTP como contraseña');
+assert.match(page,/function resetCaptcha\(\)/,'CAPTCHA se reinicia después de errores y solicitudes');
 console.log('PASS: Word público, revisión docente con correo verificado, storage privado y límites.');
