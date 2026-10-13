@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entregas Word · Krueka</title><meta name="description" content="Enviá tu trabajo de Microsoft Word al docente desde Krueka. Sin crear cuenta.">
+<link rel="icon" href="logo.svg"><meta name="theme-color" content="#081a32">
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#1b3045;background:#f5f8fc}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -8%,#d8e9ff,#f5f8fc 57%)}
+a{color:#2265ad;text-decoration:none}
+.top{height:78px;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:0 max(22px,calc((100vw - 1140px)/2))}
+.brand{display:flex;align-items:center;gap:11px;font-weight:900;font-size:18px;color:#0f2745}
+.brand img{height:37px;width:37px;object-fit:contain}
+.menu{display:flex;gap:16px;align-items:center;font-size:12px;font-weight:700}
+.menu a{white-space:nowrap}
+main{max-width:1100px;margin:auto;padding:23px 20px 70px}
+.intro{text-align:center;padding:24px 12px 30px}
+.eyebrow{font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:900;color:#1e77c1}
+h1{font-size:clamp(29px,5vw,45px);line-height:1.13;letter-spacing:-.04em;color:#0d2948;margin:10px 0}
+.intro p{color:#57708c;margin:12px auto;max-width:625px;line-height:1.65}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(250px,1fr);gap:20px;align-items:start}
+.card{border:1px solid #d8e4ef;border-radius:20px;background:#fff;padding:28px;box-shadow:0 16px 50px #0e3b6a0a}
+h2{margin:0 0 9px;font-size:19px;letter-spacing:-.02em}
+.sub{font-size:13px;color:#617b97;line-height:1.65;margin:0 0 18px}
+label{display:block;font-weight:800;font-size:12px;margin:15px 0 7px;color:#29445d}
+input,select,textarea{width:100%;padding:13px 14px;min-height:46px;border:1px solid #cfdfed;border-radius:11px;font:inherit;font-size:14px;color:#203950;background:#fbfdff;outline-color:#2588dc}
+input:focus,textarea:focus,select:focus{border-color:#2c87d0;box-shadow:0 0 0 3px #b9daf438}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.upload{margin-top:16px;border:2px dashed #90bbde;background:#f1f8ff;border-radius:14px;padding:19px 16px;text-align:center}
+.upload strong{display:block;font-size:13px;color:#1c6198}
+.upload small{display:block;color:#68839b;font-size:11px;margin:7px 0}
+.upload input{padding:7px;margin:9px 0 0;border-color:transparent;background:transparent;min-height:0;font-size:12px;max-width:100%}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#2379c4;color:white;padding:12px 17px;border:1px solid #2379c4;border-radius:11px;cursor:pointer;font-weight:800;font-size:13px;min-height:45px;font-family:inherit}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.55;cursor:wait}
+.btn-plain{background:#fff;color:#245376;border-color:#bed1e1}
+.btn-wide{width:100%;margin-top:15px}
+.note{font-size:11px;color:#69829c;line-height:1.65;margin:15px 0 0}
+.status{display:none;padding:13px 16px;border-radius:11px;line-height:1.6;font-size:13px;margin-top:16px;white-space:pre-wrap}
+.status.on{display:block}.status.ok{background:#e6f6ef;color:#19543b;border:1px solid #bce2cf}.status.err{background:#fff0ee;color:#913e3e;border:1px solid #eec7c2}
+.side ul{padding-left:19px;line-height:1.9;color:#4d6580;font-size:13px}.side li+li{margin-top:9px}
+.size{display:inline-flex;border-radius:30px;padding:6px 11px;font-size:11px;font-weight:900;background:#dff1fe;color:#12609b;margin-bottom:15px}
+.teacher{display:none}.teacher.is-open{display:block}.student.is-hidden{display:none}
+.dashboard{max-width:1070px;margin:auto}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0;align-items:center}
+.controls input{flex:2;min-width:220px;max-width:400px}
+.controls select{flex:1;min-width:150px;max-width:220px}
+.cards{display:grid;gap:10px}
+.submission{border:1px solid #dde7ef;background:#fff;border-radius:15px;padding:16px;display:grid;gap:8px}
+.submission .heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.submission h3{font-size:15px;margin:0;color:#173653}
+.meta{color:#67809a;font-size:11px;line-height:1.5}
+.actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.actions select{max-width:160px;flex:1}
+.actions input{flex:2;min-width:190px}
+.actions .btn{min-height:37px;padding:7px 11px;font-size:11px}
+.tag{font-size:10px;font-weight:900;padding:6px 10px;border-radius:20px;background:#e6f3ff;color:#225a88}
+footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
+[hidden]{display:none!important}
+@media(max-width:740px){.layout{grid-template-columns:1fr}.row{grid-template-columns:1fr}.card{padding:20px}.top{padding:0 15px}.menu{gap:10px}.intro{padding:7px 10px 20px}main{padding:13px 12px 48px}.submission{padding:12px}}
+</style></head><body>
+<header class="top"><a class="brand" href="/"><img src="logo.svg" alt="">Krueka <span style="font-size:10px;font-weight:700;color:#6284a1">· Entregas</span></a>
+<nav class="menu"><a href="/" aria-label="Volver al inicio">Inicio</a><a href="entregas-word.html?docente=1">Acceso docente</a></nav></header>
+<main>
+<section id="student" class="student">
+ <div class="intro"><span class="eyebrow">Entrega de actividades · Word</span><h1>Entregá tu trabajo aquí</h1>
+ <p>Subí tu documento Word desde tu computadora o teléfono. No necesitás crear una cuenta. Tu profesor recibirá el trabajo en su bandeja privada.</p></div>
+ <div class="layout">
+  <section class="card"><h2>Enviar mi actividad</h2><p class="sub">Completá tus datos para que el profesor pueda identificar correctamente el documento.</p>
+   <form id="upload-form">
+    <label for="student-name">Nombre y apellido del alumno</label><input id="student-name" name="student" required minlength="3" maxlength="90" autocomplete="name" placeholder="Ej.: María González">
+    <div class="row"><div><label for="class-name">Grado o curso</label><input id="class-name" name="course" required minlength="2" maxlength="60" placeholder="Ej.: 9.º grado"></div>
+    <div><label for="assignment">Tema o nombre del trabajo</label><input id="assignment" name="assignment" required minlength="2" maxlength="100" placeholder="Ej.: Proyecto integrado Word"></div></div>
+    <label for="doc">Archivo del trabajo</label><div class="upload"><strong>📄 Elegí tu archivo de Word</strong><small>Solo .docx · máximo 5 MB · un archivo por entrega</small>
+     <input id="doc" name="document" type="file" required accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
+    <button class="btn btn-wide" id="send" type="submit">⬆ Enviar documento Word</button>
+    <div class="status" id="upload-status" role="status" aria-live="polite"></div>
+   </form><p class="note">Los trabajos se guardan en un espacio privado de Krueka. Solo docentes autorizados podrán consultarlos. El recibo confirma recepción, no aprobación del contenido.</p>
+  </section>
+  <aside class="card side"><span class="size">✓ Entregas abiertas</span><h2>Antes de enviar</h2>
+   <ul><li>Realizá tu actividad en Microsoft Word o un editor compatible.</li><li>Guardá el archivo como <b>Documento de Word (.docx)</b>.</li><li>Revisá que tenga tu nombre y esté terminado.</li><li>Elegí el archivo y presioná <b>Enviar</b>.</li><li>Conservá el número de recepción que aparece al finalizar.</li></ul>
+   <p class="note">No se aceptan PDF, imágenes, archivos ZIP, archivos con macros ni documentos antiguos .doc. No incluyas datos personales innecesarios.</p>
+  </aside>
+ </div>
+</section>
+<section id="teacher" class="teacher">
+ <div class="intro"><span class="eyebrow">Área privada · Docentes Krueka</span><h1>Bandeja de trabajos Word</h1><p>Revisá las entregas, descargá los archivos y registrá la devolución para cada trabajo.</p></div>
+ <div class="card" id="teacher-login" style="max-width:530px;margin:auto">
+  <h2>Ingresar como docente</h2><p class="sub">Utilizá el mismo correo y contraseña de tu cuenta docente de Krueka. Los alumnos no tienen acceso a esta bandeja.</p>
+  <form id="login-form"><label for="teacher-email">Correo institucional</label><input type="email" id="teacher-email" required autocomplete="username" placeholder="correo@ejemplo.com">
+  <label for="teacher-password">Contraseña</label><input id="teacher-password" type="password" autocomplete="current-password" required>
+  <button class="btn btn-wide" type="submit" id="login-btn">Entrar a mis entregas</button></form>
+  <div class="status" id="login-status" role="status"></div>
+ </div>
+ <div id="teacher-board" class="dashboard" hidden>
+  <div class="card"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+   <div><h2>Trabajos recibidos</h2><p class="sub" id="total" style="margin:0">Cargando entregas…</p></div>
+   <div class="actions"><button class="btn btn-plain" id="reload">↻ Actualizar</button><button class="btn btn-plain" id="logout">Salir</button></div></div>
+   <div class="controls"><input id="search" placeholder="Buscar por alumno o trabajo…" aria-label="Buscar entregas">
+    <select id="filter-class" aria-label="Filtrar por curso"><option value="">Todos los grados</option></select>
+   </div>
+   <div id="items" class="cards"></div><div class="status" id="teacher-status" role="status"></div>
+  </div>
+ </div>
+</section></main><footer>Krueka · Plataforma educativa · Paraguay · Archivos protegidos</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(()=>{
+ 'use strict';
+ const SUPABASE_URL='https://janebfpnknapvntfqolf.supabase.co';
+ const KEY='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
+ const API=SUPABASE_URL+'/functions/v1/krueka-word-entregas';
+ const MAX=5*1024*1024;
+ const $=id=>document.getElementById(id);
+ const say=(id,message,ok)=>{const el=$(id);el.className='status on '+(ok?'ok':'err');el.textContent=message;};
+ const clear=id=>{const el=$(id);el.className='status';el.textContent='';};
+ const teacherMode=new URLSearchParams(location.search).get('docente')==='1';
+ $('student').classList.toggle('is-hidden',teacherMode);
+ $('teacher').classList.toggle('is-open',teacherMode);
+ let db=null,items=[];
+ async function request(body,token){
+  const headers={apikey:KEY,...(token?{Authorization:'Bearer '+token}:{})};
+  const opts={method:'POST',headers,body};
+  if(!(body instanceof FormData)){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(body);}
+  const res=await fetch(API,opts);
+  let json;try{json=await res.json();}catch{throw Error('No hubo respuesta del servidor. Intentá nuevamente.');}
+  if(!res.ok||!json.ok)throw Error(json.error||'El servidor no pudo completar la operación.');
+  return json;
+ }
+ $('upload-form').onsubmit=async e=>{
+  e.preventDefault();clear('upload-status');
+  const f=$('doc').files[0];
+  if(!f||!/\.docx$/i.test(f.name)){say('upload-status','Solo se permiten documentos Word .docx.',false);return;}
+  if(f.size<170||f.size>MAX){say('upload-status','El documento no puede superar 5 MB.',false);return;}
+  const btn=$('send');btn.disabled=true;btn.textContent='Enviando y guardando…';
+  try{
+   const data=new FormData($('upload-form'));
+   const r=await request(data);
+   say('upload-status','✓ Entrega recibida correctamente.\nNúmero de recepción: '+r.receipt+'\nGuardá este número y avisá a tu profesor.',true);
+   $('doc').value='';
+  }catch(err){say('upload-status',err.message||'Falló el envío. Intentá de nuevo.',false);}
+  finally{btn.disabled=false;btn.textContent='⬆ Enviar documento Word';}
+ };
+ if(!teacherMode)return;
+ if(!window.supabase){say('login-status','No se pudo cargar el sistema de acceso docente. Actualizá la página.',false);return;}
+ db=supabase.createClient(SUPABASE_URL,KEY);
+ async function token(){
+  const {data:{session},error}=await db.auth.getSession();
+  if(error||!session)throw Error('Tu sesión docente terminó. Volvé a iniciar sesión.');
+  return session.access_token;
+ }
+ async function admin(action,data={}){
+  return request({action,...data},await token());
+ }
+ async function load(){
+  clear('teacher-status');$('reload').disabled=true;
+  try{const r=await admin('list');items=r.items||[];refreshFilters();draw();}
+  catch(e){say('teacher-status',e.message,false);}
+  finally{$('reload').disabled=false;}
+ }
+ function refreshFilters(){
+  const select=$('filter-class'),old=select.value;
+  const vals=[...new Set(items.map(x=>x.class_name))].sort((a,b)=>a.localeCompare(b,'es'));
+  select.replaceChildren(new Option('Todos los grados',''));
+  vals.forEach(v=>select.add(new Option(v,v)));
+  select.value=vals.includes(old)?old:'';
+ }
+ function draw(){
+  const query=$('search').value.trim().toLocaleLowerCase('es'),cls=$('filter-class').value;
+  const rows=items.filter(x=>(!cls||x.class_name===cls)&&(!query||[x.student_name,x.assignment,x.class_name].some(y=>String(y).toLocaleLowerCase('es').includes(query))));
+  const pending=items.filter(x=>x.review_status==='pendiente').length;
+  $('total').textContent=items.length+' recibidos · '+pending+' pendientes · mostrando '+rows.length;
+  const box=$('items');box.replaceChildren();
+  if(!rows.length){const p=document.createElement('p');p.className='sub';p.textContent=items.length?'No hay resultados para ese filtro.':'Todavía no hay trabajos recibidos.';box.append(p);return;}
+  rows.forEach(x=>{
+   const card=document.createElement('article');card.className='submission';
+   const header=document.createElement('div');header.className='heading';
+   const h=document.createElement('h3');h.textContent=x.student_name;
+   const badge=document.createElement('span');badge.className='tag';badge.textContent=x.review_status==='revisado'?'✓ Revisado':x.review_status==='corregir'?'Necesita corrección':'Pendiente';
+   header.append(h,badge);card.append(header);
+   const summary=document.createElement('div');summary.className='meta';
+   const when=new Date(x.uploaded_at).toLocaleString('es-PY',{dateStyle:'short',timeStyle:'short'});
+   summary.textContent=x.class_name+' · '+x.assignment+' · '+x.original_filename+' · '+(x.size_bytes/1024).toFixed(0)+' KB · '+when;card.append(summary);
+   const actions=document.createElement('div');actions.className='actions';
+   const download=document.createElement('button');download.type='button';download.className='btn btn-plain';download.textContent='↓ Descargar Word';
+   download.onclick=async()=>{
+    download.disabled=true;
+    try{
+     const r=await admin('download',{id:x.id});
+     if(!r.url.startsWith(SUPABASE_URL+'/storage/v1/object/sign/'))throw Error('La dirección del archivo es inválida.');
+     window.open(r.url,'_blank','noopener,noreferrer');
+    }catch(e){say('teacher-status',e.message,false);}
+    finally{download.disabled=false;}
+   };
+   const select=document.createElement('select');select.setAttribute('aria-label','Estado del trabajo de '+x.student_name);
+   [['pendiente','Pendiente'],['revisado','Revisado'],['corregir','Corregir']].forEach(([v,name])=>select.add(new Option(name,v)));
+   select.value=x.review_status;
+   const note=document.createElement('input');note.placeholder='Comentario para revisión…';note.maxLength=1000;note.value=x.teacher_note||'';note.setAttribute('aria-label','Comentario para '+x.student_name);
+   const save=document.createElement('button');save.type='button';save.className='btn';save.textContent='Guardar revisión';
+   save.onclick=async()=>{
+    save.disabled=true;
+    try{await admin('review',{id:x.id,status:select.value,note:note.value});
+     x.review_status=select.value;x.teacher_note=note.value;clear('teacher-status');draw();
+    }catch(e){say('teacher-status',e.message,false);}
+    finally{save.disabled=false;}
+   };
+   actions.append(download,select,note,save);card.append(actions);box.append(card);
+  });
+ }
+ $('login-form').onsubmit=async e=>{
+  e.preventDefault();clear('login-status');
+  const btn=$('login-btn');btn.disabled=true;btn.textContent='Verificando…';
+  try{
+   const {error}=await db.auth.signInWithPassword({email:$('teacher-email').value.trim(),password:$('teacher-password').value});
+   if(error)throw Error('Correo o contraseña incorrectos.');
+   await admin('list');
+   $('teacher-login').hidden=true;$('teacher-board').hidden=false;
+   $('teacher-password').value='';
+   await load();
+  }catch(err){say('login-status',err.message,false);}
+  finally{btn.disabled=false;btn.textContent='Entrar a mis entregas';}
+ };
+ $('reload').onclick=load;
+ $('logout').onclick=async()=>{await db.auth.signOut();$('teacher-board').hidden=true;$('teacher-login').hidden=false;clear('login-status');};
+ $('search').oninput=draw;$('filter-class').onchange=draw;
+ db.auth.getSession().then(async({data:{session}})=>{
+  if(!session)return;
+  try{await admin('list');$('teacher-login').hidden=true;$('teacher-board').hidden=false;await load();}
+  catch(_){/* Mantener login si la sesión no tiene rol docente */}
+ });
+})();
+</script></body></html>
