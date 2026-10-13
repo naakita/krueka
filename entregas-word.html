@@ -57,7 +57,9 @@ input:focus,textarea:focus,select:focus{border-color:#2c87d0;box-shadow:0 0 0 3p
 footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
 [hidden]{display:none!important}
 @media(max-width:740px){.layout{grid-template-columns:1fr}.row{grid-template-columns:1fr}.card{padding:20px}.top{padding:0 15px}.menu{gap:10px}.intro{padding:7px 10px 20px}main{padding:13px 12px 48px}.submission{padding:12px}}
-</style></head><body>
+</style>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head><body>
 <header class="top"><a class="brand" href="/"><img src="logo.svg" alt="">Krueka <span style="font-size:10px;font-weight:700;color:#6284a1">· Entregas</span></a>
 <nav class="menu"><a href="/" aria-label="Volver al inicio">Inicio</a><a href="entregas-word.html?docente=1">Acceso docente</a></nav></header>
 <main>
@@ -89,6 +91,8 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
   <form id="login-form"><label for="teacher-email">Correo institucional</label><input type="email" id="teacher-email" required autocomplete="username" placeholder="correo@ejemplo.com">
   <label for="teacher-password">Contraseña</label><input id="teacher-password" type="password" autocomplete="current-password" required>
   <button class="btn btn-wide" type="submit" id="login-btn">Entrar a mis entregas</button></form>
+  <div class="cf-turnstile" data-sitekey="0x4AAAAAAEIqJeQrYo8E9sKD" data-language="es" data-size="flexible" data-theme="light" style="margin-top:16px"></div>
+  <p class="note">Completá la comprobación de seguridad antes de solicitar el enlace o entrar con contraseña.</p>
   <div class="status" id="login-status" role="status"></div>
   <div style="margin-top:20px;padding-top:17px;border-top:1px solid #dce7f1">
    <h2 style="font-size:16px">¿No tenés contraseña o acceso a Supabase?</h2>
@@ -123,6 +127,12 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
  $('student').classList.toggle('is-hidden',teacherMode);
  $('teacher').classList.toggle('is-open',teacherMode);
  let db=null,items=[];
+ function captchaToken(){
+  const code=document.querySelector('#teacher-login [name="cf-turnstile-response"]');
+  return code&&code.value||window.turnstile?.getResponse?.()||'';
+ }
+ function resetCaptcha(){try{window.turnstile?.reset?.();}catch(_){}}
+
  async function request(body,token){
   const headers={apikey:KEY,...(token?{Authorization:'Bearer '+token}:{})};
   const opts={method:'POST',headers,body};
@@ -216,13 +226,15 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
   e.preventDefault();clear('login-status');
   const btn=$('login-btn');btn.disabled=true;btn.textContent='Verificando…';
   try{
-   const {error}=await db.auth.signInWithPassword({email:$('teacher-email').value.trim(),password:$('teacher-password').value});
+   const captcha=captchaToken();
+   if(!captcha)throw Error('Completá primero la verificación de seguridad.');
+   const {error}=await db.auth.signInWithPassword({email:$('teacher-email').value.trim(),password:$('teacher-password').value,options:{captchaToken:captcha}});
    if(error)throw Error('Correo o contraseña incorrectos.');
    await admin('list');
    $('teacher-login').hidden=true;$('teacher-board').hidden=false;
    $('teacher-password').value='';
    await load();
-  }catch(err){say('login-status',err.message,false);}
+  }catch(err){say('login-status',err.message,false);resetCaptcha();}
   finally{btn.disabled=false;btn.textContent='Entrar a mis entregas';}
  };
  // Acceso sin panel Supabase: OTP al correo previamente autorizado.
@@ -231,18 +243,21 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
   clear('login-status');
   const button=$('magic-link');button.disabled=true;button.textContent='Solicitando acceso por correo…';
   try{
+   const captcha=captchaToken();
+   if(!captcha)throw Error('Completá primero la verificación de seguridad.');
    const {error}=await db.auth.signInWithOtp({
     email:'contacto@titanteo.com',
     options:{
      shouldCreateUser:true,
-     emailRedirectTo:'https://www.krueka.com/entregas-word.html?docente=1'
+     emailRedirectTo:'https://www.krueka.com/entregas-word.html?docente=1',
+     captchaToken:captcha
     }
    });
    if(error)throw new Error(error.message||'No fue posible enviar el enlace.');
    say('login-status','Si el servicio de correo aceptó la solicitud, enviamos un enlace a contacto@titanteo.com. Abrí el correo en este navegador o dispositivo y pulsá el enlace. Si querés crear una contraseña después, ingresá a establecer-clave.html.',true);
   }catch(error){
-   say('login-status','No se pudo solicitar el acceso: '+(error.message||'error del servicio')+'. Verificá más tarde o consultá al administrador del sistema.',false);
-  }finally{button.disabled=false;button.textContent='✉ Enviarme enlace de acceso al correo';}
+   say('login-status','No se pudo solicitar el acceso: '+(error.message||'error del servicio')+'. Volvé a completar la verificación e intentá de nuevo.',false);
+  }finally{resetCaptcha();button.disabled=false;button.textContent='✉ Enviarme enlace de acceso al correo';}
  };
  $('reload').onclick=load;
  $('logout').onclick=async()=>{await db.auth.signOut();$('teacher-board').hidden=true;$('teacher-login').hidden=false;clear('login-status');};
