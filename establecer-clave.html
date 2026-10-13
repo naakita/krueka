@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crear contraseña de administrador · Krueka</title><meta name="robots" content="noindex,nofollow">
+<style>
+*{box-sizing:border-box}
+body{min-height:100vh;margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:radial-gradient(circle at 48% 8%,#163b60,#081526 65%);display:grid;place-items:center;color:#eaf4fe;padding:20px}
+main{width:min(480px,100%);border:1px solid #3b6384;background:#101f32;box-shadow:0 15px 70px #0006;padding:clamp(20px,4vw,34px);border-radius:20px}
+small{font-size:11px;color:#7fd5fb;letter-spacing:.12em;font-weight:900}
+h1{font-size:clamp(24px,5vw,31px);letter-spacing:-.03em;line-height:1.17;margin:13px 0}
+p{color:#adc5da;line-height:1.7;font-size:13px}
+label{display:block;margin-top:17px;font-weight:700;font-size:12px}
+input{display:block;width:100%;min-height:47px;margin-top:7px;padding:10px 12px;border-radius:9px;border:1px solid #406887;background:#061a2b;color:#eff9ff;font-size:15px}
+button,.link{display:flex;align-items:center;justify-content:center;min-height:45px;width:100%;background:#2c8acb;color:#fff;border:0;border-radius:9px;font-weight:800;font-size:13px;cursor:pointer;margin-top:17px;text-decoration:none}
+button:disabled{opacity:.5;cursor:wait}
+.link{border:1px solid #4b7899;background:transparent}
+.state{padding:10px 12px;border-radius:9px;margin-top:16px;background:#152d44;border:1px solid #3a6989;color:#e0eef9;font-size:12px;line-height:1.6}
+.state.ok{background:#153a30;border-color:#4e9a7d;color:#bdf8dc}
+.state.err{background:#3d2228;border-color:#a06a69;color:#ffdad8}
+[hidden]{display:none!important}
+</style></head><body>
+<main>
+ <small>KRUEKA · ACCESO SEGURO</small><h1>Configurá tu contraseña</h1>
+ <p>Esta pantalla es para el enlace de invitación o recuperación que llega a tu correo. Tu contraseña se establece directamente en el sistema de autenticación; no se envía por correo.</p>
+ <div class="state" id="status" role="status">Verificando el enlace de acceso…</div>
+ <form id="setup" hidden>
+  <label for="pass">Nueva contraseña (mínimo 12 caracteres)</label><input id="pass" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+  <label for="confirm">Repetir contraseña</label><input id="confirm" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+  <button type="submit" id="save">Guardar mi contraseña</button>
+ </form>
+ <a class="link" href="entregas-word.html?docente=1">Ir a la bandeja docente</a>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(()=>{
+ 'use strict';
+ const api='https://janebfpnknapvntfqolf.supabase.co';
+ const publicKey='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
+ const status=document.getElementById('status'),form=document.getElementById('setup');
+ const write=(msg,kind='')=>{status.textContent=msg;status.className='state '+kind;};
+ if(!window.supabase){write('No se pudo cargar la conexión segura. Actualizá la página.','err');return;}
+ const sb=supabase.createClient(api,publicKey,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+ const showSession=async()=>{
+  try{
+   const {data:{session},error}=await sb.auth.getSession();
+   if(error||!session?.user){form.hidden=true;write('Ingresá desde el enlace que recibiste en contacto@titanteo.com. Si ya configuraste tu contraseña, utilizá la bandeja docente para iniciar sesión.','err');return;}
+   if(session.user.email?.toLowerCase()!=='contacto@titanteo.com'){
+    await sb.auth.signOut();form.hidden=true;write('Este enlace corresponde a otra cuenta. Abrí la invitación enviada a contacto@titanteo.com.','err');return;
+   }
+   form.hidden=false;write('Enlace verificado para contacto@titanteo.com. Elegí una contraseña privada de al menos 12 caracteres.');
+  }catch(_){write('No se pudo validar tu invitación. Volvé a abrir el enlace desde tu correo.','err');}
+ };
+ sb.auth.onAuthStateChange((_event,_session)=>{setTimeout(showSession,0);});
+ showSession();
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const password=document.getElementById('pass').value,confirm=document.getElementById('confirm').value;
+  if(password.length<12){write('Usá una contraseña de al menos 12 caracteres.','err');return;}
+  if(password!==confirm){write('Las contraseñas no coinciden.','err');return;}
+  const button=document.getElementById('save');button.disabled=true;
+  try{
+   const {data:{session}}=await sb.auth.getSession();
+   if(!session?.user||session.user.email?.toLowerCase()!=='contacto@titanteo.com')throw Error('Sesión inválida o vencida. Abrí otra vez el enlace de invitación.');
+   const {error}=await sb.auth.updateUser({password});
+   if(error)throw Error(error.message||'No se pudo guardar tu contraseña.');
+   document.getElementById('pass').value='';document.getElementById('confirm').value='';
+   form.hidden=true;write('✓ Contraseña establecida. Ahora podés entrar a la bandeja docente.','ok');
+  }catch(e){write(e.message||'Error al guardar. Volvé a intentarlo.','err');}
+  finally{button.disabled=false;}
+ });
+})();
+</script></body></html>
