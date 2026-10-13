@@ -85,11 +85,17 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
 <section id="teacher" class="teacher">
  <div class="intro"><span class="eyebrow">Área privada · Docentes Krueka</span><h1>Bandeja de trabajos Word</h1><p>Revisá las entregas, descargá los archivos y registrá la devolución para cada trabajo.</p></div>
  <div class="card" id="teacher-login" style="max-width:530px;margin:auto">
-  <h2>Ingresar como docente</h2><p class="sub">Utilizá el mismo correo y contraseña de tu cuenta docente de Krueka. Los alumnos no tienen acceso a esta bandeja.</p>
+  <h2>Ingresar como docente</h2><p class="sub">Ingresá con tu cuenta autorizada de Krueka o solicitá un enlace de acceso por correo. Los alumnos no tienen acceso a esta bandeja.</p>
   <form id="login-form"><label for="teacher-email">Correo institucional</label><input type="email" id="teacher-email" required autocomplete="username" placeholder="correo@ejemplo.com">
   <label for="teacher-password">Contraseña</label><input id="teacher-password" type="password" autocomplete="current-password" required>
   <button class="btn btn-wide" type="submit" id="login-btn">Entrar a mis entregas</button></form>
   <div class="status" id="login-status" role="status"></div>
+  <div style="margin-top:20px;padding-top:17px;border-top:1px solid #dce7f1">
+   <h2 style="font-size:16px">¿No tenés contraseña o acceso a Supabase?</h2>
+   <p class="sub" style="margin-bottom:8px">Podés ingresar con un enlace que enviaremos a <b>contacto@titanteo.com</b>. No necesitás crear una cuenta en el panel de Supabase.</p>
+   <button type="button" class="btn btn-plain btn-wide" id="magic-link">✉ Enviarme enlace de acceso al correo</button>
+   <p class="note">Solo la persona que pueda abrir ese correo podrá confirmar el acceso. Revisá también la carpeta de spam.</p>
+  </div>
  </div>
  <div id="teacher-board" class="dashboard" hidden>
   <div class="card"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -218,6 +224,25 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
    await load();
   }catch(err){say('login-status',err.message,false);}
   finally{btn.disabled=false;btn.textContent='Entrar a mis entregas';}
+ };
+ // Acceso sin panel Supabase: OTP al correo previamente autorizado.
+ // No compartimos claves temporales ni otorgamos permisos a correos arbitrarios.
+ $('magic-link').onclick=async()=>{
+  clear('login-status');
+  const button=$('magic-link');button.disabled=true;button.textContent='Solicitando acceso por correo…';
+  try{
+   const {error}=await db.auth.signInWithOtp({
+    email:'contacto@titanteo.com',
+    options:{
+     shouldCreateUser:true,
+     emailRedirectTo:'https://www.krueka.com/entregas-word.html?docente=1'
+    }
+   });
+   if(error)throw new Error(error.message||'No fue posible enviar el enlace.');
+   say('login-status','Si el servicio de correo aceptó la solicitud, enviamos un enlace a contacto@titanteo.com. Abrí el correo en este navegador o dispositivo y pulsá el enlace. Si querés crear una contraseña después, ingresá a establecer-clave.html.',true);
+  }catch(error){
+   say('login-status','No se pudo solicitar el acceso: '+(error.message||'error del servicio')+'. Verificá más tarde o consultá al administrador del sistema.',false);
+  }finally{button.disabled=false;button.textContent='✉ Enviarme enlace de acceso al correo';}
  };
  $('reload').onclick=load;
  $('logout').onclick=async()=>{await db.auth.signOut();$('teacher-board').hidden=true;$('teacher-login').hidden=false;clear('login-status');};
