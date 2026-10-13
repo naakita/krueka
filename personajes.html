@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Krueka · Personajes 2D</title>
+<link rel="icon" href="logo.svg">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font:15px/1.45 Arial,Helvetica,sans-serif;background:#101827;color:#eef3ff}
+button,input{font:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,canvas:focus-visible{outline:3px solid #f9c76c;outline-offset:3px}
+a{color:#8bd6ff}
+header{display:flex;align-items:center;gap:15px;justify-content:space-between;background:#141f34;border-bottom:1px solid #2b405b;padding:12px max(16px,calc((100vw - 1200px)/2))}
+header img{width:36px;height:36px;object-fit:contain;background:white;border-radius:9px;padding:3px}
+.brand{display:flex;align-items:center;gap:12px}.brand b{font-size:19px}.brand small{color:#a9bad2;display:block}
+main{max-width:1220px;margin:auto;padding:18px 16px 46px}
+h1{font-size:clamp(25px,4vw,34px);margin:0 0 7px}h2{font-size:20px;margin:0 0 12px}h3{font-size:16px;margin:0 0 8px}
+.sub{color:#b7c7df;margin:0 0 16px}
+.panel{background:#1a2940;border:1px solid #344963;border-radius:18px;padding:18px;box-shadow:0 12px 25px #0002}
+.off{display:none!important}
+.btn{background:#73c8ff;color:#081b2f;border:0;border-radius:11px;padding:11px 16px;font-weight:700}
+.btn:hover{filter:brightness(1.07)}.btn.secondary{background:#293a53;color:#f2f5ff;border:1px solid #51637f}
+.btn:disabled{opacity:.5;cursor:wait}
+.pill{border-radius:99px;background:#233e4c;color:#b5f6d2;padding:6px 11px;font-size:12px;font-weight:700}
+.login{max-width:540px;margin:38px auto}.login input{width:100%;background:#0c192c;border:1px solid #68809b;border-radius:12px;color:#fff;padding:15px;letter-spacing:.25em;text-align:center;text-transform:uppercase;font-size:23px}
+.login label{font-weight:700;display:block;margin-bottom:8px}
+.login p{color:#bbcadf}
+.login .btn{width:100%;margin-top:12px}
+.info{margin:13px 0;color:#bbd4ef;font-size:13px}
+.info.error{color:#ffb6b2}
+.topline{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.workspace{display:grid;grid-template-columns:minmax(190px,240px) minmax(300px,1.05fr) minmax(315px,1.25fr);gap:14px;align-items:stretch}
+.roles{display:grid;gap:10px}
+.role{width:100%;text-align:left;border-radius:12px;border:2px solid #3a526f;background:#142338;color:#f3f7ff;padding:10px}
+.role.active{border-color:#69dfff;background:#244965}
+.role span{display:block;font-size:13px;color:#acc4d9}.role strong{display:block;font-size:17px}
+.pal{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.color{height:33px;width:33px;border:3px solid #fff2;border-radius:9px;padding:0;vertical-align:middle}
+.color.active{border-color:white;box-shadow:0 0 0 2px #72c9ff}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tools button{padding:7px 10px;border-radius:8px;color:#eaf2fe;background:#293e55;border:1px solid #526780}
+.tools button.active{background:#7bd9ff;color:#071b2d}
+label.fld{display:block;color:#c0d2e7;font-size:13px;margin:12px 0 4px}
+select,input[type=text]{padding:10px;border-radius:10px;border:1px solid #57718d;background:#0c192c;color:#fff;width:100%}
+#paint{display:block;width:100%;max-width:360px;aspect-ratio:1/1;border:2px solid #9bbdd8;border-radius:8px;background:#dfe9f4;image-rendering:pixelated;touch-action:none;cursor:crosshair;margin:11px auto}
+#stage{display:block;width:100%;border-radius:12px;border:1px solid #7082b0;background:#14203e;image-rendering:pixelated}
+.stagebar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:11px;flex-wrap:wrap}
+.caption{color:#adbbd3;font-size:13px}
+.step{background:#26364d;border-radius:12px;padding:11px 13px;margin:9px 0;color:#e8f4ff}
+.step b{color:#8ce3ff}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+#save-status{padding:9px 12px;border-radius:9px;background:#223952;color:#c8d8eb;font-size:13px;min-height:36px}
+#save-status.error{background:#4c2931;color:#ffc9c9}
+#save-status.ok{background:#1d463e;color:#afffe7}
+#help{margin-top:15px}
+#help summary{font-weight:bold;cursor:pointer}
+.foot{font-size:12px;color:#9db4cd;padding-top:18px}
+@media(max-width:1010px){.workspace{grid-template-columns:1fr 1fr}.workspace>.panel:last-child{grid-column:1 / -1}}
+@media(max-width:690px){.workspace{grid-template-columns:1fr}.workspace>.panel:last-child{grid-column:auto}header{padding:12px 16px}.brand b{font-size:17px}}
+</style>
+</head>
+<body>
+<header><div class="brand"><img src="logo.svg" alt=""><div><b>KRUEKA · PERSONAJES 2D</b><small>Club de Informática · Taller liviano</small></div></div><span class="pill">Sin instalación · Sin IA paga</span></header>
+<main>
+<section class="panel login" id="login">
+<h1>🎮 ¡Tus personajes aparecen aquí!</h1>
+<p>Creá un protagonista, un amigo y un enemigo. Los vas a ver desde el primer minuto. No necesitás programar.</p>
+<form id="login-form"><label for="code">Tu código personal del Club</label><input id="code" maxlength="6" autocomplete="off" placeholder="ABC123" required><button class="btn" id="login-button" type="submit">Entrar a mis personajes →</button></form>
+<button type="button" class="btn secondary" id="demo" style="width:100%;margin-top:8px">Probar sin código (solo en esta PC)</button>
+<div id="login-status" class="info" role="status">El código permite guardar el proyecto en Krueka y continuarlo desde otro equipo.</div>
+</section>
+<section id="studio" class="off">
+<div class="topline">
+ <div><h1>🎨 Mi equipo de personajes</h1><p class="sub">Elegí, dibujá, mirá el resultado y guardá. Hoy no escribimos código.</p></div>
+ <div class="actions"><span class="pill" id="session-label">Modo invitado</span><button class="btn secondary" id="logout">Salir</button></div>
+</div>
+<div class="workspace">
+ <section class="panel">
+  <h2>1 · Elegí un personaje</h2>
+  <div class="roles">
+   <button class="role active" data-role="hero"><strong>🦸 Protagonista</strong><span>El personaje principal</span></button>
+   <button class="role" data-role="friend"><strong>🤝 Amigo</strong><span>Ayuda al protagonista</span></button>
+   <button class="role" data-role="enemy"><strong>👾 Enemigo</strong><span>Será el obstáculo del juego</span></button>
+  </div>
+  <label class="fld" for="name">Nombre del personaje</label><input id="name" type="text" maxlength="28" placeholder="Nombre del personaje">
+  <label class="fld" for="model">Modelo para comenzar</label>
+  <select id="model"><option value="robot">🤖 Robot</option><option value="alien">👽 Alien</option><option value="animal">🐱 Animal</option><option value="monster">👾 Monstruo</option></select>
+  <button class="btn secondary" id="apply-model" style="margin-top:8px;width:100%">Usar este modelo</button>
+  <p class="caption">El modelo cambia solo el personaje seleccionado. Podés dibujar encima.</p>
+ </section>
+ <section class="panel">
+  <h2>2 · Pintá tu personaje</h2>
+  <p class="caption">Elegí un color y pintá los cuadritos con clic o arrastrando. Para borrar, elegí la goma.</p>
+  <div class="pal" id="palette" aria-label="Colores para dibujar"></div>
+  <div class="tools"><button id="tool-pencil" class="active" type="button">✏️ Pintar</button><button id="tool-erase" type="button">🧽 Borrar</button><button id="tool-mirror" type="button">↔ Copiar al otro lado</button><button id="undo" type="button">↶ Deshacer</button></div>
+  <canvas id="paint" width="360" height="360" aria-label="Cuadrícula para dibujar tu personaje" tabindex="0"></canvas>
+  <p class="caption" style="text-align:center">12 × 12 cuadritos · Pensado para computadoras básicas</p>
+ </section>
+ <section class="panel">
+  <div class="stagebar"><h2>3 · Mirá tu resultado</h2><span class="pill">Vista en vivo</span></div>
+  <canvas id="stage" width="600" height="350" aria-label="Escenario con el protagonista, el amigo y el enemigo"></canvas>
+  <div class="step"><b>✓ PROBÁ:</b> al pintar un cuadrito, debe cambiar aquí inmediatamente. Los tres personajes aparecen juntos.</div>
+  <div class="toolbar">
+   <button class="btn" id="save" type="button">💾 Guardar mi equipo</button>
+   <button class="btn secondary" id="download" type="button">⬇ Descargar personajes</button>
+   <button class="btn secondary" id="png" type="button">🖼️ PNG del personaje</button>
+  </div>
+  <div id="save-status" role="status">Listo para crear.</div>
+  <details id="help"><summary>🛟 No puedo avanzar, ¿qué hago?</summary>
+    <div class="step"><b>Si no ves al personaje:</b> tocá «Usar este modelo» y revisá el escenario de la derecha.</div>
+    <div class="step"><b>Si no podés pintar:</b> elegí un color y hacé clic sobre un cuadrito.</div>
+    <div class="step"><b>Si no guarda:</b> presioná «Descargar personajes» como respaldo y avisá al profesor.</div>
+    <div class="step"><b>Si se borró algo:</b> usá «Deshacer» antes de seguir.</div>
+  </details>
+ </section>
+</div>
+<p class="foot">Misión de la clase: 1) crear protagonista, 2) crear amigo, 3) crear enemigo, 4) mostrarle el escenario al profesor. No compartas tu código personal. El modo de prueba no guarda en la nube.</p>
+</section>
+</main>
+<script src="js/club-personajes-lite.js?v=20261013a"></script>
+</body>
+</html>
