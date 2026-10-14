@@ -86,7 +86,7 @@ async function upload(req:Request){
  const file=form.get("document");
  const student=clean(form.get("student"),90),assignment=clean(form.get("assignment"),100);
  let course=clean(form.get("course"),60);
- const code=String(form.get("grade_code")||"").toUpperCase().replace(/[\\s-]/g,"");
+ const code=String(form.get("grade_code")||"").toUpperCase().replace(/[\s-]/g,"");
  let group:{id:string,name:string,accepting:boolean}|null=null;
  if(code){
   if(!/^[A-Z2-9]{12}$/.test(code))return fail(req,"El código del grado debe tener 12 letras o números.");
