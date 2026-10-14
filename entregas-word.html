@@ -154,7 +154,7 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
  }
  $('upload-form').onsubmit=async e=>{
   e.preventDefault();clear('upload-status');
-  const raw=$('grade-code').value.toUpperCase().replace(/[\\s-]/g,'');
+  const raw=$('grade-code').value.toUpperCase().replace(/[\s-]/g,'');
   if(raw && !/^[A-Z2-9]{12}$/.test(raw)){say('upload-status','El código del grado debe tener 12 letras o números.',false);return;}
   $('grade-code').value=raw;
   const f=$('doc').files[0];
