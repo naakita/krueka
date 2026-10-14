@@ -72,6 +72,9 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
     <label for="student-name">Nombre y apellido del alumno</label><input id="student-name" name="student" required minlength="3" maxlength="90" autocomplete="name" placeholder="Ej.: María González">
     <div class="row"><div><label for="class-name">Grado o curso</label><input id="class-name" name="course" required minlength="2" maxlength="60" placeholder="Ej.: 9.º grado"></div>
     <div><label for="assignment">Tema o nombre del trabajo</label><input id="assignment" name="assignment" required minlength="2" maxlength="100" placeholder="Ej.: Proyecto integrado Word"></div></div>
+    <label for="grade-code">Código de entrega del grado</label>
+    <input id="grade-code" name="grade_code" maxlength="16" autocomplete="off" autocapitalize="characters" placeholder="Ingresá el código que te dio tu profesor (si tenés)">
+    <p class="note">Si el docente te entregó un código de 12 caracteres, ingresalo para que el archivo quede guardado en la carpeta correcta del grado. El sistema asigna automáticamente la carpeta.</p>
     <label for="doc">Archivo del trabajo</label><div class="upload"><strong>📄 Elegí tu archivo de Word</strong><small>Solo .docx · máximo 5 MB · un archivo por entrega</small>
      <input id="doc" name="document" type="file" required accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
     <button class="btn btn-wide" id="send" type="submit">⬆ Enviar documento Word</button>
@@ -151,6 +154,9 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
  }
  $('upload-form').onsubmit=async e=>{
   e.preventDefault();clear('upload-status');
+  const raw=$('grade-code').value.toUpperCase().replace(/[\\s-]/g,'');
+  if(raw && !/^[A-Z2-9]{12}$/.test(raw)){say('upload-status','El código del grado debe tener 12 letras o números.',false);return;}
+  $('grade-code').value=raw;
   const f=$('doc').files[0];
   if(!f||!/\.docx$/i.test(f.name)){say('upload-status','Solo se permiten documentos Word .docx.',false);return;}
   if(f.size<170||f.size>MAX){say('upload-status','El documento no puede superar 5 MB.',false);return;}
