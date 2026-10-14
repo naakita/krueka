@@ -84,7 +84,17 @@ async function upload(req:Request){
  let form:FormData;
  try{form=await req.formData();}catch{return fail(req,"No pudimos leer el formulario.");}
  const file=form.get("document");
- const student=clean(form.get("student"),90),course=clean(form.get("course"),60),assignment=clean(form.get("assignment"),100);
+ const student=clean(form.get("student"),90),assignment=clean(form.get("assignment"),100);
+ let course=clean(form.get("course"),60);
+ const code=String(form.get("grade_code")||"").toUpperCase().replace(/[\\s-]/g,"");
+ let group:{id:string,name:string,accepting:boolean}|null=null;
+ if(code){
+  if(!/^[A-Z2-9]{12}$/.test(code))return fail(req,"El código del grado debe tener 12 letras o números.");
+  const {data:g,error:groupError}=await admin.from("word_grade_groups").select("id,name,accepting").eq("code_hash",await hash(code)).maybeSingle();
+  if(groupError)return fail(req,"No pudimos verificar el código del grado.",503);
+  if(!g||!g.accepting)return fail(req,"Código de grado incorrecto o entrega cerrada.",403);
+  group=g;course=g.name;
+ }
  if(!(file instanceof File))return fail(req,"Seleccioná un archivo Word .docx.");
  if(student.length<3||course.length<2||assignment.length<2)return fail(req,"Completá nombre, grado y título del trabajo.");
  if(file.size<170||file.size>MAX_FILE)return fail(req,"El archivo debe tener entre 170 bytes y 5 MB.");
@@ -97,18 +107,18 @@ async function upload(req:Request){
  if(limitError)return fail(req,"El servidor de entregas no está disponible.",503);
  if(!reserved)return fail(req,"Demasiados envíos en poco tiempo. Consultá al profesor.",429);
  const id=crypto.randomUUID();
- const path=new Date().toISOString().slice(0,10)+"/"+id+".docx";
+ const path=(group?group.id+"/":"")+new Date().toISOString().slice(0,10)+"/"+id+".docx";
  const {error:storageError}=await admin.storage.from(BUCKET).upload(path,new Blob([bytes],{type:WORD_MIME}),{contentType:WORD_MIME,upsert:false,cacheControl:"0"});
  if(storageError)return fail(req,"No pudimos subir el documento. Intentá de nuevo.",503);
  const {error:dbError}=await admin.from("word_dropbox_submissions").insert({
   id,student_name:student,class_name:course,assignment,original_filename:safeName(file.name)||"entrega.docx",
-  object_path:path,size_bytes:file.size
+  object_path:path,size_bytes:file.size,grade_group_id:group?.id??null
  });
  if(dbError){
   await admin.storage.from(BUCKET).remove([path]);
   return fail(req,"No pudimos registrar la entrega. Intentá nuevamente.",503);
  }
- return response(req,{ok:true,receipt:id.slice(0,8).toUpperCase(),message:"Entrega recibida correctamente."});
+ return response(req,{ok:true,receipt:id.slice(0,8).toUpperCase(),grade:course,message:"Entrega recibida correctamente."});
 }
 Deno.serve(async(req:Request)=>{
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:cors(req)});
