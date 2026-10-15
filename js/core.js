@@ -89,9 +89,9 @@ const UI = {
   /* Un mismo orden para todos los roles: primero el día a día, después la organización y al final los informes */
   menus(){
     const r = St.perfil.role;
-    if(r==="docente") return [["clase","Clase de hoy"],["planificacion","Planificación"],["alumnos","Mis alumnos"],["entregas","Entregas"],["vigilancia","Centinela"],["conducta","Registro anecdótico"],["taller","Taller"],["miscursos","Mis cursos"]];
-    if(r==="director") return [["control","Control docente"],["planes","Planificaciones"],["resumen","Resumen de alumnos"]];
-    if(r==="admin")   return [["control","Control docente"],["estructura","Cursos y materias"],["usuarios","Usuarios y roles"],["gestalumnos","Gestion de alumnos"]];
+    if(r==="docente") return [["clase","Clase de hoy"],["planificacion","Planificación"],["alumnos","Mis alumnos"],["entregas","Entregas"],["vigilancia","Centinela"],["aula","Control de PCs"],["conducta","Registro anecdótico"],["taller","Taller"],["miscursos","Mis cursos"]];
+    if(r==="director") return [["control","Control docente"],["planes","Planificaciones"],["resumen","Resumen de alumnos"],["aula","Control de PCs"]];
+    if(r==="admin")   return [["control","Control docente"],["estructura","Cursos y materias"],["usuarios","Usuarios y roles"],["gestalumnos","Gestion de alumnos"],["aula","Control de PCs"]];
     return [["control","Panel"]];
   },
   construirNav(){
@@ -106,7 +106,7 @@ const UI = {
     document.querySelectorAll("#nav button").forEach(b=>b.setAttribute("aria-selected", b.dataset.k===k));
     $("view").innerHTML = '<div class="spinner">Cargando…</div>';
     const vistas = { clase:Docente.vClase, planificacion:Docente.vPlanificacion, alumnos:Docente.vAlumnos, miscursos:Docente.vMisCursos,
-       entregas:Docente.vEntregas, conducta:Docente.vConducta, taller:Docente.vTaller, vigilancia:Docente.vVigilancia,
+       entregas:Docente.vEntregas, conducta:Docente.vConducta, taller:Docente.vTaller, vigilancia:Docente.vVigilancia, aula:AulaControl.vista,
        control:Direccion.vControl, resumen:Direccion.vAlumnos, planes:Direccion.vPlanes,
        usuarios:Admin.vUsuarios, estructura:Admin.vEstructura,
        gestalumnos: (window.Alumnos && Alumnos.vGestion) };
