@@ -38,7 +38,7 @@ const AulaControl = {
   box.innerHTML='<div class="row" style="align-items:center;justify-content:space-between;margin-bottom:15px"><div><h2 style="margin:0">Aula conectada</h2><span class="note">Cambios aplicados por el agente aproximadamente cada 30 segundos.</span></div><div class="row"><button class="btn sec sm" onclick="AulaControl.cargar()">↻ Actualizar</button><button class="btn sm" onclick="AulaControl.crear()">+ Registrar PC</button></div></div>'+
     '<div class="grid3" style="margin-bottom:18px"><div class="kpi"><b>'+ds.length+'</b><span>Computadoras registradas</span></div><div class="kpi"><b>'+ds.filter(alive).length+'</b><span>Conectadas recientemente</span></div><div class="kpi"><b>'+pending.length+'</b><span>Solicitudes pendientes</span></div></div>'+
     (ds.length?ds.map(d=>'<div class="card" style="margin:12px 0"><div class="row" style="align-items:center;justify-content:space-between"><div><b>'+esc(d.label)+'</b> <span class="tag '+(alive(d)?'green':'orange')+'">'+(alive(d)?'Conectada':'Sin conexión reciente')+'</span><div class="note">'+esc(d.id)+' · Quiosco '+(d.kiosk_enabled?'activado':'desactivado')+' (cambio tras reiniciar Windows) · '+(d.last_seen?'Última conexión '+new Date(d.last_seen).toLocaleString("es-PY"):'Aún no instalada')+'</div></div><span class="tag '+(d.enabled?'blue':'orange')+'">'+(d.enabled?'Web restringida':'Navegación liberada')+'</span></div>'+
-       '<div class="row" style="margin-top:12px"><button class="btn sm" onclick="AulaControl.codigo(\''+d.id+'\')">Generar código</button> '+actionBtns(d)+'<button class="btn sec sm" onclick="AulaControl.agregar(\''+d.id+'\')">+ Autorizar web</button><button class="btn sec sm" onclick="AulaControl.renombrar(\''+d.id+'\')">Renombrar</button><button class="btn sec sm" onclick="AulaControl.kiosco(\''+d.id+'\','+(!d.kiosk_enabled)+')">'+(d.kiosk_enabled?'Desactivar quiosco':'Activar quiosco')+'</button></div>'+
+       '<div class="row" style="margin-top:12px"><button class="btn sm" onclick="AulaControl.codigo(\''+d.id+'\')">Generar código</button> '+actionBtns(d)+'<button class="btn sec sm" onclick="AulaControl.agregar(\''+d.id+'\')">+ Autorizar web</button><button class="btn sec sm" onclick="AulaControl.renombrar(\''+d.id+'\')">Renombrar</button><button class="btn sec sm" onclick="AulaControl.renovarToken(\''+d.id+'\')">Nuevo token</button><button class="btn sec sm" onclick="AulaControl.kiosco(\''+d.id+'\','+(!d.kiosk_enabled)+')">'+(d.kiosk_enabled?'Desactivar quiosco':'Activar quiosco')+'</button></div>'+
        '<div class="note" style="margin-top:10px">Permitidas: '+(d.allowed||[]).map(a=>'<span style="display:inline-flex;gap:4px;margin:3px;padding:4px 6px;border:1px solid var(--line);border-radius:6px">'+esc(a)+(a==='krueka.com'?'':' <button aria-label="Quitar" onclick="AulaControl.quitar(\''+d.id+'\',\''+a+'\')" style="border:0;background:none;color:var(--red);cursor:pointer">×</button>')+'</span>').join('')+'</div></div>').join(''):'<div class="alert info">Todavía no hay PCs. Usá «Registrar PC» y después instalá el agente Windows.</div>')+
     '<h2 style="margin-top:20px">Solicitudes de alumnos</h2>'+
     (pending.length?pending.map(r=>{const d=ds.find(x=>x.id===r.device_id);return '<div class="stage"><div style="flex:1"><b>'+esc(r.domain)+'</b><div class="note">'+esc(d?.label||'PC')+' · '+esc(r.reason||'Uso educativo')+' · '+new Date(r.created_at).toLocaleString('es-PY')+'</div></div><button class="btn sm ok" onclick="AulaControl.decidir(\''+r.device_id+'\',\''+r.id+'\',true)">Aprobar</button><button class="btn sec sm" onclick="AulaControl.decidir(\''+r.device_id+'\',\''+r.id+'\',false)">Rechazar</button></div>';}).join(''):'<p class="sub">No hay solicitudes pendientes.</p>')+
@@ -52,9 +52,87 @@ const AulaControl = {
   if(!label?.trim())return;
   try{
    const d=await AulaControl.api("create",{label:label.trim()});
-   alert("REGISTRO DE PC — guardá estos datos antes de cerrar\n\nNombre: "+label+"\nID: "+d.id+"\nTOKEN (solo se muestra una vez): "+d.token+"\n\nServidor: "+d.hub_url+"\n\nIntroducí estos datos en el instalador Windows. No los compartas con alumnos.");
+   AulaControl.mostrarCredenciales({label,id:d.id,token:d.token,hub_url:d.hub_url},false);
    await AulaControl.cargar();
   }catch(e){alert(e.message);}
+ },
+ async renovarToken(id){
+  const equipo=(AulaControl.cache.devices||[]).find(d=>d.id===id);
+  if(!equipo)return alert("No se encontró la computadora.");
+  if(!confirm("¿Generar un token nuevo para "+equipo.label+"?\n\nEl token anterior dejará de funcionar. Si el programa ya está instalado, tendrás que actualizar su configuración."))return;
+  try{
+   const d=await AulaControl.api("rotate_token",{device_id:id});
+   AulaControl.mostrarCredenciales({label:d.label,id:d.id,token:d.token,hub_url:d.hub_url},true);
+  }catch(e){alert("No se pudo generar un token nuevo: "+e.message);}
+ },
+ mostrarCredenciales(datos,renovado){
+  const existente=document.getElementById("aula-credenciales-overlay");
+  if(existente)existente.remove();
+  const fondo=document.createElement("div");
+  fondo.id="aula-credenciales-overlay";
+  fondo.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.68);z-index:20000;display:flex;align-items:center;justify-content:center;padding:16px";
+  const modal=document.createElement("section");
+  modal.setAttribute("role","dialog");
+  modal.setAttribute("aria-modal","true");
+  modal.setAttribute("aria-labelledby","aula-cred-titulo");
+  modal.style.cssText="background:var(--panel,#fff);color:var(--tx,#222);border-radius:15px;max-width:630px;width:100%;max-height:90vh;overflow:auto;padding:22px;box-shadow:0 20px 70px rgba(0,0,0,.3)";
+  modal.innerHTML='<h2 id="aula-cred-titulo" style="font-size:20px;margin:0 0 8px">'+(renovado?'Token nuevo generado':'Registrar computadora')+'</h2>'+
+   '<p class="sub" style="margin-bottom:15px">Estos datos se muestran una sola vez. Copialos y guardalos donde solo tenga acceso el administrador.</p>'+
+   '<div id="aula-cred-campos"></div>'+
+   '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px"><button class="btn" type="button" id="aula-copiar-todo">📋 Copiar todos los datos</button><button class="btn sec" type="button" id="aula-cred-cerrar">Cerrar</button></div>'+
+   '<p id="aula-copy-status" role="status" aria-live="polite" style="font-size:12px;min-height:18px;margin:12px 0 0"></p>'+
+   '<p class="note" style="margin-top:8px">El token da acceso de esta computadora al servidor. No lo compartas con alumnos ni lo incluyas en capturas.</p>';
+  fondo.appendChild(modal);
+  document.body.appendChild(fondo);
+  const campos=modal.querySelector("#aula-cred-campos");
+  const camposData=[["Nombre",String(datos.label)],["ID de PC",String(datos.id)],["Token secreto",String(datos.token)],["Servidor",String(datos.hub_url)]];
+  const status=modal.querySelector("#aula-copy-status");
+  async function copiar(valor){
+   try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+     await navigator.clipboard.writeText(valor);
+    }else{
+     const temp=document.createElement("textarea");
+     temp.value=valor;temp.style.cssText="position:fixed;left:-10000px;top:-10000px";
+     document.body.appendChild(temp);
+     temp.focus();temp.select();
+     const ok=document.execCommand("copy");
+     temp.remove();
+     if(!ok)throw new Error("copy failed");
+    }
+    status.textContent="✓ Copiado al portapapeles. Podés pegarlo con Ctrl + V.";
+    status.style.color="var(--green,#17804a)";
+   }catch(e){
+    status.textContent="No fue posible copiar automáticamente. Seleccioná el dato y presioná Ctrl + C.";
+    status.style.color="var(--red,#c33)";
+   }
+  }
+  camposData.forEach(([titulo,valor])=>{
+   const fila=document.createElement("div");
+   fila.style.cssText="margin-bottom:12px";
+   const label=document.createElement("label");
+   label.textContent=titulo;
+   label.style.cssText="display:block;font-weight:600;margin-bottom:5px";
+   const alineado=document.createElement("div");
+   alineado.style.cssText="display:flex;gap:7px;align-items:center";
+   const input=document.createElement("input");
+   input.value=valor;input.readOnly=true;input.setAttribute("aria-label",titulo);
+   input.style.cssText="flex:1;min-width:0;font-family:Consolas,monospace;font-size:13px";
+   input.addEventListener("click",()=>input.select());
+   const boton=document.createElement("button");
+   boton.type="button";boton.className="btn sec sm";boton.textContent="Copiar";
+   boton.setAttribute("aria-label","Copiar "+titulo);
+   boton.addEventListener("click",()=>copiar(valor));
+   alineado.append(input,boton);
+   fila.append(label,alineado);
+   campos.appendChild(fila);
+  });
+  modal.querySelector("#aula-copiar-todo").addEventListener("click",()=>copiar("Nombre: "+datos.label+"\nID: "+datos.id+"\nTOKEN: "+datos.token+"\nServidor: "+datos.hub_url));
+  const onKey=e=>{if(e.key==="Escape"){e.preventDefault();cerrar();}};
+  const cerrar=()=>{fondo.remove();document.removeEventListener("keydown",onKey);};
+  modal.querySelector("#aula-cred-cerrar").addEventListener("click",cerrar);
+  document.addEventListener("keydown",onKey);
+  modal.querySelector("#aula-copiar-todo").focus();
  },
  codigo(id){
   const v=prompt("¿Cuántos minutos de Internet libre? Elegí 10, 30 o 60.","10");
