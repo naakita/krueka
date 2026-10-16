@@ -79,14 +79,14 @@ const StudioIA={__loaded:true,
       const anchor=box.querySelector('.club-dashboard-hero')||box.firstElementChild;
       const card=document.createElement('section');card.id='studio-ia-entry';
       card.style.cssText='margin:16px 0;padding:22px;border:2px solid rgba(39,131,222,.48);border-radius:18px;background:linear-gradient(135deg,rgba(39,131,222,.18),rgba(155,112,210,.13));display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 10px 30px rgba(28,75,120,.12)';
-      card.innerHTML='<div style="font-size:46px">✨</div><div style="flex:1;min-width:230px"><span class="club-kicker">TU TALLER DE CREACIÓN</span><h2 style="margin:3px 0">Krueka Studio IA</h2><p style="margin:0;color:var(--tx2)">Elegí un juego, cambiá sus reglas, abrí el código y probalo. Tus proyectos quedan guardados en Krueka.</p></div><button class="club-primary" type="button" style="min-height:44px;padding:10px 16px">Abrir Studio IA →</button>';
+      card.innerHTML='<div style="font-size:46px">✨</div><div style="flex:1;min-width:230px"><span class="club-kicker">TU TALLER DE CREACIÓN</span><h2 style="margin:3px 0">Krueka Creativo</h2><p style="margin:0;color:var(--tx2)">Videojuegos 3D, animaciones y edición de video. Elegí tu taller, probá tus ideas y guardá tu proyecto en Krueka.</p></div><button class="club-primary" type="button" style="min-height:44px;padding:10px 16px">Entrar a mi taller →</button>';
       card.querySelector('button').onclick=()=>this.open();
       if(anchor&&anchor.parentNode)anchor.insertAdjacentElement('afterend',card);else box.prepend(card);
     }
 
     if(!document.getElementById('studio-ia-float')){
       const float=document.createElement('button');float.id='studio-ia-float';float.type='button';
-      float.textContent='✨ Studio IA';
+      float.textContent='✦ Estudio creativo';
       float.style.cssText='position:fixed;right:22px;bottom:22px;z-index:120;border:0;border-radius:999px;background:#2783de;color:white;font-weight:800;padding:13px 18px;box-shadow:0 10px 30px rgba(0,0,0,.28);cursor:pointer';
       float.onclick=()=>this.open();
       document.getElementById('club-ov')?.appendChild(float);

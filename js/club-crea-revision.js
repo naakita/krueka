@@ -9,11 +9,11 @@ Object.assign(Club, {
       (x.type==='game'&&x.content?.game)||(x.type==='design'&&x.content?.model)||(x.type==='web'&&x.content?.studio?.files));
     const estado={draft:'Borrador',review:'Para revisar',published:'Aprobado',archived:'Archivado'};
     v.innerHTML='<div class="card"><button class="btn sec sm" onclick="Club.vPanel()">← Club</button>'+
-      '<h1>Creaciones de los alumnos</h1><p class="note">Revisá juegos y diseños 3D antes de aprobarlos. Solo dirección y administración pueden verlos aquí.</p></div>'+
+      '<h1>Creaciones de los alumnos</h1><p class="note">Revisá juegos, diseños 3D, animaciones y montajes antes de aprobarlos. Solo dirección y administración pueden verlos aquí.</p></div>'+
       (rows.length?rows.map(x=>{
         let mapa='';
         if(x.type==='web'){
-          mapa='<p class="note">Proyecto del Studio · '+Object.keys(x.content.studio.files).length+' archivos</p><button class="btn sm" type="button" data-studio-project="'+esc(x.id)+'">▶ Probar el juego y ver código</button>';
+          mapa='<p class="note">Proyecto del Studio · '+Object.keys(x.content.studio.files).length+' archivos</p><button class="btn sm" type="button" data-studio-project="'+esc(x.id)+'">▶ Ver creación y bitácora</button>';
         }else if(x.type==='design'){
           mapa='<canvas id="crea-vista-'+esc(x.id)+'" width="540" height="400" style="display:block;width:100%;max-width:540px;border-radius:9px" aria-label="Vista del diseño 3D"></canvas>';
         }else try{
@@ -49,6 +49,8 @@ Object.assign(Club, {
     window.addEventListener('message',nav);select.onchange=render;
     panel.querySelector('#sr-close').onclick=()=>{window.removeEventListener('message',nav);panel.remove()};
     const code=panel.querySelector('#sr-files'),file=panel.querySelector('#sr-file'),showCode=()=>code.querySelector('pre').textContent=files[file.value];
+    if(files['mi-proceso.txt']!=null){const note=document.createElement('button');note.type='button';note.className='btn sec sm';note.textContent='Ver bitácora';note.onclick=()=>{file.value='mi-proceso.txt';showCode();code.hidden=false;iframe.hidden=true;};panel.querySelector('header').insertBefore(note,panel.querySelector('#sr-close'));}
+    const cfg=window.StudioKits?.read(files);if(cfg?.kind==='video-edit'&&cfg.clips?.some(c=>c.type==='video')){const note=document.createElement('p');note.className='note';note.textContent='Este montaje usa videos originales locales. La entrega conserva la edición, las fotos y los títulos; para ver los clips originales, el alumno debe compartir su video exportado.';panel.querySelector('header').appendChild(note);}
     file.onchange=showCode;showCode();
     panel.querySelector('#sr-code').onclick=e=>{code.hidden=!code.hidden;iframe.hidden=!code.hidden;e.target.textContent=code.hidden?'Ver código':'Ver juego'};
     panel.querySelector('#sr-chat').onclick=()=>{const h=StudioIA.cleanHistory(project.content.studio.history);const box=document.createElement('section');box.id='sr-conversation';box.style.cssText='position:absolute;inset:0;background:var(--bg);padding:20px;overflow:auto';box.innerHTML='<button class="btn sec sm" id="sr-chat-back">Volver al juego</button><h2>Conversación del proyecto</h2>'+h.map(m=>'<article class="card"><b>'+esc(m.role==='user'?'Alumno':m.role==='ai'?'Asistente':'Krueka')+(m.pending?' · Idea pendiente':'')+'</b><p style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(m.text)+'</p></article>').join('');panel.lastElementChild.appendChild(box);box.querySelector('#sr-chat-back').onclick=()=>box.remove()};

@@ -1,0 +1,50 @@
+#krueka-studio .kc-home{padding:30px max(22px,calc((100% - 1140px)/2)) 36px;background:radial-gradient(ellipse at 60% 0,#19334a55,transparent 60%),linear-gradient(155deg,#101c31,#0d1424 65%)}
+#krueka-studio.kc-home-active .ks-main{grid-template-columns:1fr;grid-template-rows:1fr}
+#krueka-studio.kc-home-active .ks-right{display:none}
+#krueka-studio.kc-home-active .ks-left{border:0}
+#krueka-studio .kc-welcome h2{font-size:clamp(24px,3vw,34px);line-height:1.1;letter-spacing:-.04em;margin:12px 0}
+#krueka-studio .kc-welcome p{color:#b0c4df;line-height:1.6;font-size:13px}
+#krueka-studio .kc-free{display:inline-block;font-size:10px;color:#a8e6d4;border:1px solid #79d9b62c;padding:6px 9px;border-radius:20px;background:#163d3438}
+#krueka-studio .kc-paths{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:22px 0}
+#krueka-studio .kc-path{position:relative;overflow:hidden;padding:20px;border:1px solid #4c789b70;border-radius:17px;background:linear-gradient(120deg,#16334b,#111e31);box-shadow:0 8px 24px #0000001c}
+#krueka-studio .kc-mint{border-color:#427f716e;background:linear-gradient(120deg,#173b39,#112a2d)}
+#krueka-studio .kc-violet{border-color:#7e63a66e;background:linear-gradient(120deg,#302644,#1c2037)}
+#krueka-studio .kc-gold{border-color:#7a70516e;background:linear-gradient(120deg,#343026,#222536)}
+#krueka-studio .kc-path-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+#krueka-studio .kc-path-top small{font-size:8px;letter-spacing:.12em;font-weight:800;color:#a1bbd8}
+#krueka-studio .kc-icon{display:grid;place-items:center;width:39px;height:39px;border-radius:11px;background:#91c9ff17;color:#9fd7ff;font-size:25px}
+#krueka-studio .kc-mint .kc-icon{background:#7bf5d317;color:#9bf1d3}
+#krueka-studio .kc-violet .kc-icon{background:#d5adff17;color:#d7bbff}
+#krueka-studio .kc-path h3{font-size:20px;margin:0 0 6px;letter-spacing:-.025em}
+#krueka-studio .kc-path p{color:#b6c6dc;font-size:12px;line-height:1.6;margin:0 0 15px}
+#krueka-studio .kc-path-actions{display:flex;gap:8px;flex-wrap:wrap}
+#krueka-studio .kc-path .ks-btn{font-size:11px;min-height:38px;border-radius:9px}
+#krueka-studio .kc-path .ks-btn.primary{background:#3179b6;border-color:#5c9bd0}
+#krueka-studio .kc-mint .ks-btn.primary{background:#2b786a;border-color:#419c89}
+#krueka-studio .kc-violet .ks-btn.primary{background:#77549f;border-color:#9f7bc5}
+#krueka-studio .kc-continue{display:grid;gap:9px;max-width:540px;border:1px solid #ffffff1c;padding:16px;border-radius:14px;background:#ffffff04}
+#krueka-studio .kc-continue small{font-size:9px;color:#9cb5d2;letter-spacing:.13em}
+#krueka-studio .kc-continue strong{font-size:16px;overflow-wrap:anywhere}
+#krueka-studio .kc-continue p{font-size:12px;color:#a7bad2;margin:0;line-height:1.6}
+#krueka-studio .kc-editor-guide{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border:1px solid #6eb7f140;background:#0b2539;padding:12px;border-radius:12px;margin-bottom:22px}
+#krueka-studio .kc-editor-guide span,#krueka-studio .kc-editor-guide b{font-size:10px;color:#bbd6f3;padding:5px}
+#krueka-studio .kc-editor-guide .ks-btn{min-height:34px;font-size:10px;padding:6px 8px}
+#krueka-studio .kc-log textarea{width:100%;background:#0b1424;color:#eef5ff;border:1px solid #ffffff25;border-radius:9px;padding:12px;font:12px/1.6 system-ui,sans-serif;resize:vertical;min-height:100px}
+#krueka-studio .kc-log textarea:focus-visible{outline:2px solid #84c5fc;outline-offset:2px}
+#krueka-studio .kc-log .ks-btn{margin-top:9px}
+#krueka-studio .km-roster,#krueka-studio .km-keyframes,#krueka-studio .km-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+#krueka-studio .km-roster [aria-pressed=true],#krueka-studio .km-keyframes [aria-pressed=true],#krueka-studio .km-timeline [aria-pressed=true]{border-color:#85c4ee;background:#21496c}
+#krueka-studio .km-timeline{list-style:none;padding:0;margin:14px 0;display:grid;gap:6px}
+#krueka-studio .km-timeline button{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:9px;align-items:center;width:100%;text-align:left;padding:12px 10px}
+#krueka-studio .km-timeline span{font-size:11px;color:#9ed6f1}
+#krueka-studio .km-timeline b{font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#krueka-studio .km-timeline small{font-size:9px;color:#aec3db}
+#krueka-studio .km-export{background:linear-gradient(130deg,#172f44,#21223b)}
+#krueka-studio #ks-media-notice{font-size:12px;line-height:1.6;color:#c1d7ed;overflow-wrap:anywhere}
+#krueka-studio .kc-media-hidden{display:none!important}
+#krueka-studio .ks-tabs{gap:4px;flex-wrap:wrap}
+#krueka-studio .ks-tabs .ks-btn{padding:9px 8px;font-size:11px}
+#krueka-studio .kc-home[hidden]{display:none!important}
+@media(max-width:1000px){#krueka-studio .kc-paths{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:780px){#krueka-studio .kc-home{padding:17px 14px 28px}#krueka-studio .kc-welcome h2{font-size:25px}#krueka-studio .kc-path{padding:16px}#krueka-studio .kc-paths{gap:12px;margin:18px 0;grid-template-columns:1fr}#krueka-studio .ks-tabs .ks-btn{font-size:10px;padding:8px 7px}#krueka-studio .km-timeline button{grid-template-columns:22px minmax(0,1fr)}#krueka-studio .km-timeline small{grid-column:2}}
+@media(prefers-reduced-motion:reduce){#krueka-studio .kc-home *{scroll-behavior:auto!important}}

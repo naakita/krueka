@@ -33,6 +33,7 @@ const checks=[];function check(ok,name){if(!ok)checks.push(name)}
  await access.login('TEST01');check(StudioIA.cloudReady&&Club.alumno.nivel==='peques','Peques entra');
  check(StudioIA.projectId!=='legacy'&&StudioIA.projectId!=='new'&&__backend.projects.length===1,'primer juego guardado');
  check(!document.getElementById('krueka-studio').classList.contains('ks-chat-focus'),'chat y juego juntos');
+ check(StudioIA.tab==='home'&&!document.getElementById('ks-creative-home').hidden,'inicio creativo por talleres');StudioIA.showTab('ai');
  await until(()=>document.getElementById('ks-frame').contentWindow&&document.getElementById('ks-frame').getBoundingClientRect().width>0);
  const prompt=document.getElementById('ks-prompt');prompt.value='vidas 5 y tiempo 90';const motor=StudioIA.files['game.js'];await StudioIA.send();
  check(StudioKits.read(StudioIA.files).lives===5&&StudioIA.files['game.js']===motor,'ayuda local aplica reglas');
@@ -42,7 +43,7 @@ const checks=[];function check(ok,name){if(!ok)checks.push(name)}
  const first=StudioIA.projectId,token=access.session.token;await StudioIA.close();check(!access.session&&!Club.alumno&&!document.getElementById('krueka-studio')&&!__backend.sessions[token],'salida revoca sesión');
  access.browserId=()=> 'fixture-other-computer';__backend.projects.push({id:'ordinary-web',owner:'fixture-one',title:'Otro trabajo web',updated_at:'2999-01-01'});
  await access.login('TEST01');check(StudioIA.projectId===first&&StudioKits.read(StudioIA.files).lives===5,'otra computadora recupera Studio y omite otros trabajos');
- await StudioIA.close();await access.login('TEST02');check(Club.alumno.nivel==='mayores'&&StudioIA.projectId!==first&&StudioKits.read(StudioIA.files).lives===3,'otro alumno tiene proyecto privado');
+ await StudioIA.close();await access.login('TEST02');check(Club.alumno.nivel==='mayores'&&StudioIA.projectId!==first&&StudioKits.read(StudioIA.files).lives===3,'otro alumno tiene proyecto privado');StudioIA.showTab('ai');
  check(!StudioIA.history.some(m=>m.text==='Agregá un dragón'),'sin conversación del compañero');
  check(document.getElementById('ks-prompt').getBoundingClientRect().bottom<=innerHeight&&document.getElementById('ks-send').getBoundingClientRect().bottom<=innerHeight,'cuadro de chat accesible');
  check(document.getElementById('krueka-studio').scrollWidth<=innerWidth,'sin desbordamiento horizontal');

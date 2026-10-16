@@ -24,6 +24,11 @@ jobs:
       - run: node --check js/club-studio-classroom.js
       - run: node tests/studio-classroom.test.cjs
       - run: node tests/studio-classroom-browser.test.cjs
+      - run: node --check js/club-studio-media.js
+      - run: node --check js/club-studio-media-editor.js
+      - run: node --check js/club-studio-creative.js
+      - run: node tests/studio-creative.test.cjs
+      - run: node tests/studio-creative-browser.test.cjs
       - run: node --check js/club-studio-showcase.js
       - run: node tests/studio-neon-rift.test.cjs
       - run: node tests/studio-neon-rift-browser.cjs
