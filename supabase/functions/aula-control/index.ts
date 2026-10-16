@@ -51,7 +51,7 @@ async function userAction(req:Request,b:any):Promise<unknown>{
  const p=await actor(req);
  switch(b.action){
  case "list": {
-  const devices=await guard(db.from("aula_devices").select("id,label,enabled,allowed,kiosk_enabled,kiosk_observed,kiosk_error,desktop_mode,desktop_mode_observed,last_seen,created_at").eq("institution_id",p.institution_id).order("created_at",{ascending:true}).limit(100));
+  const devices=await guard(db.from("aula_devices").select("id,label,enabled,allowed,kiosk_enabled,kiosk_observed,kiosk_error,desktop_mode,desktop_mode_observed,agent_version,last_seen,created_at").eq("institution_id",p.institution_id).order("created_at",{ascending:true}).limit(100));
   const ids=(devices||[]).map((d:any)=>d.id);
   const requests=ids.length?await guard(db.from("aula_requests").select("id,device_id,domain,reason,status,created_at").in("device_id",ids).order("created_at",{ascending:false}).limit(200)):[];
   return {devices,requests};
@@ -151,6 +151,7 @@ async function agent(req:Request,b:any):Promise<unknown>{
  if(consumed.length)await guard(db.from("aula_unlock_codes").update({used_at:new Date().toISOString()}).eq("device_id",id).in("id",consumed).is("used_at",null));
  const heartbeat:any={last_seen:new Date().toISOString()};
  if(typeof b.kiosk_observed==="boolean")heartbeat.kiosk_observed=b.kiosk_observed;
+ if(b.agent_version==="0.5")heartbeat.agent_version="0.5";
  if(b.desktop_mode_observed==="office"||b.desktop_mode_observed==="edge")heartbeat.desktop_mode_observed=b.desktop_mode_observed;
  if(typeof b.kiosk_error==="string")heartbeat.kiosk_error=b.kiosk_error.slice(0,250);
  await guard(db.from("aula_devices").update(heartbeat).eq("id",id));
