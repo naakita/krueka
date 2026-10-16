@@ -3,7 +3,19 @@ const AulaControl = {
  cache:{devices:[],requests:[]}, actual:null,
  async api(action,fields={}){
   const {data,error}=await db.functions.invoke("aula-control",{body:{action,...fields}});
-  if(error||data?.error)throw new Error(data?.error||error?.message||"Servicio no disponible");
+  if(error){
+   let mensaje="";
+   try {
+    if(error.context && typeof error.context.json==="function"){
+     const detalle=await error.context.json();
+     mensaje=String(detalle?.error||detalle?.message||"");
+    }
+   }catch(_){}
+   if(!mensaje && error.context?.status===401) mensaje="La sesión venció. Salí de Krueka y volvé a entrar.";
+   if(!mensaje && error.context?.status===403) mensaje="Acceso denegado. Verificá tu institución y los permisos de tu cuenta.";
+   throw new Error(mensaje||error.message||"No se pudo conectar con el servidor.");
+  }
+  if(data?.error)throw new Error(data.error);
   return data;
  },
  async vista(){
