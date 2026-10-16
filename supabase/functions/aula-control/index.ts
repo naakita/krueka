@@ -63,6 +63,14 @@ async function userAction(req:Request,b:any):Promise<unknown>{
   await audit(p.institution_id,d.id,p.id,"device_created",{label:d.label});
   return {id:d.id,token,hub_url:URL+"/functions/v1/aula-control"};
  }
+
+ case "rotate_token": {
+  const d=await own(p,b.device_id);
+  const token=hex(bytes(32));
+  await guard(db.from("aula_devices").update({token_hash:await digest(token)}).eq("id",d.id));
+  await audit(p.institution_id,d.id,p.id,"device_token_rotated");
+  return {id:d.id,label:d.label,token,hub_url:URL+"/functions/v1/aula-control"};
+ }
  case "allow": {
   const d=await own(p,b.device_id); const v=domain(b.domain);
   let next=allowed(d.allowed);
