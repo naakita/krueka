@@ -51,7 +51,7 @@ async function userAction(req:Request,b:any):Promise<unknown>{
  const p=await actor(req);
  switch(b.action){
  case "list": {
-  const devices=await guard(db.from("aula_devices").select("id,label,enabled,allowed,kiosk_enabled,kiosk_observed,kiosk_error,last_seen,created_at").eq("institution_id",p.institution_id).order("created_at",{ascending:true}).limit(100));
+  const devices=await guard(db.from("aula_devices").select("id,label,enabled,allowed,kiosk_enabled,kiosk_observed,kiosk_error,desktop_mode,desktop_mode_observed,last_seen,created_at").eq("institution_id",p.institution_id).order("created_at",{ascending:true}).limit(100));
   const ids=(devices||[]).map((d:any)=>d.id);
   const requests=ids.length?await guard(db.from("aula_requests").select("id,device_id,domain,reason,status,created_at").in("device_id",ids).order("created_at",{ascending:false}).limit(200)):[];
   return {devices,requests};
@@ -96,6 +96,13 @@ async function userAction(req:Request,b:any):Promise<unknown>{
   if(b.approve===true){await guard(db.from("aula_devices").update({allowed:allowed([...d.allowed,r.domain])}).eq("id",d.id));}
   await audit(p.institution_id,d.id,p.id,b.approve===true?"request_approved":"request_denied",{domain:r.domain});
   return {ok:true};
+ }
+ case "desktop_mode": {
+  const d=await own(p,b.device_id);
+  assert(b.mode==="edge"||b.mode==="office","Modo inválido");
+  await guard(db.from("aula_devices").update({desktop_mode:b.mode}).eq("id",d.id));
+  await audit(p.institution_id,d.id,p.id,b.mode==="office"?"office_mode_requested":"edge_mode_requested");
+  return {ok:true,notice:"La PC aplicará el modo al sincronizar. Cerrá sesión o reiniciá Windows para ver el cambio."};
  }
  case "kiosk": {
   const d=await own(p,b.device_id);
@@ -144,11 +151,12 @@ async function agent(req:Request,b:any):Promise<unknown>{
  if(consumed.length)await guard(db.from("aula_unlock_codes").update({used_at:new Date().toISOString()}).eq("device_id",id).in("id",consumed).is("used_at",null));
  const heartbeat:any={last_seen:new Date().toISOString()};
  if(typeof b.kiosk_observed==="boolean")heartbeat.kiosk_observed=b.kiosk_observed;
+ if(b.desktop_mode_observed==="office"||b.desktop_mode_observed==="edge")heartbeat.desktop_mode_observed=b.desktop_mode_observed;
  if(typeof b.kiosk_error==="string")heartbeat.kiosk_error=b.kiosk_error.slice(0,250);
  await guard(db.from("aula_devices").update(heartbeat).eq("id",id));
  const requests=await guard(db.from("aula_requests").select("client_id,status").eq("device_id",id).neq("status","pending").order("created_at",{ascending:false}).limit(100));
  const codes=await guard(db.from("aula_unlock_codes").select("id,salt,hash,minutes,expires_at").eq("device_id",id).is("used_at",null).gt("expires_at",new Date().toISOString()).limit(10));
- return {enabled:d.enabled,kiosk_enabled:d.kiosk_enabled,allowlist:allowed(d.allowed),decisions:Object.fromEntries((requests||[]).map((r:any)=>[r.client_id,r.status])),unlock_codes:codes||[]};
+ return {enabled:d.enabled,kiosk_enabled:d.kiosk_enabled,desktop_mode:d.desktop_mode||"edge",allowlist:allowed(d.allowed),decisions:Object.fromEntries((requests||[]).map((r:any)=>[r.client_id,r.status])),unlock_codes:codes||[]};
 }
 Deno.serve(async(req)=>{
  if(req.method==="OPTIONS")return respond(req,{ok:true});
