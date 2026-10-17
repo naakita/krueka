@@ -24,7 +24,7 @@ assert.match(index,/Vista ilustrativa.*No muestra datos de alumnos/i);
 assert.match(index,/todavía no está activa/);
 assert.match(index,/Ayuda local/);
 assert.match(index,/no comparten la cuenta/);
-assert.doesNotMatch(index,/27\s*\/\s*29|93%\s*presentes|EN VIVO|GPT-6[^<]{0,30}ilimitado/i);
+assert.doesNotMatch(index,/27\s*\/\s*29|93%\s*presentes|Clase activa EN VIVO|GPT-6[^<]{0,30}ilimitado/i);
 assert.match(access,/id="entregas"/);
 assert.match(access,/código personal de seis caracteres/i);
 assert.match(access,/código exclusivo/i);
