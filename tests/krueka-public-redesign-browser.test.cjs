@@ -1,25 +1,60 @@
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),cp=require('node:child_process');
 const root=path.resolve(__dirname,'..');
-const browser=['chromium','chromium-browser','google-chrome','google-chrome-stable'].find(x=>cp.spawnSync(x,['--version'],{encoding:'utf8',timeout:2500}).status===0);
-assert.ok(browser,'Se necesita Chromium');
-const temp=path.join(root,'__kx_showcase_qa__.html'),home=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const script='<script>setTimeout(function(){try{'+
-'var hero=document.querySelector(".kx-hero-text"),shell=document.querySelector(".kx-demo-shell"),nav=document.querySelector(".menu-button"),' +
-'tabs=document.querySelectorAll(".kx-demo-tab"),people=document.querySelector(".kx-people-grid"),w=innerWidth,over=document.documentElement.scrollWidth-w;' +
-'var click=document.querySelector("[data-demo=ai]");if(click)click.click();'+
-'var ai=document.querySelector("[data-panel=ai]"),create=document.querySelector("[data-panel=create]");'+
-'var checks={hero:hero&&hero.getBoundingClientRect().height>250,center:getComputedStyle(hero).textAlign==="center",stage:shell&&shell.getBoundingClientRect().width>200,art:document.querySelector(".kx-character-head")!==null,tabs:tabs.length===3,click:ai&&!ai.hidden&&create.hidden,nav:nav&&getComputedStyle(nav).display===(w<=810?"flex":"none"),people:people&&people.getBoundingClientRect().height>250,overflow:over<=3};'+
-'var bad=Object.keys(checks).filter(function(k){return !checks[k]});document.body.dataset.visualQa=bad.length?"FAIL:"+bad.join(","):"PASS";document.body.dataset.viewport=String(w);document.body.dataset.overflow=String(over);'+
-'}catch(e){document.body.dataset.visualQa="ERROR:"+e.message}},700)</script>';
-try{
- fs.writeFileSync(temp,home.replace('</body>',script+'</body>'));
- for(const size of ['390,900','1440,900']){
-  const r=cp.spawnSync(browser,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--allow-file-access-from-files','--disable-background-networking','--window-size='+size,'--virtual-time-budget=2400','--dump-dom','file://'+temp],{encoding:'utf8',timeout:45000,maxBuffer:16000000});
-  assert.equal(r.status,0,(r.stderr||'').slice(-500));
-  const outcome=r.stdout.match(/data-visual-qa="([^"]+)"/)?.[1]||'missing';
-  const width=r.stdout.match(/data-viewport="([^"]+)"/)?.[1]||'missing';
-  const over=r.stdout.match(/data-overflow="([^"]+)"/)?.[1]||'missing';
-  assert.equal(outcome,'PASS','Viewport '+size+' ('+width+'px, overflow='+over+'): '+outcome);
-  console.log('PASS Chromium Krueka '+size+', real='+width+', overflow='+over);
- }
-}finally{try{fs.unlinkSync(temp)}catch(_){}}
+const chrome=['chromium','chromium-browser','google-chrome','google-chrome-stable'].find(x=>cp.spawnSync(x,['--version'],{encoding:'utf8',timeout:2500}).status===0);
+assert.ok(chrome,'Se requiere Chromium para verificar la interfaz');
+function verifyHome(){
+ try{
+  var w=innerWidth,board=document.getElementById('kp-lab-board'),app=document.getElementById('kp-app');
+  var nav=document.querySelector('.menu-button');
+  var checks={
+   cells:board&&board.querySelectorAll('.kp-lab-cell').length===56,
+   shown:app&&app.getBoundingClientRect().height>390,
+   center:getComputedStyle(document.querySelector('.kp-hero-copy')).textAlign==='center',
+   menu:nav&&getComputedStyle(nav).display===(w<=820?'flex':'none'),
+   overflow:document.documentElement.scrollWidth-w<=3
+  };
+  document.querySelector('[data-kp-move="right"]').click();
+  checks.move=document.getElementById('kp-step-count').textContent==='1 paso';
+  document.querySelector('[data-kp-mode="teacher"]').click();
+  checks.teacher=!document.getElementById('kp-mode-teacher').hidden&&document.getElementById('kp-mode-studio').hidden;
+  document.querySelectorAll('[data-kp-indicator]')[1].click();
+  checks.review=document.getElementById('kp-progress-count').textContent==='2 de 3 indicadores';
+  document.querySelector('[data-kp-mode="uploads"]').click();
+  checks.uploads=!document.getElementById('kp-mode-uploads').hidden&&!!document.querySelector('#kp-mode-uploads a[href="entregas-excel.html"]');
+  nav.click();checks.nav=document.getElementById('nav-links').classList.contains('open');nav.click();
+  var errors=Object.keys(checks).filter(function(key){return !checks[key];});
+  document.body.dataset.qaResult=errors.length?'FAIL:'+errors.join(','):'PASS';
+  document.body.dataset.qaOverflow=String(document.documentElement.scrollWidth-w);
+ }catch(e){document.body.dataset.qaResult='ERROR:'+e.message;}
+}
+function verifyAccess(){
+ try{
+  var w=innerWidth,menu=document.querySelector('.menu-button');
+  var checks={
+   cards:document.querySelectorAll('.ka-card').length===3,
+   deliveries:document.querySelectorAll('.ka-format').length===3,
+   menu:menu&&getComputedStyle(menu).display===(w<=820?'flex':'none'),
+   overflow:document.documentElement.scrollWidth-w<=3
+  };
+  var errors=Object.keys(checks).filter(function(key){return !checks[key];});
+  document.body.dataset.qaResult=errors.length?'FAIL:'+errors.join(','):'PASS';
+  document.body.dataset.qaOverflow=String(document.documentElement.scrollWidth-w);
+ }catch(e){document.body.dataset.qaResult='ERROR:'+e.message;}
+}
+for(const filename of ['index.html','accesos.html']){
+ const source=fs.readFileSync(path.join(root,filename),'utf8');
+ const temp=path.join(root,'__krueka_qa_'+filename);
+ const fn=filename==='index.html'?verifyHome:verifyAccess;
+ const script='<script>setTimeout(('+fn.toString()+'),700)</'+'script>';
+ try{
+  fs.writeFileSync(temp,source.replace('</body>',script+'</body>'));
+  for(const viewport of ['390,900','1440,900']){
+   const result=cp.spawnSync(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--allow-file-access-from-files','--disable-background-networking','--window-size='+viewport,'--virtual-time-budget=3500','--dump-dom','file://'+temp],{encoding:'utf8',timeout:45000,maxBuffer:15000000});
+   assert.equal(result.status,0,'Chromium: '+(result.stderr||'').slice(-450));
+   const resultText=result.stdout.match(/data-qa-result="([^"]+)"/)?.[1]||'missing';
+   const overflow=result.stdout.match(/data-qa-overflow="([^"]+)"/)?.[1]||'missing';
+   assert.equal(resultText,'PASS',filename+' '+viewport+' overflow='+overflow+' '+resultText);
+   console.log('PASS '+filename+' '+viewport+' overflow='+overflow+' with interactions');
+  }
+ }finally{try{fs.unlinkSync(temp)}catch(_){}}
+}
