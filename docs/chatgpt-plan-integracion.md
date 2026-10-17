@@ -31,8 +31,20 @@ Fuentes:
 
 ## Trabajo ya preparado
 
-- Página de estado pública sin indexar: chatgpt-integracion.html. Explica qué falta y contiene el texto de solicitud para copiar.
+- Página de estado pública sin indexar: chatgpt-integracion.html. Explica qué está disponible y el estado pendiente. El texto de solicitud queda en este documento para el equipo responsable.
 - No se agregó ninguna autenticación, token, clave, límite ni API nuevos. No se alteró la experiencia actual de los alumnos.
 - Estado real: aún no hay client ID de Krueka ni aprobación oficial para uso de plan desde el sitio web.
 
 La presentación de la solicitud debe realizarla quien representa a Krueka. No puede asegurarse su aprobación o plazo.
+
+## Solicitud presentada y seguimiento
+
+El responsable informa que presentó la solicitud a OpenAI el 17 de octubre de 2026. Esto no acredita autorización, aceptación ni plazo de respuesta. Se conserva la descripción para el seguimiento interno; no se muestra como tarea de estudiantes.
+
+### Descripción preparada
+
+Krueka es una plataforma educativa web utilizada por docentes y alumnos de primaria y secundaria en Paraguay. Los estudiantes aprenden a crear videojuegos, animaciones y proyectos informáticos desde navegadores, incluso en computadoras de pocos recursos, y sus proyectos permanecen privados.
+
+Queremos integrar Sign in with ChatGPT y, si el programa lo permite, la autorización individual del uso incluido en el plan de ChatGPT de cada usuario elegible, mediante un flujo oficial y sin compartir cuentas, suscripciones ni tokens. Nuestra aplicación está alojada remotamente y actualmente usa una API diferente con sus propios límites.
+
+Para menores de 13 años necesitamos información sobre las opciones institucionales supervisadas que OpenAI permita sin cuentas ChatGPT individuales. Buscamos controles de edad, consentimiento, seguridad escolar, límites y aislamiento por alumno. Solicitamos evaluar a Krueka como socio educativo para esta integración.

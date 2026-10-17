@@ -57,6 +57,11 @@ input:focus,textarea:focus,select:focus{border-color:#2c87d0;box-shadow:0 0 0 3p
 footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
 [hidden]{display:none!important}
 @media(max-width:740px){.layout{grid-template-columns:1fr}.row{grid-template-columns:1fr}.card{padding:20px}.top{padding:0 15px}.menu{gap:10px}.intro{padding:7px 10px 20px}main{padding:13px 12px 48px}.submission{padding:12px}}
+/* Accesos legibles también en pantallas pequeñas. */
+.top,body>header{height:auto;min-height:78px;flex-wrap:wrap;padding-top:14px;padding-bottom:14px}
+.menu,header nav{flex-wrap:wrap;gap:8px 16px}
+.menu a,header nav a{display:inline-flex;align-items:center;min-height:36px}
+footer a{display:inline-block;padding:8px;color:#2265ad}a:focus-visible{outline:3px solid #2265ad;outline-offset:3px}
 </style>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head><body>
@@ -67,7 +72,7 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
  <div class="intro"><span class="eyebrow">Entrega de actividades · PowerPoint</span><h1>Entregá tu trabajo aquí</h1>
  <p>Subí tu presentación PowerPoint desde tu computadora o teléfono. No necesitás crear una cuenta. Tu profesor recibirá el trabajo en su bandeja privada.</p></div>
  <div class="layout">
-  <section class="card"><h2>Enviar mi actividad</h2><p class="sub">Completá tus datos para que el profesor pueda identificar correctamente el presentación.</p>
+  <section class="card"><h2>Enviar mi actividad</h2><p class="sub">Completá tus datos para que el profesor pueda identificar correctamente la presentación.</p>
    <form id="upload-form">
     <label for="student-name">Nombre y apellido del alumno</label><input id="student-name" name="student" required minlength="3" maxlength="90" autocomplete="name" placeholder="Ej.: María González">
     <div class="row"><div><label for="class-name">Grado o curso</label><input id="class-name" name="course" required minlength="2" maxlength="60" placeholder="Ej.: 9.º grado"></div>
@@ -81,9 +86,9 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
     <div class="status" id="upload-status" role="status" aria-live="polite"></div>
    </form><p class="note">Los trabajos se guardan en un espacio privado de Krueka. Solo docentes autorizados podrán consultarlos. El recibo confirma recepción, no aprobación del contenido.</p>
   </section>
-  <aside class="card side"><span class="size">✓ Entregas abiertas</span><h2>Antes de enviar</h2>
-   <ul><li>Realizá tu actividad en Microsoft PowerPoint o un editor compatible.</li><li>Guardá el archivo como <b>Presentación de PowerPoint (.pptx)</b>.</li><li>Revisá que tenga tu nombre y esté terminado.</li><li>Elegí el archivo y presioná <b>Enviar</b>.</li><li>Conservá el número de recepción que aparece al finalizar.</li></ul>
-   <p class="note">No se aceptan PDF, imágenes, archivos ZIP, archivos con macros ni presentaciones antiguos .doc. No incluyas datos personales innecesarios.</p>
+  <aside class="card side"><span class="size">Buzón de actividades</span><h2>Antes de enviar</h2>
+   <ul><li>Realizá tu actividad en Microsoft PowerPoint o un editor compatible.</li><li>Guardá el archivo como <b>Presentación de PowerPoint (.pptx)</b>.</li><li>Revisá que tenga tu nombre y esté terminada.</li><li>Elegí el archivo y presioná <b>Enviar</b>.</li><li>Conservá el número de recepción que aparece al finalizar.</li></ul>
+   <p class="note">No se aceptan PDF, imágenes, archivos ZIP, archivos con macros ni presentaciones antiguas .ppt. No incluyas datos personales innecesarios.</p>
   </aside>
  </div>
 </section>
@@ -98,8 +103,8 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
   <p class="note">Completá la comprobación de seguridad antes de solicitar el enlace o entrar con contraseña.</p>
   <div class="status" id="login-status" role="status"></div>
   <div style="margin-top:20px;padding-top:17px;border-top:1px solid #dce7f1">
-   <h2 style="font-size:16px">¿No tenés contraseña o acceso a Supabase?</h2>
-   <p class="sub" style="margin-bottom:8px">Podés ingresar con un enlace que enviaremos a <b>contacto@titanteo.com</b>. No necesitás crear una cuenta en el panel de Supabase.</p>
+   <h2 style="font-size:16px">Acceso del responsable del buzón</h2>
+   <p class="sub" style="margin-bottom:8px">Estas opciones son para el responsable con el correo previamente autorizado. Si necesitás una cuenta docente, consultá al responsable de tu institución.</p>
    <button type="button" class="btn btn-plain btn-wide" id="magic-link">✉ Enviarme enlace de acceso al correo</button>
    <button type="button" class="btn btn-plain btn-wide" id="new-admin-password">🔐 Crear contraseña temporal segura</button>
    <div id="new-password-result" hidden style="margin-top:13px;padding:12px;border:1px solid #b6cfde;background:#f3faff;border-radius:9px">
@@ -121,7 +126,7 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
    <div id="items" class="cards"></div><div class="status" id="teacher-status" role="status"></div>
   </div>
  </div>
-</section></main><footer>Krueka · Plataforma educativa · Paraguay · Archivos protegidos</footer>
+</section></main><footer>Krueka · Plataforma educativa · Paraguay<nav aria-label="Ayuda y privacidad"><a href="accesos.html">Elegir otro acceso</a><a href="informacion.html#privacidad">Uso y privacidad</a><a href="informacion.html#ayuda">Ayuda</a></nav></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (()=>{
@@ -159,7 +164,7 @@ footer{text-align:center;font-size:11px;color:#8195a8;padding:26px 15px}
   $('grade-code').value=raw;
   const f=$('doc').files[0];
   if(!f||!/\.pptx$/i.test(f.name)){say('upload-status','Solo se permiten presentaciones PowerPoint .pptx.',false);return;}
-  if(f.size<170||f.size>MAX){say('upload-status','El presentación no puede superar 15 MB.',false);return;}
+  if(f.size<170||f.size>MAX){say('upload-status','La presentación no puede superar 15 MB.',false);return;}
   const btn=$('send');btn.disabled=true;btn.textContent='Enviando y guardando…';
   try{
    const data=new FormData($('upload-form'));

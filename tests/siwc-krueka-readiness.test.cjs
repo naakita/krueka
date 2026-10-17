@@ -5,17 +5,23 @@ const docs=fs.readFileSync(path.join(root,'docs/chatgpt-plan-integracion.md'),'u
 const arch=fs.readFileSync(path.join(root,'ARQUITECTURA.md'),'utf8');
 assert.match(page,/Estado: pendiente de autorización/);
 assert.match(page,/Sin conexión con el plan/);
-assert.match(page,/https:\/\/openai\.com\/es-419\/form\/sign-in-with-chatgpt-interest\//);
+assert.match(docs,/https:\/\/openai\.com\/es-419\/form\/sign-in-with-chatgpt-interest\//);
 assert.match(page,/ni se han modificado las cuentas de los alumnos/);
 assert.match(page,/menores de 13 años/i);
 assert.match(page,/plan de ChatGPT de cada usuario elegible/);
 assert.match(page,/No se ha creado ninguna conexión OAuth/);
 assert.doesNotMatch(page,/(OPENAI_API_KEY|sk-proj-|refresh_token|Authorization:\s*Bearer)/);
-assert.match(page,/id="request-text"/);
+// La solicitud del responsable queda en documentación; el alumnado ve el estado.
+assert.match(page,/solicitud a OpenAI/i);
+assert.match(docs,/## Solicitud presentada y seguimiento/);
+assert.match(docs,/### Descripción preparada/);
+assert.doesNotMatch(page,/<form\b|<input\b|copy-request|id="request-text"|INTEGRACIÓN OFICIAL/);
+assert.doesNotMatch(page,/href=["'][^"']*(?:auth\.openai\.com|\/auth\/openai)/);
 const inline=[...page.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]).filter(Boolean);
-assert.equal(inline.length,1);
-new vm.Script(inline[0]);
+assert.equal(inline.length,0);
+assert.match(page,/<script src="js\/home\.js\?v=20261017a"><\/script>/);
+new vm.Script(fs.readFileSync(path.join(root,'js/home.js'),'utf8'));
 assert.match(docs,/No se agregó ninguna autenticación, token, clave/);
 assert.match(docs,/suscripción del profesor para ejecutar solicitudes de los estudiantes/);
 assert.match(arch,/Solicitar acceso.*ChatGPT|Solicitud de integración con plan ChatGPT/);
-console.log('PASS: formulario oficial y preparación sin OAuth simulado ni acceso compartido de menores.');
+console.log('PASS: estado público pendiente, solicitud documentada y ningún OAuth simulado ni acceso compartido.');

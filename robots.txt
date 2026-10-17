@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /club/inscripcion.html
 
-Sitemap: https://krueka.com/sitemap.xml
+Sitemap: https://www.krueka.com/sitemap.xml

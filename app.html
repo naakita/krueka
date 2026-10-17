@@ -5,8 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-cache">
 <title>Krueka · Plataforma escolar</title>
+<meta name="robots" content="noindex,follow">
 <meta name="description" content="Krueka — plataforma educativa: clases por etapas, asistencia, planificación, entregas y seguimiento en tiempo real para dirección, docentes y alumnos.">
-<link rel="canonical" href="https://krueka.com/app.html">
+<link rel="canonical" href="https://www.krueka.com/app.html">
 <link rel="icon" id="favicon">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -25,14 +26,14 @@
   <div class="card">
     <div class="tabs"><button id="tab-doc" aria-selected="true" onclick="UI.loginTab('doc')">Docente o dirección</button><button id="tab-alu" aria-selected="false" onclick="UI.loginTab('alu')">Soy alumno</button></div>
     <form id="form-doc" onsubmit="Auth.entrar(event)">
-      <div id="err-doc" class="alert err hidden"></div><label for="email">Correo institucional</label><input id="email" type="email" autocomplete="username" placeholder="profe@krueka.edu.py" required><label for="pass">Contraseña</label><input id="pass" type="password" autocomplete="current-password" required>
+      <div id="err-doc" class="alert err hidden"></div><label for="email">Correo institucional</label><input id="email" type="email" autocomplete="username" placeholder="Tu correo registrado" required><label for="pass">Contraseña</label><input id="pass" type="password" autocomplete="current-password" required>
       <div class="linkfila"><a href="index.html">← Volver al inicio</a><a href="#" id="link-recuperar" onclick="Cuenta.recuperar(event)">¿Olvidaste tu contraseña?</a></div>
       <div class="captcha cf-turnstile" data-sitekey="0x4AAAAAAEIqJeQrYo8E9sKD" data-language="es" data-theme="auto" data-size="flexible"></div><div style="height:14px"></div><button class="btn" style="width:100%;justify-content:center" type="submit">Entrar</button><p class="note" style="text-align:center;margin:12px 0 0">¿Perdiste el acceso a tu cuenta? <a href="mailto:contacto@krueka.com?subject=Recuperar%20mi%20cuenta%20de%20Krueka">Escribinos a contacto@krueka.com</a></p>
     </form>
     <form id="form-alu" class="hidden" onsubmit="Alumno.entrar(event)">
       <div id="err-alu" class="alert err hidden"></div><label for="cod">Código de la clase</label><input id="cod" maxlength="6" style="text-transform:uppercase;text-align:center;font-size:24px;letter-spacing:.2em" placeholder="ABC123" oninput="Alumno.buscar()" required><label for="nom">Tu nombre</label><select id="nom" required><option value="">Primero escribí el código</option></select><div class="linkfila"><a href="index.html">← Volver al inicio</a></div><div style="height:14px"></div><button class="btn" style="width:100%;justify-content:center" type="submit">Entrar al aula</button><p class="note" style="text-align:center;margin:12px 0 0">Los alumnos no usan contraseña: entran con el código que dicta el docente al empezar la clase.</p>
     </form>
-  </div><p class="note" style="text-align:center"><a href="studio.html">Krueka Creativo · juegos, animación y video →</a></p><p class="note" style="text-align:center">Los datos se guardan en la base central de la escuela.</p>
+  </div><p class="note" style="text-align:center"><a href="studio.html">Krueka Creativo · juegos, animación y video →</a></p><p class="note" style="text-align:center">Los datos se guardan en la base central de la escuela.</p><nav class="note" aria-label="Ayuda de acceso" style="text-align:center;display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:16px 0"><a href="accesos.html">Elegir otro acceso</a><a href="informacion.html">Uso y privacidad</a><a href="informacion.html#ayuda">Ayuda</a></nav>
 </div>
 <div id="screen-nueva" class="center hidden">
   <div style="text-align:center;margin-bottom:18px"><a href="index.html" class="marca-link" title="Volver al inicio de Krueka" aria-label="Volver al inicio de Krueka"><img class="marca" alt="Krueka" style="height:86px"></a></div>

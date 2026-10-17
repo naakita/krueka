@@ -242,9 +242,19 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - Las páginas que cargan realmente el Studio son `app.html` y `studio.html`; los módulos y estilos nuevos llevan `?v=20261016a`. `index.html` continúa como portada pública sin cargar las herramientas privadas.
 
 
-## 23. Solicitud de integración con plan ChatGPT para Krueka (octubre 2026)
+## 24. Solicitud de integración con plan ChatGPT para Krueka (octubre 2026)
 
-- Página `chatgpt-integracion.html` (noindex) y documento `docs/chatgpt-plan-integracion.md` informan el **estado real**: Sign in with ChatGPT (SIWC) **no está conectado** a Krueka. La página facilita el formulario oficial de habilitación para apps web alojadas y un texto de presentación. No envía formularios ni agrega OAuth, tokens, claves ni backend.
+- Página `chatgpt-integracion.html` (noindex) y documento `docs/chatgpt-plan-integracion.md` informan el **estado real**: Sign in with ChatGPT (SIWC) **no está conectado** a Krueka. La página informa la solicitud presentada y diferencia editores, Ayuda local y chat de API. El formulario y el texto de presentación se conservan en la documentación del equipo. No envía formularios ni agrega OAuth, tokens, claves ni backend.
 - OpenCode utiliza un flujo SIWC permitido para aplicaciones compatibles. Krueka es un portal remoto y requiere habilitación apropiada antes de integrar el uso de planes. Los términos SIWC prohíben usar la suscripción de una persona para consultas realizadas por otra, agrupar cuota entre usuarios y compartir tokens.
 - Los proyectos estudiantiles, código de acceso, RPC Supabase de Studio, API, límites, fallbacks locales y seguridad permanecen **sin cambios**. Los menores de 13 años no reciben acceso ChatGPT personal. Las futuras conexiones deberán ser individuales y consentidas, y solo con autorización del proveedor.
 - Consultar las políticas y requisitos técnicos exactos en `docs/chatgpt-plan-integracion.md`. El equipo debe solicitar acceso y contar con credenciales válidas antes de introducir cualquier botón funcional de login con ChatGPT.
+
+
+## 25. Presentación institucional y orientación pública (octubre de 2026)
+
+- `index.html` conserva marca y tema claro, con propuesta pedagógica, herramientas existentes y acceso por tareas en `accesos.html`. El nuevo centro aclara la diferencia entre código de clase, código personal del Club y código de entrega del grado; todos enlazan los flujos previos sin modificar autenticación ni habilitar nuevos alumnos.
+- Se retiran de la portada las métricas y estados ilustrativos presentados como datos en vivo, el marketing de clubes eliminado antes desde JavaScript y los 23 scripts decorativos de movimiento. Los archivos gráficos anteriores permanecen en el repositorio. Los ejemplos de secuencia se identifican como tales y no muestran códigos o nombres ficticios que parezcan accesos reales.
+- `css/home-claro.css` se carga directamente en HTML; `css/institutional.css` ajusta jerarquía, contraste, navegación y páginas informativas sobre la identidad existente. `js/home.js?v=20261017a` solo controla menú, Escape, estado de barra y año: contenido y tema están visibles sin JavaScript. No se añaden frameworks, CDN, fuentes remotas ni infraestructura.
+- `informacion.html` explica propósito educativo, datos usados, proveedores, IA, compatibilidad y ayuda. Es un resumen de funcionamiento, no una certificación legal: el responsable debe validar identidad jurídica, contratos, consentimiento y plazos de conservación antes de presentarlo como política institucional completa. No se inventan acreditaciones, cifras de adopción, resultados ni tiempos garantizados de soporte.
+- Las entradas existentes y los tres buzones incorporan enlaces de orientación y privacidad; se corrigen textos de PowerPoint y referencias al panel técnico dentro del acceso del responsable. Se conservan IDs, manejadores, códigos, destinos de correo, controles de seguridad, límites y API de los buzones. El mapa del sitio usa el dominio `www` de CNAME y enlaza páginas públicas; la pantalla de acceso escolar recibe `noindex`.
+- Sin tablas, migraciones, políticas RLS, RPC, claves, funciones de servidor ni gastos nuevos. Las vistas autenticadas y el tratamiento jurídico completo requieren una revisión específica posterior; esta revisión pública no los certifica.

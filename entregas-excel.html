@@ -45,6 +45,11 @@ input::placeholder{color:#8c9faf}
 #teacher-folder-view[hidden],#teacher-login[hidden],#teacher-dashboard[hidden],[hidden]{display:none!important}
 footer{text-align:center;color:#8397a9;font-size:11px;padding:14px}
 @media(max-width:740px){.layout{grid-template-columns:1fr}main{padding:8px 12px 45px}.hero{margin-top:8px}.card{padding:18px}header{padding:13px}.docrow .buttons{align-items:stretch}}
+/* Accesos legibles también en pantallas pequeñas. */
+.top,body>header{height:auto;min-height:78px;flex-wrap:wrap;padding-top:14px;padding-bottom:14px}
+.menu,header nav{flex-wrap:wrap;gap:8px 16px}
+.menu a,header nav a{display:inline-flex;align-items:center;min-height:36px}
+footer a{display:inline-block;padding:8px;color:#2265ad}a:focus-visible{outline:3px solid #2265ad;outline-offset:3px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -78,7 +83,7 @@ footer{text-align:center;color:#8397a9;font-size:11px;padding:14px}
  <div class="hero"><span class="eyebrow">Acceso privado · Docente</span><h1>Carpetas de Excel por grado</h1>
  <p>Creá un grado, compartí su código, revisá las entregas y descargá cada archivo desde tu bandeja. Los alumnos solamente pueden subir documentos.</p></div>
  <div id="teacher-login" class="card" style="max-width:520px;margin:auto">
-  <h2>Entrar al panel docente</h2><p class="muted">Ingresá con una cuenta docente verificada de Krueka. Se admite contacto@titanteo.com una vez confirmado el correo.</p>
+  <h2>Entrar al panel docente</h2><p class="muted">Ingresá con la cuenta que el responsable habilitó para este buzón. El enlace por correo está reservado al responsable previamente autorizado.</p>
   <form id="login-form"><div class="field"><label for="email">Correo de docente</label><input type="email" id="email" required autocomplete="username"></div>
    <div class="field"><label for="password">Contraseña</label><input id="password" type="password" required autocomplete="current-password"></div>
    <button id="login" type="submit" class="btn btn-wide">Entrar</button></form>
@@ -105,7 +110,7 @@ footer{text-align:center;color:#8397a9;font-size:11px;padding:14px}
    <div id="files" style="margin-top:13px"></div><div id="folder-message" role="status"></div>
   </div>
  </div>
-</section></main><footer>Krueka · Plataforma educativa · Entregas privadas</footer>
+</section></main><footer>Krueka · Plataforma educativa · Paraguay<nav aria-label="Ayuda y privacidad"><a href="accesos.html">Elegir otro acceso</a><a href="informacion.html#privacidad">Uso y privacidad</a><a href="informacion.html#ayuda">Ayuda</a></nav></footer>
 <script>
 (()=>{
 'use strict';
@@ -256,7 +261,7 @@ $('email-link').onclick=async()=>{
   const {error}=await sb.auth.signInWithOtp({email:'contacto@titanteo.com',
    options:{shouldCreateUser:true,captchaToken:proof,emailRedirectTo:'https://www.krueka.com/entregas-excel.html?docente=1'}});
   if(error)throw Error(error.message);
-  message('login-message','Si Supabase aceptó la solicitud, llegará un enlace de acceso a contacto@titanteo.com. Revisá también Spam.');
+  message('login-message','Si el servicio de acceso aceptó la solicitud, llegará un enlace de acceso a contacto@titanteo.com. Revisá también Spam.');
  }catch(err){message('login-message',err.message,true)}
  finally{reset();button.disabled=false}
 };
