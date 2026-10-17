@@ -14,6 +14,7 @@
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="logo.svg">
 <link rel="stylesheet" href="css/krueka-edu.css?v=20261017c">
+<link rel="stylesheet" href="css/krueka-hero-showcase.css?v=20261017d">
 </head>
 <body class="kx-site kx-home">
 <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -33,36 +34,99 @@
 </header>
 
 <main id="contenido">
- <section class="kx-hero">
-  <div class="kx-blur kx-blur-a" aria-hidden="true"></div>
-  <div class="kx-blur kx-blur-b" aria-hidden="true"></div>
+ <section class="kx-hero kx-new-hero" aria-labelledby="kx-main-title">
+  <div class="kx-blur kx-blur-a" aria-hidden="true"></div><div class="kx-blur kx-blur-b" aria-hidden="true"></div>
   <div class="kx-wrap kx-hero-centered-layout">
- <div class="kx-hero-text">
-  <div class="kx-eyebrow"><span class="kx-spark" aria-hidden="true">✳</span> LA NUEVA GENERACIÓN DEL APRENDIZAJE</div>
-  <h1>Ideas grandes.<br><span class="kx-headline-accent">Mentes que crean.</span></h1>
-  <p>Un espacio educativo donde la tecnología se convierte en experiencias reales. Creá videojuegos, explorá la inteligencia artificial y aprendé a tu ritmo, con tus docentes.</p>
-  <div class="kx-actions">
-   <a href="accesos.html" class="btn btn-primary btn-xl">Descubrir mi espacio <span aria-hidden="true">↗</span></a>
-   <a href="personajes.html" class="btn btn-white btn-xl">Probar gratis Personajes 2D <span aria-hidden="true">↗</span></a>
-  </div>
-  <div class="kx-hero-facts"><span><b>✦</b> Aprendizaje práctico</span><span><b>✦</b> Desde el navegador</span><span><b>✦</b> Guía docente</span></div>
- </div>
- <div class="kx-hero-motion-wrap">
-  <div class="kx-hero-3d" id="kx-ai-stage" data-render-mode="pending" role="img" aria-label="Escena 3D animada de inteligencia artificial y educación: núcleo luminoso con anillos y piezas de aprendizaje en órbita.">
-   <div class="kx-stage-glow" aria-hidden="true"></div>
-   <div class="kx-stage-grid" aria-hidden="true"></div>
-   <div class="kx-ai-fallback" aria-hidden="true">
-    <div class="kx-fallback-ring one"></div><div class="kx-fallback-ring two"></div><div class="kx-fallback-ring three"></div>
-    <div class="kx-fallback-core"><span>✳</span><strong>IA</strong></div>
-    <div class="kx-fallback-cube one"></div><div class="kx-fallback-cube two"></div><div class="kx-fallback-cube three"></div>
+   <div class="kx-hero-text">
+    <div class="kx-eyebrow"><span class="kx-spark" aria-hidden="true">✳</span> UNA NUEVA FORMA DE APRENDER</div>
+    <h1 id="kx-main-title">Imaginá el futuro.<br><span class="kx-headline-accent">Crealo en Krueka.</span></h1>
+    <p>Del primer proyecto al próximo gran descubrimiento. Un espacio donde estudiantes y docentes crean, experimentan y aprenden con tecnología e inteligencia artificial.</p>
+    <div class="kx-actions">
+     <a href="accesos.html" class="btn btn-primary btn-xl">Ingresar a la plataforma <span aria-hidden="true">↗</span></a>
+     <a href="personajes.html" class="btn btn-white btn-xl">Explorar taller creativo <span aria-hidden="true">↗</span></a>
+    </div>
    </div>
-   <canvas id="kx-ai-canvas" aria-hidden="true"></canvas>
-   <div class="kx-stage-legend" aria-hidden="true"><span><i></i>INTELIGENCIA ARTIFICIAL</span><span><i></i>EDUCACIÓN</span><span><i></i>CREATIVIDAD</span></div>
+
+   <div class="kx-demo-shell" aria-label="Representación ilustrativa interactiva de las experiencias educativas de Krueka">
+    <div class="kx-demo-toolbar" role="group" aria-label="Elegí una experiencia para conocer Krueka">
+     <div class="kx-demo-brand"><span class="kx-demo-brand-symbol">✳</span><span>KRUEKA <strong>STUDIO</strong></span></div>
+     <div class="kx-demo-tabs">
+      <button class="kx-demo-tab is-selected" type="button" aria-pressed="true" data-demo="create">Crear</button>
+      <button class="kx-demo-tab" type="button" aria-pressed="false" data-demo="ai">Aprender con IA</button>
+      <button class="kx-demo-tab" type="button" aria-pressed="false" data-demo="deliver">Entregar</button>
+     </div>
+     <span class="kx-demo-label">VISTA ILUSTRATIVA</span>
+    </div>
+    <div class="kx-demo-stage" data-active-demo="create">
+     <div class="kx-demo-view kx-demo-create is-active" data-panel="create">
+      <div class="kx-demo-world" aria-hidden="true">
+       <div class="kx-world-stars"></div><div class="kx-world-sun"></div>
+       <div class="kx-world-cloud cloud-one"></div><div class="kx-world-cloud cloud-two"></div>
+       <div class="kx-world-hill back"></div><div class="kx-world-hill middle"></div><div class="kx-world-hill front"></div>
+       <div class="kx-island island-back"><span></span></div><div class="kx-island island-main"><span></span></div>
+       <div class="kx-island island-front"><span></span></div>
+       <div class="kx-character">
+        <div class="kx-character-antenna"></div><div class="kx-character-head"><span class="eye left"></span><span class="eye right"></span><span class="smile"></span></div>
+        <div class="kx-character-body"></div><div class="kx-character-arm arm-left"></div><div class="kx-character-arm arm-right"></div>
+        <div class="kx-character-leg leg-left"></div><div class="kx-character-leg leg-right"></div>
+       </div>
+       <span class="kx-world-spark spark-one">✦</span><span class="kx-world-spark spark-two">✧</span>
+      </div>
+      <div class="kx-demo-description">
+       <div class="kx-demo-icon" aria-hidden="true">◇</div>
+       <span class="kx-demo-step">TU PRIMER MUNDO DIGITAL</span>
+       <h2>Un juego que empieza con una idea.</h2>
+       <p>Diseñá personajes, construí escenarios y descubrí qué sucede cuando cambiás las reglas.</p>
+       <a href="studio.html" class="kx-demo-link">Explorar Krueka Creativo <span aria-hidden="true">↗</span></a>
+      </div>
+     </div>
+     <div class="kx-demo-view kx-demo-ai" data-panel="ai" hidden>
+      <div class="kx-demo-ai-art" aria-hidden="true">
+       <div class="kx-ai-constellation">
+        <svg viewBox="0 0 560 370" preserveAspectRatio="xMidYMid meet" role="presentation" focusable="false">
+         <defs><linearGradient id="kx-net-gradient" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3f6aff"/><stop offset="1" stop-color="#60d7cf"/></linearGradient></defs>
+         <g fill="none" stroke="url(#kx-net-gradient)" stroke-width="2" opacity=".45">
+          <path d="M90 110 175 72 271 134 345 52 459 101 420 222 510 277 355 320 264 240 147 300 90 110 264 240 459 101 175 72 147 300 345 52 355 320 420 222 271 134"/>
+         </g>
+         <g fill="#fff" stroke="#5686f7" stroke-width="4">
+          <circle cx="90" cy="110" r="9"/><circle cx="175" cy="72" r="12"/><circle cx="271" cy="134" r="11"/><circle cx="345" cy="52" r="9"/><circle cx="459" cy="101" r="11"/><circle cx="420" cy="222" r="12"/><circle cx="510" cy="277" r="9"/><circle cx="355" cy="320" r="11"/><circle cx="264" cy="240" r="14"/><circle cx="147" cy="300" r="9"/>
+         </g><circle cx="264" cy="240" r="52" fill="#dfeaff" stroke="#87a7ef" stroke-width="2"/><text x="264" y="256" font-size="51" text-anchor="middle" fill="#405fe3">✳</text>
+        </svg>
+       </div>
+       <span class="kx-ai-caption-pill">CREATIVIDAD + ORIENTACIÓN</span>
+      </div>
+      <div class="kx-demo-description">
+       <div class="kx-demo-icon" aria-hidden="true">✳</div>
+       <span class="kx-demo-step">AYUDA PARA SEGUIR APRENDIENDO</span>
+       <h2>La tecnología ayuda. Vos aprendés.</h2>
+       <div class="kx-demo-message"><b>Ejemplo de orientación</b><span>«Probá ajustar la velocidad de tu personaje y compará el resultado».</span></div>
+       <p>El modo de ayuda local es gratuito; la IA generativa remota depende del cupo disponible.</p>
+       <a href="chatgpt-integracion.html" class="kx-demo-link">Conocer la IA de Krueka <span aria-hidden="true">↗</span></a>
+      </div>
+     </div>
+     <div class="kx-demo-view kx-demo-deliver" data-panel="deliver" hidden>
+      <div class="kx-demo-delivery-art" aria-hidden="true">
+       <div class="kx-delivery-orbit">
+        <div class="kx-paper-card kx-paper-word"><b>W</b><span>DOCX</span></div>
+        <div class="kx-paper-card kx-paper-excel"><b>X</b><span>XLSX</span></div>
+        <div class="kx-paper-card kx-paper-ppt"><b>P</b><span>PPTX</span></div>
+        <div class="kx-check-large">✓</div>
+       </div>
+       <span class="kx-ai-caption-pill">APRENDER · ENTREGAR · MEJORAR</span>
+      </div>
+      <div class="kx-demo-description">
+       <div class="kx-demo-icon" aria-hidden="true">↗</div>
+       <span class="kx-demo-step">CADA TRABAJO CUENTA</span>
+       <h2>Creá. Entregá. Recibí orientación.</h2>
+       <p>Presentá tus documentos directamente al docente. Los trabajos quedan privados y separados por grupo.</p>
+       <a href="accesos.html#entregas" class="kx-demo-link">Ver entregas escolares <span aria-hidden="true">↗</span></a>
+      </div>
+     </div>
+    </div>
+    <div class="kx-demo-foot"><span><i></i>Experiencias reales de Krueka, ilustradas para esta portada</span><span class="kx-demo-foot-right">CREAR · PENSAR · APRENDER</span></div>
+   </div>
+   <p class="kx-scene-caption">La demostración es conceptual. No muestra alumnos, sesiones ni resultados reales.</p>
   </div>
-  <p class="kx-scene-caption">Escena 3D conceptual de Krueka · No muestra actividad ni datos de estudiantes</p>
- </div>
-</div>
-<div class="kx-wrap kx-hero-bottom"><span class="kx-scroll-hint"><span aria-hidden="true">↓</span> DESCUBRÍ QUÉ PODÉS CREAR</span><span>EDUCACIÓN · CREATIVIDAD · TECNOLOGÍA</span></div>
  </section>
 
  <section class="kx-ribbon" aria-label="Áreas de aprendizaje"><div class="kx-ribbon-inner"><span>DESARROLLÁ IDEAS</span><i aria-hidden="true">✳</i><span>PROGRAMÁ JUGANDO</span><i aria-hidden="true">✳</i><span>EXPLORÁ LA IA</span><i aria-hidden="true">✳</i><span>APRENDÉ HACIENDO</span><i aria-hidden="true">✳</i><span>CREÁ SIN LÍMITES DE IMAGINACIÓN</span></div></section>
@@ -171,6 +235,6 @@
  </div>
  <div class="kx-footer-bottom"><span>© <span id="year">2026</span> Krueka. Construyendo posibilidades.</span><span>Hecho para aprender, no solo para mirar.</span></div>
 </div></footer>
-<script src="js/krueka-hero-3d.js?v=20261017c" defer></script>
+<script src="js/krueka-hero-showcase.js?v=20261017d" defer></script>
 <script src="js/home.js?v=20261017a"></script>
 </body></html>
