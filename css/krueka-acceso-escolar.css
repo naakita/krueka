@@ -1,0 +1,23 @@
+/* Krueka · nueva identidad del acceso escolar, sin tocar sus controles de autenticación. */
+#screen-login,#screen-nueva{position:relative;isolation:isolate;max-width:490px;margin:0 auto;padding:62px 20px 40px;min-height:100vh;color:#eaf7ff}
+#screen-login::before,#screen-nueva::before{content:"";position:fixed;z-index:-1;inset:0;background:radial-gradient(ellipse at 50% -10%,#1d546988,transparent 60%),#080e1b;pointer-events:none}
+#screen-login .marca-link,#screen-nueva .marca-link{background:#f2f6fa;border:1px solid #c3d9e3;border-radius:18px;padding:7px 12px}
+#screen-login .marca-link .marca,#screen-nueva .marca-link .marca{background:transparent;border:0}
+#screen-login .sub,#screen-nueva .sub{color:#bdcfe0;font-size:13px}
+#screen-login>.card,#screen-nueva>.card{margin-top:25px;background:#111f33;border:1px solid #b5d7ec2a;box-shadow:0 18px 70px #0207146c;border-radius:19px;padding:25px}
+#screen-login .tabs{background:#0a172a;padding:5px;border:1px solid #c2e6eb20;border-radius:11px;gap:2px}
+#screen-login .tabs button{font-size:13px;color:#aac0d3;padding:12px 6px}
+#screen-login .tabs button[aria-selected="true"]{color:#11291e;background:#d6f28d;box-shadow:0 4px 14px #0003;font-weight:850}
+#screen-login label,#screen-nueva label{color:#d5e7f1;font-size:12px;font-weight:800;margin-top:18px;margin-bottom:7px}
+#screen-login input,#screen-login select,#screen-nueva input{background:#08182a;color:#f2fcff;border:1px solid #7194ad65;border-radius:11px;padding:12px;min-height:46px}
+#screen-login input:focus-visible,#screen-login select:focus-visible,#screen-nueva input:focus-visible{outline:2px solid #d6f28d;outline-offset:2px}
+#screen-login input::placeholder,#screen-nueva input::placeholder{color:#9bb1c0}
+#screen-login .btn:not(.sec),#screen-nueva .btn:not(.sec){background:#d6f28d;color:#15291f;border:1px solid #d6f28d;font-weight:850;border-radius:10px}
+#screen-login .btn.sec,#screen-nueva .btn.sec{background:#1a3248;border:1px solid #4b738c;color:#e9faff}
+#screen-login .note,#screen-nueva .note{color:#a6bfd1!important;font-size:12px}
+#screen-login a:not(.marca-link),#screen-nueva a:not(.marca-link){color:#8feade;text-decoration:underline;text-underline-offset:4px}
+#screen-login .alert.err,#screen-nueva .alert.err{background:#4e242c;color:#ffd9d5}
+#screen-login .linkfila{margin-top:14px}
+#screen-login .captcha{min-height:52px}
+#screen-nueva h2{color:#ebf8ff}
+@media(max-width:550px){#screen-login,#screen-nueva{padding:33px 14px 35px}#screen-login>.card,#screen-nueva>.card{padding:18px;margin-top:20px}}
