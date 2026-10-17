@@ -267,3 +267,13 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - app.html carga adicionalmente css/krueka-acceso-escolar.css: todos los selectores están acotados a #screen-login y #screen-nueva. No se altera el CSS de la aplicación tras iniciar sesión, las funciones de Core, las rutas de aula/Club, el captcha, los roles ni las credenciales.
 - La reestructuración estética no modifica tablas, políticas RLS, almacenamiento, RPC, Edge Functions, presupuestos de IA, modelos, proyectos, guardado ni funciones privadas. Documentación y pendientes de auditoría en docs/auditoria-krueka-educacion-ia-20261017.md.
 - La siguiente fase corresponde a revisión específica de UX y privacidad de los paneles internos, entrega por grados y Portal Familia, con pruebas reales de los roles y consentimiento institucional. Esta fase no declara como auditados o renovados los flujos autenticados.
+
+## 27. Identidad Light Future de Krueka — octubre de 2026
+
+- Se descarta la identidad oscura anterior a petición del usuario. La nueva estética visual se inspira en tendencias futuristas claras de Canva, SuperHi y plantillas educativas Framer: blanco hielo, azul eléctrico, celeste y coral. La implementación es original, sin reutilizar CSS, imágenes protegidas ni plantillas comerciales.
+- La portada index.html utiliza una ilustración SVG propia del mundo creativo alojada en assets/krueka-world-2026.svg, gráficos CSS ilustrativos, bloques de producto por servicio real y mensajes pedagógicos con IA transparentes. La ilustración no contiene proyectos reales ni datos de menores.
+- css/krueka-edu.css?v=20261017b es el sistema de diseño único para index.html, accesos.html, informacion.html y chatgpt-integracion.html. Incluye navegación flotante, tamaños responsive, foco visible y reduced-motion. No agrega frameworks, CDNs, fuentes ni imágenes remotas.
+- app.html carga css/krueka-acceso-escolar.css?v=20261017b: solo afecta la presentación de los formularios #screen-login y #screen-nueva. No se cambia lógica de autenticación, códigos, políticas, roles, datos ni vistas internas.
+- Los enlaces conservan sus destinos funcionales originales, incluyendo app.html, studio.html, personajes.html y buzones Word/Excel/PowerPoint.
+- SIWC sigue pendiente de aprobación. La ayuda local no se presenta como IA generativa, y las solicitudes remotas de IA siguen limitadas por la API que el sistema ya tiene.
+- Las pruebas incluyen rutas, activos, estados de IA y Chromium en móvil/escritorio. No se considera QA real de sesiones privadas, PC de 32 bits ni datos escolares.

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 620" role="img" aria-labelledby="title desc">
+<title id="title">Mundo creativo de Krueka</title><desc id="desc">Ilustración original de un mundo 3D futurista, con plataformas celestes, personaje naranja, estrellas y piezas de construcción.</desc>
+<defs>
+ <linearGradient id="base" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#e5f9ff"/><stop offset="1" stop-color="#e5e4ff"/></linearGradient>
+ <linearGradient id="floor" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#73dffb"/><stop offset="1" stop-color="#5b91eb"/></linearGradient>
+ <linearGradient id="side" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#477fe1"/><stop offset="1" stop-color="#1e52ac"/></linearGradient>
+ <linearGradient id="aqua" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d4faff"/><stop offset="1" stop-color="#73d9ff"/></linearGradient>
+ <linearGradient id="coral" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffd7a9"/><stop offset="1" stop-color="#ff956d"/></linearGradient>
+ <linearGradient id="lav" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9cdff"/><stop offset="1" stop-color="#947af2"/></linearGradient>
+ <radialGradient id="glow"><stop stop-color="#87cefc" stop-opacity=".64"/><stop offset="1" stop-color="#dcecff" stop-opacity="0"/></radialGradient>
+ <filter id="shade" x="-70%" y="-70%" width="240%" height="250%"><feGaussianBlur stdDeviation="20"/></filter>
+ <filter id="shadow" x="-50%" y="-50%" width="220%" height="220%"><feDropShadow dx="1" dy="16" stdDeviation="13" flood-color="#538bcf" flood-opacity=".21"/></filter>
+ <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#3f7eb2" flood-opacity=".16"/></filter>
+</defs>
+<ellipse cx="362" cy="320" rx="335" ry="280" fill="url(#glow)"/>
+<circle cx="606" cy="125" r="82" fill="#ddf0ff" opacity=".7"/>
+<circle cx="150" cy="174" r="55" fill="#d7e1ff" opacity=".8"/>
+<path d="M88 434C196 593 561 568 683 392" fill="none" stroke="#9aaeff" stroke-opacity=".65" stroke-width="2" stroke-dasharray="5 13"/>
+<path d="M125 165C210 17 525 14 657 188" fill="none" stroke="#a9ddfd" stroke-width="2" stroke-dasharray="4 13"/>
+<g opacity=".5" stroke="#a4c4f0" stroke-width="1"><path d="m89 257 8-8 8 8-8 8z"/><path d="m657 284 8-8 8 8-8 8z"/><path d="m558 492 8-8 8 8-8 8z"/></g>
+<g filter="url(#shade)"><ellipse cx="380" cy="497" rx="225" ry="43" fill="#589fcf" opacity=".34"/></g>
+<!-- isometric lower slab -->
+<g filter="url(#shadow)"><path d="m160 347 234-137 241 130-241 141Z" fill="url(#floor)"/>
+<path d="m160 347 234 134v52L160 397Z" fill="url(#side)"/>
+<path d="m394 481 241-141v54L394 533Z" fill="#3a6dc4"/>
+<path d="m160 347 234-137 241 130-241 141Z" fill="none" stroke="#b7f6ff" stroke-width="4"/>
+</g>
+<!-- floor grid -->
+<g stroke="#e7fdff" stroke-opacity=".5" stroke-width="1"><path d="m216 315 241 131M268 285l241 130M320 255l241 130M211 376l239-138M278 413l238-139M343 451l240-138"/></g>
+<!-- floating back steps -->
+<g filter="url(#soft)">
+ <path d="m411 242 91-53 84 44-91 54Z" fill="#c2c0ff"/><path d="m411 242 84 45v37l-84-44Z" fill="#7678d9"/><path d="m495 287 91-54v38l-91 53Z" fill="#625fb3"/>
+ <path d="m442 201 77-45 71 39-77 46Z" fill="#e1d8ff"/><path d="m442 201 71 40v35l-71-40Z" fill="#a999ed"/><path d="m513 241 77-46v35l-77 46Z" fill="#8680d1"/>
+</g>
+<!-- blue portal -->
+<g filter="url(#shadow)">
+<path d="m250 291 85-49 87 48-85 52Z" fill="#d5f9ff"/><path d="m250 291 87 51v31l-87-49Z" fill="#6ec4e8"/><path d="m337 342 85-52v32l-85 51Z" fill="#438db5"/>
+<path d="M298 278v-88c0-24 19-43 43-43s43 19 43 43v88" fill="none" stroke="#5eabff" stroke-width="26" stroke-linecap="round"/>
+<path d="M298 278v-88c0-24 19-43 43-43s43 19 43 43v88" fill="none" stroke="#e1f9ff" stroke-width="13" stroke-linecap="round"/>
+</g>
+<!-- foreground blocks -->
+<g filter="url(#soft)">
+ <path d="m174 368 62-37 59 32-62 36Z" fill="#ffdeb8"/><path d="m174 368 59 31v75l-59-33Z" fill="#fcac83"/><path d="m233 399 62-36v77l-62 34Z" fill="#ea8469"/>
+ <path d="m479 395 63-36 56 29-64 37Z" fill="#d8e3ff"/><path d="m479 395 55 30v60l-55-30Z" fill="#93b7ff"/><path d="m534 425 64-37v62l-64 35Z" fill="#7196e6"/>
+</g>
+<!-- friendly protagonist -->
+<g filter="url(#shadow)">
+<ellipse cx="364" cy="341" rx="49" ry="16" fill="#3a6b96" opacity=".26"/>
+<path d="M335 249c-9 8-13 23-12 40l3 55c4 23 16 24 31 16l5-47 13 48c20 9 29-1 31-18l-4-65c-1-26-19-43-36-43z" fill="url(#coral)" stroke="#ffede1" stroke-width="3"/>
+<path d="M339 311v32c-2 13 7 20 18 17l9-4-5-43Z" fill="#e87767"/>
+<path d="M369 309l8 46c10 7 21 4 23-9l1-34Z" fill="#e48c72"/>
+<rect x="338" y="163" width="65" height="77" rx="24" fill="#ffbb8b" stroke="#ffecda" stroke-width="4"/>
+<rect x="346" y="184" width="49" height="35" rx="13" fill="#27335c"/>
+<ellipse cx="361" cy="199" rx="4" ry="6" fill="#a5f8fa"/><ellipse cx="381" cy="199" rx="4" ry="6" fill="#a5f8fa"/>
+<path d="M363 212c5 5 10 5 15 0" stroke="#a5f8fa" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<path d="M355 162c-4-16 4-22 11-21" fill="none" stroke="#ffbb8b" stroke-width="8" stroke-linecap="round"/>
+<circle cx="365" cy="139" r="7" fill="#81d4ff"/>
+<path d="M334 263l-28 26" stroke="#ffad86" stroke-width="15" stroke-linecap="round"/><path d="m403 263 30-20" stroke="#ffad86" stroke-width="15" stroke-linecap="round"/>
+</g>
+<!-- nodes and stars -->
+<g filter="url(#soft)">
+ <circle cx="158" cy="226" r="22" fill="#fff" stroke="#c4e1ff" stroke-width="2"/><path d="m147 226 8 8 15-17" fill="none" stroke="#4ac19b" stroke-width="4" stroke-linecap="round"/>
+ <circle cx="577" cy="153" r="28" fill="#fff" stroke="#dbe2ff" stroke-width="2"/><path d="m565 158 12-24 11 24-11-6Z" fill="#8a86eb"/>
+ <path d="m600 351 7-18 6 18 18 7-18 6-6 19-7-19-19-6Z" fill="#ffc793"/>
+ <path d="m151 115 4-12 4 12 12 4-12 4-4 12-4-12-12-4Z" fill="#7fbbff"/>
+ <circle cx="525" cy="92" r="7" fill="#ffa87c"/><circle cx="91" cy="349" r="7" fill="#a9a6ed"/><circle cx="643" cy="440" r="6" fill="#79cfbd"/>
+</g>
+</svg>
