@@ -3,11 +3,11 @@ const root=path.resolve(__dirname,'..');
 const read=x=>fs.readFileSync(path.join(root,x),'utf8');
 const home=read('index.html'), access=read('accesos.html'),info=read('informacion.html'),
  siwc=read('chatgpt-integracion.html'),app=read('app.html'),css=read('css/krueka-edu.css'),
- authCSS=read('css/krueka-acceso-escolar.css'),world=read('assets/krueka-world-2026.svg');
+ authCSS=read('css/krueka-acceso-escolar.css'),scene=read('js/krueka-hero-3d.js');
 const pages=[home,access,info,siwc];
 for(const [i,html] of pages.entries()){
  assert.match(html,/<body class="kx-site/, 'Páginas públicas comparten diseño '+i);
- assert.match(html,/css\/krueka-edu\.css\?v=20261017b/,'CSS versionada '+i);
+ assert.match(html,new RegExp('css/krueka-edu\\.css\\?v=20261017'+(i===0?'c':'b')),'CSS versionada '+i);
  assert.match(html,/class="nav-inner"/,'navegación flotante '+i);
  assert.match(html,/id="nav-links"/);
  assert.match(html,/aria-expanded="false"/,'menú accesible '+i);
@@ -18,10 +18,22 @@ for(const [i,html] of pages.entries()){
 for(const id of ['contenido','plataforma','creatividad','inteligencia-artificial','para-quien','como-funciona','contacto'])assert.match(home,new RegExp('id="'+id+'"'));
 for(const dest of ['app.html','studio.html','accesos.html','personajes.html','entregas-word.html','entregas-excel.html','entregas-presentaciones.html','chatgpt-integracion.html'])
  assert.ok(home.includes('href="'+dest+'"'),'Acceso '+dest);
-assert.match(home,/assets\/krueka-world-2026\.svg/);
-assert.match(world,/<svg/);
-assert.match(world,/Ilustración original/);
-assert.match(home,/Ilustración conceptual/);
+assert.match(home,/id="kx-ai-stage"/);
+assert.match(home,/id="kx-ai-canvas"/);
+assert.match(home,/js\/krueka-hero-3d\.js\?v=20261017c/);
+assert.match(home,/Escena 3D conceptual de Krueka/);
+assert.doesNotMatch(home,/<img[^>]+class="kx-world-img"/);
+assert.match(scene,/getContext\('webgl'/);
+assert.match(scene,/createShader/);
+assert.match(scene,/drawElements/);
+assert.match(scene,/IntersectionObserver/);
+assert.match(scene,/prefers-reduced-motion: reduce/);
+assert.match(scene,/devicePixelRatio/);
+assert.match(scene,/renderMode='fallback'/);
+assert.match(scene,/requestAnimationFrame/);
+assert.doesNotMatch(scene,/<iframe|my\.spline\.design|THREE\.Scene/);
+assert.match(css,/\.kx-hero-centered-layout \.kx-hero-text h1/);
+assert.match(css,/\.kx-stage-ready #kx-ai-canvas/);
 assert.match(home,/no generada ni transmitida en tiempo real/i);
 assert.match(home,/ChatGPT: integración solicitada/i);
 assert.match(home,/pendiente de autorización de OpenAI/i);
@@ -53,4 +65,4 @@ for(const src of links){
   assert.ok(home.includes('id="'+hash+'"'),'Falta ancla '+hash);
  }
 }
-console.log('PASS: Krueka pastel futurista: enlaces, mundo original, móvil, docentes, IA transparente, autenticación intacta.');
+console.log('PASS: Krueka hero 3D centrado, WebGL real con fallback, rutas y autenticación intactas.');
