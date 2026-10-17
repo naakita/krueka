@@ -286,3 +286,11 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - Rendimiento y accesibilidad: devicePixelRatio limitado, powerPreference low-power, carga con requestIdleCallback, IntersectionObserver para detener el dibujo fuera de pantalla, pausa si la pestaña está oculta y respeto por prefers-reduced-motion. El canvas decorativo tiene aria-hidden y su contenedor dispone de descripción accesible. Los efectos no son parte de ningún examen o actividad.
 - Los cambios de CSS de portada se añaden a css/krueka-edu.css?v=20261017c; no modifican los módulos del Club, formularios del docente, políticas RLS, backend ni los sistemas de entrega.
 - Pruebas en Chromium móvil y escritorio deben confirmar centrado, sin desbordamiento y WebGL real si el navegador devuelve un contexto válido, o fallback si no.
+
+## 29. Corrección inmediata de la portada: demostración educativa de producto (octubre 2026)
+
+- El usuario rechazó explícitamente la esfera, anillos y cubos abstractos WebGL del hero por tener poco vínculo con educación. Se retiró completamente su contenido y script del `index.html`, reemplazado por una demostración de las experiencias reales de la plataforma: `Crear` (un mundo ilustrado con personaje educativo), `Aprender con IA` (ejemplo de guía pedagógica) y `Entregar` (buzones Word/Excel/PowerPoint).
+- La demostración es ilustrativa, no un editor ni una conversación activa; lo indica visiblemente y enlaza a las funciones reales. Su interfaz no trata datos de alumnos, claves, códigos, sesiones ni archivos.
+- Nuevo `css/krueka-hero-showcase.css?v=20261017d`: diseño propio pastel, interfaz editorial de alta fidelidad y animaciones CSS accesibles, sin WebGL ni dependencias externas. `js/krueka-hero-showcase.js?v=20261017d` habilita los tres botones con teclado, `aria-pressed` y contenido real separado por panel.
+- Se conserva el contenido en la portada aunque falle JavaScript: por defecto se muestra `Crear`. Reduce motion desactiva animaciones; el tamaño móvil se prueba en Chromium y los accesos al Studio y entregas se mantienen.
+- El motor `js/krueka-hero-3d.js` queda como archivo histórico no ejecutado para evitar borrar recursos no auditados, pero no se presenta ni carga desde la portada pública.
