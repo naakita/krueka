@@ -1,7 +1,7 @@
 name: Studio IA - pruebas
 on:
   push:
-    branches: [main, 'fix/studio-ia-*', 'feat/neon-rift-*', 'feat/studio-forge-*', 'feat/studio-space-*', 'feat/studio-gestor-heroes-*', 'feat/studio-rpg-builder-*', 'feat/hero-render-pro-*', 'fix/hero-renderpro-access-*', 'feat/studio-alternative-chat-*', 'feat/studio-chat-individual-focus-*', 'feat/hero-3d-to-protagonist-*', 'feat/word-public-submissions-*', 'feat/word-teacher-email-access-*', 'fix/word-teacher-captcha-*', 'feat/excel-grade-dropboxes-*', 'feat/siwc-krueka-readiness-*', 'feat/educational-ai-brand-refresh-*', 'feat/krueka-light-futurist-canva-inspired-*', 'feat/hero-centered-webgl-ai-*', 'fix/institutional-*']
+    branches: [main, 'fix/studio-ia-*', 'feat/neon-rift-*', 'feat/studio-forge-*', 'feat/studio-space-*', 'feat/studio-gestor-heroes-*', 'feat/studio-rpg-builder-*', 'feat/hero-render-pro-*', 'fix/hero-renderpro-access-*', 'feat/studio-alternative-chat-*', 'feat/studio-chat-individual-focus-*', 'feat/hero-3d-to-protagonist-*', 'feat/word-public-submissions-*', 'feat/word-teacher-email-access-*', 'fix/word-teacher-captcha-*', 'feat/excel-grade-dropboxes-*', 'feat/siwc-krueka-readiness-*', 'feat/educational-ai-brand-refresh-*', 'feat/krueka-light-futurist-canva-inspired-*', 'feat/hero-centered-webgl-ai-*', 'fix/replace-unprofessional-hero-*', 'fix/institutional-*']
   pull_request:
 permissions:
   contents: read
@@ -58,6 +58,7 @@ jobs:
       - run: node tests/word-dropbox.test.cjs
       - run: node tests/excel-grade-dropboxes.test.cjs
       - run: node tests/siwc-krueka-readiness.test.cjs
+      - run: node --check js/krueka-hero-showcase.js
       - run: node --check js/krueka-hero-3d.js
       - run: node tests/krueka-public-redesign.test.cjs
       - run: node tests/krueka-public-redesign-browser.test.cjs
