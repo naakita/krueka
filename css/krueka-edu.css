@@ -159,3 +159,18 @@ body.kx-site button{cursor:pointer}body.kx-site a:focus-visible,body.kx-site but
 @media(max-width:790px){.kx-container{padding:0 19px}.nav{padding:12px 19px;min-height:72px}.menu-button{display:flex;order:3}.nav .btn-nav{margin-left:auto;order:2;min-height:40px;padding:9px 12px}.nav .brand{order:1}.nav .links{position:absolute;top:71px;left:0;right:0;display:none;flex-direction:column;align-items:stretch;gap:0;padding:10px 20px 20px;background:#101c30;border-bottom:1px solid #b2d1ed28;box-shadow:0 18px 30px #0006}.nav .links.open{display:flex}.nav .links a{display:block;padding:12px 5px;border-bottom:1px solid #ffffff12}.kx-hero-grid{grid-template-columns:1fr}.kx-home-hero{padding:70px 0 55px}.kx-hero-content h1{max-width:780px}.kx-workspace{max-width:620px;transform:none}.kx-workspace:hover{transform:none}.kx-product-grid{grid-template-columns:1fr}.kx-product-large{grid-row:auto}.kx-product-art{max-width:500px}.kx-roles,.kx-access-grid{grid-template-columns:1fr 1fr}.kx-ai-grid{grid-template-columns:1fr}.kx-pedagogy{grid-template-columns:1fr 1fr}.kx-footer-main{grid-template-columns:1fr 1fr}.kx-deliveries{grid-template-columns:1fr}.kx-section{padding:68px 0}}
 @media(max-width:550px){.brand{font-size:18px}.brand-logo{width:37px;height:36px}.brand .kx-brand-suffix{display:none}.nav .btn-nav{font-size:11px!important}.kx-home-hero{padding:49px 0 43px}.kx-hero-content h1{font-size:clamp(43px,11vw,57px)}.kx-hero-content .kx-lead{font-size:15px}.kx-hero-actions .btn{flex:1 1 auto}.kx-workspace-body{grid-template-columns:70px 1fr;min-height:320px}.kx-workspace-rail{font-size:9px}.kx-rail-item{font-size:9px;padding:8px 3px}.kx-workspace-view{padding:10px}.kx-creation{height:165px}.kx-workspace-mini-btn{font-size:9px}.kx-workspace-bottom{grid-template-columns:1fr}.kx-workspace-subhead small{display:none}.kx-product{padding:21px}.kx-product-large{min-height:0}.kx-roles,.kx-access-grid,.kx-pedagogy,.kx-access-help{grid-template-columns:1fr}.kx-role p{min-height:auto}.kx-banner{align-items:flex-start;flex-direction:column;padding:20px}.kx-footer-main{gap:24px}.kx-section h2,.kx-cta h2{font-size:clamp(31px,8vw,43px)}.kx-access-hero{padding:44px 0 22px}.kx-access-wide{padding:21px}.kx-hero-proof{gap:11px}.kx-info-page .public-main{padding:49px 17px}.kx-info-page .public-card{padding:20px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.kx-workspace,.kx-role,.btn,.kx-btn,.kx-delivery{transition:none!important}.kx-workspace:hover,.kx-role:hover,.btn:hover,.kx-btn:hover{transform:none!important}}
+
+/* Páginas informativas: grids y avisos coherentes con la nueva marca. */
+.kx-info-page .public-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}
+.kx-info-page .public-grid .public-card{margin:0;min-width:0}
+.kx-info-page .public-grid .public-wide{grid-column:1/-1}
+.kx-info-page .public-card .card-label{color:var(--kx-cyan);text-transform:uppercase;letter-spacing:.09em;font-size:10px;font-weight:850}
+.kx-info-page .public-card .hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:19px}
+.kx-info-page .public-card .text-link{display:inline-flex;color:var(--kx-cyan)!important;font-size:13px;font-weight:800;margin-top:10px}
+.kx-info-page .public-card .status-note{border:1px solid #9fcab94b;border-radius:12px;background:#b6f09c12;color:#d7f0dc;padding:17px}
+.kx-info-page .public-card .status-note strong{display:block;font-size:14px}
+.kx-info-page .public-card .status-note p{margin-bottom:0;font-size:13px}
+.kx-info-page .public-card ul{padding-left:22px}
+.kx-info-page .public-card li+li{margin-top:8px}
+.kx-info-page .public-card .btn{font-size:12px}
+@media(max-width:720px){.kx-info-page .public-grid{grid-template-columns:1fr}.kx-info-page .public-grid .public-wide{grid-column:auto}}
