@@ -294,3 +294,15 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - Nuevo `css/krueka-hero-showcase.css?v=20261017d`: diseño propio pastel, interfaz editorial de alta fidelidad y animaciones CSS accesibles, sin WebGL ni dependencias externas. `js/krueka-hero-showcase.js?v=20261017d` habilita los tres botones con teclado, `aria-pressed` y contenido real separado por panel.
 - Se conserva el contenido en la portada aunque falle JavaScript: por defecto se muestra `Crear`. Reduce motion desactiva animaciones; el tamaño móvil se prueba en Chromium y los accesos al Studio y entregas se mantienen.
 - El motor `js/krueka-hero-3d.js` queda como archivo histórico no ejecutado para evitar borrar recursos no auditados, pero no se presenta ni carga desde la portada pública.
+
+## 30. Krueka Product-First: sitio educativo con demostraciones funcionales (octubre 2026)
+
+- Después de varias iteraciones estéticas rechazadas por el usuario (esfera WebGL, robot ilustrado, formas CSS infantiles), la portada `index.html` se rehízo sobre el principio **mostrar producto, no dibujos de tecnología**. Interfaz editorial con tipografía centrada, contraste profesional, navegación por roles y demostración embebida.
+- Las funciones de demostración son auténticamente interactivas pero usan exclusivamente ejemplos locales, sin datos reales:
+  - **Taller:** tablero de 8 × 7 casillas en `js/krueka-platform-2026.js`; el explorador se controla con flechas de teclado o botones, detecta colisiones con obstáculos, cuenta pasos y valida llegada a la meta. El algoritmo es local y no guarda actividad estudiantil.
+  - **Aula:** capacidad y tres indicadores de ejemplo; cambiar checkboxes actualiza el contador y la barra de progreso mediante `aria-valuenow`. No escribe calificaciones en el servidor.
+  - **Entregas:** accesos directos a los servicios privados Word/Excel/PowerPoint reales; no ofrece un falso formulario ni altera políticas de almacenamiento.
+- Nueva identidad profesional en `css/krueka-platform-2026.css`, portada `index.html` y `accesos.html` con `css/krueka-access-2026.css`: paleta blanco/azul marino/azul eléctrico, sin gráficos de robots o animación 3D, sin CDN ni fuentes externas, diseño móvil y soporte reduced-motion. La experiencia está utilizable en navegadores que no pueden ejecutar WebGL.
+- Se conservan `app.html`, `studio.html`, `personajes.html`, los buzones y sus permisos. No se modifica Supabase, Edge Functions, roles, códigos, IA remota, almacenamiento ni proyectos. SIWC permanece **pendiente de autorización**, sin prometer uso gratis ilimitado.
+- Las pruebas automáticas verifican enlaces locales, ausencia de scripts remotos, acciones reales del juego y rúbrica, navegación móvil, ausencia de desbordamiento y compatibilidad de la web con la suite del Studio. La captura visual Chromium complementa, no reemplaza, las pruebas con usuarios reales.
+- Los CSS/JS antiguos de portada permanecen en el repositorio como recursos históricos **no importados**; su retirada definitiva debe hacerse tras auditoría de dependencias.
