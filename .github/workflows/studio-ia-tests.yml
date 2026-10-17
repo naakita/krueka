@@ -59,3 +59,4 @@ jobs:
       - run: node tests/excel-grade-dropboxes.test.cjs
       - run: node tests/siwc-krueka-readiness.test.cjs
       - run: node tests/krueka-public-redesign.test.cjs
+      - run: node tests/krueka-public-redesign-browser.test.cjs
