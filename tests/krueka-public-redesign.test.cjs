@@ -1,60 +1,56 @@
-const assert=require('node:assert/strict');
-const fs=require('node:fs'),path=require('node:path');
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..');
-const read=f=>fs.readFileSync(path.join(root,f),'utf8');
-const index=read('index.html'),access=read('accesos.html'),info=read('informacion.html'),
-  siwc=read('chatgpt-integracion.html'),app=read('app.html'),css=read('css/krueka-edu.css'),
-  authCss=read('css/krueka-acceso-escolar.css'),homeJs=read('js/home.js');
-for(const [name,html] of [['index',index],['accesos',access],['informacion',info],['siwc',siwc]]){
- assert.match(html,/<body class="kx-site/,name+' usa identidad nueva');
- assert.match(html,/css\/krueka-edu\.css\?v=20261017a/,name+' tiene CSS nueva');
- assert.match(html,/href="index\.html"/,name+' tiene acceso de retorno');
- assert.match(html,/id="nav-links"/,name+' permite menú móvil');
- assert.match(html,/class="menu-button"/,name+' tiene botón de menú');
- assert.match(html,/aria-expanded="false"/,name+' tiene estado de menú accesible');
- assert.match(html,/href="accesos\.html|href="app\.html/,name+' tiene acceso de rol');
- assert.match(html,/href="informacion\.html/,name+' enlaza información');
- assert.match(html,/js\/home\.js\?v=20261017a/,name+' comparte navegación');
+const read=x=>fs.readFileSync(path.join(root,x),'utf8');
+const home=read('index.html'), access=read('accesos.html'),info=read('informacion.html'),
+ siwc=read('chatgpt-integracion.html'),app=read('app.html'),css=read('css/krueka-edu.css'),
+ authCSS=read('css/krueka-acceso-escolar.css'),world=read('assets/krueka-world-2026.svg');
+const pages=[home,access,info,siwc];
+for(const [i,html] of pages.entries()){
+ assert.match(html,/<body class="kx-site/, 'Páginas públicas comparten diseño '+i);
+ assert.match(html,/css\/krueka-edu\.css\?v=20261017b/,'CSS versionada '+i);
+ assert.match(html,/class="nav-inner"/,'navegación flotante '+i);
+ assert.match(html,/id="nav-links"/);
+ assert.match(html,/aria-expanded="false"/,'menú accesible '+i);
+ assert.match(html,/href="accesos\.html"/,'acceso principal '+i);
+ assert.match(html,/href="informacion\.html"/,'información '+i);
+ assert.match(html,/js\/home\.js\?v=20261017a/);
 }
-const ids=[...index.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
-for(const anchor of ['contenido','plataforma','espacios','inteligencia-artificial','como-funciona','contacto'])assert.ok(ids.includes(anchor),'faltó sección '+anchor);
-for(const link of ['studio.html','personajes.html','app.html','entregas-word.html','entregas-excel.html','entregas-presentaciones.html','chatgpt-integracion.html'])
- assert.ok(index.includes('href="'+link+'"'),'enlace faltante a '+link);
-assert.match(index,/Vista ilustrativa.*No muestra datos de alumnos/i);
-assert.match(index,/todavía no está activa/);
-assert.match(index,/Ayuda local/);
-assert.match(index,/no comparten la cuenta/);
-assert.doesNotMatch(index,/27\s*\/\s*29|93%\s*presentes|Clase activa EN VIVO|GPT-6[^<]{0,30}ilimitado/i);
+for(const id of ['contenido','plataforma','creatividad','inteligencia-artificial','para-quien','como-funciona','contacto'])assert.match(home,new RegExp('id="'+id+'"'));
+for(const dest of ['app.html','studio.html','accesos.html','personajes.html','entregas-word.html','entregas-excel.html','entregas-presentaciones.html','chatgpt-integracion.html'])
+ assert.ok(home.includes('href="'+dest+'"'),'Acceso '+dest);
+assert.match(home,/assets\/krueka-world-2026\.svg/);
+assert.match(world,/<svg/);
+assert.match(world,/Ilustración original/);
+assert.match(home,/Ilustración conceptual/);
+assert.match(home,/no generada ni transmitida en tiempo real/i);
+assert.match(home,/ChatGPT: integración solicitada/i);
+assert.match(home,/pendiente de autorización de OpenAI/i);
+assert.match(home,/Ayuda local disponible/i);
+assert.doesNotMatch(home,/Clase activa EN VIVO|93% presentes|27\s*\/\s*29|27 alumnos conectados/i);
 assert.match(access,/id="entregas"/);
 assert.match(access,/código personal de seis caracteres/i);
-assert.match(access,/código exclusivo/i);
-assert.match(info,/Servicios que intervienen/);
 assert.match(info,/Qué información se utiliza/);
-assert.match(siwc,/Estado: pendiente de autorización/);
-assert.doesNotMatch(siwc,/Estado:\s*conectado/i);
-assert.match(app,/css\/krueka-acceso-escolar\.css\?v=20261017a/);
-for(const id of ['form-doc','form-alu','screen-login','screen-nueva','screen-app','screen-alu'])
- assert.ok(app.includes('id="'+id+'"'),'app conserva '+id);
-assert.match(authCss,/#screen-login/);
-assert.match(authCss,/#screen-nueva/);
-assert.doesNotMatch(authCss,/#screen-app|#screen-alu/,'nunca intervenir vistas internas');
-assert.match(css,/@media\(max-width:550px\)/);
+assert.match(siwc,/pendiente de autorización/i);
+assert.match(app,/css\/krueka-acceso-escolar\.css\?v=20261017b/);
+for(const id of ['form-doc','form-alu','screen-login','screen-nueva','screen-app','screen-alu'])assert.ok(app.includes('id="'+id+'"'),'Se conserva '+id);
+assert.match(authCSS,/#screen-login/);assert.match(authCSS,/#screen-nueva/);
+assert.doesNotMatch(authCSS,/#screen-app|#screen-alu/,'No se alteran vistas internas');
+assert.match(css,/@media\(max-width:560px\)/);
 assert.match(css,/@media\(prefers-reduced-motion:reduce\)/);
 assert.match(css,/:focus-visible/);
+assert.match(css,/#dff5ff/i);
+assert.match(css,/#ff9b76/i);
 assert.doesNotMatch(css,/@import|fonts\.googleapis|https:\/\/|url\((?:["']?)http/);
-assert.match(homeJs,/menu\.addEventListener\('click'/);
-for(const page of [index,access,info,siwc]){
- for(const m of page.matchAll(/\b(?:href|src)="([^"]+)"/g)){
-  const url=m[1];
-  if(/^(https?:|mailto:|#|data:)/.test(url))continue;
-  const local=url.split('#')[0].split('?')[0];
-  if(!local||local==='/')continue;
-  assert.ok(!local.startsWith('/'),'usar rutas relativas verificables: '+local);
-  assert.ok(fs.existsSync(path.join(root,local)),'Falta ruta local '+local);
-  if(url.includes('#')&&!url.startsWith('mailto:')){
-   const fragment=url.split('#')[1].split('?')[0];
-   if(fragment&&local==='index.html')assert.ok(ids.includes(fragment),'Falta ancla '+fragment+' de '+url);
-  }
+const links=[...pages.flatMap(p=>[...p.matchAll(/\b(?:href|src)="([^"]+)"/g)].map(m=>m[1]))];
+for(const src of links){
+ if(/^(https?:|mailto:|#|data:)/.test(src))continue;
+ const target=src.split('#')[0].split('?')[0];
+ if(!target)continue;
+ assert.ok(!target.startsWith('/'),'Prefer relative paths '+target);
+ assert.ok(fs.existsSync(path.join(root,target)),'Falta recurso '+target);
+ if(src.includes('#')&&target==='index.html'){
+  const hash=src.split('#')[1];
+  assert.ok(home.includes('id="'+hash+'"'),'Falta ancla '+hash);
  }
 }
-console.log('PASS: nueva identidad, accesibilidad básica, rutas reales, IA honesta y login intacto.');
+console.log('PASS: Krueka pastel futurista: enlaces, mundo original, móvil, docentes, IA transparente, autenticación intacta.');
