@@ -63,3 +63,4 @@ jobs:
       - run: node --check js/krueka-hero-3d.js
       - run: node tests/krueka-public-redesign.test.cjs
       - run: node tests/krueka-public-redesign-browser.test.cjs
+      - run: node tests/krueka-visual-review.cjs
