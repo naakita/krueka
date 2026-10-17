@@ -6,7 +6,7 @@ const arch=fs.readFileSync(path.join(root,'ARQUITECTURA.md'),'utf8');
 assert.match(page,/Estado: pendiente de autorización/);
 assert.match(page,/Sin conexión con el plan/);
 assert.match(page,/https:\/\/openai\.com\/es-419\/form\/sign-in-with-chatgpt-interest\//);
-assert.match(page,/no se han modificado las cuentas de los alumnos/);
+assert.match(page,/ni se han modificado las cuentas de los alumnos/);
 assert.match(page,/menores de 13 años/i);
 assert.match(page,/plan de ChatGPT de cada usuario elegible/);
 assert.match(page,/No se ha creado ninguna conexión OAuth/);
