@@ -74,7 +74,7 @@
         p.push(x,y,z);n.push(x,y,z);
       }
     }
-    for(var y=0;y<rows;y++)for(var x=0;x<cols;x++){var a=y*(cols+1)+x,b=a+cols+1;ii.push(a,b,a+1,b,b+1,a+1);}
+    for(var y=0;y<rows;y++)for(var x=0;x<cols;x++){var a=y*(cols+1)+x,b=a+cols+1;ii.push(a,a+1,b,a+1,b+1,b);}
     return makeMesh(p,n,ii);
   }
   function ring(R,r,segments,tube){
@@ -85,7 +85,7 @@
         p.push((R+r*cv)*cu,r*sv,(R+r*cv)*su);n.push(nx,ny,nz);
       }
     }
-    for(var k=0;k<segments;k++)for(var j=0;j<tube;j++){var a=k*(tube+1)+j,b=a+tube+1;ii.push(a,a+1,b,a+1,b+1,b);}
+    for(var k=0;k<segments;k++)for(var j=0;j<tube;j++){var a=k*(tube+1)+j,b=a+tube+1;ii.push(a,b,a+1,a+1,b,b+1);}
     return makeMesh(p,n,ii);
   }
   function cube(){
