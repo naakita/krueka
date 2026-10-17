@@ -218,8 +218,7 @@
     else{inView=true;start();}
   });
   window.addEventListener('resize',function(){if(gl){resize();if(reduceMotion)draw();}},{passive:true});
-  // Esperar a que el primer texto esté visible antes de inicializar WebGL.
-  if('requestIdleCallback' in window){
-    requestIdleCallback(setup,{timeout:1200});
-  }else window.setTimeout(setup,150);
+  // La animación pertenece al primer pantallazo: inicializar después de
+  // pintar el HTML, pero sin esperar a requestIdleCallback, que puede tardar.
+  window.setTimeout(setup,110);
 })();
