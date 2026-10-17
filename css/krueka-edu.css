@@ -275,3 +275,20 @@ body.kx-site a:focus-visible,body.kx-site button:focus-visible,body.kx-site inpu
  .kx-access-wide{padding:22px}.kx-info-page .public-main{padding:47px 17px}.kx-info-page .public-grid{grid-template-columns:1fr}.kx-info-page .public-grid .public-wide{grid-column:auto}.kx-info-page .public-card{padding:20px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn,.kx-person,.kx-delivery,.links a{transition:none!important}.btn:hover,.kx-person:hover,.kx-delivery:hover{transform:none!important}}
+
+/* Compatibility helpers for the existing access and explanatory pages. */
+.kx-kicker{display:inline-flex;align-items:center;gap:8px;font-size:10px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}
+.kx-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 5px #ffaf9c3b}
+.kx-gradient-text{background:linear-gradient(90deg,#3764df,#5377e7 65%,#e87f79);background-clip:text;-webkit-background-clip:text;color:transparent}
+.kx-section-lead{font-size:16px;line-height:1.8;color:var(--muted)}
+.kx-btn-text{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:850;color:var(--blue)!important;padding:8px 0}
+.kx-btn-text:hover{text-decoration:underline!important;text-underline-offset:4px}
+.btn-ghost{color:var(--blue)!important;border:1px solid #d7e4f5;background:#fff;box-shadow:0 7px 20px #4162a412}
+.btn-ghost:hover{background:#f8fbff}
+.kx-hero-actions{display:flex;gap:11px;flex-wrap:wrap;align-items:center;margin:18px 0}
+.kx-access-card .kx-hero-actions{margin-top:auto}
+.kx-access-card .btn{min-height:45px}
+.kx-info-page .public-card .btn{color:var(--blue)!important;background:#eef5ff;border:1px solid #d1e2f8}
+.kx-info-page .public-card .btn:hover{background:#e3efff}
+.kx-info-page .public-card .text-link{color:var(--blue)!important;font-size:13px;font-weight:850}
+@media(max-width:560px){.kx-access-card .kx-hero-actions .btn{width:auto}}
