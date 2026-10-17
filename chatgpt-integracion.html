@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Integración ChatGPT · Krueka</title><meta name="robots" content="noindex,nofollow"><meta name="description" content="Preparación de la integración oficial de ChatGPT en la plataforma educativa Krueka.">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#213a50;background:radial-gradient(circle at top,#dceeff,#f5f8fc 60%)}
+header,main{max-width:940px;margin:auto;padding:20px}header{display:flex;justify-content:space-between;align-items:center;gap:14px;font-size:13px}
+a{color:#216fa3}header a{text-decoration:none;font-weight:800}
+main{padding-top:27px;padding-bottom:55px}h1{font-size:clamp(30px,5vw,46px);line-height:1.15;letter-spacing:-.04em;color:#112f4c;margin:10px 0}
+h2{font-size:19px;color:#153b5c;margin:0 0 10px}p,li{line-height:1.7}
+.eyebrow{color:#2d7dab;font-weight:900;font-size:11px;letter-spacing:.15em}
+.lead{max-width:760px;font-size:15px;color:#59768e}
+.status{display:inline-block;font-size:12px;background:#eaf0f6;border:1px solid #ccdae7;border-radius:24px;padding:8px 13px;margin-top:10px;color:#3d5369;font-weight:800}
+.grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-top:23px}
+.card{background:#fff;border:1px solid #dbe6f0;border-radius:17px;padding:24px;box-shadow:0 10px 40px #174d780b}
+.card p,.card li{color:#58738a;font-size:13px}.card ol{padding-left:20px}.card li+li{margin-top:8px}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:17px}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:43px;border-radius:10px;border:1px solid #1d75b6;padding:10px 14px;background:#1d75b6;color:#fff;font-weight:800;font-size:12px;cursor:pointer;text-decoration:none}
+.btn.secondary{color:#245e86;background:#fff;border-color:#bed4e4}
+.letter{font-size:12px;line-height:1.7;color:#385269;white-space:pre-wrap;background:#f7fbff;border:1px solid #d9e6f0;border-radius:12px;padding:16px}
+.foot{font-size:11px;color:#768ea1;margin-top:19px;line-height:1.6}
+@media(max-width:720px){.grid{grid-template-columns:1fr}.card{padding:19px}main,header{padding-left:14px;padding-right:14px}}
+</style></head><body>
+<header><a href="index.html">← Inicio de Krueka</a><span>Integraciones · IA</span></header>
+<main><span class="eyebrow">INTEGRACIÓN OFICIAL · CHATGPT</span>
+<h1>ChatGPT en Krueka</h1>
+<p class="lead">OpenCode puede usar la cuota incluida en una suscripción ChatGPT gracias a «Sign in with ChatGPT». Estamos preparando ese mismo tipo de integración para Krueka, pero necesitamos la habilitación correspondiente para una aplicación web alojada.</p>
+<p class="status">Estado: pendiente de autorización · Sin conexión con el plan</p>
+<div class="grid">
+ <section class="card">
+  <h2>Solicitar acceso para Krueka</h2>
+  <p>La modalidad para software local de código abierto no puede copiarse sin más a nuestro servidor web. La documentación oficial remite a un formulario para productos alojados.</p>
+  <ol>
+   <li>Abrí el formulario de OpenAI.</li>
+   <li>Seleccioná <strong>«Inicio de sesión y uso del plan de ChatGPT para solicitudes de IA»</strong>.</li>
+   <li>Indicá el producto <strong>Krueka</strong> y la web <strong>https://www.krueka.com</strong>.</li>
+   <li>Copiá el texto de descripción incluido debajo. La solicitud no garantiza aprobación.</li>
+  </ol>
+  <div class="actions"><a class="btn" href="https://openai.com/es-419/form/sign-in-with-chatgpt-interest/" target="_blank" rel="noopener noreferrer">Formulario oficial ↗</a>
+  <a class="btn secondary" href="https://developers.openai.com/siwc/quickstart" target="_blank" rel="noopener noreferrer">Documentación ↗</a></div>
+ </section>
+ <aside class="card"><h2>Los alumnos pueden seguir creando</h2>
+  <p>Krueka Studio conserva el editor visual, los proyectos privados y la Ayuda local sin usar créditos de API. La IA remota existente sigue sujeta al cupo de su proveedor.</p>
+  <p>La suscripción personal del profesor <strong>no se comparte</strong>. Cada usuario elegible debe autorizar su propia cuenta. Los niños menores de 13 años necesitan una solución educativa supervisada, no cuentas personales de ChatGPT.</p>
+  <div class="actions"><a class="btn secondary" href="studio.html">Abrir Studio</a></div>
+ </aside>
+</div>
+<section class="card" style="margin-top:16px">
+ <h2>Descripción lista para presentar</h2>
+ <p>Copiá este texto en el campo de productos del formulario oficial.</p>
+ <div class="letter" id="request-text">Krueka es una plataforma educativa web utilizada por docentes y alumnos de primaria y secundaria en Paraguay. Los estudiantes aprenden a crear videojuegos, animaciones y proyectos informáticos desde navegadores, incluso en computadoras de pocos recursos, y sus proyectos permanecen privados.
+
+Queremos integrar Sign in with ChatGPT y, si el programa lo permite, la autorización individual del uso incluido en el plan de ChatGPT de cada usuario elegible, mediante un flujo oficial y sin compartir cuentas, suscripciones ni tokens. Nuestra aplicación está alojada remotamente y actualmente usa una API diferente con sus propios límites.
+
+Para menores de 13 años necesitamos información sobre las opciones institucionales supervisadas que OpenAI permita sin cuentas ChatGPT individuales. Buscamos controles de edad, consentimiento, seguridad escolar, límites y aislamiento por alumno. Solicitamos evaluar a Krueka como socio educativo para esta integración.</div>
+ <div class="actions"><button class="btn secondary" id="copy-request" type="button">Copiar descripción</button></div>
+ <p id="copy-status" class="foot" role="status" aria-live="polite"></p>
+</section>
+<p class="foot">Esta sección no envía solicitudes automáticamente. No se ha creado ninguna conexión OAuth, no se usan credenciales de OpenCode ni se han modificado las cuentas de los alumnos.</p>
+</main>
+<script>
+(()=>{'use strict';
+ document.getElementById('copy-request').onclick=async()=>{
+  const el=document.getElementById('request-text'),txt=el.textContent.trim(),status=document.getElementById('copy-status');
+  try{await navigator.clipboard.writeText(txt);status.textContent='Descripción copiada. Pegala en el formulario oficial.';}
+  catch(_){const r=document.createRange();r.selectNodeContents(el);const s=window.getSelection();s.removeAllRanges();s.addRange(r);status.textContent='Texto seleccionado: presioná Ctrl+C para copiarlo.';}
+ };
+})();
+</script></body></html>
