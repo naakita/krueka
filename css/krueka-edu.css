@@ -292,3 +292,64 @@ body.kx-site a:focus-visible,body.kx-site button:focus-visible,body.kx-site inpu
 .kx-info-page .public-card .btn:hover{background:#e3efff}
 .kx-info-page .public-card .text-link{color:var(--blue)!important;font-size:13px;font-weight:850}
 @media(max-width:560px){.kx-access-card .kx-hero-actions .btn{width:auto}}
+
+/* HERO CENTRADO · escena 3D educativa Krueka.
+ * Sin iframe ni dependencias remotas. El canvas WebGL se renderiza cuando es visible.
+ * Cuando no hay WebGL, la composición CSS 3D sigue presentando el concepto.
+ */
+.kx-hero{padding-top:75px;padding-bottom:45px;min-height:0}
+.kx-hero-centered-layout{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.kx-hero-centered-layout .kx-hero-text{width:100%;max-width:960px;margin-inline:auto;padding:0}
+.kx-hero-centered-layout .kx-eyebrow{justify-content:center}
+.kx-hero-centered-layout .kx-hero-text h1{max-width:960px;margin:23px auto 22px;font-size:clamp(49px,6.7vw,93px);line-height:1.03;letter-spacing:-.078em}
+.kx-hero-centered-layout .kx-hero-text h1 .kx-headline-accent:last-child::after{bottom:-6px;height:8px;right:9%}
+.kx-hero-centered-layout .kx-hero-text>p{max-width:730px;margin:0 auto 25px;line-height:1.8;font-size:17px}
+.kx-hero-centered-layout .kx-actions,.kx-hero-centered-layout .kx-hero-facts{justify-content:center}
+.kx-hero-centered-layout .kx-hero-facts{margin-top:23px}
+.kx-hero-motion-wrap{width:100%;max-width:1120px;margin:24px auto 0;min-width:0}
+.kx-hero-3d{position:relative;isolation:isolate;width:100%;height:clamp(390px,46vw,585px);overflow:hidden;border-radius:39px;border:1px solid #d5e4fa;background:radial-gradient(ellipse at 50% 48%,#fcfdff 0%,#edf4ff 42%,#dcecff 88%,#d5e5ff 100%);box-shadow:inset 0 0 82px #ffffffc2,0 32px 90px #4369ba1b}
+.kx-hero-3d::before{content:"";position:absolute;inset:14px;border:1px solid #ffffffbf;border-radius:30px;pointer-events:none;z-index:1}
+.kx-stage-glow{position:absolute;z-index:0;inset:0;pointer-events:none;background:radial-gradient(ellipse 34% 56% at 53% 43%,#b5cfff8a 0%,transparent 98%),radial-gradient(ellipse 26% 42% at 30% 42%,#b1effd94 0%,transparent 95%),radial-gradient(ellipse 30% 30% at 76% 63%,#ffd5c594 0%,transparent 94%)}
+.kx-stage-grid{position:absolute;z-index:0;inset:0;opacity:.38;background-image:linear-gradient(#b0c6ea5f 1px,transparent 1px),linear-gradient(90deg,#b0c6ea5f 1px,transparent 1px);background-size:41px 41px;mask-image:radial-gradient(ellipse 43% 46% at 50% 49%,#000 0%,transparent 100%)}
+#kx-ai-canvas{position:absolute;z-index:3;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .5s ease;touch-action:pan-y}
+.kx-stage-ready #kx-ai-canvas{opacity:1}
+.kx-ai-fallback{position:absolute;z-index:2;left:50%;top:50%;width:min(490px,92%);height:min(420px,80%);transform:translate(-50%,-50%);pointer-events:none;transition:opacity .45s ease}
+.kx-stage-ready .kx-ai-fallback{opacity:0}
+.kx-fallback-core{position:absolute;left:50%;top:50%;width:176px;height:176px;transform:translate(-50%,-50%) rotate(-15deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border-radius:52px;background:linear-gradient(135deg,#a8eeff 0%,#596fe7 56%,#3a4aba 100%);box-shadow:inset 11px 9px 21px #ffffff9c,inset -18px -18px 0 #334faf46,0 25px 40px #5264c85e;border:4px solid #e7f5ff;color:#fff;text-shadow:0 3px 10px #2d479960}
+.kx-fallback-core span{font-size:50px;line-height:1}
+.kx-fallback-core strong{font-size:22px;letter-spacing:.18em}
+.kx-fallback-ring{position:absolute;left:50%;top:50%;width:360px;height:200px;border:6px solid #82b7f4;border-radius:50%;transform:translate(-50%,-50%) rotate(-30deg);box-shadow:0 0 22px #7ea7e857,inset 0 0 16px #9dbafc}
+.kx-fallback-ring.two{border-color:#fba78d;width:390px;height:270px;transform:translate(-50%,-50%) rotate(53deg);animation:kx-fallback-spin 15s linear infinite}
+.kx-fallback-ring.three{border-color:#c1b1fa;width:310px;height:320px;transform:translate(-50%,-50%) rotate(15deg);opacity:.75;animation:kx-fallback-spin-reverse 18s linear infinite}
+.kx-fallback-cube{position:absolute;border-radius:19px;width:65px;height:65px;background:linear-gradient(135deg,#9cdfff,#4779ea);box-shadow:inset -13px -11px #2849ba45,0 16px 29px #4f7bbc55;animation:kx-float-3d 5s ease-in-out infinite}
+.kx-fallback-cube.one{top:13%;left:10%;transform:rotate(20deg)}.kx-fallback-cube.two{top:18%;right:8%;background:linear-gradient(135deg,#d1c7ff,#846ff5);animation-delay:-2s}.kx-fallback-cube.three{bottom:6%;left:16%;background:linear-gradient(135deg,#ffd5a5,#ff946d);animation-delay:-3s}
+.kx-stage-legend{position:absolute;z-index:5;left:22px;right:22px;bottom:22px;display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}
+.kx-stage-legend span{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border:1px solid #d7e6fa;border-radius:100px;background:#fffffff2;box-shadow:0 6px 18px #6f91bb12;font-size:10px;font-weight:850;letter-spacing:.055em;color:#586a95}
+.kx-stage-legend i{width:7px;height:7px;background:#397be5;border-radius:50%;display:block}
+.kx-stage-legend span:nth-child(2) i{background:#ff9e73}.kx-stage-legend span:nth-child(3) i{background:#987ce3}
+.kx-scene-caption{text-align:center;margin:10px auto 0;color:#7c8caa;font-size:11px}
+@keyframes kx-fallback-spin{from{transform:translate(-50%,-50%) rotate(53deg)}to{transform:translate(-50%,-50%) rotate(413deg)}}
+@keyframes kx-fallback-spin-reverse{from{transform:translate(-50%,-50%) rotate(15deg)}to{transform:translate(-50%,-50%) rotate(-345deg)}}
+@keyframes kx-float-3d{0%,100%{translate:0 0}50%{translate:0 -15px}}
+@media(max-width:810px){
+ .kx-hero{padding-top:59px}
+ .kx-hero-centered-layout .kx-hero-text h1{font-size:clamp(48px,8.5vw,74px)}
+ .kx-hero-3d{height:clamp(350px,59vw,485px)}
+ .kx-hero-centered-layout .kx-hero-text>p{font-size:16px}
+}
+@media(max-width:560px){
+ .kx-hero{padding-top:43px;padding-bottom:34px}
+ .kx-hero-centered-layout .kx-hero-text h1{font-size:clamp(43px,11vw,57px);line-height:1.08}
+ .kx-hero-centered-layout .kx-hero-text>p{font-size:15px;line-height:1.7}
+ .kx-hero-centered-layout .kx-actions{gap:9px}
+ .kx-hero-centered-layout .kx-actions .btn{width:100%}
+ .kx-hero-motion-wrap{margin-top:12px}
+ .kx-hero-3d{height:340px;border-radius:23px}
+ .kx-hero-3d::before{inset:8px;border-radius:16px}
+ .kx-ai-fallback{transform:translate(-50%,-50%) scale(.71);width:490px;height:360px}
+ .kx-stage-legend{left:7px;right:7px;bottom:14px;gap:4px}
+ .kx-stage-legend span{font-size:8px;padding:6px 7px;gap:4px}
+ .kx-stage-legend i{width:5px;height:5px}
+ .kx-scene-caption{font-size:9px}
+}
+@media(prefers-reduced-motion:reduce){#kx-ai-canvas,.kx-ai-fallback{transition:none!important}.kx-fallback-ring,.kx-fallback-cube{animation:none!important}}

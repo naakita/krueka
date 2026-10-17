@@ -277,3 +277,12 @@ Las tablas tienen RLS sin acceso directo. Las 112 actividades se distribuyen en 
 - Los enlaces conservan sus destinos funcionales originales, incluyendo app.html, studio.html, personajes.html y buzones Word/Excel/PowerPoint.
 - SIWC sigue pendiente de aprobación. La ayuda local no se presenta como IA generativa, y las solicitudes remotas de IA siguen limitadas por la API que el sistema ya tiene.
 - Las pruebas incluyen rutas, activos, estados de IA y Chromium en móvil/escritorio. No se considera QA real de sesiones privadas, PC de 32 bits ni datos escolares.
+
+## 28. Hero centrado con escena 3D real IA/educación — octubre de 2026
+
+- Reorganizado el primer bloque de index.html: titular, descripción, botones y sellos centrados verticalmente sobre una escena 3D grande. Eliminada del DOM la ilustración SVG isométrica anterior y sus tarjetas flotantes; el SVG histórico se mantiene como recurso no utilizado para evitar borrar otros contenidos sin auditoría.
+- js/krueka-hero-3d.js?v=20261017c es un renderizador WebGL1 autocontenido con geometría 3D real: núcleo, anillos de conexión iluminados, nodos orbitales y bloques educativos; interacción suave con el puntero. No usa iframes, URL Spline ficticias, CDN, dependencias de pago ni datos de alumnos.
+- En navegadores sin WebGL la misma zona muestra una composición CSS de geometría/orbitas en movimiento. El contenido HTML central y los botones permanecen siempre utilizables aun sin JavaScript.
+- Rendimiento y accesibilidad: devicePixelRatio limitado, powerPreference low-power, carga con requestIdleCallback, IntersectionObserver para detener el dibujo fuera de pantalla, pausa si la pestaña está oculta y respeto por prefers-reduced-motion. El canvas decorativo tiene aria-hidden y su contenedor dispone de descripción accesible. Los efectos no son parte de ningún examen o actividad.
+- Los cambios de CSS de portada se añaden a css/krueka-edu.css?v=20261017c; no modifican los módulos del Club, formularios del docente, políticas RLS, backend ni los sistemas de entrega.
+- Pruebas en Chromium móvil y escritorio deben confirmar centrado, sin desbordamiento y WebGL real si el navegador devuelve un contexto válido, o fallback si no.
