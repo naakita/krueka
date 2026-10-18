@@ -1,4 +1,4 @@
-name: Titanteo payer guard negative-control mutation
+name: Titanteo payer identity negative-control mutation
 on:
   push:
     branches:
@@ -45,12 +45,12 @@ jobs:
           from pathlib import Path
           p = Path("0x-src/src/core/Permit2Payment.sol")
           original = p.read_text()
-          needle = "TransientStorage.clearPayer(msgSender);"
+          needle = "TransientStorage.setPayer(msgSender);"
           start = original.index("modifier takerSubmitted() override {")
           end = original.index("\n    }", start) + len("\n    }")
           body = original[start:end]
           assert body.count(needle) == 1, "unexpected takerSubmitted body"
-          mutated = body.replace(needle, "// DELIBERATE MUTATION: taker payer cleanup omitted")
+          mutated = body.replace(needle, "TransientStorage.setPayer(address(0)); // DELIBERATE WRONG-PAYER MUTATION")
           p.write_text(original[:start] + mutated + original[end:])
           print("NEGATIVE_CONTROL_MUTATION_APPLIED")
           # Any local source with the Osaka CLZ opcode needs Solidity >=0.8.34.
