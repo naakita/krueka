@@ -1,0 +1,62 @@
+name: Titanteo 0x same-transaction permit rollback verification
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoSelectAtomicity.t.sol'
+      - '.github/workflows/titanteo-atomicity-fuzz.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-0x-select-atomicity
+  cancel-in-progress: true
+jobs:
+  test-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Clone pinned public 0x source without network RPC
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git target
+          cd target
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoSelectAtomicity.t.sol test/unit/core/TitanteoSelectAtomicity.t.sol
+      - name: Align local compile constraints of opcode users
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          count=0
+          for p in Path("target/src").rglob("*.sol"):
+              text=p.read_text()
+              if re.search(r"\bclz\s*\(",text) and "pragma solidity ^0.8.25;" in text:
+                  assert text.count("pragma solidity ^0.8.25;")==1
+                  p.write_text(text.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
+                  count+=1
+          assert count>=3,count
+          print("LOCAL_COMPAT_PRAGMAS",count)
+          PY
+      - name: Run independent signed-route replay rollback fuzzing offline
+        working-directory: target
+        timeout-minutes: 10
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_EVM_VERSION: osaka
+          FOUNDRY_SPARSE_MODE: 'true'
+        run: |
+          set -euo pipefail
+          forge test --match-path test/unit/core/TitanteoSelectAtomicity.t.sol --fuzz-runs 256 -v | tee "$RUNNER_TEMP/titanteo-signed-rollback.log"
+          grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/titanteo-signed-rollback.log"
