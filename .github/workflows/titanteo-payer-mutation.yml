@@ -1,4 +1,4 @@
-name: Titanteo payer identity negative-control mutation
+name: Titanteo cleanup guard negative-control regression
 on:
   push:
     branches:
@@ -37,7 +37,7 @@ jobs:
           path: |
             0x-src/cache
             0x-src/out
-          key: titanteo-payer-regression-275cf8-v1
+          key: titanteo-payer-regression-275cf8-v2
       - name: Inject known-bad change strictly in temporary checkout
         shell: bash
         run: |
@@ -45,12 +45,12 @@ jobs:
           from pathlib import Path
           p = Path("0x-src/src/core/Permit2Payment.sol")
           original = p.read_text()
-          needle = "TransientStorage.setPayer(msgSender);"
+          needle = "TransientStorage.clearPayer(msgSender);"
           start = original.index("modifier takerSubmitted() override {")
           end = original.index("\n    }", start) + len("\n    }")
           body = original[start:end]
           assert body.count(needle) == 1, "unexpected takerSubmitted body"
-          mutated = body.replace(needle, "TransientStorage.setPayer(address(0)); // DELIBERATE WRONG-PAYER MUTATION")
+          mutated = body.replace(needle, "// DELIBERATE MUTATION: payer cleanup omitted")
           p.write_text(original[:start] + mutated + original[end:])
           print("NEGATIVE_CONTROL_MUTATION_APPLIED")
           # Any local source with the Osaka CLZ opcode needs Solidity >=0.8.34.
@@ -81,7 +81,7 @@ jobs:
           FOUNDRY_SPARSE_MODE: 'true'
         run: |
           set +e
-          forge test --match-path 'test/unit/core/TitanteoPayerIsolation.t.sol' --match-test 'test_New_SequentialPayersAreIsolatedAndSlotCleared' -v > "$RUNNER_TEMP/mutated.log" 2>&1
+          forge test --match-path 'test/unit/core/TitanteoPayerIsolation.t.sol' --match-test 'test_New_TwoExecutionsInsideOneTransactionClearPayer' -v > "$RUNNER_TEMP/mutated.log" 2>&1
           status=$?
           set -e
           tail -25 "$RUNNER_TEMP/mutated.log"
@@ -93,6 +93,6 @@ jobs:
             echo "ERROR: compiler failed instead of security invariant"
             exit 1
           fi
-          grep -F '[FAIL]' "$RUNNER_TEMP/mutated.log"
+          grep -F '[FAIL' "$RUNNER_TEMP/mutated.log"
           grep -F 'test_New_SequentialPayersAreIsolatedAndSlotCleared' "$RUNNER_TEMP/mutated.log"
           echo "NEGATIVE_CONTROL_CAUGHT_INTENTIONAL_DEFECT"
