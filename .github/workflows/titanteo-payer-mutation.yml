@@ -53,6 +53,14 @@ jobs:
           mutated = body.replace(needle, "// DELIBERATE MUTATION: taker payer cleanup omitted")
           p.write_text(original[:start] + mutated + original[end:])
           print("NEGATIVE_CONTROL_MUTATION_APPLIED")
+          # Only in this disposable clone, pin the two Yul clz sources to
+          # compiler family supporting Osaka's CLZ; function bodies unchanged.
+          for path in ("src/vendor/Clz.sol", "src/vendor/Sqrt.sol"):
+              q = Path("0x-src") / path
+              text = q.read_text()
+              assert text.count("pragma solidity ^0.8.25;") == 1
+              q.write_text(text.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
+              print("PINNED_CLZ_HELPER_COMPILER", path)
           PY
       - name: Test must fail for the known-bad code (otherwise detector is ineffective)
         working-directory: 0x-src
@@ -61,9 +69,10 @@ jobs:
         env:
           FOUNDRY_FFI: 'false'
           FOUNDRY_EVM_VERSION: osaka
+          FOUNDRY_SPARSE_MODE: 'true'
         run: |
           set +e
-          forge test --use 0.8.37 --match-path 'test/unit/core/TitanteoPayerIsolation.t.sol' --match-test 'test_New_SequentialPayersAreIsolatedAndSlotCleared' -v > "$RUNNER_TEMP/mutated.log" 2>&1
+          forge test --match-path 'test/unit/core/TitanteoPayerIsolation.t.sol' --match-test 'test_New_SequentialPayersAreIsolatedAndSlotCleared' -v > "$RUNNER_TEMP/mutated.log" 2>&1
           status=$?
           set -e
           tail -25 "$RUNNER_TEMP/mutated.log"
