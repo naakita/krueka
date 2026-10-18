@@ -1,0 +1,83 @@
+name: Titanteo sample actual public Tornado Classic events
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - '.github/workflows/titanteo-tornado-real-events.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-tornado-readonly-events
+  cancel-in-progress: true
+jobs:
+  public-events:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Read-only compare official Tornado Classic ETH pools
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request
+          endpoints=("https://ethereum-rpc.publicnode.com","https://eth.drpc.org")
+          pools={
+            "0x12d66f87a04a9e220743712ce6d9bb1b5616b8fc":"0.1 ETH",
+            "0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936":"1 ETH",
+            "0x910cbd523d972eb0a6f4cae4618ad62622b39dbf":"10 ETH",
+            "0xa160cdab225685da1d56aa342ad8841c3b53f291":"100 ETH"
+          }
+          deposit="0xa945e51eec50ab98c161376f0db4cf2aeba3ec92755fe2fcd388bdbbb80ff196"
+          withdrawal="0xe9e508bad6d4c3227e881ca19068f099da81b5164dd6d62b2eaf1e8bc6c34931"
+          allowed={"eth_chainId","eth_blockNumber","eth_getBlockByNumber","eth_getLogs","eth_getTransactionByHash"}
+          def call(url,method,params):
+              assert method in allowed
+              payload=json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
+              req=urllib.request.Request(url,data=payload,headers={"Content-Type":"application/json"},method="POST")
+              with urllib.request.urlopen(req,timeout=20) as res:
+                  raw=res.read(1000001)
+              assert len(raw)<=1000000, "response too large"
+              o=json.loads(raw)
+              assert o.get("jsonrpc")=="2.0" and o.get("id")==1, "mismatched response"
+              if "error" in o: raise RuntimeError(str(o["error"])[:180])
+              return o["result"]
+          assert all(call(u,"eth_chainId",[])=="0x1" for u in endpoints)
+          heads=[int(call(u,"eth_blockNumber",[]),16) for u in endpoints]
+          end=min(heads)-96;start=end-399
+          print("PUBLIC_SAMPLE_RANGE",start,end,"HEADS",heads)
+          opts={"fromBlock":hex(start),"toBlock":hex(end),"address":list(pools),"topics":[[deposit,withdrawal]]}
+          def canonical(rows):
+              assert isinstance(rows,list) and len(rows)<=200
+              out={}
+              for item in rows:
+                  address=item["address"].lower()
+                  assert address in pools
+                  height=int(item["blockNumber"],16)
+                  assert start<=height<=end
+                  topic=item["topics"][0].lower()
+                  assert topic in (deposit,withdrawal)
+                  assert item.get("removed") in (False,None)
+                  key=(height,item["transactionHash"].lower(),int(item["logIndex"],16))
+                  assert key not in out, "duplicate event"
+                  out[key]={"block_hash":item["blockHash"].lower(),"address":address,
+                            "type":"deposit" if topic==deposit else "withdrawal",
+                            "topics":[x.lower() for x in item["topics"]],"data":item["data"].lower()}
+              return out
+          left=canonical(call(endpoints[0],"eth_getLogs",[opts]))
+          right=canonical(call(endpoints[1],"eth_getLogs",[opts]))
+          assert left==right,"INDEPENDENT_RPC_EVENT_DISAGREEMENT"
+          totals={p:{"deposit":0,"withdrawal":0} for p in pools}
+          for obj in left.values():totals[obj["address"]][obj["type"]]+=1
+          print("EVENT_COUNTS",json.dumps({pools[k]:v for k,v in totals.items()},sort_keys=True))
+          for key in sorted(left)[:5]:
+              height,tx_hash,index=key
+              ea=left[key]
+              headers=[call(u,"eth_getBlockByNumber",[hex(height),False]) for u in endpoints]
+              assert all(int(h["number"],16)==height for h in headers)
+              assert all(h["hash"].lower()==ea["block_hash"] for h in headers)
+              txs=[call(u,"eth_getTransactionByHash",[tx_hash]) for u in endpoints]
+              assert all(t["hash"].lower()==tx_hash and int(t["blockNumber"],16)==height for t in txs)
+              assert txs[0]["from"].lower()==txs[1]["from"].lower()
+              print("CORROBORATED_PUBLIC_EVENT",ea["type"],pools[ea["address"]],"block",height,"tx",tx_hash)
+          print("REAL_PUBLIC_EVENTS_COMPARISON_OK","TOTAL",len(left),"NO_IDENTITY_INFERENCE")
+          PY
