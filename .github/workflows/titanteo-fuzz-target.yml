@@ -1,0 +1,54 @@
+name: Titanteo scoped 0x fuzz investigation
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - '.github/workflows/titanteo-fuzz-target.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-0x-fuzz-scoped
+  cancel-in-progress: true
+jobs:
+  fuzz-offline:
+    name: Original 0x Solidity fuzz suites, offline
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Clone pinned public code and dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git 0x-src
+          cd 0x-src
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
+      - name: EVM fuzz: assembly versus Solidity equivalence
+        shell: bash
+        working-directory: 0x-src
+        timeout-minutes: 8
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_FUZZ_RUNS: '4096'
+          FOUNDRY_INVARIANT_RUNS: '1'
+        run: |
+          set -euo pipefail
+          forge test --match-path 'test/fuzz_FV/fuzztest_assembly_replacement.t.sol' --fuzz-runs 4096 -v | tee "$RUNNER_TEMP/assembly-fuzz.log"
+          grep -F 'Test result:' "$RUNNER_TEMP/assembly-fuzz.log"
+      - name: EVM fuzz: payer identity safeguards
+        shell: bash
+        working-directory: 0x-src
+        timeout-minutes: 2
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_FUZZ_RUNS: '1024'
+        run: |
+          set -euo pipefail
+          forge test --match-path 'test/unit/core/MsgSenderUnitTest.t.sol' --fuzz-runs 1024 -v | tee "$RUNNER_TEMP/msgsender-fuzz.log"
+          grep -F 'Test result:' "$RUNNER_TEMP/msgsender-fuzz.log"
