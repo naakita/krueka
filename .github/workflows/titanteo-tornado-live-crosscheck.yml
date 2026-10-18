@@ -20,7 +20,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import json, re, urllib.request
-          urls = ["https://ethereum-rpc.publicnode.com", "https://eth.llamarpc.com"]
+          candidates = ["https://eth.llamarpc.com", "https://cloudflare-eth.com", "https://rpc.ankr.com/eth", "https://ethereum-rpc.publicnode.com"]
           pool = "0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936"
           topics = ["0xa945e51eec50ab98c161376f0db4cf2aeba3ec92755fe2fcd388bdbbb80ff196", "0xe9e508bad6d4c3227e881ca19068f099da81b5164dd6d62b2eaf1e8bc6c34931"]
           method_allow = {"eth_chainId","eth_blockNumber","eth_getBlockByNumber","eth_getLogs"}
@@ -36,8 +36,21 @@ jobs:
               if "error" in obj:raise RuntimeError("Provider rejected "+method+": "+str(obj["error"])[:180])
               assert "result" in obj
               return obj["result"]
-          chains=[int(call(u,"eth_chainId",[]),16) for u in urls]
-          assert chains == [1,1], "Both must be Ethereum mainnet"
+          urls = []
+          for candidate in candidates:
+              try:
+                  chain = int(call(candidate,"eth_chainId",[]),16)
+                  if chain == 1:
+                      urls.append(candidate)
+                      print("RPC_READ_OK", candidate.split("/")[2])
+                  else:
+                      print("RPC_WRONG_CHAIN", candidate.split("/")[2], chain)
+              except Exception as e:
+                  print("RPC_UNAVAILABLE", candidate.split("/")[2], type(e).__name__, str(e)[:85])
+              if len(urls) == 2:
+                  break
+          if len(urls) < 2:
+              raise RuntimeError("No two independent public Ethereum RPCs were reachable")
           heads=[int(call(u,"eth_blockNumber",[]),16) for u in urls]
           end=min(heads)-64
           start=end-7
