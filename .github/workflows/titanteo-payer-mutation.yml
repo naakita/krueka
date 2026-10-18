@@ -46,8 +46,12 @@ jobs:
           p = Path("0x-src/src/core/Permit2Payment.sol")
           original = p.read_text()
           needle = "TransientStorage.clearPayer(msgSender);"
-          assert original.count(needle) == 1, "unexpected source, no mutation"
-          p.write_text(original.replace(needle, "// DELIBERATE MUTATION: payer cleanup omitted"))
+          start = original.index("modifier takerSubmitted() override {")
+          end = original.index("\n    }", start) + len("\n    }")
+          body = original[start:end]
+          assert body.count(needle) == 1, "unexpected takerSubmitted body"
+          mutated = body.replace(needle, "// DELIBERATE MUTATION: taker payer cleanup omitted")
+          p.write_text(original[:start] + mutated + original[end:])
           print("NEGATIVE_CONTROL_MUTATION_APPLIED")
           PY
       - name: Test must fail for the known-bad code (otherwise detector is ineffective)
