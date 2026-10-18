@@ -1,0 +1,71 @@
+name: Titanteo payer guard negative-control mutation
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - '.github/workflows/titanteo-payer-mutation.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-payer-negative-control
+  cancel-in-progress: true
+jobs:
+  negative-control-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Clone pinned public source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git 0x-src
+          cd 0x-src
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoPayerIsolation.t.sol test/unit/core/TitanteoPayerIsolation.t.sol
+      - name: Restore original valid build cache without saving mutations
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            0x-src/cache
+            0x-src/out
+          key: titanteo-payer-regression-275cf8-v1
+      - name: Inject known-bad change strictly in temporary checkout
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("0x-src/src/core/Permit2Payment.sol")
+          original = p.read_text()
+          needle = "TransientStorage.clearPayer(msgSender);"
+          assert original.count(needle) == 1, "unexpected source, no mutation"
+          p.write_text(original.replace(needle, "// DELIBERATE MUTATION: payer cleanup omitted"))
+          print("NEGATIVE_CONTROL_MUTATION_APPLIED")
+          PY
+      - name: Test must fail for the known-bad code (otherwise detector is ineffective)
+        working-directory: 0x-src
+        timeout-minutes: 9
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set +e
+          forge test --match-path 'test/unit/core/TitanteoPayerIsolation.t.sol' --match-test 'test_New_SequentialPayersAreIsolatedAndSlotCleared' -v > "$RUNNER_TEMP/mutated.log" 2>&1
+          status=$?
+          set -e
+          tail -25 "$RUNNER_TEMP/mutated.log"
+          if [ "$status" -eq 0 ]; then
+            echo "ERROR: defective implementation passed; test ineffective"
+            exit 1
+          fi
+          grep -F 'test_New_SequentialPayersAreIsolatedAndSlotCleared' "$RUNNER_TEMP/mutated.log"
+          grep -F '[FAIL' "$RUNNER_TEMP/mutated.log"
+          echo "NEGATIVE_CONTROL_CAUGHT_INTENTIONAL_DEFECT"
