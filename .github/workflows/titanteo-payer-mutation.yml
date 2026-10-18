@@ -53,14 +53,23 @@ jobs:
           mutated = body.replace(needle, "// DELIBERATE MUTATION: taker payer cleanup omitted")
           p.write_text(original[:start] + mutated + original[end:])
           print("NEGATIVE_CONTROL_MUTATION_APPLIED")
-          # Only in this disposable clone, pin the two Yul clz sources to
-          # compiler family supporting Osaka's CLZ; function bodies unchanged.
-          for path in ("src/vendor/Clz.sol", "src/vendor/Sqrt.sol"):
-              q = Path("0x-src") / path
-              text = q.read_text()
-              assert text.count("pragma solidity ^0.8.25;") == 1
-              q.write_text(text.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
-              print("PINNED_CLZ_HELPER_COMPILER", path)
+          # Any local source with the Osaka CLZ opcode needs Solidity >=0.8.34.
+          # Only adjust compiler constraints in this disposable checkout;
+          # no function bodies are touched beyond the deliberate payer mutation.
+          import re
+          count = 0
+          for q in Path("0x-src/src").rglob("*.sol"):
+              txt = q.read_text()
+              if re.search(r"\\bclz\\s*\\(", txt):
+                  if "pragma solidity ^0.8.25;" not in txt:
+                      assert "pragma solidity =0.8.34;" in txt or "pragma solidity ^0.8.34;" in txt, str(q)
+                      continue
+                  assert txt.count("pragma solidity ^0.8.25;") == 1, str(q)
+                  q.write_text(txt.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
+                  print("CLZ_COMPILER_CONSTRAINT", q)
+                  count += 1
+          assert count >= 3, "expected multiple clz sources"
+          print("CLZ_COMPILER_CONSTRAINTS", count)
           PY
       - name: Test must fail for the known-bad code (otherwise detector is ineffective)
         working-directory: 0x-src
