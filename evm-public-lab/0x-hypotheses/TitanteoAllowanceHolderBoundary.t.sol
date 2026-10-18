@@ -161,4 +161,68 @@ contract TitanteoAllowanceHolderBoundaryTest is Test {
         vm.expectRevert(ConfusedDeputy.selector);
         holder.exec(address(operatorA), address(token), 1, payable(address(token2)), "");
     }
+    // Adversarial checks designed for the real AllowanceHolder fallback.
+    // All recipients/accounts/assets are synthetic and reside in the local EVM.
+    function testFuzz_UntrustedOperatorCannotPullWithoutGrant(uint96 raw) public {
+        uint256 amount = 1 + uint256(raw) % 1e24;
+        uint256 aliceBefore = token.balanceOf(alice);
+        vm.prank(address(operatorB), origin);
+        vm.expectRevert();
+        holder.transferFrom(address(token), alice, recipient, amount);
+        assertEq(token.balanceOf(alice), aliceBefore);
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
+    function testFuzz_DirtyTokenAddressABIMustFail(uint96 raw) public {
+        uint256 amount = 1 + uint256(raw) % 1e24;
+        uint256 dirty = uint256(uint160(address(token))) | (uint256(1) << 160);
+        bytes memory invalid = abi.encodeWithSelector(
+            IAllowanceHolder.transferFrom.selector,
+            dirty, alice, recipient, amount
+        );
+        vm.prank(address(operatorA), origin);
+        (bool ok,) = address(holder).call(invalid);
+        assertFalse(ok, "dirty upper bits of token accepted");
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
+    function testFuzz_DirtyOwnerAddressABIMustFail(uint96 raw) public {
+        uint256 amount = 1 + uint256(raw) % 1e24;
+        uint256 dirty = uint256(uint160(alice)) | (uint256(1) << 160);
+        bytes memory invalid = abi.encodeWithSelector(
+            IAllowanceHolder.transferFrom.selector,
+            address(token), dirty, recipient, amount
+        );
+        vm.prank(address(operatorA), origin);
+        (bool ok,) = address(holder).call(invalid);
+        assertFalse(ok, "dirty upper bits of owner accepted");
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
+    function testFuzz_DirtyRecipientAddressABIMustFail(uint96 raw) public {
+        uint256 amount = 1 + uint256(raw) % 1e24;
+        uint256 dirty = uint256(uint160(recipient)) | (uint256(1) << 160);
+        bytes memory invalid = abi.encodeWithSelector(
+            IAllowanceHolder.transferFrom.selector,
+            address(token), alice, dirty, amount
+        );
+        vm.prank(address(operatorA), origin);
+        (bool ok,) = address(holder).call(invalid);
+        assertFalse(ok, "dirty upper bits of recipient accepted");
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
+    function testFuzz_ETHValueOnTransferFromMustFail(uint64 raw) public {
+        uint256 amount = 1 + uint256(raw);
+        vm.deal(address(operatorA), 1 ether);
+        bytes memory invalid = abi.encodeWithSelector(
+            IAllowanceHolder.transferFrom.selector, address(token), alice, recipient, amount
+        );
+        vm.prank(address(operatorA), origin);
+        (bool ok,) = address(holder).call{value: 1}(invalid);
+        assertFalse(ok, "payable transferFrom accepted ETH");
+        assertEq(address(holder).balance, 0);
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
 }

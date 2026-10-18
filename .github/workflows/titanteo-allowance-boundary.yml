@@ -1,4 +1,4 @@
-name: Titanteo 0x AllowanceHolder independent authorization fuzzing
+name: Titanteo 0x AllowanceHolder adversarial 180k fuzz
 on:
   push:
     branches:
@@ -14,7 +14,7 @@ concurrency:
 jobs:
   allowance-boundary:
     runs-on: ubuntu-latest
-    timeout-minutes: 13
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,7 +50,7 @@ jobs:
           PY
       - name: Run new security properties against actual AllowanceHolder
         shell: bash
-        timeout-minutes: 10
+        timeout-minutes: 12
         working-directory: src-0x
         env:
           FOUNDRY_FFI: 'false'
@@ -58,5 +58,5 @@ jobs:
           FOUNDRY_SPARSE_MODE: 'true'
         run: |
           set -euo pipefail
-          forge test --match-path 'test/unit/TitanteoAllowanceHolderBoundary.t.sol' --fuzz-runs 256 -v | tee "$RUNNER_TEMP/allowance.log"
+          forge test --match-path 'test/unit/TitanteoAllowanceHolderBoundary.t.sol' --fuzz-runs 16384 -v | tee "$RUNNER_TEMP/allowance.log"
           grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/allowance.log"
