@@ -66,8 +66,11 @@ contract TitanteoAllowanceHolderBoundaryTest is Test {
     }
 
     function testFuzz_AuthorizedSpendThenNoLeftoverAllowance(uint96 amountRaw) public {
-        uint256 amount = 1 + uint256(amountRaw) % 1e24;
-        uint256 spend = amount / 2 + 1;
+        // Never test an allowance boundary with a zero-value transfer.
+        // A zero transfer is permitted without positive token allowance.
+        uint256 amount = 2 + uint256(amountRaw) % 1e24;
+        uint256 spend = amount / 2;
+        assertGt(amount - spend, 0, "invalid test case");
         uint256 beforeAlice = token.balanceOf(alice);
         _exec(address(operatorA), address(token), amount, address(operatorA), _pull(address(token), alice, spend));
         assertEq(token.balanceOf(alice), beforeAlice - spend);
