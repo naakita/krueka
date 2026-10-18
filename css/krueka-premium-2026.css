@@ -1,0 +1,50 @@
+/* Krueka Premium — producto primero, tipografía editorial y espacio de trabajo real. */
+:root{--kp-ink:#101e36;--kp-muted:#5b6b83;--kp-blue:#3458ec;--kp-bg:#f5f7fc;--kp-line:#dbe3f0}
+body.kp-site{background:#f5f7fc}
+.kp-header{background:#ffffffed;border-bottom:1px solid #e2e8f3}
+.kp-header-inner{max-width:1400px}
+.kp-brand{letter-spacing:-.07em}
+.kp-hero{position:relative;isolation:isolate;overflow:hidden;padding:86px 0 92px;background:radial-gradient(ellipse 48% 67% at 87% 24%,#dce6ffab,transparent 80%),linear-gradient(160deg,#fff 0%,#f7f9ff 67%,#eef3ff 100%);border-bottom:1px solid #e5ebf6}
+.kp-hero::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.42;pointer-events:none;background-image:linear-gradient(#dfe7f55e 1px,transparent 1px),linear-gradient(90deg,#dfe7f55e 1px,transparent 1px);background-size:75px 75px;mask-image:linear-gradient(90deg,transparent,#000 47%,transparent)}
+.kp-hero-copy{display:flex;flex-direction:column;align-items:center;text-align:center;max-width:1060px}
+.kp-premium-index{width:100%;display:flex;justify-content:space-between;gap:12px;align-items:center;padding:0 0 38px;color:#8290a6;font-size:10px;font-weight:850;letter-spacing:.17em}
+.kp-premium-index span{color:#4a64ae}
+.kp-hero .kp-eyebrow{background:#eaf0ff;border:1px solid #d8e3ff;border-radius:40px;padding:8px 15px;color:#3659b4;letter-spacing:.11em}
+.kp-hero h1{max-width:990px;font-size:clamp(53px,7.2vw,106px);line-height:1.035;letter-spacing:-.088em;margin:26px auto 27px;color:#11203a}
+.kp-hero h1 span{background:linear-gradient(100deg,#3058ed,#5b69dc 63%,#638fd7);background-clip:text;-webkit-background-clip:text;color:transparent}
+.kp-hero-copy>p{max-width:725px;margin:0 auto 28px;font-size:clamp(16px,1.5vw,19px);line-height:1.76;color:#52637e}
+.kp-hero-actions,.kp-hero-tags{justify-content:center}
+.kp-hero-tags{margin-top:30px}
+.kp-hero .kp-btn-primary{box-shadow:0 13px 26px #3458ec38}
+.kp-preview-section{padding-top:76px;background:linear-gradient(180deg,#f5f7fc,#fff)}
+.kp-preview-overline{font-size:10px;letter-spacing:.15em}
+.kp-premium-preview-heading{display:flex;align-items:end;justify-content:space-between;gap:30px;margin:18px 0 29px}
+.kp-premium-preview-heading>div>span{color:#4667ce;font-size:11px;letter-spacing:.17em;font-weight:850}
+.kp-premium-preview-heading h2{margin:10px 0 0;color:#12213d;font-size:clamp(32px,4vw,53px);line-height:1.12;letter-spacing:-.068em}
+.kp-premium-preview-heading>p{max-width:340px;color:#60718b;font-size:14px;line-height:1.7;margin:0}
+.kp-app{box-shadow:0 30px 90px #213e731c,0 2px 14px #34558d0d;border:1px solid #d8e1f1;border-radius:20px;overflow:hidden}
+.kp-app-sidebar{background:#14223b;color:#dce7ff}
+.kp-app-sidebar-logo{color:#fff}
+.kp-app-sidebar .kp-sidebar-item{transition:background .2s,color .2s}
+.kp-app-sidebar .kp-sidebar-item.is-active{background:#3155e7;color:#fff}
+.kp-app-main{background:#fff}
+.kp-lab-board{box-shadow:inset 0 0 0 1px #dbe5f5}
+.kp-btn,.kp-sidebar-item,.kp-pad button{transition:transform .18s ease,background .18s ease,box-shadow .18s ease}
+.kp-btn:hover{transform:translateY(-2px)}
+.kp-app a:focus-visible,.kp-app button:focus-visible{outline:3px solid #ff9c63;outline-offset:3px}
+@media(max-width:810px){
+ .kp-hero{padding:48px 0 65px}
+ .kp-premium-index{padding-bottom:30px;font-size:9px}
+ .kp-hero h1{font-size:clamp(44px,9vw,72px)}
+ .kp-premium-preview-heading{flex-direction:column;align-items:flex-start;gap:8px}
+ .kp-premium-preview-heading>p{max-width:680px}
+ .kp-preview-section{padding-top:52px}
+}
+@media(max-width:520px){
+ .kp-premium-index span{display:none}
+ .kp-hero h1{font-size:clamp(41px,10.8vw,56px);letter-spacing:-.075em}
+ .kp-hero-copy>p{font-size:15px}
+ .kp-premium-preview-heading h2{font-size:35px}
+ .kp-app{border-radius:14px}
+}
+@media(prefers-reduced-motion:reduce){.kp-btn,.kp-sidebar-item,.kp-pad button{transition:none!important}}
