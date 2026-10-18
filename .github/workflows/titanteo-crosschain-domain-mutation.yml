@@ -1,0 +1,108 @@
+name: Titanteo crosschain signature domain synthetic negative control
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - '.github/workflows/titanteo-crosschain-domain-mutation.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-crosschain-domain-negative-control
+  cancel-in-progress: true
+jobs:
+  local-signature-domain-control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Pin Foundry version used in official 0x CI
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Clone pinned original 0x source in temporary EVM environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git original-0x
+          cd original-0x
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "ORIGINAL_0X_SOURCE_SHA=$(git rev-parse HEAD)"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoCrossChainReceiverSecurity.t.sol test/unit/TitanteoCrossChainReceiverSecurity.t.sol
+      - name: Original fixed-address MultiCall creation bytecode
+        working-directory: original-0x
+        shell: bash
+        env:
+          FOUNDRY_SOLC_VERSION: '0.8.28'
+          FOUNDRY_EVM_VERSION: london
+          FOUNDRY_OPTIMIZER_RUNS: '1000000'
+          FOUNDRY_FFI: 'false'
+        run: forge build -- src/multicall/MultiCall.sol
+      - name: Original fixed-address CrossChain factory bytecode
+        working-directory: original-0x
+        shell: bash
+        env:
+          FOUNDRY_SOLC_VERSION: '0.8.34'
+          FOUNDRY_EVM_VERSION: london
+          FOUNDRY_OPTIMIZER_RUNS: '1000000'
+          FOUNDRY_FFI: 'false'
+        run: forge build -- src/CrossChainReceiverFactory.sol
+      - name: Original chain-bound proof must pass before mutation
+        working-directory: original-0x
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path test/unit/TitanteoCrossChainReceiverSecurity.t.sol --match-test NewMerkleSignatureIsChainBound --fuzz-runs 32 -v | tee "$RUNNER_TEMP/original-domain.log"
+          grep -F '[PASS] testFuzz_NewMerkleSignatureIsChainBound' "$RUNNER_TEMP/original-domain.log"
+          echo "ORIGINAL_CHAIN_BINDING_CONFIRMED"
+      - name: Disable only chain-binding within signature leaf on temporary clone
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("original-0x/src/CrossChainReceiverFactory.sol")
+          s=p.read_text()
+          start=s.index("function _hashLeaf(bytes32 signingHash)")
+          stop=s.index("function ",start+9)
+          region=s[start:stop]
+          old="mstore(0x20, chainid())"
+          assert region.count(old)==1
+          new="mstore(0x20, 1) // DELIBERATE LOCAL REGRESSION: chain binding lost"
+          p.write_text(s[:start]+region.replace(old,new)+s[stop:])
+          print("SYNTHETIC_CHAIN_BINDING_REMOVED_FROM_TEST_CLONE")
+          PY
+      - name: Rebuild modified local factory with exact upstream compiler configuration
+        working-directory: original-0x
+        shell: bash
+        env:
+          FOUNDRY_SOLC_VERSION: '0.8.34'
+          FOUNDRY_EVM_VERSION: london
+          FOUNDRY_OPTIMIZER_RUNS: '1000000'
+          FOUNDRY_FFI: 'false'
+        run: forge build -- src/CrossChainReceiverFactory.sol
+      - name: Negative control must detect wrong-chain signature acceptance
+        working-directory: original-0x
+        timeout-minutes: 5
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set +e
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path test/unit/TitanteoCrossChainReceiverSecurity.t.sol --match-test NewMerkleSignatureIsChainBound --fuzz-runs 16 -v > "$RUNNER_TEMP/mutated-domain.log" 2>&1
+          status=$?
+          set -e
+          tail -24 "$RUNNER_TEMP/mutated-domain.log"
+          if [ "$status" -eq 0 ]; then echo "ERROR: synthetic defect escaped detection"; exit 1; fi
+          if grep -Eq 'Compiler run failed|Compilation failed|ParserError|TypeError|^Error \([0-9]+\):' "$RUNNER_TEMP/mutated-domain.log"; then
+            echo "ERROR: compilation failed, this is not security proof"
+            exit 1
+          fi
+          grep -F 'proof was accepted on a different chain' "$RUNNER_TEMP/mutated-domain.log"
+          grep -F '[FAIL:' "$RUNNER_TEMP/mutated-domain.log"
+          echo "SYNTHETIC_CROSS_CHAIN_REPLAY_DETECTED_BY_TITANTEO"
