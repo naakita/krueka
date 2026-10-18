@@ -47,3 +47,32 @@ jobs:
             exit 1
           fi
           python3 -c 'import json,os; d=json.load(open(os.environ["RUNNER_TEMP"]+"/titanteo-slither.json")); assert d.get("success"), d.get("error"); findings=d.get("results",{}).get("detectors",[]); print("STATIC_ANALYSIS_COMPLETED",len(findings),"findings"); print("RULE_IDS",sorted({x.get("check","unknown") for x in findings})); print("TRAINING_FIXTURES_ONLY")'
+  compile-0x-public-source:
+    name: Compile pinned public 0x Settler source (offline EVM, no RPC)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Clone public source, never touch live deployments
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git target-0x
+          cd target-0x
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "PINNED_SOURCE_COMMIT=$(git rev-parse HEAD)"
+      - name: Compile real project without RPC, no contract execution
+        working-directory: target-0x
+        env:
+          FOUNDRY_FUZZ_RUNS: '16'
+          FOUNDRY_INVARIANT_RUNS: '1'
+          FOUNDRY_FFI: 'false'
+        run: |
+          forge --version
+          forge build --skip test --skip script --sizes
+          echo "REAL_PUBLIC_SOURCE_COMPILE_OK"
