@@ -60,9 +60,10 @@ jobs:
         shell: bash
         env:
           FOUNDRY_FFI: 'false'
+          FOUNDRY_EVM_VERSION: osaka
         run: |
           set +e
-          forge test --match-path 'test/unit/core/TitanteoPayerIsolation.t.sol' --match-test 'test_New_SequentialPayersAreIsolatedAndSlotCleared' -v > "$RUNNER_TEMP/mutated.log" 2>&1
+          forge test --use 0.8.37 --match-path 'test/unit/core/TitanteoPayerIsolation.t.sol' --match-test 'test_New_SequentialPayersAreIsolatedAndSlotCleared' -v > "$RUNNER_TEMP/mutated.log" 2>&1
           status=$?
           set -e
           tail -25 "$RUNNER_TEMP/mutated.log"
@@ -70,6 +71,10 @@ jobs:
             echo "ERROR: defective implementation passed; test ineffective"
             exit 1
           fi
+          if grep -Eq '^Error \([0-9]+\):|Compilation failed|Compiler run failed|ParserError|TypeError' "$RUNNER_TEMP/mutated.log"; then
+            echo "ERROR: compiler failed instead of security invariant"
+            exit 1
+          fi
+          grep -F '[FAIL]' "$RUNNER_TEMP/mutated.log"
           grep -F 'test_New_SequentialPayersAreIsolatedAndSlotCleared' "$RUNNER_TEMP/mutated.log"
-          grep -F '[FAIL' "$RUNNER_TEMP/mutated.log"
           echo "NEGATIVE_CONTROL_CAUGHT_INTENTIONAL_DEFECT"
