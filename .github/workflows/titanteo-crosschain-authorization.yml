@@ -55,7 +55,7 @@ jobs:
         env:
           FOUNDRY_FFI: 'false'
           FOUNDRY_EVM_VERSION: osaka
-          FOUNDRY_SPARSE_MODE: 'true'
+          FOUNDRY_SPARSE_MODE: 'false'
         run: |
           set -euo pipefail
           forge test --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 128 -v | tee "$RUNNER_TEMP/crosschain-checks.log"
