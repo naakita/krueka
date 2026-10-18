@@ -33,7 +33,7 @@ jobs:
           def call(url,method,params):
               assert method in allowed
               payload=json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
-              req=urllib.request.Request(url,data=payload,headers={"Content-Type":"application/json"},method="POST")
+              req=urllib.request.Request(url,data=payload,headers={"Content-Type":"application/json","User-Agent":"Titanteo-ReadOnly-Research/1.0"},method="POST")
               with urllib.request.urlopen(req,timeout=20) as res:
                   raw=res.read(1000001)
               assert len(raw)<=1000000, "response too large"
