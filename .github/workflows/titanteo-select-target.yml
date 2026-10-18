@@ -1,0 +1,43 @@
+name: Titanteo 0x SELECT route security suite
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - '.github/workflows/titanteo-select-target.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-0x-select-scoped
+  cancel-in-progress: true
+jobs:
+  select-offline:
+    name: Offline 0x SELECT route and authorization test suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Clone public pinned 0x source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git 0x-src
+          cd 0x-src
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
+      - name: "Test SELECT transaction rollback, permission guards and bounded fuzz"
+        shell: bash
+        working-directory: 0x-src
+        timeout-minutes: 9
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_FUZZ_RUNS: '4096'
+          FOUNDRY_INVARIANT_RUNS: '1'
+        run: |
+          set -euo pipefail
+          forge test --match-path 'test/unit/core/SelectUnitTest.t.sol' --fuzz-runs 4096 -v | tee "$RUNNER_TEMP/select-tests.log"
+          grep -E 'Ran [0-9]+ test suites|Suite result:' "$RUNNER_TEMP/select-tests.log"
