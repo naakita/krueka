@@ -41,12 +41,32 @@ jobs:
           path: |
             0x-src/cache
             0x-src/out
-          key: titanteo-payer-regression-275cf8-v1
+          key: titanteo-payer-regression-275cf8-v2
+      - name: Pin Osaka assembly compiler constraints in disposable checkout
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          changed = []
+          for p in Path("0x-src/src").rglob("*.sol"):
+              source = p.read_text()
+              if not re.search(r"\bclz\s*\(", source):
+                  continue
+              if "pragma solidity ^0.8.25;" in source:
+                  assert source.count("pragma solidity ^0.8.25;") == 1
+                  p.write_text(source.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
+                  changed.append(str(p))
+          assert len(changed) >= 3, changed
+          print("LOCAL_OSAKA_COMPILER_CONSTRAINTS", changed)
+          PY
       - name: Execute independent authorization and callback invariants
         timeout-minutes: 9
         working-directory: 0x-src
         env:
           FOUNDRY_FFI: 'false'
+          FOUNDRY_EVM_VERSION: osaka
+          FOUNDRY_SPARSE_MODE: 'true'
         shell: bash
         run: |
           set -euo pipefail
