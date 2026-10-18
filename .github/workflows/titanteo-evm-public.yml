@@ -1,0 +1,32 @@
+name: Titanteo EVM educational test (isolated)
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/**'
+      - '.github/workflows/titanteo-evm-public.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-evm-educational
+  cancel-in-progress: true
+jobs:
+  foundry-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Foundry version
+        run: forge --version
+      - name: Compile local educational contracts
+        working-directory: evm-public-lab
+        run: forge build
+      - name: Run real EVM tests (no external RPC)
+        working-directory: evm-public-lab
+        run: forge test -vvv --fuzz-runs 64
