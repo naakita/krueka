@@ -1,0 +1,23 @@
+name: Titanteo bounded real Ethereum receipt corroboration
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/eth-readonly/real_sample.py'
+      - '.github/workflows/titanteo-eth-receipts.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-ethereum-public-receipts
+  cancel-in-progress: true
+jobs:
+  public-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify one historical Ethereum sample against two public RPC endpoints
+        run: python3 evm-public-lab/eth-readonly/real_sample.py
