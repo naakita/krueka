@@ -60,7 +60,7 @@ jobs:
           count = 0
           for q in Path("0x-src/src").rglob("*.sol"):
               txt = q.read_text()
-              if re.search(r"\\bclz\\s*\\(", txt):
+              if re.search(r"\bclz\s*\(", txt):
                   if "pragma solidity ^0.8.25;" not in txt:
                       assert "pragma solidity =0.8.34;" in txt or "pragma solidity ^0.8.34;" in txt, str(q)
                       continue
