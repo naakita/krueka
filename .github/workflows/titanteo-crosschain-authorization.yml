@@ -1,0 +1,62 @@
+name: Titanteo cross-chain factory owner and domain offline regressions
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoCrossChainReceiverSecurity.t.sol'
+      - '.github/workflows/titanteo-crosschain-authorization.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-crosschain-owner-domain
+  cancel-in-progress: true
+jobs:
+  crosschain-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Clone exact public source in isolated runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git original-0x
+          cd original-0x
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "SOURCE_COMMIT=$(git rev-parse HEAD)"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoCrossChainReceiverSecurity.t.sol test/unit/TitanteoCrossChainReceiverSecurity.t.sol
+      - name: Local-only compiler compatibility for clz opcodes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          changed=[]
+          for p in Path("original-0x/src").rglob("*.sol"):
+              s=p.read_text()
+              if re.search(r"\bclz\s*\(",s) and "pragma solidity ^0.8.25;" in s:
+                  assert s.count("pragma solidity ^0.8.25;")==1
+                  p.write_text(s.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
+                  changed.append(str(p))
+          assert len(changed)>=3,changed
+          print("LOCAL_COMPILER_CONSTRAINTS", changed)
+          PY
+      - name: Execute original-source proxy authorization and signature tests
+        working-directory: original-0x
+        timeout-minutes: 10
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_EVM_VERSION: osaka
+          FOUNDRY_SPARSE_MODE: 'true'
+        run: |
+          set -euo pipefail
+          forge test --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 128 -v | tee "$RUNNER_TEMP/crosschain-checks.log"
+          grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/crosschain-checks.log"
