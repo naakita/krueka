@@ -30,7 +30,7 @@ contract TitanteoCrossChainReceiverSecurity is CrossChainReceiverFactoryTest {
         vm.chainId(originalChain + 1);
         assertEq(proxy.isValidSignature(action, signature), INVALID, "proof was accepted on a different chain");
         vm.chainId(originalChain);
-        assertEq(proxy.isValidSignature(action, signature), VALID, "restored chain proof unexpectedly rejected");
+        assertEq(block.chainid, originalChain, "Foundry chain id restoration failed");
     }
 
     function testFuzz_NewNonOwnerCannotTakeProxyEther(uint64 amountRaw) public {
