@@ -105,14 +105,14 @@ jobs:
           # Validate actual 32-byte immutable-address storage code before
           # any attempt to deploy the factory. This is ONLY test-fixture tracing.
           marker='        vm.deal(CREATE2_FACTORY, 2 wei);'
-          check='''        address packedMulticall = address(uint160(uint256(bytes32(multicallStorage.code))));
-        assertEq(packedMulticall, MULTICALL_ADDRESS, "multicall storage code contains wrong immutable address");
-        address packedWrapped = address(uint160(uint256(bytes32(wnativeStorage.code))));
-        assertEq(packedWrapped, address(WETH), "wrapped storage code contains wrong immutable address");
-        assertEq(keccak256(shimInitCode), keccak256(shimInitCode), "shim hash corruption");
-'''
+          checkLines=(
+              '        address packedMulticall = address(uint160(uint256(bytes32(multicallStorage.code))));',
+              '        assertEq(packedMulticall, MULTICALL_ADDRESS, "wrong multicall immutable address");',
+              '        address packedWrapped = address(uint160(uint256(bytes32(wnativeStorage.code))));',
+              '        assertEq(packedWrapped, address(WETH), "wrong wrapped immutable address");'
+          )
           assert s.count(marker)==1
-          s=s.replace(marker,chr(10).join("        "+line for line in check.splitlines())+chr(10)+marker)
+          s=s.replace(marker,chr(10).join(checkLines)+chr(10)+marker)
           p.write_text(s)
           print("TEST_FIXTURE_CANONICAL_MULTICALL_RUNTIME_AND_STORAGE_ASSERTS_APPLIED")
           PY
