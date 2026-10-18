@@ -90,19 +90,18 @@ jobs:
           # the original MultiCall bytecode. The EVM authorization fixture uses
           # the runtime at the documented canonical address, as production does.
           # This adapts ONLY the test harness, not the protocol Solidity sources.
-          old3='''        bytes memory multicallInitcode = vm.getCode("src/multicall/MultiCall.sol:MultiCall");
-        (bool success, bytes memory returndata) =
-            CREATE2_FACTORY.call(bytes.concat(bytes32(0x0000000000000000000000000000000000000031a5e6991d522b26211cf840ce), multicallInitcode));
-        require(success);
-        require(returndata.length == 20);
-        require(address(uint160(bytes20(returndata))) == MULTICALL_ADDRESS);'''
-          new3='''        bytes memory multicallRuntime = vm.getDeployedCode("src/multicall/MultiCall.sol:MultiCall");
-        assertGt(multicallRuntime.length, 0);
-        vm.etch(address(MULTICALL_ADDRESS), multicallRuntime);
-        bool success;
-        bytes memory returndata;'''
-          assert s.count(old3)==1,"multicall fixture changed unexpectedly"
-          s=s.replace(old3,new3)
+          start=s.index('        bytes memory multicallInitcode =')
+          stopMarker='        require(address(uint160(bytes20(returndata))) == MULTICALL_ADDRESS);'
+          stop=s.index(stopMarker,start)+len(stopMarker)
+          assert 'CREATE2_FACTORY.call' in s[start:stop]
+          replacementLines=(
+              '        bytes memory multicallRuntime = vm.getDeployedCode("src/multicall/MultiCall.sol:MultiCall");',
+              '        assertGt(multicallRuntime.length, 0);',
+              '        vm.etch(address(MULTICALL_ADDRESS), multicallRuntime);',
+              '        bool success;',
+              '        bytes memory returndata;'
+          )
+          s=s[:start]+chr(10).join(replacementLines)+s[stop:]
           p.write_text(s)
           print("TEST_FIXTURE_CANONICAL_MULTICALL_RUNTIME_APPLIED")
           PY
