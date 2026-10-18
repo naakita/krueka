@@ -10,7 +10,7 @@ REQ=0
 def rpc(url,method,params):
     global REQ
     REQ+=1
-    req=urllib.request.Request(url,data=json.dumps({"jsonrpc":"2.0","id":REQ,"method":method,"params":params}).encode(),headers={"Content-Type":"application/json"},method="POST")
+    req=urllib.request.Request(url,data=json.dumps({"jsonrpc":"2.0","id":REQ,"method":method,"params":params}).encode(),headers={"Content-Type":"application/json","User-Agent":"Titanteo-ReadOnly-Research/1.0"},method="POST")
     with urllib.request.urlopen(req,timeout=14) as conn: body=conn.read(2000001)
     assert len(body)<2000001,"response too large"
     obj=json.loads(body)
