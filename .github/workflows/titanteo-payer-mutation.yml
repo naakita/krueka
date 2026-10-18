@@ -94,5 +94,6 @@ jobs:
             exit 1
           fi
           grep -F '[FAIL' "$RUNNER_TEMP/mutated.log"
-          grep -F 'test_New_SequentialPayersAreIsolatedAndSlotCleared' "$RUNNER_TEMP/mutated.log"
+          grep -F 'test_New_TwoExecutionsInsideOneTransactionClearPayer' "$RUNNER_TEMP/mutated.log"
+          grep -F '0x7407c0f8' "$RUNNER_TEMP/mutated.log"
           echo "NEGATIVE_CONTROL_CAUGHT_INTENTIONAL_DEFECT"
