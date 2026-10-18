@@ -1,4 +1,4 @@
-name: Titanteo cross-chain factory owner and domain offline regressions
+name: Titanteo crosschain official-compiler auth tests
 on:
   push:
     branches:
@@ -14,15 +14,17 @@ concurrency:
 jobs:
   crosschain-source:
     runs-on: ubuntu-latest
-    timeout-minutes: 14
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Install original pinned Foundry from 0x CI
+        uses: foundry-rs/foundry-toolchain@v1
         with:
+          version: v1.5.1
           cache: false
-      - name: Clone exact public source in isolated runner
+      - name: Clone unmodified pinned 0x sources with submodules
         shell: bash
         run: |
           set -euo pipefail
@@ -30,94 +32,56 @@ jobs:
           cd original-0x
           git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
           git submodule update --init --recursive
-          echo "SOURCE_COMMIT=$(git rev-parse HEAD)"
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
           cp ../evm-public-lab/0x-hypotheses/TitanteoCrossChainReceiverSecurity.t.sol test/unit/TitanteoCrossChainReceiverSecurity.t.sol
-      - name: Local-only compiler compatibility for clz opcodes
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import re
-          from pathlib import Path
-          changed=[]
-          for p in Path("original-0x/src").rglob("*.sol"):
-              s=p.read_text()
-              if re.search(r"\bclz\s*\(",s) and "pragma solidity ^0.8.25;" in s:
-                  assert s.count("pragma solidity ^0.8.25;")==1
-                  p.write_text(s.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
-                  changed.append(str(p))
-          assert len(changed)>=3,changed
-          print("LOCAL_COMPILER_CONSTRAINTS", changed)
-          PY
-      - name: Execute original-source proxy authorization and signature tests
+          echo "USING_ORIGINAL_TEST_FIXTURE_AND_UNMODIFIED_PROTOCOL"
+      - name: Build MultiCall using official deterministic CREATE2 compiler flags
         working-directory: original-0x
-        timeout-minutes: 10
+        timeout-minutes: 6
+        shell: bash
+        env:
+          FOUNDRY_SOLC_VERSION: '0.8.28'
+          FOUNDRY_EVM_VERSION: london
+          FOUNDRY_OPTIMIZER_RUNS: '1000000'
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          forge build -- src/multicall/MultiCall.sol
+          test -s out/MultiCall.sol/MultiCall.json
+          echo "PINNED_MULTICALL_BYTECODE_BUILT"
+      - name: Build factory using official deterministic CREATE2 compiler flags
+        working-directory: original-0x
+        timeout-minutes: 6
+        shell: bash
+        env:
+          FOUNDRY_SOLC_VERSION: '0.8.34'
+          FOUNDRY_EVM_VERSION: london
+          FOUNDRY_OPTIMIZER_RUNS: '1000000'
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          forge build -- src/CrossChainReceiverFactory.sol
+          test -s out/CrossChainReceiverFactory.sol/CrossChainReceiverFactory.json
+          echo "PINNED_FACTORY_BYTECODE_BUILT"
+      - name: Reproduce official upstream testSingleAction on isolated EVM
+        working-directory: original-0x
+        timeout-minutes: 6
         shell: bash
         env:
           FOUNDRY_FFI: 'false'
-          FOUNDRY_EVM_VERSION: osaka
-          FOUNDRY_SPARSE_MODE: 'false'
         run: |
           set -euo pipefail
-          forge build src/CrossChainReceiverFactory.sol src/multicall/MultiCall.sol
-          test -s out/CrossChainReceiverFactory.sol/CrossChainReceiverFactory.json
-          test -s out/MultiCall.sol/MultiCall.json
-          echo "BOTH_FACTORY_AND_MULTICALL_CREATION_BYTECODE_READY"
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          for p in (Path("out/MultiCall.sol/MultiCall.json"), Path("out/CrossChainReceiverFactory.sol/CrossChainReceiverFactory.json")):
-              blob=json.loads(p.read_text())
-              for field in ("bytecode", "deployedBytecode"):
-                  v=blob.get(field)
-                  obj=v.get("object","") if isinstance(v,dict) else str(v or "")
-                  print("ARTIFACT_DIAGNOSTIC",str(p),field,"bytecode_chars",len(obj),"start",obj[:22])
-              print("ARTIFACT_SOURCE",p,"bytecode loaded")
-          PY
-          # Fix only the test fixture artifact lookup, never production Solidity.
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path("test/unit/CrossChainReceiverFactory.t.sol")
-          s=p.read_text()
-          old='vm.getCode("MultiCall.sol:MultiCall")'
-          new='vm.getCode("src/multicall/MultiCall.sol:MultiCall")'
-          assert s.count(old)==1,s.count(old)
-          s=s.replace(old,new)
-          old2='deployCodeTo("CrossChainReceiverFactory.sol", new bytes(0), 2 wei, address(factory));'
-          new2='deployCodeTo("src/CrossChainReceiverFactory.sol:CrossChainReceiverFactory", new bytes(0), 2 wei, address(factory));'
-          assert s.count(old2)==1,s.count(old2)
-          s=s.replace(old2,new2)
-          # Compiler / optimizer changes produce a different CREATE2 address for
-          # the original MultiCall bytecode. The EVM authorization fixture uses
-          # the runtime at the documented canonical address, as production does.
-          # This adapts ONLY the test harness, not the protocol Solidity sources.
-          start=s.index('        bytes memory multicallInitcode =')
-          stopMarker='        require(address(uint160(bytes20(returndata))) == MULTICALL_ADDRESS);'
-          stop=s.index(stopMarker,start)+len(stopMarker)
-          assert 'CREATE2_FACTORY.call' in s[start:stop]
-          replacementLines=(
-              '        bytes memory multicallRuntime = vm.getDeployedCode("src/multicall/MultiCall.sol:MultiCall");',
-              '        assertGt(multicallRuntime.length, 0);',
-              '        vm.etch(address(MULTICALL_ADDRESS), multicallRuntime);',
-              '        bool success;',
-              '        bytes memory returndata;'
-          )
-          s=s[:start]+chr(10).join(replacementLines)+s[stop:]
-          # Validate actual 32-byte immutable-address storage code before
-          # any attempt to deploy the factory. This is ONLY test-fixture tracing.
-          marker='        vm.deal(CREATE2_FACTORY, 2 wei);'
-          checkLines=(
-              '        address packedMulticall = address(uint160(uint256(bytes32(multicallStorage.code))));',
-              '        assertEq(packedMulticall, MULTICALL_ADDRESS, "wrong multicall immutable address");',
-              '        address packedWrapped = address(uint160(uint256(bytes32(wnativeStorage.code))));',
-              '        assertEq(packedWrapped, address(WETH), "wrong wrapped immutable address");'
-          )
-          assert s.count(marker)==1
-          s=s.replace(marker,chr(10).join(checkLines)+chr(10)+marker)
-          p.write_text(s)
-          print("TEST_FIXTURE_CANONICAL_MULTICALL_RUNTIME_AND_STORAGE_ASSERTS_APPLIED")
-          PY
-          echo "BASELINE_OFFICIAL_SINGLE_ACTION"
-          forge test --match-path test/unit/CrossChainReceiverFactory.t.sol --match-test testSingleAction -vvvv | tee "$RUNNER_TEMP/crosschain-baseline.log"
-          echo "TITANTEO_INDEPENDENT_TESTS"
-          forge test --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 128 -vv | tee "$RUNNER_TEMP/crosschain-checks.log"
-          grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/crosschain-checks.log"
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/CrossChainReceiverFactory.t.sol' --match-test testSingleAction -vv | tee "$RUNNER_TEMP/upstream-baseline.log"
+          grep -F '[PASS] testSingleAction()' "$RUNNER_TEMP/upstream-baseline.log"
+          echo "UPSTREAM_CROSSCHAIN_BASELINE_PASSED"
+      - name: Execute five independently authored Titanteo security invariants
+        working-directory: original-0x
+        timeout-minutes: 6
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 256 -v | tee "$RUNNER_TEMP/titanteo-crosschain-checks.log"
+          grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/titanteo-crosschain-checks.log"
+          echo "TITANTEO_CROSSCHAIN_INVARIANTS_COMPLETED"
