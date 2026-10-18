@@ -71,4 +71,23 @@ contract TitanteoCrossChainReceiverSecurity is CrossChainReceiverFactoryTest {
         proxy.metaTx(empty, 0, 0, block.timestamp - 1 - uint256(expiredBy % 1000), "");
         assertEq(proxy.owner() != address(0), true);
     }
+    function testFuzz_NewMerkleSignatureCannotAuthorizeDifferentAction(bytes32 action, bytes32 other) public {
+        vm.assume(action != other);
+        (ICrossChainReceiverFactory proxy, address owner) = _deployProxy(action);
+        bytes32[] memory emptyProof = new bytes32[](0);
+        bytes memory signature = abi.encode(owner, emptyProof);
+        assertEq(proxy.isValidSignature(action, signature), VALID, "positive action rejected");
+        assertEq(proxy.isValidSignature(other, signature), INVALID, "different action unexpectedly authorized");
+    }
+
+    function testFuzz_NewOnlyProxyFunctionsCannotBeCalledOnFactory(uint64 amount) public {
+        address caller = makeAddr("external-proxy-attacker");
+        vm.prank(caller);
+        vm.expectRevert();
+        factory.approvePermit2(WETH, 1 + uint256(amount));
+        vm.prank(caller);
+        vm.expectRevert();
+        factory.setOwner(caller);
+    }
+
 }
