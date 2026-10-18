@@ -74,14 +74,14 @@ jobs:
           forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/CrossChainReceiverFactory.t.sol' --match-test testSingleAction -vv | tee "$RUNNER_TEMP/upstream-baseline.log"
           grep -F '[PASS] testSingleAction()' "$RUNNER_TEMP/upstream-baseline.log"
           echo "UPSTREAM_CROSSCHAIN_BASELINE_PASSED"
-      - name: Execute five independently authored Titanteo security invariants
+      - name: Execute seven independently authored Titanteo security invariants
         working-directory: original-0x
-        timeout-minutes: 6
+        timeout-minutes: 8
         shell: bash
         env:
           FOUNDRY_FFI: 'false'
         run: |
           set -euo pipefail
-          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 256 -v | tee "$RUNNER_TEMP/titanteo-crosschain-checks.log"
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 1024 -v | tee "$RUNNER_TEMP/titanteo-crosschain-checks.log"
           grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/titanteo-crosschain-checks.log"
           echo "TITANTEO_CROSSCHAIN_INVARIANTS_COMPLETED"
