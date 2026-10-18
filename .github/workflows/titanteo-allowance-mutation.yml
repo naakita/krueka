@@ -1,0 +1,101 @@
+name: Titanteo 0x AllowanceHolder negative-control sensitivity
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - '.github/workflows/titanteo-allowance-mutation.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-allowance-mutants
+  cancel-in-progress: true
+jobs:
+  local-defect-detection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        mutation: [owner-key, cleanup-omitted]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Clone exact public original and local security test
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git src-0x
+          cd src-0x
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "PINNED_SOURCE=$(git rev-parse HEAD)"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoAllowanceHolderBoundary.t.sol test/unit/TitanteoAllowanceHolderBoundary.t.sol
+      - name: Introduce one known-bad change only in temporary local copy
+        shell: bash
+        env:
+          MUTATION: ${{ matrix.mutation }}
+        run: |
+          python3 - <<'PY'
+          import os,re
+          from pathlib import Path
+          root=Path("src-0x")
+          mutant=os.environ["MUTATION"]
+          if mutant=="owner-key":
+              p=root/"src/allowanceholder/TransientStorageLayout.sol"
+              old="mstore(0x14, owner)"
+              new="mstore(0x14, 0) // INTENTIONAL SYNTHETIC OWNER-ISOLATION DEFECT"
+          elif mutant=="cleanup-omitted":
+              p=root/"src/allowanceholder/AllowanceHolder.sol"
+              old="_set(allowance, 0);"
+              new="// INTENTIONAL SYNTHETIC CLEANUP-OMISSION DEFECT"
+          else: raise RuntimeError("unknown mutant")
+          original=p.read_text()
+          assert original.count(old)==1,(str(p),original.count(old))
+          p.write_text(original.replace(old,new))
+          print("APPLIED_LOCAL_NEGATIVE_CONTROL",mutant)
+          files=[]
+          for q in (root/"src").rglob("*.sol"):
+              txt=q.read_text()
+              if re.search(r"\bclz\s*\(",txt) and "pragma solidity ^0.8.25;" in txt:
+                  assert txt.count("pragma solidity ^0.8.25;")==1
+                  q.write_text(txt.replace("pragma solidity ^0.8.25;","pragma solidity ^0.8.34;"))
+                  files.append(str(q))
+          assert len(files)>=3
+          print("LOCAL_OSAKA_COMPAT",len(files))
+          PY
+      - name: Confirm vulnerable synthetic variant is rejected by its invariant
+        timeout-minutes: 9
+        working-directory: src-0x
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_EVM_VERSION: osaka
+          FOUNDRY_SPARSE_MODE: 'true'
+          MUTATION: ${{ matrix.mutation }}
+        run: |
+          if [ "$MUTATION" = "owner-key" ]; then
+            test_name="testFuzz_AnotherOwnerCannotBeDebited"
+          else
+            test_name="testFuzz_AuthorizedSpendThenNoLeftoverAllowance"
+          fi
+          set +e
+          forge test --match-path 'test/unit/TitanteoAllowanceHolderBoundary.t.sol' --match-test "$test_name" --fuzz-runs 32 -v > "$RUNNER_TEMP/mutation.log" 2>&1
+          status=$?
+          set -e
+          tail -36 "$RUNNER_TEMP/mutation.log"
+          if [ "$status" -eq 0 ]; then
+            echo "ERROR: test missed synthetic defect"
+            exit 1
+          fi
+          if grep -Eq 'Compiler run failed|Compilation failed|ParserError|TypeError|^Error \([0-9]+\):' "$RUNNER_TEMP/mutation.log"; then
+            echo "ERROR: compiler failed, not a security test"
+            exit 1
+          fi
+          grep -F '[FAIL' "$RUNNER_TEMP/mutation.log"
+          grep -F "$test_name" "$RUNNER_TEMP/mutation.log"
+          echo "NEGATIVE_CONTROL_CAUGHT_INTENTIONAL_DEFECT=$MUTATION"
