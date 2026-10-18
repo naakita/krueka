@@ -1,0 +1,138 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.25;
+// Titanteo Security Lab: independent checks of the actual transient AllowanceHolder.
+// Educational local-EVM tests only. No mainnet, no credentials, no real assets.
+import {Test} from "@forge-std/Test.sol";
+import {MockERC20} from "@solmate/test/utils/mocks/MockERC20.sol";
+import {IAllowanceHolder} from "src/allowanceholder/IAllowanceHolder.sol";
+import {AllowanceHolder} from "src/allowanceholder/AllowanceHolder.sol";
+import {ConfusedDeputy} from "src/allowanceholder/AllowanceHolderBase.sol";
+
+contract TitanteoLocalOperator {
+    IAllowanceHolder internal immutable holder;
+    constructor(IAllowanceHolder _holder) { holder = _holder; }
+    function pull(address token, address owner, address recipient, uint256 amount) external {
+        require(holder.transferFrom(token, owner, recipient, amount), "transfer was not acknowledged");
+    }
+    function pullAndRevert(address token, address owner, address recipient, uint256 amount) external {
+        require(holder.transferFrom(token, owner, recipient, amount), "transfer failed");
+        revert("SYNTHETIC_OPERATOR_ROLLBACK");
+    }
+    function pullViaOther(TitanteoLocalOperator other, address token, address owner, address recipient, uint256 amount) external {
+        other.pull(token, owner, recipient, amount);
+    }
+}
+
+contract TitanteoAllowanceHolderBoundaryTest is Test {
+    IAllowanceHolder holder;
+    MockERC20 token;
+    MockERC20 token2;
+    TitanteoLocalOperator operatorA;
+    TitanteoLocalOperator operatorB;
+    address alice;
+    address bob;
+    address recipient;
+    address origin;
+
+    function setUp() public {
+        vm.chainId(31337);
+        holder = IAllowanceHolder(address(new AllowanceHolder()));
+        token = new MockERC20("Primary", "P", 18);
+        token2 = new MockERC20("Secondary", "S", 18);
+        operatorA = new TitanteoLocalOperator(holder);
+        operatorB = new TitanteoLocalOperator(holder);
+        alice = makeAddr("titanteo-alice");
+        bob = makeAddr("titanteo-bob");
+        recipient = makeAddr("titanteo-recipient");
+        origin = makeAddr("titanteo-origin");
+        token.mint(alice, 1_000_000 ether);
+        token.mint(bob, 1_000_000 ether);
+        token2.mint(alice, 1_000_000 ether);
+        vm.prank(alice);
+        token.approve(address(holder), type(uint256).max);
+        vm.prank(bob);
+        token.approve(address(holder), type(uint256).max);
+        vm.prank(alice);
+        token2.approve(address(holder), type(uint256).max);
+    }
+
+    function _exec(address operator_, address token_, uint256 grant, address target, bytes memory data) internal {
+        vm.prank(alice, origin); // ensure caller != tx.origin, so cleanup is required
+        holder.exec(operator_, token_, grant, payable(target), data);
+    }
+
+    function _pull(address token_, address owner_, uint256 n) internal view returns (bytes memory) {
+        return abi.encodeCall(TitanteoLocalOperator.pull, (token_, owner_, recipient, n));
+    }
+
+    function testFuzz_AuthorizedSpendThenNoLeftoverAllowance(uint96 amountRaw) public {
+        uint256 amount = 1 + uint256(amountRaw) % 1e24;
+        uint256 spend = amount / 2 + 1;
+        uint256 beforeAlice = token.balanceOf(alice);
+        _exec(address(operatorA), address(token), amount, address(operatorA), _pull(address(token), alice, spend));
+        assertEq(token.balanceOf(alice), beforeAlice - spend);
+        assertEq(token.balanceOf(recipient), spend);
+        vm.prank(address(operatorA), origin);
+        vm.expectRevert();
+        holder.transferFrom(address(token), alice, recipient, amount - spend);
+        assertEq(token.balanceOf(recipient), spend, "permission leaked after exec");
+    }
+
+    function testFuzz_CannotSpendMoreThanGranted(uint96 amountRaw) public {
+        uint256 amount = 1 + uint256(amountRaw) % 1e24;
+        uint256 beforeAlice = token.balanceOf(alice);
+        vm.expectRevert();
+        _exec(address(operatorA), address(token), amount, address(operatorA),
+            _pull(address(token), alice, amount + 1));
+        assertEq(token.balanceOf(alice), beforeAlice);
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
+    function testFuzz_AnotherOwnerCannotBeDebited(uint96 amountRaw) public {
+        uint256 amount = 1 + uint256(amountRaw) % 1e24;
+        uint256 beforeBob = token.balanceOf(bob);
+        vm.expectRevert();
+        _exec(address(operatorA), address(token), amount, address(operatorA),
+            _pull(address(token), bob, amount));
+        assertEq(token.balanceOf(bob), beforeBob, "cross-owner spending");
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
+    function testFuzz_AnotherTokenCannotBeDebited(uint96 amountRaw) public {
+        uint256 amount = 1 + uint256(amountRaw) % 1e24;
+        uint256 beforeAlice = token2.balanceOf(alice);
+        vm.expectRevert();
+        _exec(address(operatorA), address(token), amount, address(operatorA),
+            _pull(address(token2), alice, amount));
+        assertEq(token2.balanceOf(alice), beforeAlice, "cross-token spending");
+        assertEq(token2.balanceOf(recipient), 0);
+    }
+
+    function testFuzz_OtherOperatorCannotBorrowAllowance(uint96 amountRaw) public {
+        uint256 amount = 1 + uint256(amountRaw) % 1e24;
+        bytes memory forwarded = abi.encodeCall(
+            TitanteoLocalOperator.pullViaOther,
+            (operatorB, address(token), alice, recipient, amount)
+        );
+        vm.expectRevert();
+        _exec(address(operatorA), address(token), amount, address(operatorA), forwarded);
+        assertEq(token.balanceOf(recipient), 0, "operator B borrowed A's grant");
+    }
+
+    function testFuzz_RevertedOperatorTransferIsAtomic(uint96 amountRaw) public {
+        uint256 amount = 1 + uint256(amountRaw) % 1e24;
+        uint256 beforeAlice = token.balanceOf(alice);
+        bytes memory attempt = abi.encodeCall(TitanteoLocalOperator.pullAndRevert,
+            (address(token), alice, recipient, amount));
+        vm.expectRevert("SYNTHETIC_OPERATOR_ROLLBACK");
+        _exec(address(operatorA), address(token), amount, address(operatorA), attempt);
+        assertEq(token.balanceOf(alice), beforeAlice, "rollback did not restore owner");
+        assertEq(token.balanceOf(recipient), 0, "rollback did not restore recipient");
+    }
+
+    function test_AllowanceHolderCannotBeConfusedIntoCallingERC20AsTarget() public {
+        vm.prank(alice, origin);
+        vm.expectRevert(ConfusedDeputy.selector);
+        holder.exec(address(operatorA), address(token), 1, payable(address(token2)), "");
+    }
+}

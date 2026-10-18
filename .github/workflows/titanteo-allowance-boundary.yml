@@ -1,0 +1,62 @@
+name: Titanteo 0x AllowanceHolder independent authorization fuzzing
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoAllowanceHolderBoundary.t.sol'
+      - '.github/workflows/titanteo-allowance-boundary.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-0x-allowance-boundary
+  cancel-in-progress: true
+jobs:
+  allowance-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Clone exact public source into temporary isolated EVM workspace
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git src-0x
+          cd src-0x
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "PINNED_SOURCE=$(git rev-parse HEAD)"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoAllowanceHolderBoundary.t.sol test/unit/TitanteoAllowanceHolderBoundary.t.sol
+      - name: Ensure local Osaka opcode compiler compatibility
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          changes=[]
+          for f in Path("src-0x/src").rglob("*.sol"):
+              s=f.read_text()
+              if re.search(r"\bclz\s*\(",s) and "pragma solidity ^0.8.25;" in s:
+                  assert s.count("pragma solidity ^0.8.25;")==1
+                  f.write_text(s.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
+                  changes.append(str(f))
+          assert len(changes)>=3,changes
+          print("LOCAL_ONLY_COMPAT_FILES",changes)
+          PY
+      - name: Run new security properties against actual AllowanceHolder
+        shell: bash
+        timeout-minutes: 10
+        working-directory: src-0x
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_EVM_VERSION: osaka
+          FOUNDRY_SPARSE_MODE: 'true'
+        run: |
+          set -euo pipefail
+          forge test --match-path 'test/unit/TitanteoAllowanceHolderBoundary.t.sol' --fuzz-runs 256 -v | tee "$RUNNER_TEMP/allowance.log"
+          grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/allowance.log"
