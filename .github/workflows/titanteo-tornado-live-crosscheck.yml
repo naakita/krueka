@@ -1,0 +1,66 @@
+name: Titanteo passive Ethereum dual-RPC live check
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - '.github/workflows/titanteo-tornado-live-crosscheck.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-chain-readonly-crosscheck
+  cancel-in-progress: true
+jobs:
+  passive-rpc-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Read-only chain header and Tornado Classic event corroboration
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, re, urllib.request
+          urls = ["https://ethereum-rpc.publicnode.com", "https://eth.llamarpc.com"]
+          pool = "0x47ce0c6ed5b0ce3d3a51fdb1c52dc66a7c3c2936"
+          topics = ["0xa945e51eec50ab98c161376f0db4cf2aeba3ec92755fe2fcd388bdbbb80ff196", "0xe9e508bad6d4c3227e881ca19068f099da81b5164dd6d62b2eaf1e8bc6c34931"]
+          method_allow = {"eth_chainId","eth_blockNumber","eth_getBlockByNumber","eth_getLogs"}
+          def call(url, method, params):
+              assert method in method_allow
+              packet=json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
+              req=urllib.request.Request(url, data=packet, method="POST", headers={"Content-Type":"application/json","User-Agent":"Titanteo-ReadOnly-Research/1.0"})
+              with urllib.request.urlopen(req,timeout=12) as resp:
+                  data=resp.read(250001)
+              assert len(data)<=250000,"oversized RPC response"
+              obj=json.loads(data)
+              assert obj.get("jsonrpc")=="2.0" and obj.get("id")==1
+              if "error" in obj:raise RuntimeError("Provider rejected "+method+": "+str(obj["error"])[:180])
+              assert "result" in obj
+              return obj["result"]
+          chains=[int(call(u,"eth_chainId",[]),16) for u in urls]
+          assert chains == [1,1], "Both must be Ethereum mainnet"
+          heads=[int(call(u,"eth_blockNumber",[]),16) for u in urls]
+          end=min(heads)-64
+          start=end-7
+          assert start>0 and end-start==7
+          print("ETH_MAINNET_HEADS",heads,"SAMPLE_BLOCKS",start,end)
+          headers=[call(u,"eth_getBlockByNumber",[hex(end),False]) for u in urls]
+          assert all(isinstance(h,dict) and int(h["number"],16)==end for h in headers)
+          assert headers[0]["hash"].lower()==headers[1]["hash"].lower(), "Provider block hash disagreement"
+          print("INDEPENDENT_BLOCK_HASH_MATCH",headers[0]["hash"])
+          opts={"fromBlock":hex(start),"toBlock":hex(end),"address":pool,"topics":[topics]}
+          results=[call(u,"eth_getLogs",[opts]) for u in urls]
+          assert all(isinstance(r,list) and len(r)<=50 for r in results)
+          def normalized(rows):
+              x=[]
+              for row in rows:
+                  assert row.get("address","").lower()==pool
+                  assert start<=int(row["blockNumber"],16)<=end
+                  assert row["topics"][0].lower() in topics
+                  assert re.fullmatch(r"0x[0-9a-fA-F]{64}",row["blockHash"])
+                  x.append((row["blockNumber"].lower(), row["blockHash"].lower(),row["transactionHash"].lower(),row["logIndex"].lower(),row["data"].lower(),tuple(v.lower() for v in row["topics"])))
+              return sorted(x)
+          a,b=map(normalized,results)
+          assert a==b, "Provider event mismatch"
+          print("DUAL_RPC_LIVE_COMPARISON_OK","PUBLIC_LOG_COUNT",len(a),"POOL",pool)
+          print("No user identification; no deposit-withdrawal pairing; no RPC write methods.")
+          PY
