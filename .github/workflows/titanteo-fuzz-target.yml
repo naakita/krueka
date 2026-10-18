@@ -14,7 +14,7 @@ jobs:
   fuzz-offline:
     name: Original 0x Solidity fuzz suites, offline
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -35,20 +35,20 @@ jobs:
         timeout-minutes: 8
         env:
           FOUNDRY_FFI: 'false'
-          FOUNDRY_FUZZ_RUNS: '4096'
+          FOUNDRY_FUZZ_RUNS: '32768'
           FOUNDRY_INVARIANT_RUNS: '1'
         run: |
           set -euo pipefail
-          forge test --match-path 'test/fuzz_FV/fuzztest_assembly_replacement.t.sol' --fuzz-runs 4096 -v | tee "$RUNNER_TEMP/assembly-fuzz.log"
+          forge test --match-path 'test/fuzz_FV/fuzztest_assembly_replacement.t.sol' --fuzz-runs 32768 -v | tee "$RUNNER_TEMP/assembly-fuzz.log"
           grep -E 'Ran [0-9]+ test suites|Suite result:' "$RUNNER_TEMP/assembly-fuzz.log"
       - name: "EVM fuzz - payer identity safeguards"
         shell: bash
         working-directory: 0x-src
-        timeout-minutes: 2
+        timeout-minutes: 5
         env:
           FOUNDRY_FFI: 'false'
-          FOUNDRY_FUZZ_RUNS: '1024'
+          FOUNDRY_FUZZ_RUNS: '8192'
         run: |
           set -euo pipefail
-          forge test --match-path 'test/unit/core/MsgSenderUnitTest.t.sol' --fuzz-runs 1024 -v | tee "$RUNNER_TEMP/msgsender-fuzz.log"
+          forge test --match-path 'test/unit/core/MsgSenderUnitTest.t.sol' --fuzz-runs 8192 -v | tee "$RUNNER_TEMP/msgsender-fuzz.log"
           grep -E 'Ran [0-9]+ test suites|Suite result:' "$RUNNER_TEMP/msgsender-fuzz.log"
