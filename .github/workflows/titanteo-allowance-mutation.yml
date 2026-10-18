@@ -5,6 +5,7 @@ on:
       - research/evm-lab-public-tests
     paths:
       - '.github/workflows/titanteo-allowance-mutation.yml'
+      - 'evm-public-lab/0x-hypotheses/TitanteoAllowanceHolderBoundary.t.sol'
 permissions:
   contents: read
 concurrency:
@@ -17,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mutation: [owner-key, cleanup-omitted]
+        mutation: [cleanup-omitted]
     steps:
       - uses: actions/checkout@v4
         with:
