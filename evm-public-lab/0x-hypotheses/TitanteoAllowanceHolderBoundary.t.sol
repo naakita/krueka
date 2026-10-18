@@ -23,6 +23,33 @@ contract TitanteoLocalOperator {
     }
 }
 
+/// @notice Calls AllowanceHolder and probes residual authorization in the SAME EVM transaction.
+contract TitanteoAHBatchOwner {
+    function executeAndProbe(
+        IAllowanceHolder holder,
+        TitanteoLocalOperator operator_,
+        MockERC20 token,
+        address recipient,
+        uint256 amount,
+        uint256 spend
+    ) external returns (bool leaked) {
+        token.approve(address(holder), type(uint256).max);
+        holder.exec(
+            address(operator_),
+            address(token),
+            amount,
+            payable(address(operator_)),
+            abi.encodeCall(TitanteoLocalOperator.pull, (address(token), address(this), recipient, spend))
+        );
+        // This second call occurs inside one transaction, without a VM cheatcode boundary.
+        try operator_.pull(address(token), address(this), recipient, amount - spend) {
+            leaked = true;
+        } catch {
+            leaked = false;
+        }
+    }
+}
+
 contract TitanteoAllowanceHolderBoundaryTest is Test {
     IAllowanceHolder holder;
     MockERC20 token;
@@ -66,19 +93,15 @@ contract TitanteoAllowanceHolderBoundaryTest is Test {
     }
 
     function testFuzz_AuthorizedSpendThenNoLeftoverAllowance(uint96 amountRaw) public {
-        // Never test an allowance boundary with a zero-value transfer.
-        // A zero transfer is permitted without positive token allowance.
         uint256 amount = 2 + uint256(amountRaw) % 1e24;
         uint256 spend = amount / 2;
-        assertGt(amount - spend, 0, "invalid test case");
-        uint256 beforeAlice = token.balanceOf(alice);
-        _exec(address(operatorA), address(token), amount, address(operatorA), _pull(address(token), alice, spend));
-        assertEq(token.balanceOf(alice), beforeAlice - spend);
+        assertGt(amount - spend, 0, "must probe positive leftover");
+        TitanteoAHBatchOwner batch = new TitanteoAHBatchOwner();
+        token.mint(address(batch), amount);
+        bool leaked = batch.executeAndProbe(holder, operatorA, token, recipient, amount, spend);
+        assertFalse(leaked, "transient allowance remains usable after exec");
         assertEq(token.balanceOf(recipient), spend);
-        vm.prank(address(operatorA), origin);
-        vm.expectRevert();
-        holder.transferFrom(address(token), alice, recipient, amount - spend);
-        assertEq(token.balanceOf(recipient), spend, "permission leaked after exec");
+        assertEq(token.balanceOf(address(batch)), amount - spend);
     }
 
     function testFuzz_CannotSpendMoreThanGranted(uint96 amountRaw) public {
