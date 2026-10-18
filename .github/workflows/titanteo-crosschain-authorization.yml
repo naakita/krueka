@@ -62,5 +62,20 @@ jobs:
           test -s out/CrossChainReceiverFactory.sol/CrossChainReceiverFactory.json
           test -s out/MultiCall.sol/MultiCall.json
           echo "BOTH_FACTORY_AND_MULTICALL_CREATION_BYTECODE_READY"
-          forge test --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 128 -v | tee "$RUNNER_TEMP/crosschain-checks.log"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for p in (Path("out/MultiCall.sol/MultiCall.json"), Path("out/CrossChainReceiverFactory.sol/CrossChainReceiverFactory.json")):
+              blob=json.loads(p.read_text())
+              for field in ("bytecode", "deployedBytecode"):
+                  v=blob.get(field)
+                  obj=v.get("object","") if isinstance(v,dict) else str(v or "")
+                  print("ARTIFACT_DIAGNOSTIC",str(p),field,"bytecode_chars",len(obj),"start",obj[:22])
+              print("ARTIFACT_SOURCE",p,blob.get("metadata",{}) if isinstance(blob.get("metadata"),dict) else "metadata-string")
+          PY
+          echo "BASELINE_OFFICIAL_SINGLE_ACTION"
+          forge test --match-path 'test/unit/CrossChainReceiverFactory.t.sol' --match-test '^testSingleAction
+ -vvvv | tee "$RUNNER_TEMP/crosschain-baseline.log"
+          echo "TITANTEO_INDEPENDENT_TESTS"
+          forge test --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 128 -vv | tee "$RUNNER_TEMP/crosschain-checks.log"
           grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/crosschain-checks.log"
