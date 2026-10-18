@@ -40,7 +40,7 @@ jobs:
         run: |
           set -euo pipefail
           forge test --match-path 'test/fuzz_FV/fuzztest_assembly_replacement.t.sol' --fuzz-runs 4096 -v | tee "$RUNNER_TEMP/assembly-fuzz.log"
-          grep -F 'Test result:' "$RUNNER_TEMP/assembly-fuzz.log"
+          grep -E 'Ran [0-9]+ test suites|Suite result:' "$RUNNER_TEMP/assembly-fuzz.log"
       - name: "EVM fuzz - payer identity safeguards"
         shell: bash
         working-directory: 0x-src
@@ -51,4 +51,4 @@ jobs:
         run: |
           set -euo pipefail
           forge test --match-path 'test/unit/core/MsgSenderUnitTest.t.sol' --fuzz-runs 1024 -v | tee "$RUNNER_TEMP/msgsender-fuzz.log"
-          grep -F 'Test result:' "$RUNNER_TEMP/msgsender-fuzz.log"
+          grep -E 'Ran [0-9]+ test suites|Suite result:' "$RUNNER_TEMP/msgsender-fuzz.log"
