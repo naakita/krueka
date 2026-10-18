@@ -58,7 +58,9 @@ jobs:
           FOUNDRY_SPARSE_MODE: 'false'
         run: |
           set -euo pipefail
-          forge build src/CrossChainReceiverFactory.sol
+          forge build src/CrossChainReceiverFactory.sol src/multicall/MultiCall.sol
           test -s out/CrossChainReceiverFactory.sol/CrossChainReceiverFactory.json
+          test -s out/MultiCall.sol/MultiCall.json
+          echo "BOTH_FACTORY_AND_MULTICALL_CREATION_BYTECODE_READY"
           forge test --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 128 -v | tee "$RUNNER_TEMP/crosschain-checks.log"
           grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/crosschain-checks.log"
