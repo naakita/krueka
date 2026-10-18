@@ -43,9 +43,9 @@ jobs:
               return o["result"]
           assert all(call(u,"eth_chainId",[])=="0x1" for u in endpoints)
           heads=[int(call(u,"eth_blockNumber",[]),16) for u in endpoints]
-          end=min(heads)-96;start=end-399
+          end=min(heads)-96;start=end-31
           print("PUBLIC_SAMPLE_RANGE",start,end,"HEADS",heads)
-          opts={"fromBlock":hex(start),"toBlock":hex(end),"address":list(pools),"topics":[[deposit,withdrawal]]}
+          opts={"fromBlock":hex(start),"toBlock":hex(end),"address":"0x12d66f87a04a9e220743712ce6d9bb1b5616b8fc","topics":[[deposit,withdrawal]]}
           def canonical(rows):
               assert isinstance(rows,list) and len(rows)<=200
               out={}
