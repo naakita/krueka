@@ -14,7 +14,7 @@ concurrency:
 jobs:
   foundry-local:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,3 +30,20 @@ jobs:
       - name: Run real EVM tests (no external RPC)
         working-directory: evm-public-lab
         run: forge test -vvv --fuzz-runs 64
+      - name: Install Slither static analyzer
+        run: python3 -m pip install --disable-pip-version-check slither-analyzer
+      - name: Run Slither on educational contracts (JSON evidence)
+        shell: bash
+        working-directory: evm-public-lab
+        run: |
+          set +e
+          slither . --json "$RUNNER_TEMP/titanteo-slither.json" > "$RUNNER_TEMP/titanteo-slither.log" 2>&1
+          code=$?
+          set -e
+          tail -40 "$RUNNER_TEMP/titanteo-slither.log"
+          echo "Slither exit status: $code (findings can cause nonzero)"
+          if [ ! -s "$RUNNER_TEMP/titanteo-slither.json" ]; then
+            echo "No analysis JSON. Slither did not complete."
+            exit 1
+          fi
+          python3 -c 'import json,os; d=json.load(open(os.environ["RUNNER_TEMP"]+"/titanteo-slither.json")); assert d.get("success"), d.get("error"); findings=d.get("results",{}).get("detectors",[]); print("STATIC_ANALYSIS_COMPLETED",len(findings),"findings"); print("RULE_IDS",sorted({x.get("check","unknown") for x in findings})); print("TRAINING_FIXTURES_ONLY")'
