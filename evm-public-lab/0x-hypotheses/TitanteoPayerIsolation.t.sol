@@ -37,6 +37,27 @@ contract TitanteoLocalCallback {
     }
 }
 
+
+/**
+ * @notice Two Settler calls in ONE EVM transaction, avoiding any top-level
+ * cheatcode transaction reset between calls. This is intentionally separate
+ * from the test contract.
+ */
+contract TitanteoBatchCaller {
+    function executeTwice(BaseSettler settler, TitanteoLocalCallback observer) external {
+        bytes[] memory actions = new bytes[](1);
+        actions[0] = abi.encodeCall(
+            ISettlerActions.BASIC,
+            (address(0), 0, address(observer), 0, abi.encodeCall(TitanteoLocalCallback.observe, (address(settler))))
+        );
+        ISettlerBase.AllowedSlippage memory slip = ISettlerBase.AllowedSlippage({
+            recipient: payable(address(0)), buyToken: IERC20(address(0)), minAmountOut: 0
+        });
+        settler.execute(slip, actions, bytes32(0));
+        settler.execute(slip, actions, bytes32(0));
+    }
+}
+
 contract TitanteoPayerIsolationTest is Test {
     BaseSettler internal settler;
     TitanteoLocalCallback internal observer;
@@ -63,6 +84,14 @@ contract TitanteoPayerIsolationTest is Test {
         (bool ok,) = address(settler).call(abi.encodeWithSelector(IMsgSender.msgSender.selector));
         assertFalse(ok, "payer persisted beyond execution");
     }
+    function test_New_TwoExecutionsInsideOneTransactionClearPayer() public {
+        TitanteoBatchCaller batch = new TitanteoBatchCaller();
+        batch.executeTwice(settler, observer);
+        assertEq(observer.successfulCalls(), 2, "second Settler call must be allowed");
+        assertEq(observer.recordedPayer(), address(batch), "incorrect batch payer");
+        _noExternalPayer();
+    }
+
     function test_New_SequentialPayersAreIsolatedAndSlotCleared() public {
         address alice = makeAddr("t-a"); address bob = makeAddr("t-b");
         assertTrue(_invoke(alice, false), "alice failed");
