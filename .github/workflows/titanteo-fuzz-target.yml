@@ -29,7 +29,7 @@ jobs:
           git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
           git submodule update --init --recursive
           echo "SOURCE_SHA=$(git rev-parse HEAD)"
-      - name: EVM fuzz: assembly versus Solidity equivalence
+      - name: "EVM fuzz - assembly versus Solidity equivalence"
         shell: bash
         working-directory: 0x-src
         timeout-minutes: 8
@@ -41,7 +41,7 @@ jobs:
           set -euo pipefail
           forge test --match-path 'test/fuzz_FV/fuzztest_assembly_replacement.t.sol' --fuzz-runs 4096 -v | tee "$RUNNER_TEMP/assembly-fuzz.log"
           grep -F 'Test result:' "$RUNNER_TEMP/assembly-fuzz.log"
-      - name: EVM fuzz: payer identity safeguards
+      - name: "EVM fuzz - payer identity safeguards"
         shell: bash
         working-directory: 0x-src
         timeout-minutes: 2
