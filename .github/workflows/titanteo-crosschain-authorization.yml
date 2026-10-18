@@ -74,8 +74,7 @@ jobs:
               print("ARTIFACT_SOURCE",p,blob.get("metadata",{}) if isinstance(blob.get("metadata"),dict) else "metadata-string")
           PY
           echo "BASELINE_OFFICIAL_SINGLE_ACTION"
-          forge test --match-path 'test/unit/CrossChainReceiverFactory.t.sol' --match-test '^testSingleAction
- -vvvv | tee "$RUNNER_TEMP/crosschain-baseline.log"
+          forge test --match-path test/unit/CrossChainReceiverFactory.t.sol --match-test testSingleAction -vvvv | tee "$RUNNER_TEMP/crosschain-baseline.log"
           echo "TITANTEO_INDEPENDENT_TESTS"
           forge test --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --fuzz-runs 128 -vv | tee "$RUNNER_TEMP/crosschain-checks.log"
           grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/crosschain-checks.log"
