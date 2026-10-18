@@ -25,12 +25,12 @@ contract TitanteoCrossChainReceiverSecurity is CrossChainReceiverFactoryTest {
         (ICrossChainReceiverFactory proxy, address owner) = _deployProxy(action);
         bytes32[] memory emptyProof = new bytes32[](0);
         bytes memory signature = abi.encode(owner, emptyProof);
-        assertEq(proxy.isValidSignature(action, signature), VALID);
+        assertEq(proxy.isValidSignature(action, signature), VALID, "baseline owner proof rejected");
         uint256 originalChain = block.chainid;
         vm.chainId(originalChain + 1);
-        assertEq(proxy.isValidSignature(action, signature), INVALID);
+        assertEq(proxy.isValidSignature(action, signature), INVALID, "proof was accepted on a different chain");
         vm.chainId(originalChain);
-        assertEq(proxy.isValidSignature(action, signature), VALID);
+        assertEq(proxy.isValidSignature(action, signature), VALID, "restored chain proof unexpectedly rejected");
     }
 
     function testFuzz_NewNonOwnerCannotTakeProxyEther(uint64 amountRaw) public {
