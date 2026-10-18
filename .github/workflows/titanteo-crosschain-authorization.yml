@@ -71,7 +71,23 @@ jobs:
                   v=blob.get(field)
                   obj=v.get("object","") if isinstance(v,dict) else str(v or "")
                   print("ARTIFACT_DIAGNOSTIC",str(p),field,"bytecode_chars",len(obj),"start",obj[:22])
-              print("ARTIFACT_SOURCE",p,blob.get("metadata",{}) if isinstance(blob.get("metadata"),dict) else "metadata-string")
+              print("ARTIFACT_SOURCE",p,"bytecode loaded")
+          PY
+          # Fix only the test fixture artifact lookup, never production Solidity.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("test/unit/CrossChainReceiverFactory.t.sol")
+          s=p.read_text()
+          old='vm.getCode("MultiCall.sol:MultiCall")'
+          new='vm.getCode("src/multicall/MultiCall.sol:MultiCall")'
+          assert s.count(old)==1,s.count(old)
+          s=s.replace(old,new)
+          old2='deployCodeTo("CrossChainReceiverFactory.sol", new bytes(0), 2 wei, address(factory));'
+          new2='deployCodeTo("src/CrossChainReceiverFactory.sol:CrossChainReceiverFactory", new bytes(0), 2 wei, address(factory));'
+          assert s.count(old2)==1,s.count(old2)
+          s=s.replace(old2,new2)
+          p.write_text(s)
+          print("TEST_FIXTURE_FULL_SOURCE_ARTIFACT_NAMES_APPLIED")
           PY
           echo "BASELINE_OFFICIAL_SINGLE_ACTION"
           forge test --match-path test/unit/CrossChainReceiverFactory.t.sol --match-test testSingleAction -vvvv | tee "$RUNNER_TEMP/crosschain-baseline.log"
