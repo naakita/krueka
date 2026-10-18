@@ -1,4 +1,4 @@
-name: Titanteo 0x AllowanceHolder adversarial 180k fuzz
+name: Titanteo 0x AllowanceHolder active-grant dual-seed fuzz
 on:
   push:
     branches:
@@ -58,5 +58,10 @@ jobs:
           FOUNDRY_SPARSE_MODE: 'true'
         run: |
           set -euo pipefail
-          forge test --match-path 'test/unit/TitanteoAllowanceHolderBoundary.t.sol' --fuzz-runs 16384 -v | tee "$RUNNER_TEMP/allowance.log"
-          grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/allowance.log"
+          # Compile only once, then exercise independent deterministic seeds.
+          for seed in 0x20261018 0x20261019; do
+            echo "ACTIVE_ALLOWANCE_FUZZ_SEED=$seed"
+            forge test --match-path 'test/unit/TitanteoAllowanceHolderBoundary.t.sol' --fuzz-runs 32768 --fuzz-seed "$seed" -v | tee "$RUNNER_TEMP/allowance-$seed.log"
+            grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/allowance-$seed.log"
+          done
+          echo "TITANTEO_DUAL_SEED_ADVERSARIAL_COMPLETED"

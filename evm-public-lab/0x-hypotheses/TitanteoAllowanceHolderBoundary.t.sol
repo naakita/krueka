@@ -18,6 +18,24 @@ contract TitanteoLocalOperator {
         require(holder.transferFrom(token, owner, recipient, amount), "transfer failed");
         revert("SYNTHETIC_OPERATOR_ROLLBACK");
     }
+    // Probe the ABI parser with an AUTHORIZED temporary grant active.
+    // Rejected calls must not transfer any tokens.
+    function probeDirtyActiveGrant(
+        uint8 field, address token, address owner, address recipient, uint256 amount
+    ) external {
+        uint256 rawToken = uint256(uint160(token));
+        uint256 rawOwner = uint256(uint160(owner));
+        uint256 rawRecipient = uint256(uint160(recipient));
+        if (field == 0) rawToken |= uint256(1) << 160;
+        else if (field == 1) rawOwner |= uint256(1) << 160;
+        else if (field == 2) rawRecipient |= uint256(1) << 160;
+        else revert("invalid field");
+        bytes memory malformed = abi.encodeWithSelector(
+            IAllowanceHolder.transferFrom.selector, rawToken, rawOwner, rawRecipient, amount
+        );
+        (bool ok,) = address(holder).call(malformed);
+        require(!ok, "DIRTY_ADDRESS_ACCEPTED_WITH_ACTIVE_GRANT");
+    }
     function pullViaOther(TitanteoLocalOperator other, address token, address owner, address recipient, uint256 amount) external {
         other.pull(token, owner, recipient, amount);
     }
@@ -209,6 +227,37 @@ contract TitanteoAllowanceHolderBoundaryTest is Test {
         vm.prank(address(operatorA), origin);
         (bool ok,) = address(holder).call(invalid);
         assertFalse(ok, "dirty upper bits of recipient accepted");
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
+
+    function testFuzz_ActiveGrantRejectsDirtyTokenAddress(uint96 raw) public {
+        uint256 amount = 1 + uint256(raw) % 1e24;
+        uint256 beforeAlice = token.balanceOf(alice);
+        _exec(address(operatorA), address(token), amount, address(operatorA),
+            abi.encodeCall(TitanteoLocalOperator.probeDirtyActiveGrant,
+                (0, address(token), alice, recipient, amount)));
+        assertEq(token.balanceOf(alice), beforeAlice);
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
+    function testFuzz_ActiveGrantRejectsDirtyOwnerAddress(uint96 raw) public {
+        uint256 amount = 1 + uint256(raw) % 1e24;
+        uint256 beforeAlice = token.balanceOf(alice);
+        _exec(address(operatorA), address(token), amount, address(operatorA),
+            abi.encodeCall(TitanteoLocalOperator.probeDirtyActiveGrant,
+                (1, address(token), alice, recipient, amount)));
+        assertEq(token.balanceOf(alice), beforeAlice);
+        assertEq(token.balanceOf(recipient), 0);
+    }
+
+    function testFuzz_ActiveGrantRejectsDirtyRecipientAddress(uint96 raw) public {
+        uint256 amount = 1 + uint256(raw) % 1e24;
+        uint256 beforeAlice = token.balanceOf(alice);
+        _exec(address(operatorA), address(token), amount, address(operatorA),
+            abi.encodeCall(TitanteoLocalOperator.probeDirtyActiveGrant,
+                (2, address(token), alice, recipient, amount)));
+        assertEq(token.balanceOf(alice), beforeAlice);
         assertEq(token.balanceOf(recipient), 0);
     }
 
