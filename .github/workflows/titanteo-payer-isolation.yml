@@ -1,0 +1,54 @@
+name: Titanteo new payer context regression tests
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/**'
+      - '.github/workflows/titanteo-payer-isolation.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-payer-isolation
+  cancel-in-progress: true
+jobs:
+  payer-context-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          cache: false
+      - name: Clone pinned public source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git 0x-src
+          cd 0x-src
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          echo "SOURCE_SHA=$(git rev-parse HEAD)"
+      - name: Insert Titanteo-authored regression tests in local clone
+        shell: bash
+        run: |
+          cp evm-public-lab/0x-hypotheses/TitanteoPayerIsolation.t.sol 0x-src/test/unit/core/TitanteoPayerIsolation.t.sol
+      - name: Reuse compiled artifacts where available
+        uses: actions/cache@v4
+        with:
+          path: |
+            0x-src/cache
+            0x-src/out
+          key: titanteo-payer-regression-275cf8-v1
+      - name: Execute independent authorization and callback invariants
+        timeout-minutes: 9
+        working-directory: 0x-src
+        env:
+          FOUNDRY_FFI: 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          forge test --match-path 'test/unit/core/TitanteoPayerIsolation.t.sol' --fuzz-runs 1024 -v | tee "$RUNNER_TEMP/new-payer-tests.log"
+          grep -E 'Ran [0-9]+ test suites|Suite result:' "$RUNNER_TEMP/new-payer-tests.log"

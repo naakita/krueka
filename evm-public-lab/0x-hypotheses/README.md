@@ -1,0 +1,2 @@
+# Titanteo Security Lab — independent 0x source regressions
+Five new checks on pinned 0x Settler source: transient payer isolation across different callers, full rollback on reverted action, nested execution rejection, forged 20-byte suffix rejection, and fuzzed payer separation. Runs only in Foundry local EVM, without RPC or real assets. New test failures need root cause validation; passing checks do not establish complete security.
