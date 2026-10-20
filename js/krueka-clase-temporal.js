@@ -52,7 +52,7 @@ $('lookup-form').addEventListener('submit',async e=>{
 $('upload-form').addEventListener('submit',async e=>{
  e.preventDefault();message('upload-message','');
  const code=normalizeCode($('student-code').value),file=$('student-file').files[0];
- if(!file||!/.\.(docx|xlsx|pptx|pdf)$/i.test(file.name)||file.size>10*1024*1024){
+ if(!file||!/\.(docx|xlsx|pptx|pdf)$/i.test(file.name)||file.size>10*1024*1024){
   message('upload-message','Elegí un archivo Word, Excel, PowerPoint o PDF de hasta 10 MB.',true);return;
  }
  const form=new FormData($('upload-form'));form.set('code',code);
