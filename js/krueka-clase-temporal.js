@@ -14,6 +14,7 @@ function resetPdf(){
  if(studentPdfUrl){URL.revokeObjectURL(studentPdfUrl);studentPdfUrl=null;}
  $('student-pdf-frame').removeAttribute('src');
  $('download-guide').removeAttribute('href');
+ $('open-guide').removeAttribute('href');
  $('student-pdf').hidden=true;message('pdf-message','');
 }
 function message(id,text,error=false){
@@ -58,6 +59,7 @@ async function loadStudentPdf(code,name){
   studentPdfUrl=URL.createObjectURL(pdf);
   $('student-pdf-frame').src=studentPdfUrl;
   $('download-guide').href=studentPdfUrl;
+  $('open-guide').href=studentPdfUrl;
   $('download-guide').download=name||'actividad.pdf';
   message('pdf-message','');
  }catch(err){if(normalizeCode($('student-code').value)===code)message('pdf-message',err.message,true);}
