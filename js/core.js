@@ -91,7 +91,7 @@ const UI = {
     const r = St.perfil.role;
     if(r==="docente") return [["clase","Clase de hoy"],["planificacion","Planificación"],["alumnos","Mis alumnos"],["entregas","Entregas"],["vigilancia","Centinela"],["aula","Control de PCs"],["conducta","Registro anecdótico"],["taller","Taller"],["miscursos","Mis cursos"]];
     if(r==="director") return [["control","Control docente"],["planes","Planificaciones"],["resumen","Resumen de alumnos"],["aula","Control de PCs"]];
-    if(r==="admin")   return [["control","Control docente"],["estructura","Cursos y materias"],["usuarios","Usuarios y roles"],["gestalumnos","Gestion de alumnos"],["aula","Control de PCs"]];
+    if(r==="admin")   return [["control","Control docente"],["clase","Clase de hoy"],["planificacion","Planificación y actividades"],["entregas","Entregas"],["estructura","Cursos y materias"],["usuarios","Usuarios y roles"],["gestalumnos","Gestion de alumnos"],["aula","Control de PCs"]];
     return [["control","Panel"]];
   },
   construirNav(){
