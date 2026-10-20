@@ -92,6 +92,15 @@ async function handleStaff(req:Request,staff:{id:string,email:string},form:Recor
  const {data:activity,error:ae}=await supa.from("krueka_live_activities")
   .select("id,title,teacher_id,accepting").eq("id",id).eq("teacher_id",staff.id).maybeSingle();
  if(ae||!activity)return fail(req,"La actividad no existe o no te pertenece.",404);
+ if(action==="reissue-code"){
+  if(!activity.accepting)return fail(req,"La clase cerrada no admite nuevos códigos.",403);
+  const code=randomCode(),hash=await sha(code);
+  const {data,error}=await supa.from("krueka_live_activities")
+   .update({code_hash:hash}).eq("id",id).eq("teacher_id",staff.id)
+   .eq("accepting",true).select("id,title").maybeSingle();
+  if(error||!data)return fail(req,"La clase se cerró o no se pudo renovar el código.",503);
+  return json(req,{ok:true,code,notice:"El código anterior dejó de funcionar."});
+ }
  if(action==="close-class"){
   if(!activity.accepting)return json(req,{ok:true,already_closed:true});
   const {data,error}=await supa.from("krueka_live_activities")
