@@ -74,7 +74,7 @@ end;$$;
 revoke all on function public.krueka_live_reserve(uuid,text,text) from public,anon,authenticated;
 grant execute on function public.krueka_live_reserve(uuid,text,text) to service_role;
 revoke all on function public.krueka_live_finalize(uuid,text,uuid,text,text,text,text,integer) from public,anon,authenticated;
-grant execute on function public.krueka_live_finalize(uuid,text,uuid,text,text,text,integer) to service_role;
+grant execute on function public.krueka_live_finalize(uuid,text,uuid,text,text,text,text,integer) to service_role;
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
 values('krueka-actividades-clase','krueka-actividades-clase',false,10485760,
  array['application/vnd.openxmlformats-officedocument.wordprocessingml.document',
