@@ -89,9 +89,10 @@ a:focus-visible,button:focus-visible{outline:3px solid #ff9b7b;outline-offset:3p
      <h3 style="margin-top:22px">Consigna del profesor</h3><div class="instructions" id="activity-instructions"></div>
      <section id="student-pdf" class="pdf-panel" hidden aria-label="Guía PDF de la actividad">
       <h3>📄 PDF para realizar la actividad</h3><p id="student-pdf-name" class="note"></p>
-      <div class="toolbar"><a id="download-guide" class="btn secondary" download="actividad.pdf" href="#">↓ Descargar la guía PDF</a></div>
-      <iframe id="student-pdf-frame" class="pdf-frame" title="Guía PDF publicada por el docente" sandbox="allow-scripts allow-downloads" referrerpolicy="no-referrer"></iframe>
-      <p class="note">Leé el documento y seguí sus indicaciones. Prepará tu trabajo en Word, Excel, PowerPoint o PDF y entregalo debajo.</p>
+      <p class="note">Leé directamente el PDF aquí, sin necesidad de descargarlo.</p>
+      <iframe id="student-pdf-frame" class="pdf-frame" title="Guía PDF publicada por el docente" referrerpolicy="no-referrer"></iframe>
+      <div class="toolbar"><a id="open-guide" class="btn secondary" href="#" target="_blank" rel="noopener noreferrer">↗ Ver PDF en otra pestaña</a><a id="download-guide" class="btn secondary" download="actividad.pdf" href="#">↓ Descargar PDF (opcional)</a></div>
+      <p class="note">Seguí las indicaciones del PDF, prepará tu trabajo y entregalo debajo. Si tu navegador no muestra la vista previa, probá abrir el PDF en otra pestaña.</p>
       <div id="pdf-message" role="status" aria-live="polite"></div>
      </section>
     </div>
@@ -153,5 +154,5 @@ a:focus-visible,button:focus-visible{outline:3px solid #ff9b7b;outline-offset:3p
  </div>
 </section></main>
 <footer>Krueka · Paraguay · Plataforma educativa · <a href="informacion.html#privacidad">Privacidad</a> · <a href="accesos.html">Volver a los accesos</a></footer>
-<script src="js/krueka-clase-temporal.js?v=20261020b" defer></script>
+<script src="js/krueka-clase-temporal.js?v=20261020c" defer></script>
 </body></html>
