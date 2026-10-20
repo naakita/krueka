@@ -116,6 +116,13 @@ function renderClasses(){
    $('submissions-panel').scrollIntoView({behavior:'smooth',block:'start'});await loadSubmissions();
   }));
   if(c.accepting){
+   actions.append(button('↻ Nuevo código','secondary',async()=>{
+    if(!confirm('¿Generar un código nuevo para '+c.title+'? El anterior dejará de funcionar.'))return;
+    try{
+     const r=await staff('reissue-code',{activity_id:c.id});
+     showCode(r.code);message('teacher-message','Código anterior invalidado. Compartí el nuevo.');
+    }catch(err){message('teacher-message',err.message,true);}
+   }));
    actions.append(button('■ Cerrar clase','danger',async()=>{
     if(!confirm('¿Cerrar la clase '+c.title+'? El código dejará de servir para ver la actividad y para entregar archivos. Este cierre es definitivo.'))return;
     try{
