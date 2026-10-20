@@ -35,3 +35,12 @@
 @media(max-width:880px){.ka-cards{grid-template-columns:1fr 1fr}.ka-card:last-child{grid-column:1/-1;min-height:300px}.ka-card{min-height:370px}.ka-format-grid{grid-template-columns:1fr}.ka-format{padding:17px}}
 @media(max-width:580px){.ka-hero{padding:55px 0 44px}.ka-hero h1{font-size:clamp(41px,10vw,55px)}.ka-hero p{font-size:15px}.ka-workspaces{padding:13px 0 61px}.ka-cards,.ka-split-heading,.ka-support-grid{grid-template-columns:1fr}.ka-card,.ka-card:last-child{grid-column:auto;min-height:0;padding:22px}.ka-card h2{margin-top:22px}.ka-submissions{padding:63px 0}.ka-split-heading{gap:6px}.ka-format-grid{gap:10px}.ka-support{padding:60px 0}.ka-support-grid{gap:8px}}
 @media(prefers-reduced-motion:reduce){.ka-format{transition:none}.ka-format:hover{transform:none}}
+
+/* Código temporal de clase: punto de acceso visible sin mezclarse con buzones permanentes. */
+.ka-live-class{padding:28px 0;background:#f1f5ff}
+.ka-live-inner{display:flex;justify-content:space-between;align-items:center;gap:24px;padding:33px 38px;background:linear-gradient(105deg,#e4eeff,#f6f9ff);border:1px solid #ccdbf3;border-radius:20px}
+.ka-live-inner h2{font-size:clamp(24px,3.1vw,35px);line-height:1.2;letter-spacing:-.055em;margin:10px 0}
+.ka-live-inner p{max-width:620px;margin:0;color:#5d7190;font-size:13px;line-height:1.8}
+.ka-live-buttons{display:flex;flex-direction:column;align-items:stretch;gap:10px;flex:0 0 255px}
+.ka-live-buttons a{width:100%}
+@media(max-width:760px){.ka-live-inner{align-items:stretch;flex-direction:column;padding:25px 21px}.ka-live-buttons{flex:auto}}
