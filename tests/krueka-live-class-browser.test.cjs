@@ -7,7 +7,8 @@ const client=fs.readFileSync(path.join(root,'js/krueka-clase-temporal.js'),'utf8
 const temp=path.join(root,'__test_temp_classes.html');
 const mock='<script>'+
 'window.fetch=async function(url,opts){let body;if(typeof opts.body==="string")body=JSON.parse(opts.body);'+
-'if(body&&body.action==="lookup")return {ok:true,json:async()=>({ok:true,activity:{title:"Actividad real de prueba",grade:"Octavo grado",subject:"Informática",instructions:"Escribí un documento y entregalo en la clase."}})};'+
+'if(body&&body.action==="lookup")return {ok:true,json:async()=>({ok:true,activity:{title:"Actividad real de prueba",grade:"Octavo grado",subject:"Informática",instructions:"Escribí un documento y entregalo en la clase.",has_pdf:true,pdf_name:"guia-ejemplo.pdf"}})};'+
+'if(body&&body.action==="guide")return {ok:true,blob:async()=>new Blob(["%PDF-1.4\\n1 0 obj\\n%%EOF"],{type:"application/pdf"})};'+
 'return {ok:false,json:async()=>({ok:false,error:"Mock sin entrega real"})};};'+
 '</script>';
 const test='<script>setTimeout(function(){try{'+
@@ -16,7 +17,7 @@ const test='<script>setTimeout(function(){try{'+
 'setTimeout(function(){'+
 'var view=document.getElementById("activity-view"),inst=document.getElementById("activity-instructions"),heading=document.getElementById("activity-title");'+
 'var checks={student:!document.getElementById("student").hidden,teacher:document.getElementById("teacher").hidden,'+
-'view:view&&!view.hidden,heading:heading&&heading.textContent==="Actividad real de prueba",instructions:inst&&inst.textContent.includes("entregalo en la clase"),file:!!document.getElementById("student-file"),overflow:document.documentElement.scrollWidth-innerWidth<=3};'+
+'view:view&&!view.hidden,heading:heading&&heading.textContent==="Actividad real de prueba",instructions:inst&&inst.textContent.includes("entregalo en la clase"),file:!!document.getElementById("student-file"),pdf:!document.getElementById("student-pdf").hidden,pdfSource:document.getElementById("student-pdf-frame").src.startsWith("blob:"),overflow:document.documentElement.scrollWidth-innerWidth<=3};'+
 'var bad=Object.keys(checks).filter(function(k){return !checks[k]});document.body.dataset.test=bad.length?"FAIL:"+bad.join(","):"PASS";'+
 '},500);'+
 '}catch(err){document.body.dataset.test="ERROR:"+err.message}},350)</script>';

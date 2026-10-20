@@ -68,7 +68,7 @@ async function handleStaff(req:Request,staff:{id:string,email:string},form:Recor
  const action=String(form.action||"");
  if(action==="list-classes"){
   const {data,error}=await supa.from("krueka_live_activities")
-   .select("id,title,grade,subject,accepting,created_at,closed_at")
+   .select("id,title,grade,subject,accepting,created_at,closed_at,pdf_name")
    .eq("teacher_id",staff.id).order("created_at",{ascending:false}).limit(100);
   if(error)return fail(req,"No se pudieron cargar tus actividades.",503);
   return json(req,{ok:true,classes:data||[]});
@@ -90,7 +90,7 @@ async function handleStaff(req:Request,staff:{id:string,email:string},form:Recor
  const id=String(form.activity_id||"");
  if(!uuid(id))return fail(req,"Seleccioná una actividad válida.");
  const {data:activity,error:ae}=await supa.from("krueka_live_activities")
-  .select("id,title,teacher_id,accepting").eq("id",id).eq("teacher_id",staff.id).maybeSingle();
+  .select("id,title,teacher_id,accepting,pdf_path,pdf_name").eq("id",id).eq("teacher_id",staff.id).maybeSingle();
  if(ae||!activity)return fail(req,"La actividad no existe o no te pertenece.",404);
  if(action==="reissue-code"){
   if(!activity.accepting)return fail(req,"La clase cerrada no admite nuevos códigos.",403);
@@ -110,6 +110,10 @@ async function handleStaff(req:Request,staff:{id:string,email:string},form:Recor
   if(error)return fail(req,"No se pudo cerrar la clase. Intentá otra vez.",503);
   // Concurrent close is idempotent. A closed code cannot be reopened in this module.
   return json(req,{ok:true,closed:true,activity:data||{id,accepting:false}});
+ }
+ if(action==="teacher-guide"){
+  if(!activity.pdf_path)return fail(req,"Esta actividad todavía no tiene PDF.",404);
+  return await servePdf(req,activity.pdf_path);
  }
  if(action==="submissions"){
   const {data,error}=await supa.from("krueka_live_submissions")
@@ -140,10 +144,62 @@ async function handleStaff(req:Request,staff:{id:string,email:string},form:Recor
  }
  return fail(req,"Acción no permitida.",400);
 }
+async function servePdf(req:Request,path:string){
+ const {data,error}=await supa.storage.from(STORAGE).download(path);
+ if(error||!data)return fail(req,"No se pudo abrir el PDF. Avisá al docente.",503);
+ return new Response(data,{status:200,headers:{...cors(req),
+  "Content-Type":"application/pdf","Content-Disposition":"inline",
+  "X-Content-Type-Options":"nosniff"}});
+}
+async function studentPdf(req:Request,code:string){
+ if(!/^[A-HJ-NP-Z2-9]{12}$/.test(code))return fail(req,"Código no válido o clase cerrada.",403);
+ const activity=await activityByCode(code);
+ if(!activity)return fail(req,"El código no existe o la clase ya terminó.",403);
+ if(!activity.pdf_path)return fail(req,"Esta actividad todavía no tiene una guía PDF.",404);
+ const {data:file,error}=await supa.storage.from(STORAGE).download(activity.pdf_path);
+ if(error||!file)return fail(req,"No se pudo abrir el PDF. Avisá al docente.",503);
+ // Una renovación o cierre durante la lectura también invalida la respuesta.
+ const {data:live,error:checkError}=await supa.from("krueka_live_activities")
+  .select("accepting,pdf_path").eq("id",activity.id).eq("code_hash",activity.code_hash).maybeSingle();
+ if(checkError||!live?.accepting||live.pdf_path!==activity.pdf_path)
+  return fail(req,"El código dejó de estar disponible. Consultá al docente.",403);
+ return new Response(file,{status:200,headers:{...cors(req),
+  "Content-Type":"application/pdf","Content-Disposition":"inline",
+  "X-Content-Type-Options":"nosniff"}});
+}
+async function uploadGuide(req:Request,form:FormData){
+ const staff=await teacher(req);
+ if(!staff)return fail(req,"Ingresá con tu cuenta docente para adjuntar el PDF.",403);
+ const id=String(form.get("activity_id")||""),file=form.get("guide");
+ if(!uuid(id))return fail(req,"Elegí una actividad válida.");
+ if(!(file instanceof File)||file.size<100||file.size>MAX||!/\.pdf$/i.test(file.name))
+  return fail(req,"Elegí un archivo PDF de hasta 10 MB.");
+ const {data:activity,error:ae}=await supa.from("krueka_live_activities")
+  .select("id,pdf_path").eq("id",id).eq("teacher_id",staff.id).eq("accepting",true).maybeSingle();
+ if(ae||!activity)return fail(req,"La clase no existe, está cerrada o no te pertenece.",403);
+ const bytes=new Uint8Array(await file.arrayBuffer());
+ if(!validFile(bytes,".pdf")||!new TextDecoder("latin1").decode(bytes.slice(-2048)).includes("%%EOF"))
+  return fail(req,"El documento no tiene un formato PDF válido.");
+ const path="guides/"+id+"/"+crypto.randomUUID()+".pdf";
+ const {error:uploadError}=await supa.storage.from(STORAGE)
+  .upload(path,new Blob([bytes],{type:"application/pdf"}),{contentType:"application/pdf",upsert:false,cacheControl:"0"});
+ if(uploadError)return fail(req,"No se pudo subir el PDF. Intentá nuevamente.",503);
+ const pdfName=safeFileName(file.name);
+ const {data:saved,error:saveError}=await supa.from("krueka_live_activities")
+  .update({pdf_path:path,pdf_name:pdfName}).eq("id",id).eq("teacher_id",staff.id)
+  .eq("accepting",true).select("id,pdf_name").maybeSingle();
+ if(saveError||!saved){
+  await supa.storage.from(STORAGE).remove([path]);
+  return fail(req,"La clase se cerró o no fue posible asociar el PDF.",503);
+ }
+ if(activity.pdf_path&&activity.pdf_path!==path)
+  await supa.storage.from(STORAGE).remove([activity.pdf_path]);
+ return json(req,{ok:true,pdf_name:pdfName,message:"PDF asociado a esta clase."});
+}
 async function activityByCode(code:string){
  const hash=await sha(code);
  const {data,error}=await supa.from("krueka_live_activities")
-  .select("id,title,grade,subject,instructions,accepting,code_hash")
+  .select("id,title,grade,subject,instructions,accepting,code_hash,pdf_path,pdf_name")
   .eq("code_hash",hash).maybeSingle();
  if(error||!data||!data.accepting)return null;
  return data;
@@ -153,6 +209,7 @@ async function upload(req:Request){
   return fail(req,"El documento supera 10 MB.",413);
  let form:FormData;
  try{form=await req.formData();}catch{return fail(req,"No se pudo leer el documento.",400);}
+ if(form.get("action")==="upload-guide")return await uploadGuide(req,form);
  const code=codeOf(form.get("code")),student=escape(form.get("student"),90),file=form.get("document");
  if(!/^[A-HJ-NP-Z2-9]{12}$/.test(code))return fail(req,"Código no válido o clase cerrada.",403);
  if(student.length<3)return fail(req,"Escribí tu nombre y apellido.");
@@ -197,13 +254,14 @@ Deno.serve(async(req:Request)=>{
   if((req.headers.get("content-type")||"").startsWith("multipart/form-data"))return await upload(req);
   let body:Record<string,unknown>={};
   try{body=await req.json();}catch{return fail(req,"Solicitud incorrecta.");}
+  if(body.action==="guide")return await studentPdf(req,codeOf(body.code));
   if(body.action==="lookup"){
    const code=codeOf(body.code);
    if(!/^[A-HJ-NP-Z2-9]{12}$/.test(code))return fail(req,"Código no válido o clase cerrada.",403);
    const data=await activityByCode(code);
    if(!data)return fail(req,"El código no existe o la clase ya terminó.",403);
    return json(req,{ok:true,activity:{title:data.title,grade:data.grade,subject:data.subject,
-      instructions:data.instructions}});
+      instructions:data.instructions,has_pdf:!!data.pdf_path,pdf_name:data.pdf_name||null}});
   }
   const staff=await teacher(req);
   if(!staff)return fail(req,"Ingresá con una cuenta docente autorizada y correo verificado.",403);
