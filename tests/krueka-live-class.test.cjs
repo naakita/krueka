@@ -50,7 +50,7 @@ assert.match(sql,/for update;/g);
 assert.match(sql,/a\.accepting into v_open/);
 assert.match(sql,/create or replace function public\.krueka_live_finalize/);
 assert.match(sql,/where a\.id=p_activity_id and a\.code_hash=p_code_hash for update/);
-assert.match(sql,/krueka-actividades-clase','bucket privado');
+assert.match(sql,/krueka-actividades-clase/,'bucket privado');
 assert.match(sql,/false,10485760/);
 assert.ok(home.includes('href="actividades-clase.html"'),'La portada enlaza actividades');
 assert.ok(access.includes('href="actividades-clase.html?docente=1"'));
