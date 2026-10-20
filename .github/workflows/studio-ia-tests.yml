@@ -65,3 +65,4 @@ jobs:
       - run: node tests/krueka-public-redesign-browser.test.cjs
       - run: node --check js/krueka-clase-temporal.js
       - run: node tests/krueka-live-class.test.cjs
+      - run: node tests/krueka-live-class-browser.test.cjs
