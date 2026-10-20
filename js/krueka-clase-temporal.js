@@ -9,7 +9,13 @@ const API=BASE+'/functions/v1/krueka-actividades-clase';
 const $=id=>document.getElementById(id);
 const teacherMode=new URLSearchParams(location.search).get('docente')==='1';
 $('student').hidden=teacherMode;$('teacher').hidden=!teacherMode;
-let sb=null,classes=[],selected=null,items=[];
+let sb=null,classes=[],selected=null,items=[],studentPdfUrl=null;
+function resetPdf(){
+ if(studentPdfUrl){URL.revokeObjectURL(studentPdfUrl);studentPdfUrl=null;}
+ $('student-pdf-frame').removeAttribute('src');
+ $('download-guide').removeAttribute('href');
+ $('student-pdf').hidden=true;message('pdf-message','');
+}
 function message(id,text,error=false){
  const node=$(id);node.replaceChildren();if(!text)return;
  const el=document.createElement('div');el.className='notice '+(error?'error':'success');el.textContent=text;node.append(el);
@@ -30,8 +36,34 @@ async function api(body,token){
  if(!res.ok||!reply.ok)throw Error(reply.error||'No se pudo completar el pedido.');
  return reply;
 }
+async function getPdf(body,accessToken){
+ const headers={apikey:KEY,'Content-Type':'application/json',...(accessToken?{authorization:'Bearer '+accessToken}:{})};
+ const res=await fetch(API,{method:'POST',headers,body:JSON.stringify(body),cache:'no-store'});
+ if(!res.ok){let message='No se pudo cargar la guía PDF.';
+  try{const r=await res.json();message=r.error||message;}catch(_){}
+  throw Error(message);
+ }
+ const pdf=await res.blob();
+ if(pdf.type!=='application/pdf'||!pdf.size)throw Error('El documento recibido no es un PDF.');
+ return pdf;
+}
+async function loadStudentPdf(code,name){
+ resetPdf();
+ $('student-pdf').hidden=false;
+ $('student-pdf-name').textContent=name||'Documento de la actividad';
+ message('pdf-message','Cargando el PDF…');
+ try{
+  const pdf=await getPdf({action:'guide',code});
+  if(normalizeCode($('student-code').value)!==code||$('activity-view').hidden)return;
+  studentPdfUrl=URL.createObjectURL(pdf);
+  $('student-pdf-frame').src=studentPdfUrl;
+  $('download-guide').href=studentPdfUrl;
+  $('download-guide').download=name||'actividad.pdf';
+  message('pdf-message','');
+ }catch(err){if(normalizeCode($('student-code').value)===code)message('pdf-message',err.message,true);}
+}
 function normalizeCode(s){return String(s||'').toUpperCase().replace(/[\s-]/g,'');}
-$('student-code').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g,'').slice(0,14);$('activity-view').hidden=true;});
+$('student-code').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g,'').slice(0,14);$('activity-view').hidden=true;resetPdf();});
 $('lookup-form').addEventListener('submit',async e=>{
  e.preventDefault();message('lookup-message','');
  const code=normalizeCode($('student-code').value);
@@ -45,8 +77,9 @@ $('lookup-form').addEventListener('submit',async e=>{
   $('activity-info').append(el('span','',g.grade),el('span','',g.subject));
   $('activity-instructions').textContent=g.instructions;
   $('activity-view').hidden=false;$('upload-form').reset();message('upload-message','');
+  if(g.has_pdf)loadStudentPdf(code,g.pdf_name);else resetPdf();
   $('activity-view').scrollIntoView({behavior:'smooth',block:'start'});
- }catch(err){$('activity-view').hidden=true;message('lookup-message',err.message,true);}
+ }catch(err){$('activity-view').hidden=true;resetPdf();message('lookup-message',err.message,true);}
  finally{btn.disabled=false}
 });
 $('upload-form').addEventListener('submit',async e=>{
@@ -74,6 +107,13 @@ async function token(){
  return session.access_token;
 }
 async function staff(action,payload={}){return api({action,...payload},await token());}
+async function uploadGuide(activityId,file){
+ if(!file||!(/\.pdf$/i).test(file.name)||file.size>10*1024*1024||file.size<100)
+  throw Error('Seleccioná un archivo PDF válido de hasta 10 MB.');
+ const data=new FormData();
+ data.set('action','upload-guide');data.set('activity_id',activityId);data.set('guide',file);
+ return api(data,await token());
+}
 async function loadClasses(){
  const r=await staff('list-classes');classes=r.classes||[];renderClasses();
 }
@@ -93,11 +133,24 @@ $('copy-link').addEventListener('click',()=>copyText('https://www.krueka.com/act
 $('create-form').addEventListener('submit',async e=>{
  e.preventDefault();message('teacher-message','');const b=$('create-button');b.disabled=true;
  try{
+  const pdf=$('new-pdf').files[0];
+  const instructions=$('new-instructions').value.trim()||(pdf?'Leé el PDF de esta actividad, realizá el trabajo según las instrucciones y entregá tu archivo aquí.':'');
+  if(!pdf&&instructions.length<15)throw Error('Escribí una consigna de al menos 15 caracteres o adjuntá un PDF.');
+  if(pdf&&(!/\.pdf$/i.test(pdf.name)||pdf.size>10*1024*1024||pdf.size<100))throw Error('Adjuntá un PDF válido de hasta 10 MB.');
   const r=await staff('create-class',{
    grade:$('new-grade').value,subject:$('new-subject').value,
-   title:$('new-title').value,instructions:$('new-instructions').value
+   title:$('new-title').value,instructions
   });
-  $('create-form').reset();showCode(r.code);await loadClasses();
+  showCode(r.code);
+  if(pdf){
+   try{await uploadGuide(r.activity.id,pdf);}
+   catch(err){
+    message('teacher-message','La clase y su código se crearon, pero NO se pudo adjuntar el PDF: '+err.message+' Subilo desde Mis clases antes de compartir el código.',true);
+    await loadClasses();return;
+   }
+  }
+  $('create-form').reset();await loadClasses();
+  message('teacher-message','Clase creada'+(pdf?' y PDF asociado correctamente.':'.')+' Compartí el código con tus alumnos.');
  }catch(err){message('teacher-message',err.message,true);}
  finally{b.disabled=false;}
 });
@@ -110,12 +163,25 @@ function renderClasses(){
   group.append(title,detail);
   header.append(group,el('span','tag'+(!c.accepting?' closed':''),c.accepting?'● Código habilitado':'● Clase cerrada'));
   card.append(header);
+  card.append(el('p','note',c.pdf_name?'📄 Guía PDF: '+c.pdf_name:'Todavía no tiene PDF adjunto.'));
   const actions=el('div','toolbar');
   actions.append(button('📂 Ver entregas','secondary',async()=>{
    selected=c;$('selected-title').textContent=c.title;$('submissions-panel').hidden=false;
    $('submissions-panel').scrollIntoView({behavior:'smooth',block:'start'});await loadSubmissions();
   }));
   if(c.accepting){
+   const pdfInput=el('input');pdfInput.type='file';pdfInput.accept='.pdf,application/pdf';pdfInput.hidden=true;
+   pdfInput.setAttribute('aria-label','Elegí el PDF de '+c.title);
+   pdfInput.addEventListener('change',async()=>{
+    const pdf=pdfInput.files[0];if(!pdf)return;
+    try{
+     await uploadGuide(c.id,pdf);
+     message('teacher-message','Guía PDF asociada a '+c.title+'.');
+     await loadClasses();
+    }catch(err){message('teacher-message',err.message,true);}
+    finally{pdfInput.value='';}
+   });
+   actions.append(button(c.pdf_name?'↻ Cambiar PDF':'📄 Adjuntar PDF','secondary',()=>pdfInput.click()),pdfInput);
    actions.append(button('↻ Nuevo código','secondary',async()=>{
     if(!confirm('¿Generar un código nuevo para '+c.title+'? El anterior dejará de funcionar.'))return;
     try{
