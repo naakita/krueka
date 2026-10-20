@@ -10,5 +10,5 @@ alter table public.krueka_live_activities
   (pdf_path is null and pdf_name is null) or
   (pdf_path is not null and pdf_name is not null
    and char_length(pdf_name) between 5 and 175
-   and pdf_path ~ '^guides/[0-9a-f-]{36}/[0-9a-f-]{36}\\.pdf$')
+   and pdf_path ~ '^guides/[0-9a-f-]{36}/[0-9a-f-]{36}[.]pdf$')
  );
