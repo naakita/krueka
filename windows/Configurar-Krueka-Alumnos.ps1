@@ -78,10 +78,13 @@ New-ItemProperty -LiteralPath $edge -Name 'HomepageLocation' -Value $pagina -Pro
 New-ItemProperty -LiteralPath $edge -Name 'HomepageIsNewTabPage' -Value 0 -PropertyType DWord -Force | Out-Null
 
 # Ruta habitual de Edge, sin instalar programas nuevos.
-$rutasEdge = @(
-  (Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe'),
-  (Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe')
-)
+$rutasEdge = @()
+if (${env:ProgramFiles(x86)}) {
+  $rutasEdge += Join-Path ${env:ProgramFiles(x86)} 'Microsoft\Edge\Application\msedge.exe'
+}
+if ($env:ProgramFiles) {
+  $rutasEdge += Join-Path $env:ProgramFiles 'Microsoft\Edge\Application\msedge.exe'
+}
 $edgeExe = $rutasEdge | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
 if (-not $edgeExe) {
   $registroExe = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe' -ErrorAction SilentlyContinue
