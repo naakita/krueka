@@ -92,6 +92,9 @@ function Informe {
  Write-Host ""
  Write-Host "KRUEKA - SEGURIDAD ENTRE CUENTAS WINDOWS" -ForegroundColor Cyan
  Write-Host ("PC: "+$env:COMPUTERNAME+"; modo: "+$Modo)
+ try{$os=Get-CimInstance Win32_OperatingSystem -ErrorAction Stop; Write-Host ("Windows: "+$os.Caption+" ("+$os.Version+")")
+  if($os.Caption -match "Home"){Write-Warning "Windows Home no incluye Assigned Access multi-app; la restriccion de aplicaciones de alumnos necesita un mecanismo compatible."}}
+ catch{Write-Warning "No se pudo identificar la edicion de Windows."}
  $setting=(Get-ItemProperty -LiteralPath $fast -Name HideFastUserSwitching -ErrorAction SilentlyContinue).HideFastUserSwitching
  Write-Host ("Ocultar Cambiar usuario: "+$(if($setting -eq 1){"SI"}else{"NO"}))
  foreach($item in @(@("Edge","HKLM:\SOFTWARE\Policies\Microsoft\Edge"),@("Chrome","HKLM:\SOFTWARE\Policies\Google\Chrome"))){
