@@ -26,7 +26,9 @@ function domain(raw:unknown):string{
  if(s.length<4||s.length>253||!s.includes(".")||!(/^[a-z0-9.-]+$/).test(s)||s.includes("..")||s.split(".").some(p=>!p||p.length>63||p.startsWith("-")||p.endsWith("-")))fail(400,"Dominio inválido");
  return s;
 }
-function allowed(arr:any):string[]{return [...new Set(["krueka.com", ...(Array.isArray(arr)?arr:[]).filter(v=>typeof v==="string").map(v=>domain(v))])].sort().slice(0,80);}
+// Recursos esenciales: la web, el backend, el cliente JS y la verificacion docente.
+const CORE_DOMAINS = ["krueka.com","www.krueka.com","janebfpnknapvntfqolf.supabase.co","cdn.jsdelivr.net","challenges.cloudflare.com"];
+function allowed(arr:any):string[]{return [...new Set([...CORE_DOMAINS, ...(Array.isArray(arr)?arr:[]).filter(v=>typeof v==="string").map(v=>domain(v))])].sort().slice(0,80);}
 function assert(ok:any,message:string,code=400):void{if(!ok)fail(code,message);}
 async function guard(query:any):Promise<any>{const {data,error}=await query;if(error)fail(500,"Error de almacenamiento: "+error.code);return data;}
 async function audit(inst:string,device:string|null,actor:string|null,event:string,detail:Record<string,unknown>={}){
@@ -54,7 +56,7 @@ async function userAction(req:Request,b:any):Promise<unknown>{
   const devices=await guard(db.from("aula_devices").select("id,label,enabled,allowed,kiosk_enabled,kiosk_observed,kiosk_error,desktop_mode,desktop_mode_observed,agent_version,last_seen,created_at").eq("institution_id",p.institution_id).order("created_at",{ascending:true}).limit(100));
   const ids=(devices||[]).map((d:any)=>d.id);
   const requests=ids.length?await guard(db.from("aula_requests").select("id,device_id,domain,reason,status,created_at").in("device_id",ids).order("created_at",{ascending:false}).limit(200)):[];
-  return {devices,requests};
+  return {devices:(devices||[]).map((d:any)=>({...d,allowed:allowed(d.allowed)})),requests};
  }
  case "create": {
   assert(typeof b.label==="string"&&b.label.trim().length>0&&b.label.length<=80,"Nombre de PC inválido");
@@ -74,7 +76,7 @@ async function userAction(req:Request,b:any):Promise<unknown>{
  case "allow": {
   const d=await own(p,b.device_id); const v=domain(b.domain);
   let next=allowed(d.allowed);
-  if(b.add===false){if(v==="krueka.com")fail(400,"Krueka siempre debe estar disponible");next=next.filter(x=>x!==v);}
+  if(b.add===false){if(CORE_DOMAINS.includes(v))fail(400,"Esta conexion es necesaria para las actividades de Krueka");next=next.filter(x=>x!==v);}
   else next=allowed([...next,v]);
   await guard(db.from("aula_devices").update({allowed:next}).eq("id",d.id));
   await audit(p.institution_id,d.id,p.id,b.add===false?"remove_domain":"allow_domain",{domain:v});
