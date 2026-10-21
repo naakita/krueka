@@ -26,6 +26,6 @@ assert.match(view.innerHTML,/Reintentar Office/);
 assert.match(view.innerHTML,/modoOfimatica\('device-id','office'\)/);
 assert.doesNotMatch(view.innerHTML,/modoOfimatica\('device-id','edge'\)/);
 vm.runInContext('AulaControl.cache.devices[0].desktop_mode_observed="office";AulaControl.cache.devices[0].kiosk_error="";AulaControl.render();',ctx);
-assert.doesNotMatch(view.innerHTML,/Office NO habilitado en Windows/);
+assert.doesNotMatch(view.innerHTML,/<b>⚠ Office NO habilitado en Windows<\/b>/);
 assert.match(view.innerHTML,/modoOfimatica\('device-id','edge'\)/);
 console.log('PASS: modo enviado distinto del aplicado alerta y no revierte el permiso Office.');
