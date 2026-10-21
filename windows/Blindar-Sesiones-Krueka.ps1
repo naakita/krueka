@@ -80,7 +80,7 @@ function RuleInstalled([string]$exe){
  return !!($filter -and $filter.Program -ieq $exe)
 }
 function Respaldo([string]$reg,[string]$name){
- $check=$reg -replace '^HKLM\\','HKLM:\\'
+ $check="HKLM:\"+$reg.Substring(5)
  if(Test-Path -LiteralPath $check){
   $dest=Join-Path $backup ($name+"-"+(Get-Date -Format "yyyyMMdd-HHmmss")+".reg")
   & reg.exe export "$reg" "$dest" /y|Out-Null
