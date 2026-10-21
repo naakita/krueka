@@ -59,12 +59,13 @@ function OtrasRutas {
  try{
   foreach($proc in @(Get-CimInstance Win32_Process -ErrorAction Stop |
     Where-Object{$_.Name -in @("firefox.exe","opera.exe","launcher.exe","vivaldi.exe","chromium.exe","waterfox.exe","palemoon.exe")})){
+   if($proc.Name -eq "launcher.exe" -and $proc.ExecutablePath -notmatch "(?i)\\Opera"){continue}
    if($proc.ExecutablePath -and (Test-Path -LiteralPath $proc.ExecutablePath -PathType Leaf)){
     [void]$paths.Add([IO.Path]::GetFullPath($proc.ExecutablePath))
    }
   }
  }catch{Write-Warning "No se pudieron revisar procesos de navegadores alternativos."}
- return @($paths)
+ foreach($item in $paths){Write-Output $item}
 }
 function BrowserRuleName([string]$exe){
  $sha=[Security.Cryptography.SHA256]::Create()
@@ -79,7 +80,7 @@ function RuleInstalled([string]$exe){
  return !!($filter -and $filter.Program -ieq $exe)
 }
 function Respaldo([string]$reg,[string]$name){
- $check="Registry::"+$reg
+ $check=$reg -replace '^HKLM\\','HKLM:\\'
  if(Test-Path -LiteralPath $check){
   $dest=Join-Path $backup ($name+"-"+(Get-Date -Format "yyyyMMdd-HHmmss")+".reg")
   & reg.exe export "$reg" "$dest" /y|Out-Null
