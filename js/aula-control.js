@@ -35,16 +35,36 @@ const AulaControl = {
   const ds=AulaControl.cache.devices||[],rs=AulaControl.cache.requests||[];
   const alive=d=>d.last_seen&&(Date.now()-Date.parse(d.last_seen)<125000);
   const pending=rs.filter(r=>r.status==="pending");
+  const officePendiente=d=>d.desktop_mode==="office" && d.desktop_mode_observed!=="office";
+  // La orden enviada no garantiza que Windows haya aplicado el cambio.
+  const modoButton=d=>{
+   const pendiente=officePendiente(d);
+   const next=pendiente?"office":d.desktop_mode==="office"?"edge":"office";
+   const label=pendiente?"↻ Reintentar Office":d.desktop_mode==="office"?"Volver a solo Krueka":"Habilitar Word, Excel y PowerPoint";
+   return '<button class="btn sm '+(pendiente?'dan':d.desktop_mode==='office'?'sec':'ok')+
+    '" onclick="AulaControl.modoOfimatica(\''+d.id+'\',\''+next+'\')">'+label+'</button>';
+  };
+  const estadoOffice=d=>{
+   if(!officePendiente(d))return "";
+   const fallido=!!d.kiosk_error&&d.desktop_mode_observed==="edge";
+   return '<div class="alert '+(fallido?'err':'info')+'" style="margin-top:10px" role="status">'+
+    '<b>'+(fallido?'⚠ Office NO habilitado en Windows':'Office solicitado: falta confirmación de Windows')+'</b>'+
+    '<div style="margin-top:5px">'+(fallido
+     ? 'El equipo sigue en modo Solo Krueka. Error del agente: '+esc(d.kiosk_error)
+     : 'La autorización está guardada en Krueka, pero la PC todavía no confirmó Ofimática.')+'</div>'+
+    '<div style="margin-top:5px">Si falla después de cerrar sesión y volver a entrar en Windows, revisá en esa PC los permisos del agente y la configuración de quiosco con una cuenta administradora. No es necesario liberar Internet.</div></div>';
+  };
   const actionBtns=d=>'<button class="btn sm '+(d.enabled?'sec':'ok')+'" onclick="AulaControl.bloquear(\''+d.id+'\','+!d.enabled+')">'+(d.enabled?'Liberar navegación':'Restablecer bloqueo')+'</button> ';
   box.innerHTML='<div class="row" style="align-items:center;justify-content:space-between;margin-bottom:15px"><div><h2 style="margin:0">Aula conectada</h2><span class="note">Cambios aplicados por el agente aproximadamente cada 30 segundos.</span></div><div class="row"><button class="btn sec sm" onclick="AulaControl.cargar()">↻ Actualizar</button><button class="btn sm" onclick="AulaControl.crear()">+ Registrar PC</button></div></div>'+
     '<div class="grid3" style="margin-bottom:18px"><div class="kpi"><b>'+ds.length+'</b><span>Computadoras registradas</span></div><div class="kpi"><b>'+ds.filter(alive).length+'</b><span>Conectadas recientemente</span></div><div class="kpi"><b>'+pending.length+'</b><span>Solicitudes pendientes</span></div></div>'+
     (ds.length?ds.map(d=>'<div class="card" style="margin:12px 0"><div class="row" style="align-items:center;justify-content:space-between"><div><b>'+esc(d.label)+'</b> <span class="tag '+(alive(d)?'green':'orange')+'">'+(alive(d)?'Conectada':'Sin conexión reciente')+'</span><div class="note">'+esc(d.id)+' · Quiosco '+(d.kiosk_enabled?'activado':'desactivado')+' · Modo '+(d.desktop_mode==='office'?'Ofimática':'Solo Krueka')+' (PC: '+(d.desktop_mode_observed==='office'?'Ofimática':d.desktop_mode_observed==='edge'?'Solo Krueka':'sin confirmar')+') · '+(d.last_seen?'Última conexión '+new Date(d.last_seen).toLocaleString("es-PY"):'Aún no instalada')+'</div></div><span class="tag '+(d.enabled?'blue':'orange')+'">'+(d.enabled?'Web restringida':'Navegación liberada')+'</span></div>'+
-       '<div class="row" style="margin-top:12px"><button class="btn sm" onclick="AulaControl.codigo(\''+d.id+'\')">Generar código</button> '+actionBtns(d)+'<button class="btn sec sm" onclick="AulaControl.agregar(\''+d.id+'\')">+ Autorizar web</button><button class="btn sec sm" onclick="AulaControl.renombrar(\''+d.id+'\')">Renombrar</button><button class="btn sm '+(d.desktop_mode==='office'?'sec':'ok')+'" onclick="AulaControl.modoOfimatica(\''+d.id+'\',\''+(d.desktop_mode==='office'?'edge':'office')+'\')">'+(d.desktop_mode==='office'?'Volver a solo Krueka':'Habilitar Word, Excel y PowerPoint')+'</button><button class="btn sec sm" onclick="AulaControl.renovarToken(\''+d.id+'\')">Nuevo token</button><button class="btn sec sm" onclick="AulaControl.kiosco(\''+d.id+'\','+(!d.kiosk_enabled)+')">'+(d.kiosk_enabled?'Desactivar quiosco':'Activar quiosco')+'</button></div>'+
+       estadoOffice(d)+
+       '<div class="row" style="margin-top:12px"><button class="btn sm" onclick="AulaControl.codigo(\''+d.id+'\')">Generar código</button> '+actionBtns(d)+'<button class="btn sec sm" onclick="AulaControl.agregar(\''+d.id+'\')">+ Autorizar web</button><button class="btn sec sm" onclick="AulaControl.renombrar(\''+d.id+'\')">Renombrar</button>'+modoButton(d)+'<button class="btn sec sm" onclick="AulaControl.renovarToken(\''+d.id+'\')">Nuevo token</button><button class="btn sec sm" onclick="AulaControl.kiosco(\''+d.id+'\','+(!d.kiosk_enabled)+')">'+(d.kiosk_enabled?'Desactivar quiosco':'Activar quiosco')+'</button></div>'+
        '<div class="note" style="margin-top:10px"><b>Protección Brave: '+(d.agent_version==='0.5'?'Instalada (agente 0.5)':'Actualización 0.5 pendiente de comprobar')+'</b></div>'+ 
        '<div class="note" style="margin-top:10px">Permitidas: '+(d.allowed||[]).map(a=>'<span style="display:inline-flex;gap:4px;margin:3px;padding:4px 6px;border:1px solid var(--line);border-radius:6px">'+esc(a)+(AulaControl.dominiosBase.includes(a)?'':' <button aria-label="Quitar" onclick="AulaControl.quitar(\''+d.id+'\',\''+a+'\')" style="border:0;background:none;color:var(--red);cursor:pointer">×</button>')+'</span>').join('')+'</div></div>').join(''):'<div class="alert info">Todavía no hay PCs. Usá «Registrar PC» y después instalá el agente Windows.</div>')+
     '<h2 style="margin-top:20px">Solicitudes de alumnos</h2>'+
     (pending.length?pending.map(r=>{const d=ds.find(x=>x.id===r.device_id);return '<div class="stage"><div style="flex:1"><b>'+esc(r.domain)+'</b><div class="note">'+esc(d?.label||'PC')+' · '+esc(r.reason||'Uso educativo')+' · '+new Date(r.created_at).toLocaleString('es-PY')+'</div></div><button class="btn sm ok" onclick="AulaControl.decidir(\''+r.device_id+'\',\''+r.id+'\',true)">Aprobar</button><button class="btn sec sm" onclick="AulaControl.decidir(\''+r.device_id+'\',\''+r.id+'\',false)">Rechazar</button></div>';}).join(''):'<p class="sub">No hay solicitudes pendientes.</p>')+
-    '<div class="alert info" style="margin-top:15px">El quiosco de Windows permanece activo aunque liberes la navegación. Para usar Word, Excel y Godot fuera de Edge, el administrador debe cambiar la configuración de quiosco de esa PC.</div>';
+    '<div class="alert info" style="margin-top:15px">La orden de Ofimática se aplica por Windows, no solo por Krueka. Confirmá que el equipo indique «PC: Ofimática». Si aparece «Office NO habilitado en Windows», se necesita revisar el quiosco o el agente de esa PC.</div>';
  },
  async ejecutar(action,payload,success){
   try{const result=await AulaControl.api(action,payload);if(success)success(result);await AulaControl.cargar();}catch(e){alert(e.message);}
@@ -158,8 +178,8 @@ const AulaControl = {
   AulaControl.ejecutar("kiosk",{device_id:id,kiosk_enabled},()=>alert("Orden enviada. Windows aplicará el cambio y requerirá reiniciar o cerrar sesión para que surta efecto."));
  },
  modoOfimatica(id,mode){
-  if(!confirm(mode==='office'?'¿Autorizar Word, Excel y PowerPoint en esta PC?\n\nLas páginas web seguirán restringidas. Antes de activarlo, actualizá el agente en Windows y comprobá que Office esté instalado.':'¿Volver al quiosco de solo Krueka? Guardá los trabajos de Office antes de cerrar sesión.'))return;
-  AulaControl.ejecutar("desktop_mode",{device_id:id,mode},()=>alert("Orden enviada a la PC. Esperá la sincronización y después cerrá sesión o reiniciá Windows. No se interrumpirán los documentos abiertos automáticamente."));
+  if(!confirm(mode==='office'?'¿Solicitar o reintentar Word, Excel y PowerPoint en esta PC?\n\nLa navegación web seguirá restringida. Si Windows devuelve un error de quiosco, hay que repararlo en esa PC con permisos de administrador.':'¿Volver al quiosco de solo Krueka? Guardá los trabajos de Office antes de cerrar sesión.'))return;
+  AulaControl.ejecutar("desktop_mode",{device_id:id,mode},()=>alert("Solicitud registrada, no confirmación de aplicación. Esperá la sincronización y cerrá sesión en Windows o reiniciá la PC. Luego actualizá este panel y comprobá que diga PC: Ofimática. Si aparece un error del quiosco de Windows, debe corregirse localmente."));
  },
  renombrar(id){
   const d=prompt("Nuevo nombre de la PC");
