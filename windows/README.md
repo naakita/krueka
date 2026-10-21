@@ -33,3 +33,25 @@ Documentacion:
 - https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/restoreonstartupurls
 
 Actualizado: 21/10/2026.
+
+
+## Brave: comprobación real y bloqueo de Internet (octubre de 2026)
+
+El panel de Krueka muestra `agent_version=0.5` pero **el número de versión NO certifica que Brave esté bloqueado**. La sincronización de `aula-control` reporta estado de quiosco y modo Ofimática, pero no inspecciona las directivas ni el firewall de Brave. Por tanto, **no es posible saber desde el panel cuál PC conserva Internet en Brave**.
+
+Para reparar únicamente una PC autorizada:
+
+1. Guardá estos **tres archivos juntos en la misma carpeta**:
+   - `Bloquear-Brave-Krueka.ps1`
+   - `COMPROBAR-BRAVE.cmd`
+   - `APLICAR-BLOQUEO-BRAVE-COMO-ADMIN.cmd`
+2. En la PC problemática, abrí `COMPROBAR-BRAVE.cmd`. Muestra rutas detectadas, directiva y reglas de salida, **sin modificar nada**.
+3. Con la cuenta del administrador de Windows, clic derecho en `APLICAR-BLOQUEO-BRAVE-COMO-ADMIN.cmd` → **Ejecutar como administrador**. Si ya fue instalada la regla, se mantiene: es idempotente.
+4. Cerrá **por completo** Brave, volvé a abrirlo e intentá acceder a **una página nueva no almacenada en caché**. El resultado esperado es **sin conexión**. Si abre páginas, la reparación NO está confirmada: revisar firewall/perfil administrado, otros procesos/túneles y rutas alternativas del ejecutable.
+5. Abrí Krueka desde **Microsoft Edge** y verificá que puedan verse las actividades, Word/Excel/PowerPoint y subir entregas. Abrí `COMPROBAR-BRAVE.cmd` para comprobar los cambios. Repetí únicamente en otros equipos donde también falle.
+
+¿Qué aplica? Agrega `URLBlocklist=*` a la **clave de Brave**, preservando los valores existentes. Instala reglas explícitas de **salida bloqueada** en Firewall de Windows **solo para rutas de `brave.exe` detectadas** (instalaciones comunes por equipo, por usuario y procesos activos). No desinstala Brave, no elimina reglas de otras aplicaciones, no cambia Office, Edge, los códigos ni tokens de Krueka. Si ya existe una clave de Brave crea un respaldo `.reg` en `C:\ProgramData\Krueka\Respaldo-Politicas` antes de alterarla.
+
+Limitaciones: se necesita ejecución local como Administrador, el firewall debe estar activo y la política local debe ser aplicada por Windows. **No se instala de forma remota desde GitHub**, tampoco reporta resultados al panel. Una copia portable de Brave no ejecutada y guardada fuera de las carpetas comunes puede requerir localizar su ruta y repetir el script con Brave abierto; GPO/MDM pueden prevalecer. Una pestaña en caché no es prueba de conectividad. No se debe presentar el estado de las 8 PCs como verificado si no se probó localmente. El programa no sustituye el control de permisos de una cuenta de alumno sin privilegios de administrador.
+
+Referencias técnicas: [Directivas Brave](https://support.brave.app/hc/en-us/articles/360039248271-Group-Policy) y [Firewall Windows](https://learn.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule).
