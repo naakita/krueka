@@ -32,6 +32,52 @@ function AgregarValores($path,[string[]]$entries){
   }
  }
 }
+# Un usuario alternativo puede abrir Firefox/Opera/Vivaldi en lugar de Edge.
+# Reglas de firewall por ruta (HKLM para todos los usuarios); no se tocan Office ni Edge.
+function OtrasRutas {
+ $paths=New-Object "System.Collections.Generic.HashSet[string]" ([StringComparer]::OrdinalIgnoreCase)
+ $known=@(
+  "Mozilla Firefox\firefox.exe","Vivaldi\Application\vivaldi.exe",
+  "Opera\opera.exe","Opera\launcher.exe","Opera GX\launcher.exe",
+  "Programs\Opera\opera.exe","Programs\Opera\launcher.exe",
+  "Programs\Opera GX\launcher.exe","Programs\Vivaldi\Application\vivaldi.exe"
+ )
+ $roots=@($env:ProgramFiles,$env:ProgramW6432,[Environment]::GetEnvironmentVariable("ProgramFiles(x86)"))
+ if($env:LOCALAPPDATA){$roots+=@($env:LOCALAPPDATA)}
+ $users=Join-Path $env:SystemDrive "Users"
+ if(Test-Path -LiteralPath $users){
+  foreach($folder in @(Get-ChildItem -LiteralPath $users -Directory -Force -ErrorAction SilentlyContinue)){
+   $roots+=@(Join-Path $folder.FullName "AppData\Local")
+  }
+ }
+ foreach($root in @($roots|Where-Object{$_}|Select-Object -Unique)){
+  foreach($relative in $known){
+   $file=Join-Path $root $relative
+   if(Test-Path -LiteralPath $file -PathType Leaf){[void]$paths.Add([IO.Path]::GetFullPath($file))}
+  }
+ }
+ try{
+  foreach($proc in @(Get-CimInstance Win32_Process -ErrorAction Stop |
+    Where-Object{$_.Name -in @("firefox.exe","opera.exe","launcher.exe","vivaldi.exe","chromium.exe","waterfox.exe","palemoon.exe")})){
+   if($proc.ExecutablePath -and (Test-Path -LiteralPath $proc.ExecutablePath -PathType Leaf)){
+    [void]$paths.Add([IO.Path]::GetFullPath($proc.ExecutablePath))
+   }
+  }
+ }catch{Write-Warning "No se pudieron revisar procesos de navegadores alternativos."}
+ return @($paths)
+}
+function BrowserRuleName([string]$exe){
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{$hash=$sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($exe.ToLowerInvariant()))}
+ finally{$sha.Dispose()}
+ return "Krueka_OtroNavegador_"+([BitConverter]::ToString($hash)).Replace("-","").Substring(0,16)
+}
+function RuleInstalled([string]$exe){
+ $r=Get-NetFirewallRule -Name (BrowserRuleName $exe) -ErrorAction SilentlyContinue
+ if(!$r -or [string]$r.Enabled -ne "True" -or [string]$r.Action -ne "Block" -or [string]$r.Direction -ne "Outbound"){return $false}
+ $filter=$r|Get-NetFirewallApplicationFilter -ErrorAction SilentlyContinue
+ return !!($filter -and $filter.Program -ieq $exe)
+}
 function Respaldo([string]$reg,[string]$name){
  $check="Registry::"+$reg
  if(Test-Path -LiteralPath $check){
@@ -57,6 +103,11 @@ function Informe {
    Write-Warning ($item[0]+": hay permisos URL anteriores adicionales; revisarlos en el navegador.")
   }
  }
+ $alts=@(OtrasRutas)
+ Write-Host ("Navegadores alternativos localizados: "+$alts.Count)
+ foreach($exe in $alts){Write-Host ("  "+$exe+" -> salida bloqueada: "+$(if(RuleInstalled $exe){"SI"}else{"NO"}))}
+ $off=@(Get-NetFirewallProfile | Where-Object {$_.Enabled -eq $false} | Select-Object -ExpandProperty Name)
+ if($off.Count){Write-Warning ("Firewall apagado: "+($off -join ", ")+". Las reglas NO seran eficaces.")}
  Write-Host "CUENTAS LOCALES:" -ForegroundColor Cyan
  try{
   $adminIds=@(Get-LocalGroupMember -SID ([Security.Principal.SecurityIdentifier]::new("S-1-5-32-544")) -ErrorAction Stop|ForEach-Object{$_.SID.Value})
@@ -89,6 +140,15 @@ if($Modo -eq "Aplicar"){
   AgregarValores (Join-Path $base "URLBlocklist") @("*")
   AgregarValores (Join-Path $base "URLAllowlist") $sites
  }
+ if(!(Get-Command New-NetFirewallRule -ErrorAction SilentlyContinue)){throw "No se encontro NetSecurity."}
+ foreach($exe in @(OtrasRutas)){
+  if(!(RuleInstalled $exe)){
+   $name=BrowserRuleName $exe
+   $existing=Get-NetFirewallRule -Name $name -ErrorAction SilentlyContinue
+   if($existing){$existing|Remove-NetFirewallRule}
+   New-NetFirewallRule -Name $name -DisplayName "Krueka - navegador alternativo sin red" -Group "Krueka - Bloqueos aula" -Direction Outbound -Action Block -Enabled True -Profile Any -Protocol Any -Program $exe|Out-Null
+  }
+ }
  & $brave -Modo Aplicar
  if(!$?){throw "No se pudo aplicar el bloqueo Brave. Revisar su salida."}
  Write-Host "Directivas de equipo aplicadas. Reiniciar sesion para comprobar." -ForegroundColor Green
@@ -96,7 +156,7 @@ if($Modo -eq "Aplicar"){
 Informe
 Write-Host ""
 Write-Host "PRUEBAS: Edge debe abrir Krueka, pero no sitios externos no autorizados."
-Write-Host "Brave no debe navegar. Probar una URL nueva, no cacheada."
+Write-Host "Brave, Firefox, Opera y Vivaldi detectados no deben navegar. Probar URL nueva."
 Write-Host "Cerrar sesion y repetir con OTRA CUENTA ESTANDAR. Si navega, bloqueo NO confirmado."
 Write-Host "No se modificaron cuentas, contrasenas, Office, quiosco ni permisos de archivos."
-Write-Host "Las apps portables y otras cuentas siguen requiriendo control Assigned Access/AppLocker/WDAC."
+Write-Host "Apps portables no detectadas requieren controles adicionales (Assigned Access/AppLocker/WDAC)."
