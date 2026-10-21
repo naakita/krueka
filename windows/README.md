@@ -55,3 +55,29 @@ Para reparar únicamente una PC autorizada:
 Limitaciones: se necesita ejecución local como Administrador, el firewall debe estar activo y la política local debe ser aplicada por Windows. **No se instala de forma remota desde GitHub**, tampoco reporta resultados al panel. Una copia portable de Brave no ejecutada y guardada fuera de las carpetas comunes puede requerir localizar su ruta y repetir el script con Brave abierto; GPO/MDM pueden prevalecer. Una pestaña en caché no es prueba de conectividad. No se debe presentar el estado de las 8 PCs como verificado si no se probó localmente. El programa no sustituye el control de permisos de una cuenta de alumno sin privilegios de administrador.
 
 Referencias técnicas: [Directivas Brave](https://support.brave.app/hc/en-us/articles/360039248271-Group-Policy) y [Firewall Windows](https://learn.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule).
+
+
+## Seguridad de sesiones: impedir evasión al cambiar de usuario (21/10/2026)
+
+**Problema:** Assigned Access/Quiosco de Windows se configura para una cuenta o grupo. Cerrar sesión e iniciar otra cuenta sin estas restricciones evade el bloqueo; ocultar «Cambiar usuario» por sí solo NO impide iniciar otra sesión. El modo quiosco web de `js/kiosco.js` es cliente y tampoco es una barrera de Windows.
+
+**Herramientas nuevas:**
+
+- `Blindar-Sesiones-Krueka.ps1` (modo `Comprobar` por defecto y `Aplicar` explícito).
+- `COMPROBAR-SESIONES-KRUEKA.cmd` (diagnóstico sin cambios).
+- `APLICAR-SEGURIDAD-SESIONES-COMO-ADMIN.cmd` (requiere administrador de Windows).
+- `Bloquear-Brave-Krueka.ps1` (debe permanecer **en la misma carpeta**).
+
+**Orden recomendado en una sola PC piloto antes de distribuir a las 8:**
+
+1. Confirmar que el profesor conserve acceso a **una cuenta administradora con contraseña privada** (no conocida por alumnos). El script **no crea, borra, deshabilita cuentas ni cambia contraseñas**, tampoco elimina quioscos existentes. Anotar el nombre de la cuenta estándar usada por los alumnos y las cuentas sobrantes. No compartir credenciales de administración.
+2. Abrir `COMPROBAR-SESIONES-KRUEKA.cmd`: ver lista de cuentas locales habilitadas, cuáles son administradoras, configuración de inicio automático, políticas de Edge/Chrome y reglas de navegadores alternativos.
+3. Si se dispone de la cuenta administradora, clic derecho en `APLICAR-SEGURIDAD-SESIONES-COMO-ADMIN.cmd` → **Ejecutar como administrador**. Respaldará políticas de sistema, Edge y Chrome en `C:\ProgramData\Krueka\Respaldo-Politicas` antes de modificarlas.
+4. Aplica **HKLM** `HideFastUserSwitching=1` y URLBlocklist `*` + URLAllowlist para los seis patrones necesarios en **Edge y Chrome para todas las cuentas**. Conserva las URL previas autorizadas: el administrador debe revisar excepciones anteriores para que no permitan sitios no deseados. Aplica el bloqueo del script de Brave por políticas y firewall, y reglas por ruta detectada para Firefox, Opera y Vivaldi (incluye navegadores en perfiles locales y procesos activos). No desinstala programas, no altera Office ni el agente ni desbloquea Internet.
+5. Reiniciar Windows, abrir Edge y comprobar que las actividades y PDF de Krueka carguen y se puedan entregar archivos. Comprobar que Edge/Chrome rechazan webs no autorizadas y Brave y demás navegadores detectados no puedan abrir una página **nueva, no cacheada**.
+6. **Cerrar sesión e iniciar otra cuenta estándar** que siga habilitada: repetir las pruebas. Si hay una cuenta admin conocida por alumnos, otras cuentas sobrantes habilitadas, navegador portable no detectado, Windows Home sin AppLocker, GPO/MDM contradictoria o firewall apagado, **no declarar protegido el equipo**. En `Configuración > Cuentas > Otros usuarios`, administrar cuentas sobrantes de forma individual y planificada (sin borrar datos de alumnos). Para protección realmente resistente a apps portables, aplicar un perfil multi-app de **Assigned Access** a todas las cuentas/grupo de alumnos, con solo Edge y Office como apps permitidas, en ediciones compatibles Pro/Education/Enterprise; o usar AppLocker/WDAC en una edición compatible.
+7. Repetir en otras PCs **solo tras validar** que el profesor pueda entrar como administrador y que Word, Excel, PowerPoint, Krueka, actividad PDF y las entregas funcionan.
+
+**Limitaciones importantes:** las políticas de navegador aplicadas a toda la máquina también afectan a la navegación de cuentas de profesor/admin hasta que éste las cambie con sus credenciales. Ocultar cambio rápido no impide cerrar sesión. Un alumno con credenciales de administrador, con arranque externo sin protección o con aplicaciones portables no controladas aún puede saltar medidas. Revisar firmware/arranque y BitLocker según la política del centro; no aplicar cambios automatizados de BIOS, usuarios ni cifrado sin intervención. Se requiere instalación **local** en Windows; publicar código en GitHub no ejecuta comandos en las PCs ni confirma cambios remotamente en Krueka.
+
+Guías oficiales: https://learn.microsoft.com/windows/configuration/kiosk/ y https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-windowslogon

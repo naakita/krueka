@@ -4,7 +4,7 @@ const base=path.resolve(__dirname,'..');
 const code=fs.readFileSync(path.join(base,'js/aula-control.js'),'utf8');
 const app=fs.readFileSync(path.join(base,'app.html'),'utf8');
 new vm.Script(code);
-assert.match(app,/js\/aula-control\.js\?v=20261021d/);
+assert.match(app,/js\/aula-control\.js\?v=20261021e/);
 assert.match(code,/desktop_mode_observed/);
 assert.match(code,/kiosk_error/);
 assert.match(code,/Office NO habilitado en Windows/);

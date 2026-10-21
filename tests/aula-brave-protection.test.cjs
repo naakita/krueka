@@ -8,7 +8,7 @@ const html=fs.readFileSync(path.join(dir,'app.html'),'utf8');
 const win=fs.readFileSync(path.join(dir,'windows/Bloquear-Brave-Krueka.ps1'),'utf8');
 const readme=fs.readFileSync(path.join(dir,'windows/README.md'),'utf8');
 new vm.Script(js);
-assert.match(html,/js\/aula-control\.js\?v=20261021d/);
+assert.match(html,/js\/aula-control\.js\?v=20261021e/);
 assert.match(js,/Brave: sin verificación del bloqueo real/);
 assert.doesNotMatch(js,/Protección Brave:[^<]+Instalada/);
 assert.match(js,/comprobador y reparador local de Brave/);

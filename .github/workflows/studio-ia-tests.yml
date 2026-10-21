@@ -69,6 +69,8 @@ jobs:
       - run: node --check js/aula-control.js
       - run: node tests/aula-office-state.test.cjs
       - run: node tests/aula-brave-protection.test.cjs
+      - run: node tests/aula-windows-sessions.test.cjs
+      - run: pwsh -NoProfile -Command '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile("windows/Blindar-Sesiones-Krueka.ps1",[ref]$tokens,[ref]$errors) | Out-Null; if($errors.Count){$errors | Out-String | Write-Error; exit 1}'
       - run: pwsh -NoProfile -Command '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile("windows/Bloquear-Brave-Krueka.ps1",[ref]$tokens,[ref]$errors) | Out-Null; if($errors.Count){$errors | Out-String | Write-Error; exit 1}'
       - run: node --check js/krueka-clase-temporal.js
       - run: node tests/krueka-live-class.test.cjs
