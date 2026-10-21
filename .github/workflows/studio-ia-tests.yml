@@ -63,6 +63,9 @@ jobs:
       - run: node --check js/krueka-hero-3d.js
       - run: node tests/krueka-public-redesign.test.cjs
       - run: node tests/krueka-public-redesign-browser.test.cjs
+      - run: node --check js/club-gestion.js
+      - run: node --check js/asistencia-grado.js
+      - run: node tests/asistencia-grado.test.cjs
       - run: node --check js/krueka-clase-temporal.js
       - run: node tests/krueka-live-class.test.cjs
       - run: node tests/krueka-live-class-browser.test.cjs
