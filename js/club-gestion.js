@@ -4,7 +4,7 @@
    club_finanzas. Mudar de grupo usa club_alumno_guardar(p_group) que ya existe. */
 
 const ClubG = {
-  alumnos: [], grupos: [], filtro: "", grupo: "", inactivos: false,
+  alumnos: [], grupos: [], filtro: "", grupo: "", inactivos: false, salidos: false,
   fin: null, fanio: new Date().getFullYear(), fmes: new Date().getMonth() + 1,
 
   /* ==================== ALUMNOS ==================== */
@@ -13,7 +13,10 @@ const ClubG = {
     v.innerHTML = '<div class="spinner">Cargando alumnos del club…</div>';
     const { data, error } = await db.rpc("club_panel");
     if(error){ v.innerHTML = '<div class="alert err">' + esc(error.message) + '</div>'; return; }
-    this.alumnos = data.alumnos || [];
+    const {data:estados,error:estadoError}=await db.from("club_students").select("id,salio_at");
+    if(estadoError){v.innerHTML='<div class="alert err">'+esc(estadoError.message)+'</div>';return;}
+    const salidas=new Map((estados||[]).map(r=>[r.id,r.salio_at]));
+    this.alumnos=(data.alumnos||[]).map(a=>({...a,salio_at:salidas.get(a.id)||null}));
     this.grupos = data.grupos || [];
     this.pintaAlumnos();
   },
@@ -34,7 +37,8 @@ const ClubG = {
   lista(){
     const f = ClubG.norma(this.filtro);
     return this.alumnos.filter(a=>{
-      if(!this.inactivos && !a.activo) return false;
+      if(!a.activo && a.salio_at && !this.salidos) return false;
+      if(!a.activo && !a.salio_at && !this.inactivos) return false;
       if(this.grupo && String(a.grupo) !== String(this.grupo)) return false;
       if(f && ClubG.norma(a.nombre).indexOf(f) < 0) return false;
       return true;
@@ -46,13 +50,14 @@ const ClubG = {
     const opsG = this.grupos.map(g=>'<option value="' + esc(g.nombre) + '">' + esc(g.nombre) + '</option>').join("");
     v.innerHTML =
       '<h1>Alumnos del club</h1>'
-      + '<p class="sub">Cambiá nombres, mudá de grupo, desactivá, fusioná duplicados o eliminá definitivo. Todo queda registrado en la auditoría.</p>'
+      + '<p class="sub">Marcá «Salió» cuando un alumno deja el Club. El acceso se desactiva, pero sus pagos y avances quedan conservados.</p>'
       + '<div class="row" style="margin-bottom:12px"><button class="btn" onclick="ClubG.formCrear()">＋ Carga directa de alumno</button></div>'
       + '<div class="card"><div class="row">'
       + '<div style="flex:2;min-width:200px"><label>Buscar</label><input id="cg-q" value="' + esc(this.filtro) + '" placeholder="Nombre del alumno" oninput="ClubG.filtro=this.value;ClubG.refresca()"></div>'
       + '<div style="flex:1;min-width:160px"><label>Grupo</label><select onchange="ClubG.grupo=this.value;ClubG.pintaAlumnos()"><option value="">Todos</option>'
       + this.grupos.map(g=>'<option value="' + esc(g.nombre) + '"' + (this.grupo===g.nombre?" selected":"") + '>' + esc(g.nombre) + '</option>').join("") + '</select></div>'
       + '<div style="min-width:150px"><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" style="width:auto"' + (this.inactivos?" checked":"") + ' onchange="ClubG.inactivos=this.checked;ClubG.pintaAlumnos()"> Ver inactivos</label></div>'
+      + '<div style="min-width:150px"><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" style="width:auto"' + (this.salidos?" checked":"") + ' onchange="ClubG.salidos=this.checked;ClubG.pintaAlumnos()"> Ver los que salieron</label></div>'
       + '</div></div>'
       + '<div id="cg-msg"></div>'
       + (dups.length ? '<div class="card"><h2>Posibles duplicados (' + dups.length + ')</h2>'
@@ -67,14 +72,15 @@ const ClubG = {
         + '<td><b>' + esc(a.nombre) + '</b><div class="note">' + esc(a.ultimo_pago ? "último pago " + a.ultimo_pago : "sin pagos") + '</div></td>'
         + '<td>' + esc(a.grupo || "sin grupo") + '</td>'
         + '<td><b style="letter-spacing:2px">' + esc(a.codigo || "—") + '</b></td>'
-        + '<td>' + (a.activo ? '<span class="tag green">activo</span>' : '<span class="tag gray">inactivo</span>') + '</td>'
+        + '<td>' + (a.salio_at ? '<span class="tag orange">Salió</span><div class="note">'+new Date(a.salio_at).toLocaleDateString("es-PY")+'</div>' : (a.activo ? '<span class="tag green">Activo</span>' : '<span class="tag gray">Inactivo</span>')) + '</td>'
         + '<td style="white-space:nowrap"><div class="row" style="gap:6px">'
         + '<button class="btn sm sec" onclick="ClubG.formEditar(\'' + a.id + '\')">Editar</button>'
         + '<button class="btn sm sec" onclick="ClubG.formFusionar(\'' + a.id + '\')">Fusionar</button>'
         + '<button class="btn sm sec" onclick="ClubG.miniCuenta(\'' + a.id + '\',\'' + esc(a.nombre).replace(/'/g, "\\'") + '\')">Cuenta</button>'
         + (a.activo
           ? '<button class="btn sm sec" onclick="ClubG.activar(\'' + a.id + '\',false)">Desactivar</button>'
-          : '<button class="btn sm ok" onclick="ClubG.activar(\'' + a.id + '\',true)">Reactivar</button>')
+          : '<button class="btn sm ok" onclick="ClubG.activar(\'' + a.id + '\',true)">'+(a.salio_at?'Reincorporar':'Reactivar')+'</button>')
+        + (!a.salio_at ? '<button class="btn sm sec" onclick="ClubG.salida(\'' + a.id + '\')">Salió</button>' : '')
         + '<button class="btn sm dan" onclick="ClubG.eliminar(\'' + a.id + '\',\'' + esc(a.nombre).replace(/'/g, "\\'") + '\',' + (a.ultimo_pago ? "true" : "false") + ')">Eliminar</button>'
         + '</div></td></tr>').join("")
         || '<tr><td colspan="5" class="note">Sin alumnos con ese filtro.</td></tr>')
@@ -93,14 +99,15 @@ const ClubG = {
       + '<td><b>' + esc(a.nombre) + '</b><div class="note">' + esc(a.ultimo_pago ? "último pago " + a.ultimo_pago : "sin pagos") + '</div></td>'
       + '<td>' + esc(a.grupo || "sin grupo") + '</td>'
       + '<td><b style="letter-spacing:2px">' + esc(a.codigo || "—") + '</b></td>'
-      + '<td>' + (a.activo ? '<span class="tag green">activo</span>' : '<span class="tag gray">inactivo</span>') + '</td>'
+      + '<td>' + (a.salio_at ? '<span class="tag orange">Salió</span><div class="note">'+new Date(a.salio_at).toLocaleDateString("es-PY")+'</div>' : (a.activo ? '<span class="tag green">Activo</span>' : '<span class="tag gray">Inactivo</span>')) + '</td>'
       + '<td style="white-space:nowrap"><div class="row" style="gap:6px">'
       + '<button class="btn sm sec" onclick="ClubG.formEditar(\'' + a.id + '\')">Editar</button>'
       + '<button class="btn sm sec" onclick="ClubG.formFusionar(\'' + a.id + '\')">Fusionar</button>'
       + '<button class="btn sm sec" onclick="ClubG.miniCuenta(\'' + a.id + '\',\'' + esc(a.nombre).replace(/'/g, "\\'") + '\')">Cuenta</button>'
       + (a.activo
         ? '<button class="btn sm sec" onclick="ClubG.activar(\'' + a.id + '\',false)">Desactivar</button>'
-        : '<button class="btn sm ok" onclick="ClubG.activar(\'' + a.id + '\',true)">Reactivar</button>')
+        : '<button class="btn sm ok" onclick="ClubG.activar(\'' + a.id + '\',true)">'+(a.salio_at?'Reincorporar':'Reactivar')+'</button>')
+      + (!a.salio_at ? '<button class="btn sm sec" onclick="ClubG.salida(\'' + a.id + '\')">Salió</button>' : '')
       + '<button class="btn sm dan" onclick="ClubG.eliminar(\'' + a.id + '\',\'' + esc(a.nombre).replace(/'/g, "\\'") + '\',' + (a.ultimo_pago ? "true" : "false") + ')">Eliminar</button>'
       + '</div></td></tr>').join("")
       || '<tr><td colspan="5" class="note">Sin alumnos con ese filtro.</td></tr>';
@@ -167,8 +174,18 @@ const ClubG = {
   async activar(id, on){
     const a = this.porId(id);
     if(!on && !confirm("Desactivar a " + (a.nombre || "") + "? No podrá entrar hasta reactivarlo.")) return;
-    const { error } = await db.rpc("club_alumno_guardar", { p_student: id, p_activo: on });
-    if(error){ alert(error.message); return; }
+    const {error}=a.salio_at && on
+      ? await db.rpc("club_alumno_salida",{p_student:id,p_salio:false})
+      : await db.rpc("club_alumno_guardar",{p_student:id,p_activo:on});
+    if(error){alert(error.message);return;}
+    await this.vAlumnos();
+  },
+  async salida(id){
+    const a=this.porId(id);
+    if(!confirm('¿Marcar como «Salió» a '+(a.nombre||'este alumno')+'?\n\nNo podrá ingresar al Club. Se conservarán pagos, proyectos y registros.'))return;
+    const {error}=await db.rpc("club_alumno_salida",{p_student:id,p_salio:true});
+    if(error){alert(error.message);return;}
+    this.salidos=true;
     await this.vAlumnos();
   },
   formFusionar(id){
