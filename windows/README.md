@@ -98,3 +98,22 @@ Guías oficiales: https://learn.microsoft.com/windows/configuration/kiosk/ y htt
 **Precaución:** el programa de la PC podría usar un nombre de servicio/tarea distinto a «Krueka». Si no se detecta, el resultado es **inconcluso**, no una confirmación de desinstalación. Los scripts no reescriben la configuración del quiosco, no cambian los permisos del sistema ni pueden ejecutar reparaciones remotas por sí solos. No prometer que el problema esté resuelto hasta observar una sincronización nueva con `desktop_mode_observed=office` y una prueba real con el usuario del alumno.
 
 Documentación oficial de Windows: https://learn.microsoft.com/en-us/windows/configuration/kiosk/
+
+
+## Recuperación de actualización Brave v0.5 interrumpida por respaldo previo — 22/10/2026
+
+**Síntoma exacto:** el actualizador local `Krueka-Aula-Control-Actualizador-Brave-v05.exe` muestra `Existe un respaldo de una actualización anterior: C:\Program Files (x86)\KruekaAula\KruekaAula.exe.pre-brave-05.bak`, seguido de `exit status 1`. La comprobación de Supabase para **PC 02 BEI** confirma `desktop_mode=office` pero `desktop_mode_observed=null`, sin `last_seen` nuevo desde 21/10/2026 08:06 PY. La PC puede tener Internet y seguir sin agente conectado.
+
+**Importante:** no eliminar el respaldo ni generar un token nuevo. El error es de instalación local y no puede corregirse remotamente si el agente no sincroniza.
+
+1. Descargar los tres archivos en una sola carpeta en la PC afectada:
+   - `Recuperar-Actualizador-Brave-v05.ps1`
+   - `COMPROBAR-ACTUALIZADOR-BRAVE.cmd`
+   - `RECUPERAR-ACTUALIZADOR-BRAVE-ADMIN.cmd`
+2. Ejecutar **COMPROBAR-ACTUALIZADOR-BRAVE.cmd** (solo lectura): detecta `Program Files\KruekaAula` o `Program Files (x86)\KruekaAula`, valida cabeceras `MZ` y tamaño del ejecutable principal y del respaldo y muestra hashes SHA256. No revela tokens ni contraseñas.
+3. Si el respaldo existe y es válido, ejecutar **RECUPERAR-ACTUALIZADOR-BRAVE-ADMIN.cmd** mediante clic derecho **Ejecutar como administrador**. Si falta el ejecutable `KruekaAula.exe`, primero se copia el respaldo y se verifica SHA256. Si el ejecutable actual ya existe y es válido, no se reemplaza. Después el antiguo archivo `.bak` se **mueve** (no se borra) a `C:\ProgramData\Krueka\Respaldo-Actualizadores`, verificando su hash. Se desbloquea así el nombre original reservado del actualizador.
+4. Ejecutar **una sola vez** el actualizador original `Krueka-Aula-Control-Actualizador-Brave-v05.exe` (el que ya tenía el usuario) como administrador. La herramienta de recuperación **no** ejecuta automáticamente ningún archivo descargado ni reinstala software.
+5. Reiniciar sesión Windows y volver al panel Krueka: verificar PC conectada y **PC: Ofimática**. Si ahora conecta pero Office sigue bloqueado, comprobar con `COMPROBAR-OFFICE-KRUEKA.cmd` el quiosco; un quiosco de aplicación única Edge impide abrir Office aunque el servidor lo autorice.
+6. Probar Word, Excel, PowerPoint y envío de actividad desde la cuenta **estándar** de alumno. Mantener el filtro de navegación web. Si aparece otro error o una copia incompleta, detenerse y conservar los archivos, sin eliminar permisos ni desinstalar el agente.
+
+**Limitaciones:** esto resuelve únicamente la condición de respaldo previo existente. No sustituye el código del actualizador del agente, ni confirma el funcionamiento de Windows Assigned Access, ni sirve como conexión remota. Windows puede requerir reparación adicional del agente o de la configuración de quiosco multiapp. La instalación es local y necesita derechos de administrador.
