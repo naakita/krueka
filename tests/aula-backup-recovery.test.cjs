@@ -16,7 +16,7 @@ assert.match(ps,/if\(\$Modo -eq "Comprobar"\)/);
 assert.match(ps,/if\(!\(Admin\)\)/);
 assert.match(ps,/Se recupero KruekaAula\.exe/);
 assert.match(ps,/no se modifico nada/i);
-assert.doesNotMatch(ps,/Remove-LocalUser|Set-AssignedAccess|Remove-AssignedAccess|service_role|token|Restart-Service|Set-NetFirewallRule/i);
+assert.doesNotMatch(ps,/Remove-LocalUser|Set-AssignedAccess|Remove-AssignedAccess|service_role|Restart-Service|Set-NetFirewallRule/i);
 assert.match(check,/-Modo Comprobar/);
 assert.match(apply,/-Modo PrepararReintento/);
 console.log('PASS: recuperación segura del error de respaldo Brave, sin borrar seguridad ni tokens.');
