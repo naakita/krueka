@@ -81,3 +81,20 @@ Referencias técnicas: [Directivas Brave](https://support.brave.app/hc/en-us/art
 **Limitaciones importantes:** las políticas de navegador aplicadas a toda la máquina también afectan a la navegación de cuentas de profesor/admin hasta que éste las cambie con sus credenciales. Ocultar cambio rápido no impide cerrar sesión. Un alumno con credenciales de administrador, con arranque externo sin protección o con aplicaciones portables no controladas aún puede saltar medidas. Revisar firmware/arranque y BitLocker según la política del centro; no aplicar cambios automatizados de BIOS, usuarios ni cifrado sin intervención. Se requiere instalación **local** en Windows; publicar código en GitHub no ejecuta comandos en las PCs ni confirma cambios remotamente en Krueka.
 
 Guías oficiales: https://learn.microsoft.com/windows/configuration/kiosk/ y https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-windowslogon
+
+
+## PC 02 BEI: Office autorizado pero sin confirmación (22/10/2026)
+
+**Hallazgo:** la PC02 tiene `desktop_mode=office` y `desktop_mode_observed=null`; su último contacto con Supabase fue el 21/10/2026 a las 08:06 de Paraguay. El panel recibió nuevas solicitudes de Office el 22/10, pero ninguna ha sido confirmada por el agente porque no ha sincronizado. En otras PCs el agente 0.5 sí informó `desktop_mode_observed=office`. La versión del agente, por sí sola, no prueba que Office esté habilitado.
+
+### Diagnóstico y recuperación segura
+
+1. En **la PC02**, con un administrador responsable presente, copiar juntos `Diagnosticar-Office-Krueka.ps1`, `COMPROBAR-OFFICE-KRUEKA.cmd` y `REINICIAR-AGENTE-KRUEKA-ADMIN.cmd`.
+2. Ejecutar `COMPROBAR-OFFICE-KRUEKA.cmd`. El modo predeterminado `Comprobar` es de solo lectura. Busca servicios/tareas Krueka (sin mostrar tokens ni contraseñas), detecta rutas habituales de Word, Excel y PowerPoint, prueba HTTPS al backend, consulta `Get-AssignedAccess` cuando está disponible y muestra errores recientes de quiosco Windows.
+3. Si existe un servicio/tarea **identificado expresamente como Krueka**, cerrar documentos abiertos y ejecutar `REINICIAR-AGENTE-KRUEKA-ADMIN.cmd` con clic derecho → **Ejecutar como administrador**. Solamente reinicia esos servicios/tareas identificados; no desinstala componentes ni crea tokens nuevos. Si no detecta ninguno, localizar el instalador original del agente y su configuración; no reinstalar a ciegas ni volver a registrar el equipo.
+4. Desde el panel del docente, pulsar **Actualizar** y esperar a ver **PC: Ofimática** junto con **Conectada**. Si sigue sin contacto, comprobar la conexión HTTPS, estado de tareas y credenciales de servicio local. Si ya está conectada pero Office no funciona, revisar en Windows (cuenta administradora) si el alumno tiene quiosco **de una sola aplicación Edge**, que no permite iniciar aplicaciones Word, Excel o PowerPoint. Para Office debe usarse una **experiencia restringida multiaplicación** de Assigned Access compatible con la edición Windows, y conceder explícitamente las aplicaciones de Office y Edge; no quitar todas las restricciones del equipo.
+5. Verificar con la cuenta estándar del alumno: abrir Word, Excel, PowerPoint y Krueka, completar una actividad y cargar el archivo. Probar que Brave u otros navegadores no puedan salir a Internet sin permiso. Conservar cuenta administradora de rescate.
+
+**Precaución:** el programa de la PC podría usar un nombre de servicio/tarea distinto a «Krueka». Si no se detecta, el resultado es **inconcluso**, no una confirmación de desinstalación. Los scripts no reescriben la configuración del quiosco, no cambian los permisos del sistema ni pueden ejecutar reparaciones remotas por sí solos. No prometer que el problema esté resuelto hasta observar una sincronización nueva con `desktop_mode_observed=office` y una prueba real con el usuario del alumno.
+
+Documentación oficial de Windows: https://learn.microsoft.com/en-us/windows/configuration/kiosk/
