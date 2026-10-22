@@ -36,8 +36,11 @@ const AulaControl = {
   const alive=d=>d.last_seen&&(Date.now()-Date.parse(d.last_seen)<125000);
   const pending=rs.filter(r=>r.status==="pending");
   const officePendiente=d=>d.desktop_mode==="office" && d.desktop_mode_observed!=="office";
+  const offline=d=>!alive(d);
+  const diagnosticoPc='https://github.com/naakita/krueka/tree/main/windows';
   // La orden enviada no garantiza que Windows haya aplicado el cambio.
   const modoButton=d=>{
+   if(offline(d))return '<button class="btn sm sec" disabled title="La PC no responde al servidor. Revisar agente Windows en el equipo.">PC desconectada · revisar agente</button>';
    const pendiente=officePendiente(d);
    const next=pendiente?"office":d.desktop_mode==="office"?"edge":"office";
    const label=pendiente?"↻ Reintentar Office":d.desktop_mode==="office"?"Volver a solo Krueka":"Habilitar Word, Excel y PowerPoint";
@@ -45,6 +48,11 @@ const AulaControl = {
     '" onclick="AulaControl.modoOfimatica(\''+d.id+'\',\''+next+'\')">'+label+'</button>';
   };
   const estadoOffice=d=>{
+   if(offline(d))return '<div class="alert err" style="margin-top:10px" role="status">'+
+    '<b>⚠ PC sin conexión: Krueka no puede confirmar ni aplicar Office</b>'+
+    '<div>El permiso '+(d.desktop_mode==="office"?'de Word, Excel y PowerPoint ya está autorizado':'de Ofimática no está activo')+
+    ', pero el agente no se ha comunicado recientemente. Último contacto: '+(d.last_seen?esc(new Date(d.last_seen).toLocaleString("es-PY")):'nunca registrado')+'.</div>'+
+    '<div style="margin-top:5px">Primero comprobá o reiniciá el agente de Windows en esa PC. No generes otro token ni cambies el quiosco. <a href="'+diagnosticoPc+'" target="_blank" rel="noopener noreferrer">Herramientas de diagnóstico</a>.</div></div>';
    if(!officePendiente(d))return "";
    const fallido=!!d.kiosk_error&&d.desktop_mode_observed==="edge";
    return '<div class="alert '+(fallido?'err':'info')+'" style="margin-top:10px" role="status">'+
