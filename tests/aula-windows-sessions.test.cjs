@@ -11,7 +11,7 @@ const docs=read('windows/README.md');
 const cmd=read('windows/APLICAR-SEGURIDAD-SESIONES-COMO-ADMIN.cmd');
 const check=read('windows/COMPROBAR-SESIONES-KRUEKA.cmd');
 new vm.Script(ui);
-assert.match(html,/js\/aula-control\.js\?v=20261021e/);
+assert.match(html,/js\/aula-control\.js\?v=20261022a/);
 assert.match(ui,/Seguridad al cambiar de cuenta: sin comprobar en Windows/);
 assert.match(ps,/\[ValidateSet\("Comprobar","Aplicar"\)\]/);
 assert.match(ps,/HideFastUserSwitching/);
