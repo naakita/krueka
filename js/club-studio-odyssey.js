@@ -1,0 +1,102 @@
+/* KRUEKA ODYSSEY 3D · demo original, editada y guardada en el Studio.
+   WebGL 1 / Canvas 2D existentes, sin cuentas ni CDN adicionales. */
+(function(){
+'use strict';
+if(window.StudioOdyssey||!window.StudioForge||!window.StudioKits)return;
+const kind='odyssey3d';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const defaults={title:'KRUEKA ODYSSEY · Ciudad de los Portales',speed:5,lives:5,seconds:300,quality:'low',environment:{district:'city',weather:'clear',light:'cryo'},odyssey:{carColor:'#24c7d9',neon:true}};
+function clean(raw){
+ const input=raw&&typeof raw==='object'?raw:{},cfg=StudioForge.clean({...defaults,...input});
+ const original=input.odyssey||{},color=String(original.carColor||defaults.odyssey.carColor);
+ cfg.odyssey={carColor:/^#[0-9a-f]{6}$/i.test(color)?color:defaults.odyssey.carColor,neon:original.neon!==false};
+ cfg.kind=kind;
+ if(!input.title)cfg.title=defaults.title;
+ return cfg;
+}
+function enhance(source){
+ let src=source,applied=0;
+ const patch=(needle,replacement)=>{if(!src.includes(needle))throw Error('Motor 3D incompatible, falta: '+needle.slice(0,70));src=src.replace(needle,replacement);applied++;};
+ patch('function cinemaScene(){',"\nlet vehicleOn=false,carPos={x:3,z:8},terminals=new Set(),sfxEnabled=false,sfxContext=null,lastCollected=0,missionDone=false;\nconst ODYSSEY_TERMINALS=[{id:'central',x:-4,z:1,label:'Central energética'},{id:'north',x:4,z:-8,label:'Estación norte'}];\nfunction odysseyBeep(note){\n if(!sfxEnabled)return;\n try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!sfxContext)sfxContext=new AC();\n  const o=sfxContext.createOscillator(),v=sfxContext.createGain();o.type='sine';o.frequency.value=note||660;v.gain.setValueAtTime(.0001,sfxContext.currentTime);\n  v.gain.exponentialRampToValueAtTime(.045,sfxContext.currentTime+.018);v.gain.exponentialRampToValueAtTime(.0001,sfxContext.currentTime+.19);\n  o.connect(v);v.connect(sfxContext.destination);o.start();o.stop(sfxContext.currentTime+.20);\n }catch(_e){}\n}\nfunction odysseyCar(x,z,s,color){\n const tone=color||'#37d4df',pulse=(Math.sin(elapsed*3)+1)*.5;\n box(x,.17,z,1.65*s,.37*s,2.4*s,tone);\n box(x,.47*s,z-.13*s,1.24*s,.57*s,1.17*s,'#193c5a');\n box(x,.53*s,z+.52*s,1.05*s,.30*s,.15*s,'#80c9e8',0,true);\n for(const dx of [-.7,.7])for(const dz of [-.71,.71])box(x+dx*s,.03,z+dz*s,.27*s,.34*s,.47*s,'#101827');\n for(const dx of [-.52,.52]){\n  box(x+dx*s,.27*s,z-1.18*s,.25*s,.11*s,.06*s,'#fb7f93',0,true);\n  box(x+dx*s,.27*s,z+1.20*s,.25*s,.12*s,.08*s,'#f9ebb4',0,true);\n }\n box(x,.015,z,2.4*s,.03*s,2.9*s,pulse>.5?'#17566b':'#174c68',0,true);\n}\nfunction odysseyScene(){\n const settings=cfg.odyssey||{},low=cfg.quality!=='high',rain=cfg.environment?.weather==='rain';\n const cyan='#4ee7eb',amber='#f6c776';\n drawLayer=2;\n for(const x of [-8.8,8.8])for(const z of [-10,-4,3,9]){\n  box(x,0,z,.32,1.7,.32,'#795e50');box(x,1.4,z,1.2,.4,1.2,'#2a866b');box(x,1.8,z,.83,.65,.83,'#369e80');\n }\n for(const x of [-6.5,6.5])for(const z of [-10,-2,6]){\n  box(x,0,z,.16,3.3,.16,'#64798d');box(x,3.16,z,.63,.16,.62,cyan,0,true);\n  box(x,0,z,.7,.13,.7,'#22394a');\n }\n drawLayer=3;\n for(const x of [-7.5,7.5])for(const z of [-7,4]){\n  box(x,2.9,z,.08,.9,2.4,settings.neon?'#48d8ef':amber,0,true);\n  box(x,2.9,z,.095,.15,1.5,'#112537');\n }\n box(0,-.01,3.5,5.6,.12,4.0,'#315268');\n box(0,.06,3.5,3.5,.13,3,'#295974');\n for(let i=0;i<8;i++){const angle=i*Math.PI/4;box(Math.cos(angle)*1.2,.2,3.5+Math.sin(angle)*.92,.18,.23,.18,'#66ebf4',0,true);}\n box(0,.23,3.5,.58,1.1,.58,'#3bbfd9');\n box(0,1.2,3.5,.24,.6,.24,'#b9f2ff',0,true);\n const c=carPos;if(!vehicleOn)odysseyCar(c.x,c.z,.88,settings.carColor||'#38cfdc');\n for(const t of ODYSSEY_TERMINALS){\n  const active=terminals.has(t.id),shade=active?'#7cf5b2':'#efb15a';\n  box(t.x,0,t.z,1.1,.2,1.1,'#314052');box(t.x,.2,t.z,.7,1.2,.48,'#33475e');\n  box(t.x,1.0,t.z+.26,.56,.46,.06,shade,0,true);\n  box(t.x,1.45,t.z,.83,.09,.72,shade,0,true);\n  if(!low)for(const off of [-.31,.31])box(t.x+off,.3,t.z,.09,.85,.07,'#9cb1bd');\n }\n box(0,.08,-11.4,3,.09,1.8,terminals.size===2?'#71f5a2':'#d59c62',0,true);\n if(rain&&!low)for(let i=0;i<20;i++){const x=Math.sin(i*19.13)*10,z=((i*17+elapsed*6)%25)-12.5;box(x,1.2,z,.022,.65,.022,'#85aecd');}\n}\nfunction odysseyDrive(){\n if(paused||editing||ended)return false;\n if(vehicleOn){vehicleOn=false;carPos={x:player.x,z:player.z};document.getElementById('odyssey-message').textContent='Bajaste del vehículo. E para volver a conducir.';odysseyBeep(280);return true;}\n if(Math.hypot(player.x-carPos.x,player.z-carPos.z)>2.6)return false;\n vehicleOn=true;player.x=carPos.x;player.z=carPos.z;player.y=0;player.vy=0;\n document.getElementById('odyssey-message').textContent='Conduciendo. Flechas o WASD · E para bajar.';\n odysseyBeep(550);return true;\n}\nfunction odysseyUseTerminal(){\n if(paused||editing||ended)return false;\n for(const t of ODYSSEY_TERMINALS){\n  if(Math.hypot(player.x-t.x,player.z-t.z)>2.7)continue;\n  if(terminals.has(t.id)){document.getElementById('odyssey-message').textContent=t.label+' ya está activada.';return true;}\n  if(vehicleOn){document.getElementById('odyssey-message').textContent='Bajá del auto antes de activar esta terminal.';return true;}\n  terminals.add(t.id);odysseyBeep(820);\n  document.getElementById('odyssey-message').textContent='Terminal '+t.label+' activada. '+terminals.size+'/2';\n  odysseyHud();return true;\n }return false;\n}\nfunction odysseyHud(){\n const o=document.getElementById('odyssey-objectives'),t=document.getElementById('odyssey-drive'),bar=document.getElementById('odyssey-bar');\n if(!o)return;\n const total=cfg.objects.filter(x=>x.type==='crystal').length,got=collected.size;\n o.textContent='REGISTROS '+got+'/'+total+'  ·  TERMINALES '+terminals.size+'/2  ·  '+(vehicleOn?'EN VEHÍCULO':'A PIE');\n if(bar)bar.style.width=Math.round(100*(got+terminals.size)/(total+2))+'%';\n if(t)t.textContent=vehicleOn?'E · Bajar del auto':'E · Conducir cerca del auto';\n const x=player.x,z=player.z,canvas=document.getElementById('odyssey-map'),ctx=canvas?.getContext('2d');\n if(ctx){\n  const W=canvas.width,H=canvas.height,map=(xx,zz)=>[W/2+xx/W*W*3.1,H/2+zz/H*H*3.05];\n  ctx.clearRect(0,0,W,H);ctx.fillStyle='#071522e8';ctx.fillRect(0,0,W,H);\n  ctx.strokeStyle='#37617855';ctx.lineWidth=1;\n  for(let p=-10;p<=10;p+=5){ctx.beginPath();ctx.moveTo(...map(p,-12));ctx.lineTo(...map(p,12));ctx.stroke();}\n  for(let p=-10;p<=10;p+=5){ctx.beginPath();ctx.moveTo(...map(-11,p));ctx.lineTo(...map(11,p));ctx.stroke();}\n  ctx.fillStyle='#1a3348';ctx.fillRect(...map(-3,-11.8),36,140);\n  const dot=(xx,zz,c,r)=>{const [mx,my]=map(xx,zz);ctx.fillStyle=c;ctx.beginPath();ctx.arc(mx,my,r||3,0,Math.PI*2);ctx.fill();};\n  for(const obj of cfg.objects.filter(y=>y.type==='crystal'&&!collected.has(y.id)))dot(obj.x,obj.z,'#66e9f3',3.3);\n  for(const p of ODYSSEY_TERMINALS)dot(p.x,p.z,terminals.has(p.id)?'#73f2b2':'#ffb45a',4);\n  dot(0,-11.7,'#a5f4c0',5);if(!vehicleOn)dot(carPos.x,carPos.z,'#e7ca8d',3.3);\n  dot(x,z,'#ffffff',5);\n  ctx.strokeStyle='#fff';ctx.lineWidth=1.5;const [mx,my]=map(x,z);\n  ctx.beginPath();ctx.moveTo(mx,my);ctx.lineTo(mx+Math.sin(player.angle)*9,my+Math.cos(player.angle)*9);ctx.stroke();\n }\n}\nfunction odysseyUpdate(dt){\n \n if(collected.size>lastCollected){odysseyBeep(790);lastCollected=collected.size;}\n if(ended&&!missionDone){missionDone=true;\n  const msg=document.getElementById('odyssey-message');if(msg)msg.textContent=lives>0?'¡Victoria! Recuperaste los registros, activaste las terminales y completaste la operación.':'Terminó tu misión. Podés reiniciar.';\n  odysseyBeep(920);}\n if(!paused&&!editing)odysseyHud();\n}\nfunction odysseySetup(){\n const gear=document.getElementById('odyssey-drive'),map=document.getElementById('odyssey-map'),sound=document.getElementById('odyssey-sfx');\n if(gear)gear.onclick=()=>{if(!odysseyDrive()){const message=document.getElementById('odyssey-message');if(message)message.textContent='Acercate al auto para conducir; usá E cuando estés cerca.';}};\n if(sound)sound.onclick=()=>{sfxEnabled=!sfxEnabled;sound.textContent='Sonidos: '+(sfxEnabled?'activados':'apagados');if(sfxEnabled)odysseyBeep(650);};\n const originalRestart=document.getElementById('restart').onclick;\n document.getElementById('restart').onclick=()=>{vehicleOn=false;carPos={x:3,z:8};terminals=new Set();missionDone=false;lastCollected=0;originalRestart();odysseyHud();};\n const first=document.getElementById('odyssey-message');if(first)first.textContent='Iniciá la misión. E: conversar o conducir · F: activar terminales · Shift: correr.';\n odysseyHud();\n}\n"+'\nfunction cinemaScene(){');
+ patch('if(cinematicGesture>elapsed){','odysseyScene();\n  if(cinematicGesture>elapsed){');
+ patch('humanoid(hero,player.x,player.y,player.z,player.angle,locomotion,elapsed*(cfg.motions?.walk||1));','if(vehicleOn)odysseyCar(player.x,player.z,.88,cfg.odyssey?.carColor);else humanoid(hero,player.x,player.y,player.z,player.angle,locomotion,elapsed*(cfg.motions?.walk||1));');
+ patch('function interact(){','function interact(){\n  if(odysseyDrive())return;');
+ patch("gesture.onclick=()=>{","gesture.onclick=()=>{if(odysseyUseTerminal())return;");
+ patch('dx=dx/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;dz=dz/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;',
+ 'dx=dx/length*cfg.speed*(vehicleOn?2.25:(keys.Shift?(cfg.motions?.run||1.55):1))*dt;dz=dz/length*cfg.speed*(vehicleOn?2.25:(keys.Shift?(cfg.motions?.run||1.55):1))*dt;');
+ patch("if((keys[' ']||keys.jump)&&player.y===0)player.vy=7;","if(!vehicleOn&&(keys[' ']||keys.jump)&&player.y===0)player.vy=7;");
+ patch('open=collected.size===crystals.length','open=collected.size===crystals.length&&terminals.size===2');
+ patch("if(collected.size===cfg.objects.filter(o=>o.type==='crystal').length&&Math.abs(player.x)<1.4&&player.z<-11)",
+ "if(collected.size===cfg.objects.filter(o=>o.type==='crystal').length&&terminals.size===2&&Math.abs(player.x)<1.4&&player.z<-11)");
+ patch('reset();bindCanvas();cinematicSetup();function frame(now)','reset();bindCanvas();cinematicSetup();odysseySetup();function frame(now)');
+ patch('update(dt);if(now-lastDraw','update(dt);odysseyUpdate(dt);if(now-lastDraw');
+ return src;
+}
+function create(){
+ const files=StudioForge.create(),cfg=clean({
+  ...defaults,
+  characters:{hero:{name:'Alex Explorer',style:'explorer',skin:'#b9876c',jacket:'#24b8b1',pants:'#223b5d',hair:'#1d2c3a'},guide:{name:'Mara',style:'urban',skin:'#cda487',jacket:'#c58371',pants:'#24425b'},guard:{name:'Centinela',style:'tactical',jacket:'#324b62'}},
+  story:{objective:'Recuperá 3 registros, encendé 2 terminales y cruzá el portal.',dialogue:'La ciudad perdió su energía. Activá ambas terminales para abrir la salida. Podés usar el automóvil.',reply:'Voy a recuperar los registros y encender las terminales.'},
+  objects:[
+   {id:'registro-plaza',type:'crystal',label:'Registro de la plaza',x:-3.7,z:7,size:1.3,height:1.2,color:'#65ebff'},
+   {id:'registro-sur',type:'crystal',label:'Registro de la estación',x:4.3,z:-1,size:1.3,height:1.2,color:'#65ebff'},
+   {id:'registro-norte',type:'crystal',label:'Registro del norte',x:-3.4,z:-9,size:1.3,height:1.2,color:'#65ebff'},
+   {id:'dron-uno',type:'drone',label:'Dron centinela',x:-6,z:0,size:1.3,height:1,color:'#ff8096'},
+   {id:'dron-dos',type:'drone',label:'Dron centinela 2',x:6,z:-3,size:1.3,height:1,color:'#ff8096'},
+   {id:'baliza-uno',type:'beacon',label:'Torre de enlace',x:-8,z:-8,size:1,height:3,color:'#e3b76b'}
+  ]
+ });
+ files['game-config.js']=StudioKits.configFile(cfg);
+ files['game.js']=enhance(files['game.js']);
+ files['index.html']=files['index.html']
+  .replace('KRUEKA · FORGE · PROTOTIPO CINEMÁTICO','KRUEKA · ODYSSEY 3D · MISIÓN INTERACTIVA')
+  .replace('HORIZON · DEMOSTRACIÓN EDITABLE','MUNDO ABIERTO · MISIÓN 01')
+  .replace('</div><div id="controls">','<div class="odyssey-map-box"><canvas id="odyssey-map" width="170" height="170" aria-label="Minimapa"></canvas><span>MAPA · ZONA URBANA</span></div></div><div id="controls">')
+  .replace('<button id="gesture">F · Gesto</button>','<button id="gesture">F · Activar / Gesto</button><button id="odyssey-drive">E · Vehículo</button><button id="odyssey-sfx">Sonidos: apagados</button>')
+  .replace('<p id="mission" role="status"></p>','<div class="odyssey-panel"><div class="odyssey-head"><b>OBJETIVOS DE LA MISIÓN</b><span id="odyssey-objectives">Iniciando…</span></div><div class="odyssey-meter"><i id="odyssey-bar"></i></div><p id="odyssey-message" role="status" aria-live="polite"></p></div><p id="mission" role="status"></p>');
+ files['style.css']+='\n'+".odyssey-map-box{position:absolute;right:14px;top:12px;width:170px;padding:8px;background:#081a29df;border:1px solid #498ca8a0;border-radius:14px;box-shadow:0 12px 32px #000a;pointer-events:none}.odyssey-map-box canvas{width:154px;height:154px;display:block;border-radius:8px;background:#081c28}.odyssey-map-box span{display:block;color:#87dcec;font-size:9px;text-align:center;letter-spacing:.15em;margin-top:5px}.odyssey-panel{border:1px solid #2b819ea0;background:linear-gradient(115deg,#0d2637,#142232);padding:14px;border-radius:12px;margin:9px 0}.odyssey-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11px;color:#b9f5ff;letter-spacing:.06em}.odyssey-head span{font-size:11px;color:#f5fafc}.odyssey-meter{height:6px;background:#1b4253;border-radius:6px;margin:11px 0 6px;overflow:hidden}.odyssey-meter i{display:block;width:0;height:100%;background:linear-gradient(90deg,#37d6e6,#91f5bc);transition:width .35s}#odyssey-message{margin:7px 0 0;color:#a2cfe0;font-size:11px;line-height:1.45}#odyssey-drive{background:#145368;color:#e4fdff;border-color:#35b6ca}.stage{border-color:#32aaca70;box-shadow:0 24px 65px #0009,0 0 50px #2aafb01d}#mission{border-color:#49c7c4}@media(max-width:600px){.odyssey-map-box{right:5px;top:5px;width:106px;padding:4px}.odyssey-map-box canvas{width:96px;height:96px}.odyssey-map-box span{font-size:7px}.odyssey-head span{font-size:9px}header h1{font-size:20px}}";
+ files['LEEME.md']='# KRUEKA ODYSSEY 3D · Ciudad de los Portales\n\nUn videojuego 3D editable del Club de Informática, con motor WebGL y alternativa Canvas.\n\n## Cómo jugar\n1. Pulsá **Jugar**. Caminá con WASD o flechas. Shift para correr. Espacio para saltar.\n2. Recuperá 3 registros brillantes evitando drones.\n3. Acercate a las dos terminales luminosas y pulsá F para activarlas.\n4. Acercate al automóvil turquesa y pulsá E o el botón Vehículo para conducir. E nuevamente para bajar.\n5. Para hablar con Mara, acercate y pulsá E. Activá el sonido solo si querés.\n6. Con los 3 registros y las 2 terminales activadas, llegá al portal del fondo.\n\n## Cómo personalizarlo\nEn Bases y reglas, cambiá el barrio, clima, iluminación, color del auto, vidas, tiempo o velocidad. Guardá el proyecto antes de salir. Usá Deshacer si es necesario.\n\n## Retos\n- Nivel 1: cambiá la paleta e iluminación.\n- Nivel 2: probá el coche, dos terminales y recolección de registros.\n- Nivel 3: inventá tu propia misión y registrá las pruebas.\n\nNo requiere bibliotecas externas ni IA para jugar. Proyecto escolar original, no imita marcas o videojuegos comerciales.\n';
+ return files;
+}
+function art(){return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 65" role="img" aria-label="Ciudad 3D futurista"><rect width="190" height="65" rx="9" fill="#0c2740"/><path d="M0 59L95 30l95 29" fill="#1d4e63"/><path d="M20 48v-33h24v33m16-8V6h27v34m15 8V17h26v31m12-5V11h29v32" fill="#355b74" stroke="#5ddbf1" stroke-width="2"/><path d="M89 62l6-30 6 30" stroke="#ffe09b" stroke-width="3"/><path d="M70 47l13-4 15 5-13 5z" fill="#39e0e5"/></svg>';}
+function render(studio,el,raw){
+ const cfg=clean(raw),opts=(obj,value)=>Object.entries(obj).map(([v,label])=>'<option value="'+v+'" '+(v===value?'selected':'')+'>'+esc(label)+'</option>').join('');
+ el.innerHTML='<div class="ks-section-label">ODYSSEY 3D · EDITOR VISUAL</div><h2>Construí tu ciudad interactiva</h2><p>Este proyecto viene completo. Personalizá el ambiente, el vehículo y las reglas. Probalo después de cada cambio.</p>'+
+ '<section class="ks-settings"><h3>Ciudad y efectos</h3><div class="ks-fields">'+
+ '<label>Nombre del juego<input id="ody-title" maxlength="60" value="'+esc(cfg.title)+'"></label>'+
+ '<label>Barrio<select id="ody-district">'+opts({city:'Ciudad futurista',industrial:'Distrito industrial',port:'Puerto tecnológico'},cfg.environment.district)+'</select></label>'+
+ '<label>Clima<select id="ody-weather">'+opts({clear:'Despejado',mist:'Niebla',rain:'Lluvia'},cfg.environment.weather)+'</select></label>'+
+ '<label>Iluminación<select id="ody-light">'+opts({cryo:'Azul nocturno',sunset:'Atardecer',alert:'Alerta roja'},cfg.environment.light)+'</select></label>'+
+ '<label>Color del vehículo<input type="color" id="ody-car" value="'+cfg.odyssey.carColor+'"></label>'+
+ '<label>Velocidad del explorador<input id="ody-speed" type="number" min="2" max="9" step=".5" value="'+cfg.speed+'"></label>'+
+ '<label>Vidas<input id="ody-lives" type="number" min="1" max="9" value="'+cfg.lives+'"></label>'+
+ '<label>Tiempo disponible<input id="ody-time" type="number" min="60" max="300" value="'+cfg.seconds+'"></label>'+
+ '<label>Calidad<select id="ody-quality">'+opts({low:'Liviana · PC básica',high:'Alta · PC moderna'},cfg.quality)+'</select></label>'+
+ '<label>Carteles neón<select id="ody-neon">'+opts({yes:'Encendidos',no:'Apagados'},cfg.odyssey.neon?'yes':'no')+'</select></label></div>'+
+ '<div class="ks-scene-actions"><button class="ks-btn primary" id="ody-apply">Aplicar mis cambios</button><button class="ks-btn" id="ody-play">▶ Probar videojuego</button><button class="ks-btn" id="ody-code">Explorar código</button></div></section>'+
+ '<section class="ks-settings"><h3>Misiones incluidas</h3><ol><li>Conducir el vehículo por la ciudad.</li><li>Recuperar los tres registros.</li><li>Activar ambas terminales con F.</li><li>Evitar drones y alcanzar el portal.</li></ol><p>Accesible con teclado y botones táctiles. El audio es opcional.</p></section>';
+ el.querySelector('#ody-apply').onclick=()=>{
+  if(studio.busy||!studio.cloudReady)return;
+  const get=id=>el.querySelector('#ody-'+id).value;
+  const next=clean({...cfg,title:get('title'),speed:get('speed'),lives:get('lives'),seconds:get('time'),quality:get('quality'),
+   environment:{district:get('district'),weather:get('weather'),light:get('light')},odyssey:{carColor:get('car'),neon:get('neon')==='yes'}});
+  try{const files=studio.validFiles({...studio.files,'game-config.js':StudioKits.configFile(next)});
+   studio.checkpoint();studio.files=files;studio.changed();studio.refreshAll();studio.lock(false);
+  }catch(e){studio.say('sys','No se pudo aplicar: '+e.message);}
+ };
+ el.querySelector('#ody-play').onclick=()=>studio.playCurrent();
+ el.querySelector('#ody-code').onclick=()=>{studio.current='game-config.js';if(!document.getElementById('ks-code').classList.contains('on'))studio.toggleCode();studio.renderFileList();studio.renderEditor();};
+}
+function install(){
+ if(!window.StudioIA||window.StudioIA.__odysseyInstalled)return false;
+ const prev=StudioIA.renderCreator;
+ StudioIA.renderCreator=function(){const el=document.getElementById('ks-create'),cfg=StudioKits.read(this.files);if(el&&cfg?.kind===kind)return render(this,el,cfg);return prev.apply(this,arguments);};
+ window.StudioIA.__odysseyInstalled=true;return true;
+}
+window.StudioOdyssey={kind,clean,create,enhance,render,install};
+StudioKits.catalog.unshift({id:kind,icon:'🏙️',title:'ODYSSEY 3D · Ciudad de los Portales',tag:'Vehículo · Misiones · Minimap',description:'Mundo 3D completo con automóvil conducible, tres registros, dos terminales y portal. Original, sin motores externos.',challenge:'Jugá, activá terminales, manejá el vehículo y cambiá clima, luces y reglas.'});
+const beforeCreate=StudioKits.create.bind(StudioKits),beforeArt=StudioKits.art.bind(StudioKits);
+StudioKits.create=id=>id===kind?create():beforeCreate(id);
+StudioKits.art=id=>id===kind?art():beforeArt(id);
+install();
+})();

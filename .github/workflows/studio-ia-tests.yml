@@ -30,6 +30,9 @@ jobs:
       - run: node --check js/club-studio-academy.js
       - run: node --check js/club-studio-3d.js
       - run: node --check js/club-studio-3d-toolbox.js
+      - run: node --check js/club-studio-odyssey.js
+      - run: node tests/studio-odyssey.test.cjs
+      - run: node tests/studio-odyssey-browser.test.cjs
       - run: node tests/studio-3d-toolbox.test.cjs
       - run: node tests/studio-academy.test.cjs
       - run: node tests/studio-creative.test.cjs

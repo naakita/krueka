@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Probá KRUEKA ODYSSEY 3D: juego original con ciudad, vehículo conducible, misiones, terminales y minimapa. Construido en Krueka Studio.">
+<title>KRUEKA ODYSSEY 3D · Ciudad de los Portales</title>
+<link rel="icon" href="../logo.svg">
+<style>
+:root{color-scheme:dark;--sky:#73eaf2;--ink:#e9f8ff;--muted:#9ab3c7;--panel:#102239;--line:#285069}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:radial-gradient(circle at 50% 4%,#175068 0%,#071522 48%,#050e1a 100%);color:var(--ink)}
+body:before{content:'';position:fixed;inset:0;pointer-events:none;background:linear-gradient(transparent 97%,#73bfff06 98%),linear-gradient(90deg,transparent 97%,#73bfff06 98%);background-size:42px 42px;mask-image:linear-gradient(#0007,transparent 74%);z-index:-1}
+.container{max-width:1320px;margin:0 auto;padding:20px 24px 80px}
+nav{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:#efffff;font-size:17px;font-weight:850;letter-spacing:.07em}.brand img{width:54px;height:50px;object-fit:contain}.navlinks{display:flex;gap:14px}.navlinks a{color:#b1d2e3;font-size:13px;text-decoration:none}.navlinks a:hover{color:white}
+.hero{padding:50px 0 27px;text-align:center;max-width:890px;margin:auto}.eyebrow{display:inline-block;border:1px solid #60dedb7a;border-radius:50px;background:#2c7f8850;color:#affbfa;font-weight:850;font-size:11px;letter-spacing:.15em;padding:8px 16px}.hero h1{font-size:clamp(37px,7vw,78px);line-height:1.02;margin:19px 0 17px;letter-spacing:-.04em;font-weight:900}.hero h1 span{display:block;color:#8cf5ed;text-shadow:0 0 45px #37cfcb8c}.hero p{max-width:730px;margin:0 auto;color:#bed8e8;font-size:clamp(14px,2vw,18px);line-height:1.65}
+.features{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:25px 0 5px}.features span{background:#163246b8;border:1px solid #2c5d75;border-radius:10px;padding:9px 12px;color:#bee4eb;font-size:12px;font-weight:650}
+.game-shell{position:relative;border:1px solid #388eac88;border-radius:22px;background:#081322;overflow:hidden;box-shadow:0 0 0 1px #a6edff1a,0 35px 100px #0009,0 0 80px #1babad21}
+.game-top{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 18px;background:linear-gradient(100deg,#132c3f,#071a2a);border-bottom:1px solid #296177}
+.game-top strong{font-size:13px;letter-spacing:.06em}.game-top small{display:block;margin-top:3px;color:#8facbd;font-size:11px}.game-top .light{display:flex;align-items:center;gap:6px;color:#a8fbd8;font-size:11px}.light:before{content:'';width:8px;height:8px;border-radius:50%;background:#60f2af;box-shadow:0 0 15px #5bf0b8}
+#playground{display:block;border:0;width:100%;height:min(800px,78svh);min-height:500px;background:#0b1b2c}
+.instructions{display:grid;grid-template-columns:1.2fr 1fr;gap:22px;margin-top:27px}
+.panel{border:1px solid #294f69;background:#102338dc;padding:24px;border-radius:18px}
+.panel h2{font-size:20px;letter-spacing:-.02em;margin:0 0 13px}.panel p{color:#b3cad8;font-size:13px;line-height:1.75}.tasks{list-style:none;padding:0;margin:0}.tasks li{display:flex;align-items:start;gap:11px;padding:10px 0;border-bottom:1px solid #ffffff13;color:#b9d5e1;font-size:13px}.tasks li:last-child{border:0}.num{border:1px solid #397d93;background:#1c475c;color:#adfcf3;min-width:27px;height:27px;display:grid;place-items:center;border-radius:8px;font-weight:850;font-size:12px}
+kbd{font-size:12px;border:1px solid #46677b;border-bottom-width:3px;background:#223b53;border-radius:5px;padding:3px 6px;font-family:inherit;color:#fff}
+.controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.control{padding:11px 12px;border:1px solid #31576c;border-radius:10px;background:#122e42;color:#c3dce9;font-size:12px}.control b{color:#fff;display:block;margin-bottom:5px}
+.cta{display:flex;align-items:center;flex-wrap:wrap;gap:11px;margin-top:20px}.button{border-radius:12px;padding:14px 18px;background:#65e3e2;color:#062a36;text-decoration:none;font-size:14px;font-weight:850;display:inline-flex;gap:10px;align-items:center}.button:hover{background:#a8ffef}.button.secondary{background:#183a52;border:1px solid #50849c;color:#e6f7ff}
+footer{text-align:center;color:#7795ac;padding-top:34px;font-size:12px}
+@media(max-width:840px){.instructions{grid-template-columns:1fr}.hero{padding:30px 0 20px}#playground{height:75svh;min-height:510px}}
+@media(max-width:520px){.container{padding:12px 9px 55px}.hero{padding:24px 10px}.hero h1{font-size:43px}.game-shell{border-radius:14px}.game-top{padding:10px 12px}#playground{min-height:610px;height:85svh}.panel{padding:17px}.controls{grid-template-columns:1fr}.navlinks{gap:8px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="container">
+<nav><a class="brand" href="../index.html"><img src="../logo.svg" alt="">KRUEKA <span style="color:#60e2d9">/ LABS</span></a><div class="navlinks"><a href="../index.html">Inicio</a><a href="../studio.html">Entrar al Studio</a><a href="#proyecto">Cómo funciona</a></div></nav>
+<header class="hero">
+<span class="eyebrow">PROYECTO 3D · JUGABLE · EDITABLE</span>
+<h1>ODYSSEY <span>CIUDAD DE LOS PORTALES</span></h1>
+<p>Un mundo 3D creado con el propio motor de Krueka. Recorré la ciudad, conducí, hablá con personajes, recuperá registros, activá terminales y completá una misión real. Todo desde el navegador.</p>
+<div class="features"><span>◈ Mundo 3D WebGL</span><span>🚙 Vehículo conducible</span><span>◉ Misiones y objetivos</span><span>⌁ Minimap en tiempo real</span><span>✦ Sin instalaciones</span></div>
+</header>
+<div class="game-shell" id="juego">
+ <div class="game-top"><div><strong>KRUEKA ODYSSEY · MISIÓN 01</strong><small>Demostración pública · tu juego comienza al pulsar Jugar dentro del escenario</small></div><div class="light">MOTOR PROPIO</div></div>
+ <iframe id="playground" sandbox="allow-scripts" title="Videojuego Krueka Odyssey 3D"></iframe>
+</div>
+<section class="instructions" id="proyecto">
+ <article class="panel"><h2>Completá la misión</h2><ol class="tasks"><li><span class="num">1</span><span>Pulsá <b>Jugar</b>, recorré la ciudad y encontrá los tres registros luminosos.</span></li><li><span class="num">2</span><span>Acercate a las dos terminales tecnológicas y activalas con la tecla F.</span></li><li><span class="num">3</span><span>Subí al automóvil con E cuando estés cerca, conducí y bajá con E.</span></li><li><span class="num">4</span><span>Esquivá los drones. Cuando tengas los registros y las terminales, llegá al portal norte.</span></li></ol></article>
+ <article class="panel"><h2>Controles del videojuego</h2>
+ <div class="controls"><div class="control"><b><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></b>Caminar o conducir</div><div class="control"><b><kbd>E</kbd></b>Conducir, bajar o hablar</div><div class="control"><b><kbd>F</kbd></b>Activar terminal o gesto</div><div class="control"><b><kbd>Shift</kbd> / <kbd>Espacio</kbd></b>Correr y saltar</div><div class="control"><b>Arrastrar el escenario</b>Girar la cámara 3D</div><div class="control"><b>Botones en pantalla</b>Movimiento táctil</div></div>
+ <p>Este juego es un ejemplo público. Cada alumno crea una copia privada y editable en Krueka Studio, con su propio acceso y guardado.</p>
+ <div class="cta"><a class="button" href="../studio.html">Crear mi versión en Krueka →</a><a class="button secondary" href="#juego">Volver a jugar</a></div></article>
+</section>
+<footer>KRUEKA LABS · Un proyecto original para aprender desarrollo de videojuegos, sin contenido premium de terceros.</footer>
+</div>
+<script src="../js/club-studio-kits.js?v=20261008a"></script>
+<script src="../js/club-studio-3d.js?v=20261023b"></script>
+<script src="../js/club-studio-forge.js?v=20261008a"></script>
+<script src="../js/club-studio-odyssey.js?v=20261023d"></script>
+<script>
+(function(){
+ const frame=document.getElementById('playground'),files=window.StudioKits.create('odyssey3d'),close='</'+'script>',open='<script>';
+ const guard='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; connect-src \'none\'; media-src blob: data:; font-src data:; base-uri \'none\'; form-action \'none\'">';
+ const error='<script>window.__odysseyErrors=[];window.addEventListener("error",function(e){window.__odysseyErrors.push(String(e.message))});</'+'script>';
+ const html=files['index.html'].replace('<head>','<head>'+guard+error)
+  .replace('<link rel="stylesheet" href="style.css">','<style>'+files['style.css']+'</style>')
+  .replace('<script src="game-config.js">'+close,open+files['game-config.js']+close)
+  .replace('<script src="game.js">'+close,open+files['game.js']+close);
+ frame.srcdoc=html;
+})();
+</script>
+</body></html>

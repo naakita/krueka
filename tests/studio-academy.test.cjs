@@ -11,9 +11,9 @@ vm.createContext(context);
 vm.runInContext(src,context);
 const A=context.KruekaAcademy;
 assert.ok(A,'Academia exportada');
-assert.equal(A.courses.length,5);
-assert.deepEqual(Array.from(A.courses,c=>c.lessons.length),[15,8,8,6,8]);
-assert.equal(new Set(A.courses.map(c=>c.id)).size,5);
+assert.equal(A.courses.length,6);
+assert.deepEqual(Array.from(A.courses,c=>c.lessons.length),[15,8,8,6,8,8]);
+assert.equal(new Set(A.courses.map(c=>c.id)).size,6);
 for(const c of A.courses){
  assert.ok(c.id && c.name && c.desc && c.kind);
  for(const lesson of c.lessons){
@@ -30,9 +30,9 @@ assert.equal(A.progress({files:{}}),null);
 const direct=fs.readFileSync(path.join(root,'js/club-studio-access.js'),'utf8');
 const app=fs.readFileSync(path.join(root,'app.html'),'utf8');
 const studio=fs.readFileSync(path.join(root,'studio.html'),'utf8');
-assert.ok(app.includes('<script src="js/club-studio-academy.js?v=20261023c"></script>'));
+assert.ok(app.includes('<script src="js/club-studio-academy.js?v=20261023d"></script>'));
 assert.ok(app.indexOf('club-studio-academy.js')>app.indexOf('club-studio-creative.js'));
 assert.ok(direct.includes("'club-studio-creative.js','club-studio-academy.js'"));
 assert.match(studio,/club-studio-access\.js\?v=20261023[a-z]/);
 assert.equal(/https?:\/\/|fetch\s*\(|import\s*\(/.test(src),false,'sin CDNs ni API nuevas');
-console.log('PASS: academia Krueka, 37 lecciones, progreso por proyecto, entradas privadas, sin terceros nuevos.');
+console.log('PASS: academia Krueka, 53 lecciones, progreso por proyecto, entradas privadas, sin terceros nuevos.');
