@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="es-PY">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#101a37">
+<title>Academia IA · Krueka Junior</title>
+<meta name="description" content="Aprendé a escribir buenas instrucciones para inteligencia artificial con actividades prácticas de videojuegos, marketing y programación.">
+<link rel="icon" href="logo.svg">
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:#eff4ff;background:#0b1125;--bg:#0b1125;--panel:#151f3d;--line:#334366;--muted:#b7c4e1;--mint:#72ead2;--amber:#ffc77b;--blue:#92b9ff}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 80% 0%,#19315b 0%,#0b1125 52%);min-height:100vh;line-height:1.48}button,input,select,textarea{font:inherit}button,a{touch-action:manipulation}a{color:var(--mint)}button{cursor:pointer;border:0}
+:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
+.wrap{max-width:1150px;margin:auto;padding:18px 18px 70px}header{display:flex;gap:14px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-bottom:20px}header a{color:#e4f0ff;text-decoration:none}header .brand{display:flex;align-items:center;gap:11px;font-weight:850;letter-spacing:.02em}.brand img{width:88px;height:auto;filter:brightness(0) invert(1)}.headlinks{display:flex;gap:12px;flex-wrap:wrap;font-size:.9rem}.pill{display:inline-flex;align-items:center;border:1px solid #527e89;border-radius:999px;padding:5px 10px;color:#b5f6e9;font-size:.78rem;font-weight:700}
+h1{font-size:clamp(1.9rem,5vw,3.5rem);line-height:1.12;margin:.6rem 0 1rem}h2{font-size:1.45rem;margin:0 0 12px}h3{margin:8px 0;font-size:1.06rem}p{margin:8px 0 16px}.muted{color:var(--muted)}.small{font-size:.85rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 12px 32px #0002}.hero{padding:27px;border:1px solid #31516d;border-radius:22px;background:linear-gradient(120deg,#183452,#162040 65%,#252b5c)}
+.hero p{max-width:780px}.split{display:grid;grid-template-columns:280px minmax(0,1fr);gap:17px;margin-top:18px}.side{align-self:start;position:sticky;top:10px}.side h2{font-size:1.05rem}.side button{display:flex;width:100%;align-items:center;gap:10px;text-align:left;background:transparent;color:#eff4ff;padding:13px 11px;border-radius:10px;border:1px solid transparent;margin:4px 0}.side button[aria-current=true]{background:#294878;border-color:#6fa3ec}.side button:hover{background:#202f52}.num{flex:0 0 auto;display:inline-grid;place-items:center;width:27px;height:27px;background:#31436c;border-radius:8px;font-weight:800}.side button.done .num{background:#18645c;color:#e9fff8}.meter{height:8px;border-radius:20px;background:#34425c;overflow:hidden;margin:10px 0}.meter span{display:block;background:var(--mint);height:100%;width:0;transition:width .3s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:11px;padding:11px 16px;color:#09172a;background:var(--mint);font-weight:800;text-decoration:none;min-height:44px}.btn:hover{filter:brightness(1.08)}.btn.secondary{background:#31456e;color:#fff;border:1px solid #6889be}.btn.ghost{color:#ecf4ff;border:1px solid #5e749f;background:transparent}.btn:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.hint{border-left:4px solid var(--amber);background:#2b2943;padding:12px 14px;border-radius:9px;margin:15px 0;color:#f7e8cd}
+.example{background:#0d1731;border:1px solid #3e5482;padding:13px 15px;border-radius:10px;white-space:pre-wrap;font-size:.95rem}.example strong{color:var(--mint)}.step{color:var(--mint);font-size:.8rem;font-weight:850;letter-spacing:.09em;text-transform:uppercase}
+label{display:block;font-weight:700;margin:13px 0 5px}input,textarea,select{width:100%;padding:12px;border:1px solid #6b7fa8;border-radius:10px;color:#fff;background:#101b36}textarea{min-height:95px;resize:vertical}select{max-width:480px}input::placeholder,textarea::placeholder{color:#a8b7d4}input:disabled{opacity:.5}
+.choice{width:100%;display:block;text-align:left;padding:13px;margin:10px 0;border:1px solid #516b95;background:#1b2d51;color:#fff;border-radius:12px}.choice:hover{background:#294371}.choice.selected{border-color:var(--mint);background:#23485a}.choice.correct{border-color:#7ee0b2}.choice.wrong{border-color:#f2a4a4}
+.result{border-radius:12px;padding:13px;margin-top:12px;background:#1b3350;border:1px solid #587ca7}.result.good{border-color:#529e8e;background:#183f3d}.result.warn{border-color:#b89a59;background:#3b332c}.result[hidden]{display:none}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.mini{border:1px solid #3d5279;border-radius:12px;background:#182947;padding:13px}.mini b{display:block;margin:0 0 7px;color:#d5f6f0}.progress-mark{font-size:.82rem;color:var(--mint);font-weight:800}
+ul{padding-left:20px}.example-dim{border-left:4px solid #d98181;background:#302c40}.example-bright{border-left:4px solid #66c6ac}
+#app[hidden],#login[hidden],#academy[hidden],section[hidden],div[hidden],p[hidden]{display:none!important}
+footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{opacity:.65;pointer-events:none}
+@media(max-width:780px){.split{grid-template-columns:1fr}.side{position:static}.cards{grid-template-columns:1fr}.hero{padding:20px}.card{padding:16px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header><a class="brand" href="index.html"><img src="logo.svg" alt="Krueka"><span>ACADEMIA IA · JUNIORS</span></a><nav class="headlinks" aria-label="Navegación"><a href="studio.html">Studio de juegos</a><a href="index.html">Inicio</a><button id="logout" class="btn ghost small" type="button" hidden>Salir</button></nav></header>
+  <main>
+    <section id="login" class="card" style="max-width:600px;margin:8vh auto 0">
+      <span class="pill">CURSO GRATUITO · SIN INSTALAR NADA</span>
+      <h1>Aprendé a pedirle cosas a una IA.</h1>
+      <p>Antes de crear videojuegos, páginas web o publicidad, vas a aprender a escribir instrucciones que una IA pueda entender y que vos puedas comprobar.</p>
+      <form id="login-form">
+        <label for="code">Código personal del Club</label>
+        <input id="code" maxlength="6" minlength="6" pattern="[A-Za-z0-9]{6}" required placeholder="6 letras o números" autocomplete="off" spellcheck="false">
+        <div class="actions"><button id="login-btn" type="submit" class="btn">Entrar a mi academia →</button></div>
+      </form>
+      <p id="login-msg" class="small muted" role="status" aria-live="polite">Usá el mismo código que tenés para Krueka Studio. No necesitás crear una cuenta externa.</p>
+      <p class="small muted">Si todavía no tenés código del Club, pedíselo al profesor. Nunca lo compartas con otros alumnos.</p>
+    </section>
+
+    <div id="academy" hidden>
+      <section class="hero">
+        <span class="pill">APRENDER → PRACTICAR → COMPROBAR</span>
+        <h1>Tu laboratorio de prompts</h1>
+        <p>Un <b>prompt</b> es la instrucción que escribís a una IA. Si explicás qué tenés, qué necesitás y cómo querés el resultado, la IA tiene más posibilidades de ayudarte.</p>
+        <div class="cards">
+          <div class="mini"><b>🎮 Videojuegos</b> Pedir movimientos, escenarios y mejoras.</div>
+          <div class="mini"><b>🎨 Marketing</b> Diseñar campañas, anuncios y marcas.</div>
+          <div class="mini"><b>💻 Programación</b> Revisar errores y mejorar páginas web.</div>
+        </div>
+        <p class="small" style="margin-bottom:0">Este entrenador da sugerencias automáticas sobre la estructura del prompt. <b>No es un modelo de IA generativa</b> y no consume tokens. Cuando una IA real esté disponible en Studio podrás llevar allí tus instrucciones.</p>
+      </section>
+      <div class="split">
+        <aside class="card side">
+          <h2>Mis cuatro misiones</h2>
+          <p class="small muted" id="counter">0 de 4 completadas</p>
+          <div class="meter" aria-hidden="true"><span id="meter"></span></div>
+          <button type="button" data-step="0" aria-current="true"><span class="num">1</span>Conocé las herramientas</button>
+          <button type="button" data-step="1"><span class="num">2</span>Elegí el mejor prompt</button>
+          <button type="button" data-step="2"><span class="num">3</span>Construí tu prompt</button>
+          <button type="button" data-step="3"><span class="num">4</span>Comprobá y mejorá</button>
+          <p id="save-status" class="small muted" role="status" aria-live="polite">Cargando progreso…</p>
+          <button id="export" type="button" class="btn secondary" style="width:100%">Guardar una copia de mis prompts</button>
+        </aside>
+        <div class="card" id="work" aria-live="polite">
+          <section id="lesson-0">
+            <span class="step">MISIÓN 1 · 10 MINUTOS</span><h2>¿Qué puede hacer una IA?</h2>
+            <p>Una IA conversacional puede explicar y sugerir ideas. Una IA de imágenes puede crear ilustraciones. Un agente como OpenCode puede trabajar con archivos, pero depende del modelo y los permisos disponibles.</p>
+            <div class="example">Ejemplo: «Explicame qué es una variable con un ejemplo de videojuego» sirve para una <b>IA conversacional</b>. «Creá un dibujo de un dragón» necesita una <b>herramienta de imágenes</b>.</div>
+            <h3>Pregunta: ¿cuál herramienta elegirías para revisar un error en tu página HTML?</h3>
+            <button type="button" class="choice" data-quiz="0" data-answer="a">A. Una IA que solamente genera imágenes.</button>
+            <button type="button" class="choice" data-quiz="0" data-answer="b">B. Un asistente que pueda leer el código y explicar errores.</button>
+            <button type="button" class="choice" data-quiz="0" data-answer="c">C. Un generador de sonidos.</button>
+            <div class="result" id="feedback-0" hidden></div>
+            <div class="actions"><button class="btn" id="next-0" type="button" data-next="1" disabled>Siguiente misión →</button></div>
+          </section>
+
+          <section id="lesson-1" hidden>
+            <span class="step">MISIÓN 2 · 10 MINUTOS</span><h2>¿Qué pedido entiende mejor la IA?</h2>
+            <p>Una frase muy general deja demasiadas decisiones sin definir. Un buen prompt explica <b>el objetivo, el contexto, la tarea, los límites y cómo comprobar el resultado</b>.</p>
+            <div class="example example-dim">❌ «Haceme un juego espectacular».</div>
+            <div class="example example-bright">✅ «Estoy creando un juego 2D. Mi personaje ya camina. Agregá tres monedas para recoger, sin cambiar los controles. Deben desaparecer al tocarlas y sumar un punto».</div>
+            <h3>¿Qué pedido es mejor para modificar un juego que ya funciona?</h3>
+            <button type="button" class="choice" data-quiz="1" data-answer="a">A. «No me gusta el juego. Mejoralo todo».</button>
+            <button type="button" class="choice" data-quiz="1" data-answer="b">B. «Mi juego tiene plataformas y monedas. Agregá una plataforma cerca del final, sin cambiar el movimiento; comprobaré si puedo saltar hasta ella».</button>
+            <button type="button" class="choice" data-quiz="1" data-answer="c">C. «Hacé lo que quieras y después vemos».</button>
+            <div class="result" id="feedback-1" hidden></div>
+            <div class="actions"><button class="btn secondary" type="button" data-prev="0">← Volver</button><button class="btn" id="next-1" type="button" data-next="2" disabled>Siguiente misión →</button></div>
+          </section>
+
+          <section id="lesson-2" hidden>
+            <span class="step">MISIÓN 3 · 25 MINUTOS</span><h2>Construí tu propio prompt</h2>
+            <p>Elegí un tema y completá los cinco cuadros. Cada parte sirve para que la IA entienda exactamente lo que necesitás.</p>
+            <label for="area">¿Qué área querés practicar?</label>
+            <select id="area"><option value="juegos">🎮 Videojuegos</option><option value="marketing">🎨 Marketing digital</option><option value="programacion">💻 Programación web</option></select>
+            <div class="actions"><button class="btn secondary" id="load-example" type="button">Ver ejemplo de esta área</button><button class="btn ghost" id="clear" type="button">Escribir el mío desde cero</button></div>
+            <label for="goal">1. OBJETIVO · ¿Qué querés conseguir?</label><textarea id="goal" maxlength="350" placeholder="Quiero conseguir que…"></textarea>
+            <label for="context">2. CONTEXTO · ¿Qué tenés actualmente?</label><textarea id="context" maxlength="350" placeholder="Mi proyecto ya tiene…"></textarea>
+            <label for="instruction">3. INSTRUCCIÓN · ¿Qué acción concreta debe hacer?</label><textarea id="instruction" maxlength="350" placeholder="Agregá o modificá solamente…"></textarea>
+            <label for="limits">4. LÍMITES · ¿Qué cosas no debe cambiar?</label><textarea id="limits" maxlength="350" placeholder="Conservá…, no cambies…"></textarea>
+            <label for="check">5. COMPROBACIÓN · ¿Cómo sabrás que funcionó?</label><textarea id="check" maxlength="350" placeholder="Voy a probarlo y verificar que…"></textarea>
+            <div class="actions"><button class="btn" id="evaluate" type="button">Revisar mi prompt</button><button class="btn secondary" id="copy-prompt" type="button">Copiar prompt</button></div>
+            <div class="result" id="feedback-2" hidden></div>
+            <label for="compiled">Tu prompt completo (se actualiza al escribir)</label>
+            <textarea id="compiled" rows="10" readonly style="min-height:160px"></textarea>
+            <div class="actions"><button class="btn secondary" type="button" data-prev="1">← Volver</button><button class="btn" id="next-2" type="button" data-next="3" disabled>Pasar a la prueba final →</button></div>
+          </section>
+
+          <section id="lesson-3" hidden>
+            <span class="step">MISIÓN 4 · 15 MINUTOS</span><h2>La IA puede equivocarse. ¡Comprobá!</h2>
+            <p>Una respuesta convincente no significa que el videojuego o la página realmente funcione. Vos tenés que hacer las pruebas.</p>
+            <div class="example">Imaginá que una IA afirma: «Agregué cinco monedas a tu juego y ya funciona perfectamente».</div>
+            <h3>¿Qué deberías hacer?</h3>
+            <button type="button" class="choice" data-quiz="3" data-answer="a">A. Confiar sin mirar el juego.</button>
+            <button type="button" class="choice" data-quiz="3" data-answer="b">B. Abrir el juego, recoger las monedas, revisar el contador y pedir la corrección de un fallo concreto si aparece.</button>
+            <button type="button" class="choice" data-quiz="3" data-answer="c">C. Borrar el proyecto y empezar de cero.</button>
+            <div class="result" id="feedback-3" hidden></div>
+            <h3>Tu próximo desafío</h3>
+            <p id="final-prompt" class="example">Primero terminá la misión 3 para mostrar acá tu propio prompt.</p>
+            <div class="actions"><button class="btn secondary" type="button" data-prev="2">← Revisar mi prompt</button><button class="btn" id="finish" type="button" disabled>Terminé mi entrenamiento ✓</button></div>
+            <div class="result good" id="certificate" hidden><strong>¡Misión cumplida!</strong><p>Aprendiste a formular pedidos y comprobar las respuestas. El siguiente paso es utilizar tus instrucciones en un proyecto real.</p><div class="actions"><a class="btn secondary" href="studio.html">Ir a Krueka Studio</a><a class="btn ghost" href="https://editor.gdevelop.io/" target="_blank" rel="noopener noreferrer">Probar GDevelop</a></div></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer>Krueka · Club de Informática · Nunca compartas nombres completos, contraseñas, teléfonos, direcciones ni fotografías personales con una IA.</footer>
+</div>
+<script>
+(function(){
+  'use strict';
+  var BASE='https://janebfpnknapvntfqolf.supabase.co';
+  var PUB='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
+  var SESSION='krueka-studio-session-v1';
+  var session=null,step=0,saving=false,savePending=false;
+  var state={version:1,entries:{}};
+  var examples={
+    juegos:{goal:'Quiero que mi juego de plataformas tenga monedas coleccionables.',context:'Ya tengo un personaje que corre y salta; el escenario funciona.',instruction:'Agregá tres monedas al nivel y un contador de puntos.',limits:'No cambies el movimiento del personaje ni las plataformas existentes.',check:'Voy a jugar, tocar tres monedas y verificar que desaparezcan y sumen tres puntos.'},
+    marketing:{goal:'Quiero preparar un anuncio para una feria escolar.',context:'Mi marca ficticia vende jugos naturales y el público son familias.',instruction:'Proponé un texto publicitario de máximo 30 palabras y tres títulos posibles.',limits:'No inventes precios ni promociones; usá palabras claras.',check:'Voy a revisar si el anuncio explica el producto y tiene una invitación a visitar el stand.'},
+    programacion:{goal:'Quiero corregir un botón que no funciona en mi página.',context:'Tengo archivos HTML, CSS y JavaScript. El botón debería mostrar un mensaje.',instruction:'Revisá el fragmento que voy a pegar y decime qué debo comprobar primero.',limits:'No reescribas toda la web; guiame con pistas antes de dar código.',check:'Voy a pulsar el botón y verificar que aparezca el mensaje sin afectar otras funciones.'}
+  };
+  function el(id){return document.getElementById(id);}
+  function notify(msg,error){var e=el('login-msg');e.textContent=msg;e.style.color=error?'#ffd0d0':'';}
+  function deviceId(){
+    var value=null;try{value=localStorage.getItem('krueka_device');}catch(e){}
+    if(!value){var a=new Uint8Array(16);if(window.crypto&&crypto.getRandomValues){crypto.getRandomValues(a);value='web-'+Array.prototype.map.call(a,function(x){return ('0'+x.toString(16)).slice(-2);}).join('');}else value='web-'+Date.now().toString(36)+Math.random().toString(36).slice(2,14);try{localStorage.setItem('krueka_device',value);}catch(e){}}
+    return value;
+  }
+  function rpc(name,body){
+    return fetch(BASE+'/rest/v1/rpc/'+name,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUB},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.message||'Krueka no pudo completar la operación.');return d;});});
+  }
+  function localKey(){return 'krueka-academia-ia-v1:'+(session&&session.student?session.student.student_id:'anon');}
+  function localSave(){try{localStorage.setItem(localKey(),JSON.stringify(state));}catch(e){}}
+  function localRead(){try{var d=JSON.parse(localStorage.getItem(localKey())||'null');return d&&d.entries&&typeof d.entries==='object'?d:null;}catch(e){return null;}}
+  function saved(n){return !!(state.entries&&state.entries['m'+n]&&state.entries['m'+n].done);}
+  function updateMeter(){
+    var n=0;for(var i=0;i<4;i++)if(saved(i))n++;
+    el('counter').textContent=n+' de 4 completadas';el('meter').style.width=(n*25)+'%';
+    document.querySelectorAll('[data-step]').forEach(function(b){var id=Number(b.getAttribute('data-step'));b.classList.toggle('done',saved(id));b.setAttribute('aria-current',String(id===step));b.querySelector('.num').textContent=saved(id)?'✓':String(id+1);});
+    for(var j=0;j<3;j++)el('next-'+j).disabled=!saved(j);
+    el('finish').disabled=!saved(3)||!saved(2);
+    el('certificate').hidden=!(saved(3)&&saved(2));
+  }
+  function openStep(i){step=i;for(var x=0;x<4;x++)el('lesson-'+x).hidden=x!==i;updateMeter();window.scrollTo({top:0,behavior:'auto'});if(i===3)el('final-prompt').textContent=state.entries.m2&&state.entries.m2.prompt||'Primero completá tu prompt en la misión 3.';}
+  function fields(){return ['goal','context','instruction','limits','check'];}
+  function promptText(){var f=fields(),labels=['OBJETIVO','CONTEXTO','INSTRUCCIÓN','LÍMITES','COMPROBACIÓN'];return f.map(function(k,i){return labels[i]+': '+el(k).value.trim();}).join('\n\n');}
+  function showCompiled(){el('compiled').value=promptText();}
+  function feedback(n,text,good){var e=el('feedback-'+n);e.hidden=false;e.className='result '+(good?'good':'warn');e.textContent=text;}
+  function mark(n,extra){state.entries['m'+n]=Object.assign({done:true,date:new Date().toISOString()},extra||{});localSave();saveCloud();updateMeter();}
+  function privateText(text){return /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|(?:\+?595\s*)?0?9\d{2}[\s.-]?\d{3}[\s.-]?\d{3}|\b(?:contraseña|password|cedula|cédula|direcci[oó]n de mi casa)\b/i.test(text);}
+  function evaluate(){
+    var missing=[],labels=['objetivo','contexto','instrucción','límites','comprobación'];
+    fields().forEach(function(k,i){if(el(k).value.trim().length<15)missing.push(labels[i]);});
+    var t=promptText();
+    if(privateText(t)){feedback(2,'Quitá teléfonos, correos, contraseñas o datos personales del prompt. No se guardó.',false);return;}
+    if(missing.length){feedback(2,'Todavía necesitás explicar mejor: '+missing.join(', ')+'. Cada cuadro debe tener una oración concreta.',false);return;}
+    feedback(2,'¡Bien! Completaste las cinco piezas. Ahora verificá que el pedido sea claro, realizable y que no cambie cosas que no solicitaste. Esta revisión comprueba la estructura, no la calidad de una respuesta generada.',true);
+    var details={};fields().forEach(function(k){details[k]=el(k).value.trim();});mark(2,{prompt:t,area:el('area').value,fields:details});
+  }
+  function saveCloud(){
+    localSave();if(!session||!session.token)return;if(saving){savePending=true;return;}
+    saving=true;var snapshot=JSON.stringify(state);el('save-status').textContent='Guardando en Krueka…';
+    rpc('club_ai_academy_state',{p_token:session.token,p_data:state}).then(function(d){
+      if(!d.ok)throw Error(d.error||'No se guardó.');
+      el('save-status').textContent='✓ Progreso guardado en Krueka.';
+    }).catch(function(e){el('save-status').textContent='⚠ Guardado en esta PC; sin sincronizar: '+e.message;}).then(function(){saving=false;if(savePending||snapshot!==JSON.stringify(state)){savePending=false;saveCloud();}});
+  }
+  function open(sessionData){
+    session=sessionData;el('login').hidden=true;el('academy').hidden=false;el('logout').hidden=false;
+    var old=localRead();if(old)state=old;
+    updateMeter();el('save-status').textContent='Recuperando avance de Krueka…';
+    rpc('club_ai_academy_state',{p_token:session.token}).then(function(d){
+      if(!d.ok)throw Error(d.error||'Sesión inválida.');
+      if(d.data&&d.data.entries&&typeof d.data.entries==='object') {
+        var cloud=d.data,local=localRead();
+        if(local&&Object.keys(local.entries).length>Object.keys(cloud.entries).length){state=local;saveCloud();}
+        else {state=cloud;localSave();}
+      }
+      el('save-status').textContent='✓ Avance recuperado de Krueka.';
+      if(state.entries&&state.entries.m2&&state.entries.m2.fields){var f=state.entries.m2.fields;fields().forEach(function(k){el(k).value=f[k]||'';});el('area').value=state.entries.m2.area||'juegos';showCompiled();}
+      updateMeter();
+    }).catch(function(e){el('save-status').textContent='⚠ Sin conexión de guardado: '+e.message+'. Podés guardar una copia.';});
+  }
+  document.querySelectorAll('[data-step]').forEach(function(b){b.addEventListener('click',function(){openStep(Number(b.getAttribute('data-step')));});});
+  document.querySelectorAll('[data-next]').forEach(function(b){b.addEventListener('click',function(){openStep(Number(b.getAttribute('data-next')));});});
+  document.querySelectorAll('[data-prev]').forEach(function(b){b.addEventListener('click',function(){openStep(Number(b.getAttribute('data-prev')));});});
+  document.querySelectorAll('[data-quiz]').forEach(function(b){b.addEventListener('click',function(){
+    var n=Number(b.getAttribute('data-quiz')),right=b.getAttribute('data-answer')==='b';
+    document.querySelectorAll('[data-quiz="'+n+'"]').forEach(function(x){x.classList.remove('selected','correct','wrong');});
+    b.classList.add('selected',right?'correct':'wrong');
+    feedback(n,right?'Correcto. No basta con pedir algo: debemos elegir la herramienta adecuada y comprobar su resultado.':'Probá otra respuesta. Pensá qué herramienta o prueba permitiría verificar el resultado.',right);
+    if(right)mark(n);
+  });});
+  fields().forEach(function(k){el(k).addEventListener('input',function(){showCompiled();if(saved(2)){delete state.entries.m2;localSave();updateMeter();feedback(2,'Modificaste tu prompt. Volvé a presionar «Revisar mi prompt» para guardar la nueva versión.',false);}});});
+  el('evaluate').onclick=evaluate;
+  el('load-example').onclick=function(){var e=examples[el('area').value];fields().forEach(function(k){el(k).value=e[k];});delete state.entries.m2;localSave();updateMeter();showCompiled();feedback(2,'Este es un ejemplo de aprendizaje. Modificalo para crear tu propio pedido y luego revisalo.',false);};
+  el('clear').onclick=function(){fields().forEach(function(k){el(k).value='';});delete state.entries.m2;localSave();updateMeter();showCompiled();feedback(2,'Ahora escribí tus propias cinco instrucciones.',false);};
+  el('copy-prompt').onclick=function(){
+    var text=promptText();if(!text.trim())return;
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){feedback(2,'Prompt copiado. Ahora podés pegarlo en un chat de IA permitido para tu edad.',true);}).catch(function(){el('compiled').focus();el('compiled').select();});}
+    else {el('compiled').focus();el('compiled').select();document.execCommand('copy');feedback(2,'Prompt seleccionado para copiar.',true);}
+  };
+  el('finish').onclick=function(){el('certificate').hidden=false;el('certificate').scrollIntoView({block:'nearest'});};
+  el('export').onclick=function(){
+    var text='KRUEKA · MIS PROMPTS\n\n'+Object.keys(state.entries||{}).map(function(k){var v=state.entries[k];return k+' · '+(v.date||'')+'\n'+(v.prompt||'Actividad completada');}).join('\n\n');
+    var blob=new Blob([text],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='mis-prompts-krueka.txt';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  };
+  el('logout').onclick=function(){
+    var token=session&&session.token;session=null;state={version:1,entries:{}};try{sessionStorage.removeItem(SESSION);}catch(e){}
+    el('academy').hidden=true;el('login').hidden=false;el('logout').hidden=true;el('code').value='';notify('Sesión cerrada. El siguiente alumno puede ingresar.',false);
+    if(token)rpc('club_studio_salir',{p_token:token}).catch(function(){});
+  };
+  el('login-form').onsubmit=function(e){
+    e.preventDefault();var code=el('code').value.trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(code)){notify('Ingresá las seis letras o números de tu código.',true);return;}
+    el('login-btn').disabled=true;notify('Validando el código del Club…',false);
+    rpc('club_studio_entrar',{p_codigo:code,p_device:deviceId(),p_agent:String(navigator.userAgent||'').slice(0,240)}).then(function(d){
+      if(!d.ok)throw Error(d.error||'No se pudo ingresar.');
+      el('code').value='';
+      try{sessionStorage.setItem(SESSION,JSON.stringify(d));}catch(e){}
+      open(d);
+    }).catch(function(e){notify(e.message||'Error de conexión.',true);}).then(function(){el('login-btn').disabled=false;});
+  };
+  showCompiled();openStep(0);
+  try{var existing=JSON.parse(sessionStorage.getItem(SESSION)||'null');
+    if(existing&&existing.token&&existing.student&&existing.expiresAt&&Date.parse(existing.expiresAt)>Date.now())open(existing);
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
