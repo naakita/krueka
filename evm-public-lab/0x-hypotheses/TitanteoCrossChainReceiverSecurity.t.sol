@@ -90,4 +90,69 @@ contract TitanteoCrossChainReceiverSecurity is CrossChainReceiverFactoryTest {
         factory.setOwner(caller);
     }
 
+    // Two-step ownership: pending authority must not become spending authority
+    // until acceptance; afterwards, the previous owner loses spending rights.
+    function testFuzz_NewPendingOwnerCannotSpendBeforeAcceptance(uint80 raw) public {
+        uint256 amount = 1 + uint256(raw) % 1e15;
+        (ICrossChainReceiverFactory proxy, address initialOwner) = _deployProxy(keccak256(abi.encode(raw, "transfer")));
+        address successor = makeAddr("titanteo-successor");
+        address outsider = makeAddr("titanteo-outsider");
+        vm.deal(address(proxy), amount);
+        vm.prank(initialOwner);
+        assertTrue(proxy.transferOwnership(successor), "owner could not schedule transfer");
+
+        vm.prank(successor);
+        vm.expectRevert();
+        proxy.call(payable(successor), amount, "");
+        assertEq(address(proxy).balance, amount, "pending owner spent funds");
+
+        vm.prank(outsider);
+        (bool outsiderAccepted,) = address(proxy).call(abi.encodeWithSignature("acceptOwnership()"));
+        assertFalse(outsiderAccepted, "outsider accepted ownership");
+
+        vm.prank(successor);
+        (bool accepted,) = address(proxy).call(abi.encodeWithSignature("acceptOwnership()"));
+        assertTrue(accepted, "pending owner could not accept");
+        assertEq(proxy.owner(), successor, "owner was not updated");
+
+        vm.prank(initialOwner);
+        vm.expectRevert();
+        proxy.call(payable(initialOwner), amount, "");
+        assertEq(address(proxy).balance, amount, "former owner spent funds");
+
+        vm.prank(successor);
+        proxy.call(payable(successor), amount, "");
+        assertEq(successor.balance, amount, "new owner did not receive balance");
+        assertEq(address(proxy).balance, 0, "proxy funds not moved");
+    }
+
+    function testFuzz_NewMerkleProofCannotCrossProxyOwners(bytes32 action) public {
+        uint256 firstKey = uint256(keccak256(abi.encode("titanteo-first-owner")));
+        uint256 secondKey = uint256(keccak256(abi.encode("titanteo-second-owner")));
+        (ICrossChainReceiverFactory one, address ownerOne) = _deployProxy(action, firstKey);
+        (ICrossChainReceiverFactory two, address ownerTwo) = _deployProxy(action, secondKey);
+        assertTrue(ownerOne != ownerTwo);
+        bytes32[] memory noProof = new bytes32[](0);
+        bytes memory firstProof = abi.encode(ownerOne, noProof);
+        bytes memory secondProof = abi.encode(ownerTwo, noProof);
+        assertEq(one.isValidSignature(action, firstProof), VALID, "first proxy rejected own leaf");
+        assertEq(two.isValidSignature(action, secondProof), VALID, "second proxy rejected own leaf");
+        assertEq(two.isValidSignature(action, firstProof), INVALID, "replayed owner leaf in second proxy");
+        assertEq(one.isValidSignature(action, secondProof), INVALID, "replayed owner leaf in first proxy");
+    }
+
+    function testFuzz_NewRestrainedRelayerCannotBeReplaced(uint96 deadlineLowBits) public {
+        (ICrossChainReceiverFactory proxy,) = _deployProxy(keccak256(abi.encode(deadlineLowBits, "relayer")));
+        address authorizedRelayer = makeAddr("titanteo-listed-relayer");
+        address unrelatedRelayer = makeAddr("titanteo-foreign-relayer");
+        // Deadline's upper 160 bits bind the designated relayer.
+        uint256 timestampPart = block.timestamp + 365 days + (uint256(deadlineLowBits) % 1 days);
+        uint256 encodedDeadline = (uint256(uint160(authorizedRelayer)) << 96) | timestampPart;
+        IMultiCall.Call[] memory empty = new IMultiCall.Call[](0);
+        vm.prank(unrelatedRelayer);
+        vm.expectRevert(bytes4(0x1e092104)); // PermissionDenied
+        proxy.metaTx(empty, 0, 0, encodedDeadline, hex"");
+    }
+
+
 }
