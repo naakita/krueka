@@ -141,7 +141,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   var BASE='https://janebfpnknapvntfqolf.supabase.co';
   var PUB='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
   var SESSION='krueka-studio-session-v1';
-  var session=null,step=0,saving=false;
+  var session=null,step=0,saving=false,savePending=false;
   var state={version:1,entries:{}};
   var examples={
     juegos:{goal:'Quiero que mi juego de plataformas tenga monedas coleccionables.',context:'Ya tengo un personaje que corre y salta; el escenario funciona.',instruction:'Agregá tres monedas al nivel y un contador de puntos.',limits:'No cambies el movimiento del personaje ni las plataformas existentes.',check:'Voy a jugar, tocar tres monedas y verificar que desaparezcan y sumen tres puntos.'},
@@ -184,15 +184,15 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     if(privateText(t)){feedback(2,'Quitá teléfonos, correos, contraseñas o datos personales del prompt. No se guardó.',false);return;}
     if(missing.length){feedback(2,'Todavía necesitás explicar mejor: '+missing.join(', ')+'. Cada cuadro debe tener una oración concreta.',false);return;}
     feedback(2,'¡Bien! Completaste las cinco piezas. Ahora verificá que el pedido sea claro, realizable y que no cambie cosas que no solicitaste. Esta revisión comprueba la estructura, no la calidad de una respuesta generada.',true);
-    mark(2,{prompt:t,area:el('area').value});
+    var details={};fields().forEach(function(k){details[k]=el(k).value.trim();});mark(2,{prompt:t,area:el('area').value,fields:details});
   }
   function saveCloud(){
-    localSave();if(!session||!session.token||saving)return;
-    saving=true;el('save-status').textContent='Guardando en Krueka…';
+    localSave();if(!session||!session.token)return;if(saving){savePending=true;return;}
+    saving=true;var snapshot=JSON.stringify(state);el('save-status').textContent='Guardando en Krueka…';
     rpc('club_ai_academy_state',{p_token:session.token,p_data:state}).then(function(d){
       if(!d.ok)throw Error(d.error||'No se guardó.');
       el('save-status').textContent='✓ Progreso guardado en Krueka.';
-    }).catch(function(e){el('save-status').textContent='⚠ Guardado en esta PC; sin sincronizar: '+e.message;}).then(function(){saving=false;});
+    }).catch(function(e){el('save-status').textContent='⚠ Guardado en esta PC; sin sincronizar: '+e.message;}).then(function(){saving=false;if(savePending||snapshot!==JSON.stringify(state)){savePending=false;saveCloud();}});
   }
   function open(sessionData){
     session=sessionData;el('login').hidden=true;el('academy').hidden=false;el('logout').hidden=false;
@@ -222,8 +222,8 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   });});
   fields().forEach(function(k){el(k).addEventListener('input',function(){showCompiled();if(saved(2)){delete state.entries.m2;localSave();updateMeter();feedback(2,'Modificaste tu prompt. Volvé a presionar «Revisar mi prompt» para guardar la nueva versión.',false);}});});
   el('evaluate').onclick=evaluate;
-  el('load-example').onclick=function(){var e=examples[el('area').value];fields().forEach(function(k){el(k).value=e[k];});showCompiled();feedback(2,'Este es un ejemplo de aprendizaje. Modificalo para crear tu propio pedido y luego revisalo.',false);};
-  el('clear').onclick=function(){fields().forEach(function(k){el(k).value='';});showCompiled();feedback(2,'Ahora escribí tus propias cinco instrucciones.',false);};
+  el('load-example').onclick=function(){var e=examples[el('area').value];fields().forEach(function(k){el(k).value=e[k];});delete state.entries.m2;localSave();updateMeter();showCompiled();feedback(2,'Este es un ejemplo de aprendizaje. Modificalo para crear tu propio pedido y luego revisalo.',false);};
+  el('clear').onclick=function(){fields().forEach(function(k){el(k).value='';});delete state.entries.m2;localSave();updateMeter();showCompiled();feedback(2,'Ahora escribí tus propias cinco instrucciones.',false);};
   el('copy-prompt').onclick=function(){
     var text=promptText();if(!text.trim())return;
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){feedback(2,'Prompt copiado. Ahora podés pegarlo en un chat de IA permitido para tu edad.',true);}).catch(function(){el('compiled').focus();el('compiled').select();});}
