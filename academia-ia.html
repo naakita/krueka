@@ -43,11 +43,13 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
         <input id="code" maxlength="6" minlength="6" pattern="[A-Za-z0-9]{6}" required placeholder="6 letras o números" autocomplete="off" spellcheck="false">
         <div class="actions"><button id="login-btn" type="submit" class="btn">Entrar a mi academia →</button></div>
       </form>
+      <div id="teacher-demo-entry" hidden style="border-top:1px solid var(--line);padding-top:15px;margin-top:16px"><p class="small muted">¿Sos profesor o administrador de Krueka?</p><button id="teacher-demo" class="btn secondary" type="button">🧑‍🏫 Entrar al modo DEMO docente</button><p class="small muted" id="teacher-demo-status" role="status" aria-live="polite">La demostración no accede a cuentas ni trabajos de alumnos.</p></div>
       <p id="login-msg" class="small muted" role="status" aria-live="polite">Usá el mismo código que tenés para Krueka Studio. No necesitás crear una cuenta externa.</p>
       <p class="small muted">Si todavía no tenés código del Club, pedíselo al profesor. Nunca lo compartas con otros alumnos.</p>
     </section>
 
     <div id="academy" hidden>
+      <section id="teacher-demo-banner" class="hint" hidden><strong>🧑‍🏫 MODO DEMO DOCENTE</strong> · Estás probando la Academia sin un alumno. Los cambios se guardan únicamente en este navegador; no afectan los registros reales.</section>
       <section class="hero">
         <span class="pill">APRENDER → PRACTICAR → COMPROBAR</span>
         <h1>Tu laboratorio de prompts</h1>
@@ -135,13 +137,15 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   </main>
   <footer>Krueka · Club de Informática · Nunca compartas nombres completos, contraseñas, teléfonos, direcciones ni fotografías personales con una IA.</footer>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (function(){
   'use strict';
   var BASE='https://janebfpnknapvntfqolf.supabase.co';
   var PUB='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
   var SESSION='krueka-studio-session-v1';
-  var session=null,step=0,saving=false,savePending=false;
+  var session=null,step=0,saving=false,savePending=false,isTeacherDemo=false;
+  var teacherAuthClient=null;
   var state={version:1,entries:{}};
   var examples={
     juegos:{goal:'Quiero que mi juego de plataformas tenga monedas coleccionables.',context:'Ya tengo un personaje que corre y salta; el escenario funciona.',instruction:'Agregá tres monedas al nivel y un contador de puntos.',limits:'No cambies el movimiento del personaje ni las plataformas existentes.',check:'Voy a jugar, tocar tres monedas y verificar que desaparezcan y sumen tres puntos.'},
@@ -158,7 +162,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   function rpc(name,body){
     return fetch(BASE+'/rest/v1/rpc/'+name,{method:'POST',headers:{'Content-Type':'application/json','apikey':PUB},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){if(!r.ok)throw Error(d.message||'Krueka no pudo completar la operación.');return d;});});
   }
-  function localKey(){return 'krueka-academia-ia-v1:'+(session&&session.student?session.student.student_id:'anon');}
+  function localKey(){return 'krueka-academia-ia-v1:'+(isTeacherDemo?'profesor-demo-local':(session&&session.student?session.student.student_id:'anon'));}
   function localSave(){try{localStorage.setItem(localKey(),JSON.stringify(state));}catch(e){}}
   function localRead(){try{var d=JSON.parse(localStorage.getItem(localKey())||'null');return d&&d.entries&&typeof d.entries==='object'?d:null;}catch(e){return null;}}
   function saved(n){return !!(state.entries&&state.entries['m'+n]&&state.entries['m'+n].done);}
@@ -187,15 +191,33 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     var details={};fields().forEach(function(k){details[k]=el(k).value.trim();});mark(2,{prompt:t,area:el('area').value,fields:details});
   }
   function saveCloud(){
-    localSave();if(!session||!session.token)return;if(saving){savePending=true;return;}
+    localSave();
+    if(isTeacherDemo){el('save-status').textContent='✓ Prueba del profesor guardada solo en este navegador.';return;}
+    if(!session||!session.token)return;if(saving){savePending=true;return;}
     saving=true;var snapshot=JSON.stringify(state);el('save-status').textContent='Guardando en Krueka…';
     rpc('club_ai_academy_state',{p_token:session.token,p_data:state}).then(function(d){
       if(!d.ok)throw Error(d.error||'No se guardó.');
       el('save-status').textContent='✓ Progreso guardado en Krueka.';
     }).catch(function(e){el('save-status').textContent='⚠ Guardado en esta PC; sin sincronizar: '+e.message;}).then(function(){saving=false;if(savePending||snapshot!==JSON.stringify(state)){savePending=false;saveCloud();}});
   }
+  function restorePromptFields(){
+    if(state.entries&&state.entries.m2&&state.entries.m2.fields){
+      var values=state.entries.m2.fields;
+      fields().forEach(function(k){el(k).value=values[k]||'';});
+      el('area').value=state.entries.m2.area||'juegos';
+      showCompiled();
+    }
+  }
+  function openTeacherDemo(){
+    session=null;isTeacherDemo=true;
+    state=localRead()||{version:1,entries:{}};
+    el('login').hidden=true;el('academy').hidden=false;el('logout').hidden=false;
+    el('teacher-demo-banner').hidden=false;
+    restorePromptFields();updateMeter();openStep(0);
+    el('save-status').textContent='Modo DEMO docente · guardado local separado de los alumnos.';
+  }
   function open(sessionData){
-    session=sessionData;el('login').hidden=true;el('academy').hidden=false;el('logout').hidden=false;
+    isTeacherDemo=false;el('teacher-demo-banner').hidden=true;session=sessionData;el('login').hidden=true;el('academy').hidden=false;el('logout').hidden=false;
     var old=localRead();if(old)state=old;
     updateMeter();el('save-status').textContent='Recuperando avance de Krueka…';
     rpc('club_ai_academy_state',{p_token:session.token}).then(function(d){
@@ -206,7 +228,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
         else {state=cloud;localSave();}
       }
       el('save-status').textContent='✓ Avance recuperado de Krueka.';
-      if(state.entries&&state.entries.m2&&state.entries.m2.fields){var f=state.entries.m2.fields;fields().forEach(function(k){el(k).value=f[k]||'';});el('area').value=state.entries.m2.area||'juegos';showCompiled();}
+      restorePromptFields();
       updateMeter();
     }).catch(function(e){el('save-status').textContent='⚠ Sin conexión de guardado: '+e.message+'. Podés guardar una copia.';});
   }
@@ -235,9 +257,34 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     var blob=new Blob([text],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='mis-prompts-krueka.txt';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
   };
   el('logout').onclick=function(){
-    var token=session&&session.token;session=null;state={version:1,entries:{}};try{sessionStorage.removeItem(SESSION);}catch(e){}
+    var token=session&&session.token;session=null;isTeacherDemo=false;state={version:1,entries:{}};try{sessionStorage.removeItem(SESSION);}catch(e){}
     el('academy').hidden=true;el('login').hidden=false;el('logout').hidden=true;el('code').value='';notify('Sesión cerrada. El siguiente alumno puede ingresar.',false);
     if(token)rpc('club_studio_salir',{p_token:token}).catch(function(){});
+  };
+  async function teacherAllowed(){
+    if(!teacherAuthClient)return false;
+    var current=await teacherAuthClient.auth.getSession();
+    if(!current.data||!current.data.session)return false;
+    var result=await teacherAuthClient.rpc('club_ai_teacher_demo_allowed');
+    return !result.error&&result.data===true;
+  }
+  async function checkTeacherAccess(){
+    var entry=el('teacher-demo-entry');
+    entry.hidden=true;
+    try{
+      if(!window.supabase||typeof window.supabase.createClient!=='function')return;
+      teacherAuthClient=window.supabase.createClient(BASE,PUB);
+      entry.hidden=!(await teacherAllowed());
+    }catch(e){entry.hidden=true;}
+  }
+  el('teacher-demo').onclick=async function(){
+    var button=el('teacher-demo');
+    button.disabled=true;el('teacher-demo-status').textContent='Comprobando permisos del profesor…';
+    try{
+      if(!(await teacherAllowed()))throw Error('Esta función requiere una sesión activa con rol docente o administrador.');
+      openTeacherDemo();
+    }catch(e){el('teacher-demo-entry').hidden=true;notify('Ingresá primero a Krueka como docente o administrador y luego volvé a esta página.',true);}
+    finally{button.disabled=false;}
   };
   el('login-form').onsubmit=function(e){
     e.preventDefault();var code=el('code').value.trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(code)){notify('Ingresá las seis letras o números de tu código.',true);return;}
@@ -249,7 +296,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
       open(d);
     }).catch(function(e){notify(e.message||'Error de conexión.',true);}).then(function(){el('login-btn').disabled=false;});
   };
-  showCompiled();openStep(0);
+  showCompiled();openStep(0);checkTeacherAccess();
   try{var existing=JSON.parse(sessionStorage.getItem(SESSION)||'null');
     if(existing&&existing.token&&existing.student&&existing.expiresAt&&Date.parse(existing.expiresAt)>Date.now())open(existing);
   }catch(e){}
