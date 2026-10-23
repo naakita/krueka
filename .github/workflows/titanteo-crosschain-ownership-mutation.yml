@@ -1,0 +1,96 @@
+name: Titanteo two-step owner acceptance negative control
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - '.github/workflows/titanteo-crosschain-ownership-mutation.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-crosschain-owner-negative
+  cancel-in-progress: true
+jobs:
+  local-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Clone pinned public sources into disposable runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git original-0x
+          cd original-0x
+          git checkout 275cf8ce398bcc862753deee7ff043764c1e27b9
+          git submodule update --init --recursive
+          cp ../evm-public-lab/0x-hypotheses/TitanteoCrossChainReceiverSecurity.t.sol test/unit/TitanteoCrossChainReceiverSecurity.t.sol
+          echo "PUBLIC_SOURCE_SHA=$(git rev-parse HEAD)"
+      - name: Inject deliberate invalid pending-owner check only in local clone
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("original-0x/src/utils/TwoStepOwnable.sol")
+          s=p.read_text()
+          old="if (pendingOwner() != _msgSender())"
+          replacement="if (pendingOwner() == _msgSender()) /* SYNTHETIC AUTHZ DEFECT */"
+          assert s.count(old)==1,("unexpected source",s.count(old))
+          p.write_text(s.replace(old,replacement))
+          print("SYNTHETIC_PENDING_OWNER_CHECK_INVERTED")
+          PY
+      - name: Compile original MultiCall using upstream CREATE2 flags
+        working-directory: original-0x
+        timeout-minutes: 6
+        shell: bash
+        env:
+          FOUNDRY_SOLC_VERSION: '0.8.28'
+          FOUNDRY_EVM_VERSION: london
+          FOUNDRY_OPTIMIZER_RUNS: '1000000'
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          forge build -- src/multicall/MultiCall.sol
+          test -s out/MultiCall.sol/MultiCall.json
+      - name: Compile locally mutated factory using upstream CREATE2 flags
+        working-directory: original-0x
+        timeout-minutes: 6
+        shell: bash
+        env:
+          FOUNDRY_SOLC_VERSION: '0.8.34'
+          FOUNDRY_EVM_VERSION: london
+          FOUNDRY_OPTIMIZER_RUNS: '1000000'
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          forge build -- src/CrossChainReceiverFactory.sol
+          test -s out/CrossChainReceiverFactory.sol/CrossChainReceiverFactory.json
+      - name: Confirm authorization invariant rejects intentionally defective source
+        working-directory: original-0x
+        timeout-minutes: 7
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set +e
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoCrossChainReceiverSecurity.t.sol' --match-test 'testFuzz_NewPendingOwnerCannotSpendBeforeAcceptance' --fuzz-runs 32 -v > "$RUNNER_TEMP/owner-mutant.log" 2>&1
+          rc=$?
+          set -e
+          tail -35 "$RUNNER_TEMP/owner-mutant.log"
+          if [ "$rc" -eq 0 ]; then
+            echo "ERROR: invalid owner acceptance passed the security test"
+            exit 1
+          fi
+          if grep -Eq 'Compiler run failed|Compilation failed|ParserError|TypeError|^Error \([0-9]+\):|vm.getCode: no bytecode' "$RUNNER_TEMP/owner-mutant.log"; then
+            echo "ERROR: compiler or fixture failure, not an authorization finding"
+            exit 1
+          fi
+          grep -F '[FAIL:' "$RUNNER_TEMP/owner-mutant.log"
+          grep -F 'outsider accepted ownership' "$RUNNER_TEMP/owner-mutant.log"
+          echo "SYNTHETIC_UNAUTHORIZED_OWNER_ACCEPTANCE_CAUGHT"
