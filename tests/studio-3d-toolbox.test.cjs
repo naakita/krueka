@@ -44,7 +44,7 @@ const access=js('club-studio-access.js');
 const studio=fs.readFileSync(path.join(root,'studio.html'),'utf8');
 assert.ok(app.indexOf('club-studio-3d-toolbox.js')>app.indexOf('club-studio-3d.js'));
 assert.ok(access.includes("'club-studio-academy.js','club-studio-3d-toolbox.js'"));
-assert.ok(studio.includes('club-studio-access.js?v=20261023c'));
+assert.ok(studio.includes('club-studio-access.js?v=20261023d'));
 async function importTests(){
  let saved=null,changed=0;
  const s={cloudReady:true,busy:false,files:original,validFiles:x=>x,checkpoint(){},changed(){changed++},refreshAll(){},lock(){}};
