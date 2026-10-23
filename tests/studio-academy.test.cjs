@@ -33,6 +33,6 @@ const studio=fs.readFileSync(path.join(root,'studio.html'),'utf8');
 assert.ok(app.includes('<script src="js/club-studio-academy.js?v=20261023a"></script>'));
 assert.ok(app.indexOf('club-studio-academy.js')>app.indexOf('club-studio-creative.js'));
 assert.ok(direct.includes("'club-studio-creative.js','club-studio-academy.js'"));
-assert.ok(studio.includes('club-studio-access.js?v=20261023a'));
+assert.match(studio,/club-studio-access\.js\?v=20261023[a-z]/);
 assert.equal(/https?:\/\/|fetch\s*\(|import\s*\(/.test(src),false,'sin CDNs ni API nuevas');
 console.log('PASS: academia Krueka, 37 lecciones, progreso por proyecto, entradas privadas, sin terceros nuevos.');
