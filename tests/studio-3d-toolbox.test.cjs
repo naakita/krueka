@@ -30,6 +30,12 @@ for(const id of ['city','forest','track']){
  assert.ok(result.crystals>=1,id+' tiene recompensas');
 }
 assert.equal(tool.template('untrusted'),null);
+const exported=tool.exportObj(engine.normalise(tool.template('city')));
+assert.match(exported,/^# Krueka/);
+assert.match(exported,/o kit-0-house_pared/);
+assert.match(exported,/\nv [-\d.]+ [-\d.]+ [-\d.]+\n/);
+assert.match(exported,/\nf \d+ \d+ \d+ \d+\n/);
+assert.ok(exported.length<150000,'OBJ exportable aun en PC simple');
 const closed=engine.normalise({objects:[{type:'wall',id:'one',x:0,z:11,size:3,height:2,color:'#aaaaaa'}]});
 assert.ok(tool.validate(closed).warnings.some(w=>w.includes('punto de salida')));
 assert.equal(engine.normalise({objects:[{type:'invalid',label:'<img src=x onerror=alert(1)>',size:9999,color:'javascript:alert(1)',x:Infinity}]}).objects[0].type,'crate');
