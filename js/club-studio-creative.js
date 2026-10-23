@@ -3,7 +3,7 @@
 'use strict';
 if(window.StudioCreative)return;
 const paths=[
- {id:'games',icon:'◈',title:'Videojuegos 3D',tag:'CONSTRUÍ UN MUNDO',color:'blue',text:'Diseñá el escenario, ubicá objetos y probá tu propia misión.',first:'explore3d',kits:['explore3d','space3d','cinematic3d','hero-manager']},
+ {id:'games',icon:'◈',title:'Videojuegos 3D',tag:'CONSTRUÍ UN MUNDO',color:'blue',text:'Diseñá el escenario, ubicá objetos y probá tu propia misión.',first:'odyssey3d',kits:['odyssey3d','explore3d','space3d','cinematic3d','hero-manager']},
  {id:'animation',icon:'✦',title:'Animación',tag:'DALE VIDA A TU HISTORIA',color:'mint',text:'Creá personajes, guardá poses y descubrí cómo se mueve una historia.',first:'animation',kits:['animation','cinematic3d']},
  {id:'video',icon:'▶',title:'Edición de video',tag:'CONVERTITE EN EDITOR',color:'violet',text:'Ordená escenas, recortá clips, agregá títulos y descargá tu montaje.',first:'video-edit',kits:['video-edit']},
  {id:'more',icon:'+',title:'Juegos 2D y más',tag:'SEGUÍ EXPLORANDO',color:'gold',text:'Carreras, plataformas, personajes y tu propio sitio creativo.',first:'platform',kits:['stars','race','platform','neon-rift','quiz','web']}
