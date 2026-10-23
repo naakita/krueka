@@ -25,5 +25,5 @@ test('Incluye las cuatro misiones y campos del prompt', () => {
 
 test('El editor de prompts no envía consultas del menor a proveedores externos', () => {
   assert.doesNotMatch(js[1], /api\.openai\.com|opencode\.ai\/inference|openrouter\.ai\/api/);
-  assert.match(js[1], /studio\.html/);
+  assert.match(html, /href="studio\.html"/);
 });
