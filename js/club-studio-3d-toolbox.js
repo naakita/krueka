@@ -81,6 +81,38 @@ function download(data,name){
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
+function exportObj(raw){
+ const scene=window.Studio3D.normalise(raw),out=['# Krueka · geometria 3D low-poly · exportacion OBJ (sin animaciones ni texturas)','o Escenario_Krueka'];let index=1;
+ const box=(name,x,y,z,w,h,d)=>{
+  out.push('o '+name.replace(/[^a-zA-Z0-9_-]/g,'_'));const v=[
+   [x-w/2,y,z-d/2],[x+w/2,y,z-d/2],[x+w/2,y,z+d/2],[x-w/2,y,z+d/2],
+   [x-w/2,y+h,z-d/2],[x+w/2,y+h,z-d/2],[x+w/2,y+h,z+d/2],[x-w/2,y+h,z+d/2]];
+  for(const p of v)out.push('v '+p.map(n=>Number(n.toFixed(4))).join(' '));
+  for(const f of [[1,2,3,4],[5,8,7,6],[1,5,6,2],[2,6,7,3],[3,7,8,4],[4,8,5,1]])out.push('f '+f.map(i=>i+index-1).join(' '));
+  index+=8;
+ };
+ const pyramid=(name,x,y,z,s,h)=>{
+  out.push('o '+name.replace(/[^a-zA-Z0-9_-]/g,'_'));
+  for(const p of [[x-s,y,z-s],[x+s,y,z-s],[x+s,y,z+s],[x-s,y,z+s],[x,y+h,z]])out.push('v '+p.map(n=>Number(n.toFixed(4))).join(' '));
+  for(const f of [[1,2,3,4],[1,5,2],[2,5,3],[3,5,4],[4,5,1]])out.push('f '+f.map(i=>i+index-1).join(' '));
+  index+=5;
+ };
+ box('suelo',0,-.65,0,24,.6,28);
+ for(const o of scene.objects){
+  const n=o.id,x=o.x,z=o.z,s=o.size,h=o.height;
+  if(o.type==='crystal'){box(n+'_base',x,0,z,s,.15,s);pyramid(n+'_gema',x,.4,z,s*.35,s*.95);}
+  else if(o.type==='tree'){box(n+'_tronco',x,0,z,s*.24,h*.45,s*.24);pyramid(n+'_copa',x,h*.2,z,s*.65,h*.9);}
+  else if(o.type==='house'){box(n+'_pared',x,0,z,s,h*.75,s);pyramid(n+'_techo',x,h*.75,z,s*.72,h*.32);}
+  else if(o.type==='car'){box(n+'_chasis',x,.2,z,s*.95,h*.3,s*1.6);box(n+'_cabina',x,h*.3+.18,z,s*.7,h*.35,s*.85);}
+  else if(o.type==='road')box(n,x,-.03,z,s,.06,s*1.8);
+  else if(o.type==='wall')box(n,x,0,z,s,h,s*.24);
+  else if(o.type==='rock')pyramid(n,x,0,z,s*.56,h);
+  else if(o.type==='lamp'){box(n+'_poste',x,0,z,s*.15,h,s*.15);box(n+'_luz',x,h-.2,z,s*.6,.15,s*.5);}
+  else if(o.type==='arch'){box(n+'_izquierda',x-s*.42,0,z,s*.2,h,s*.35);box(n+'_derecha',x+s*.42,0,z,s*.2,h,s*.35);box(n+'_alto',x,h-.22,z,s,.22,s*.4);}
+  else box(n,x,0,z,s,h,s);
+ }
+ return out.join('\n')+'\n';
+}
 async function importScene(studio,file){
  if(!file||file.size>50000)throw Error('Elegí un archivo JSON de hasta 50 KB.');
  const incoming=JSON.parse(await file.text());
@@ -98,8 +130,8 @@ function append(studio,el,cfg){
  '<div class="ks-scene-actions">'+Object.entries(presets).map(([id,p])=>'<button class="ks-btn" type="button" data-preset="'+id+'">'+esc(p.name)+'</button>').join('')+'</div>'+
  '<h3>Comprobá tu nivel</h3><p>'+check.objects+' de '+MAX+' objetos · '+check.crystals+' cristales · '+(check.route?'Hay ruta al portal':'No se detecta una ruta al portal')+'</p>'+
  (check.warnings.length?'<ul>'+check.warnings.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p>✓ Sin advertencias básicas. Jugá la misión igualmente: esta comprobación no reemplaza una prueba real.</p>')+
- '<div class="ks-scene-actions"><button class="ks-btn" type="button" id="k3d-export">Descargar escena (.json)</button><button class="ks-btn" type="button" id="k3d-import">Abrir escena (.json)</button><input id="k3d-file" type="file" accept=".json,application/json" hidden></div>'+
- '<h3>Biblioteca gratuita de creación 3D</h3><p>Estos sitios son opcionales, externos y conviene abrirlos con supervisión del docente. No se descargan recursos ni se envían datos de alumnos automáticamente.</p>'+
+ '<div class="ks-scene-actions"><button class="ks-btn" type="button" id="k3d-export">Descargar escena (.json)</button><button class="ks-btn" type="button" id="k3d-obj">Exportar geometría 3D (.obj)</button><button class="ks-btn" type="button" id="k3d-import">Abrir escena (.json)</button><input id="k3d-file" type="file" accept=".json,application/json" hidden></div>'+
+ '<h3>Biblioteca gratuita de creación 3D</h3><p>El archivo .obj permite abrir una geometría estática simple en Blender, sin colores ni animaciones. Estos sitios son opcionales, externos y conviene abrirlos con supervisión del docente. No se descargan recursos ni se envían datos de alumnos automáticamente.</p>'+
  '<div class="ks-scene-list">'+resources.map(r=>'<a class="ks-btn" href="'+r.url+'" target="_blank" rel="noopener noreferrer" style="display:block;text-align:left;text-decoration:none"><b>'+esc(r.name)+' ↗</b><small style="display:block;font-size:11px;opacity:.8">'+esc(r.detail)+'</small></a>').join('')+'</div>'+
  '<p class="ks-tip">Los modelos 3D externos (.glb/.gltf) todavía no se importan al juego. Esta versión incluye objetos procedurales originales y escenas JSON nativas de Krueka. Los vehículos son decorativos, no conducibles.</p>'+
  '<p id="k3d-message" role="status" aria-live="polite"></p>';
@@ -111,6 +143,7 @@ function append(studio,el,cfg){
   try{set(studio,{...current,...p});}catch(e){msg(e.message);}
  });
  section.querySelector('#k3d-export').onclick=()=>download({format:'krueka-scene',version:1,scene:current},'mi-escena-3d-krueka.json');
+ section.querySelector('#k3d-obj').onclick=()=>{const blob=new Blob([exportObj(current)],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='escenario-krueka.obj';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);};
  section.querySelector('#k3d-import').onclick=()=>section.querySelector('#k3d-file').click();
  section.querySelector('#k3d-file').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{if(await importScene(studio,f))msg('Escena importada. Guardá y probá el juego.');}catch(error){msg('No se pudo importar: '+error.message);}};
 }
@@ -120,6 +153,6 @@ function install(){
  window.Studio3D.renderEditor=function(studio,el,cfg){const out=original(studio,el,cfg);append(studio,el,cfg);return out;};
  window.Studio3D.__toolboxReady=true;return true;
 }
-window.Krueka3DToolbox={MAX,presets,resources,template,validate,importScene,install};
+window.Krueka3DToolbox={MAX,presets,resources,template,validate,exportObj,importScene,install};
 install();
 })();
