@@ -53,7 +53,7 @@ const AulaControl = {
   const educativo=d=>["betesda-educacion.edclub.com","studio.code.org"].every(x=>(d.allowed||[]).includes(x));
   const educativoEstado=d=>'<div class="note" style="margin-top:10px"><b>Plataformas educativas:</b> '+
     (educativo(d)?'EdClub y Code.org autorizadas en Krueka': 'EdClub / Code.org pendientes de configurar')+
-    (educativo(d)?(webAlive(d)?' · comprobar una actividad real en la PC':alive(d)?' · conector web sin confirmar':' · pendiente de sincronización web'):'')+
+    (educativo(d)?(webAlive(d)?' · comprobar una actividad real en la PC':alive(d)?' · conector web sin confirmar':' · pendientes de sincronización (PC desconectada)'):'')+
     '</div>';
   const officePendiente=d=>d.desktop_mode==="office" && d.desktop_mode_observed!=="office";
   const offline=d=>!alive(d);
