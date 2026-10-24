@@ -11,7 +11,20 @@ $permitidos = @(
   'https://krueka.com',
   'https://janebfpnknapvntfqolf.supabase.co',
   'https://cdn.jsdelivr.net',
-  'https://challenges.cloudflare.com'
+  'https://challenges.cloudflare.com',
+  'https://betesda-educacion.edclub.com',
+  'https://edclub.com',
+  'https://edclub.dev',
+  'https://edclub.app',
+  'https://typingclub.com',
+  'https://fonts.googleapis.com',
+  'https://fonts.gstatic.com',
+  'https://code.org',
+  'https://codeaiprojects.org',
+  'https://codeprojects.org',
+  'https://downloads.computinginthecore.org',
+  'https://api.pusherapp.com',
+  'https://www.google.com/recaptcha/'
 )
 function CrearClave([string]$ruta) {
   if (-not (Test-Path -LiteralPath $ruta)) {
