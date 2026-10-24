@@ -1,0 +1,76 @@
+name: Titanteo 0x metaTx ABI action aliasing (isolated)
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoMetaTxnCalldataAlias.t.sol'
+      - '.github/workflows/titanteo-metatxn-calldata-alias.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-metatxn-calldata-alias
+  cancel-in-progress: true
+jobs:
+  local-permit2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Clone unmodified 0x and pinned Permit2 submodule (no RPC)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git original-0x
+          cd original-0x
+          git checkout 9a5f9f9ee9f5f056cb9846048b36fa18562b1983
+          git submodule update --init --recursive
+          test "$(git -C lib/permit2 rev-parse HEAD)" = "cc56ad0f3439c502c246fc5cfcc3db92bb8b7219"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoMetaTxnCalldataAlias.t.sol test/unit/TitanteoMetaTxnCalldataAlias.t.sol
+          echo "UPSTREAM_0X_SHA=$(git rev-parse HEAD)"
+          echo "UPSTREAM_PERMIT2_SHA=$(git -C lib/permit2 rev-parse HEAD)"
+      - name: Compile real Permit2 and official upstream dependencies
+        working-directory: original-0x
+        timeout-minutes: 11
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          FOUNDRY_SOLC_VERSION=0.8.17 FOUNDRY_EVM_VERSION=london forge build -- lib/permit2/src/Permit2.sol
+          test -s out/Permit2.sol/Permit2.json
+          FOUNDRY_SOLC_VERSION=0.8.34 forge build -- src/chains/Base/MetaTxn.sol
+          FOUNDRY_SOLC_VERSION=0.8.25 forge build -- src/deployer/Deployer.sol src/allowanceholder/AllowanceHolder.sol
+          FOUNDRY_SOLC_VERSION=0.8.26 forge build -- lib/v4-core/src/PoolManager.sol
+          FOUNDRY_SOLC_VERSION=0.8.28 FOUNDRY_EVM_VERSION=london FOUNDRY_OPTIMIZER_RUNS=1000000 forge build -- src/multicall/MultiCall.sol
+          echo "REAL_PERMIT2_ARTIFACT_AND_UPSTREAM_COMPILERS_READY"
+      - name: Test real nonce and witness boundaries in ephemeral EVM
+        working-directory: original-0x
+        timeout-minutes: 8
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_GAS_LIMIT: '50000000'
+          FOUNDRY_BLOCK_GAS_LIMIT: '50000000'
+          FOUNDRY_CODE_SIZE_LIMIT: '200000'
+        run: |
+          set -euo pipefail
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoMetaTxnCalldataAlias.t.sol' --fuzz-runs 64 -vvvv | tee "$RUNNER_TEMP/alias-original.log"
+          grep -F '[PASS] testValidSignatureConsumesNonceAndCannotReplay()' "$RUNNER_TEMP/alias-original.log"
+          grep -F '[PASS] testChangedSlippageRecipientRejectedBeforeNonceUse()' "$RUNNER_TEMP/alias-original.log"
+          grep -F '[PASS] testDifferentSettlerContractCannotReuseSignature()' "$RUNNER_TEMP/alias-original.log"
+          grep -F '[PASS] testDifferentSignerCannotUseSignature()' "$RUNNER_TEMP/alias-original.log"
+          grep -F '[PASS] testRevertedFinalSlippageRollsBackPermit2Nonce()' "$RUNNER_TEMP/alias-original.log"
+          grep -F '[PASS] testChangedChainIdCannotReplaySignature()' "$RUNNER_TEMP/alias-original.log"
+          grep -F '[PASS] testFuzz_ChangedActionsCannotReuseWitness' "$RUNNER_TEMP/alias-original.log"
+          grep -F '[PASS] testFuzz_ChangedPermitNonceCannotReuseSignature' "$RUNNER_TEMP/alias-original.log"
+          grep -F "[PASS] testMalformedArrayOffsetCannotConsumeNonce()" "$RUNNER_TEMP/alias-original.log"
+          grep -F "[PASS] testTruncatedActionLengthCannotConsumeNonce()" "$RUNNER_TEMP/alias-original.log"
+          grep -F "[PASS] testSecondActionAliasedToFirstCannotBypassWitness()" "$RUNNER_TEMP/alias-original.log"
+          echo "UPSTREAM_METATXN_ALIASING_BASELINE_PASSED"
