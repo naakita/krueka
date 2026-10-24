@@ -61,7 +61,7 @@ async function userAction(req:Request,b:any):Promise<unknown>{
  const p=await actor(req);
  switch(b.action){
  case "list": {
-  const devices=await guard(db.from("aula_devices").select("id,label,enabled,allowed,kiosk_enabled,kiosk_observed,kiosk_error,desktop_mode,desktop_mode_observed,agent_version,last_seen,created_at").eq("institution_id",p.institution_id).order("created_at",{ascending:true}).limit(100));
+  const devices=await guard(db.from("aula_devices").select("id,label,enabled,allowed,kiosk_enabled,kiosk_observed,kiosk_error,desktop_mode,desktop_mode_observed,agent_version,last_seen,created_at,policy_version,policy_applied_version,policy_last_seen,policy_applied_at,policy_apply_error").eq("institution_id",p.institution_id).order("created_at",{ascending:true}).limit(100));
   const ids=(devices||[]).map((d:any)=>d.id);
   const requests=ids.length?await guard(db.from("aula_requests").select("id,device_id,domain,reason,status,created_at").in("device_id",ids).order("created_at",{ascending:false}).limit(200)):[];
   return {devices:(devices||[]).map((d:any)=>({...d,allowed:allowed(d.allowed)})),requests};
@@ -74,6 +74,35 @@ async function userAction(req:Request,b:any):Promise<unknown>{
   return {id:d.id,token,hub_url:URL+"/functions/v1/aula-control"};
  }
 
+ case "policy_token": {
+  // Policy synchronization has a different secret than the existing Go classroom agent.
+  const d=await own(p,b.device_id);
+  const token=hex(bytes(32));
+  await guard(db.from("aula_devices").update({
+    policy_token_hash:await digest(token),policy_applied_version:0,
+    policy_last_seen:null,policy_applied_at:null,policy_apply_error:null
+  }).eq("id",d.id));
+  await audit(p.institution_id,d.id,p.id,"policy_token_issued");
+  return {id:d.id,label:d.label,token,endpoint:URL+"/functions/v1/aula-control",policy_version:d.policy_version};
+ }
+ case "allow_all": {
+  const v=domain(b.domain);
+  assert(typeof b.add==="boolean","Indicá si el dominio se autoriza o se quita");
+  if(!b.add&&CORE_DOMAINS.includes(v))fail(400,"No se pueden bloquear recursos esenciales de Krueka");
+  const ds=await guard(db.from("aula_devices").select("id,allowed").eq("institution_id",p.institution_id).limit(100));
+  assert(ds.length<=80,"Demasiados equipos para una sola operación");
+  let changed=0;
+  for(const d of ds){
+   const current=allowed(d.allowed);
+   const next=b.add?allowed([...current,v]):current.filter((x:string)=>x!==v);
+   if(next.length===current.length&&next.every((x:string,i:number)=>x===current[i]))continue;
+   if(b.add)assert(next.includes(v),"La lista de esta PC llegó al máximo de dominios");
+   await guard(db.from("aula_devices").update({allowed:next}).eq("id",d.id).eq("institution_id",p.institution_id));
+   await audit(p.institution_id,d.id,p.id,b.add?"allow_domain_all":"remove_domain_all",{domain:v});
+   changed++;
+  }
+  return {ok:true,affected:changed,total:ds.length,domain:v,added:b.add};
+ }
  case "rotate_token": {
   const d=await own(p,b.device_id);
   const token=hex(bytes(32));
@@ -144,6 +173,32 @@ async function userAction(req:Request,b:any):Promise<unknown>{
  default:fail(400,"Acción no admitida");
  }
 }
+async function policyAgent(req:Request,b:any):Promise<unknown>{
+ const id=req.headers.get("x-device-id")||"";
+ const token=(req.headers.get("authorization")||"").replace(/^Bearer /,"");
+ assert(/^[0-9a-f-]{36}$/.test(id)&&/^[0-9a-f]{64}$/.test(token),"Credenciales de sincronización incorrectas",401);
+ const d=await guard(db.from("aula_devices").select(
+  "id,policy_token_hash,policy_version,policy_applied_version,enabled,allowed"
+ ).eq("id",id).maybeSingle());
+ if(!d||!d.policy_token_hash||!equal(d.policy_token_hash,await digest(token)))fail(401,"Sincronizador no autorizado");
+ if(b.action==="policy_pull"){
+  await guard(db.from("aula_devices").update({policy_last_seen:new Date().toISOString()}).eq("id",id));
+  return {version:d.policy_version,enabled:d.enabled,allowlist:allowed(d.allowed)};
+ }
+ if(b.action==="policy_report"){
+  const version=Number(b.version);
+  assert(Number.isSafeInteger(version)&&version>=1,"Versión inválida");
+  const error=typeof b.error==="string"?b.error.slice(0,320):"";
+  const update:any={policy_last_seen:new Date().toISOString(),policy_apply_error:error||null};
+  if(!error&&version===d.policy_version){
+   update.policy_applied_version=version;
+   update.policy_applied_at=new Date().toISOString();
+  }else if(!error){update.policy_apply_error="La versión aplicada no coincide con la más reciente";}
+  await guard(db.from("aula_devices").update(update).eq("id",id).eq("policy_version",d.policy_version));
+  return {ok:true,desired_version:d.policy_version,applied:!error&&version===d.policy_version};
+ }
+ fail(400,"Acción de sincronización inválida");
+}
 async function agent(req:Request,b:any):Promise<unknown>{
  const id=req.headers.get("x-device-id")||"";
  const token=(req.headers.get("authorization")||"").replace(/^Bearer /,"");
@@ -177,7 +232,7 @@ Deno.serve(async(req)=>{
   if(clen>65536)fail(413,"Solicitud demasiado grande");
   const b=await req.json();
   if(!b||typeof b.action!=="string")fail(400,"Acción requerida");
-  const data=b.action==="sync"?await agent(req,b):await userAction(req,b);
+  const data=b.action==="sync"?await agent(req,b):["policy_pull","policy_report"].includes(b.action)?await policyAgent(req,b):await userAction(req,b);
   return respond(req,data);
  }catch(e){const x=e as {code?:number,message?:string};return respond(req,{error:x.message||"Error inesperado"},x.code||500);}
 });
