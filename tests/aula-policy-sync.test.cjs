@@ -7,7 +7,7 @@ const ps=read('windows/Krueka-PolicySync.ps1');
 const sql=read('supabase/migrations/20261024160000_aula_browser_policy_sync.sql');
 const app=read('app.html'),install=read('windows/INSTALAR-SINCRONIZACION-WEB-ADMIN.cmd');
 new vm.Script(ui);
-assert.match(app,/js\/aula-control\.js\?v=20261024b/);
+assert.match(app,/js\/aula-control\.js\?v=20261024c/);
 for(const name of ['policy_pull','policy_report','policy_token','allow_all','lock_all']){
  assert.ok(edge.includes('"'+name+'"'),'Missing backend action '+name);
 }
@@ -17,7 +17,8 @@ assert.match(edge,/eq\("policy_version",d\.policy_version\)/);
 assert.match(edge,/policy_applied_version/);
 assert.match(edge,/policy_last_seen/);
 assert.match(edge,/policy_apply_error/);
-assert.doesNotMatch(edge,/return \{[^}]*policy_token_hash/);
+assert.ok(edge.includes('const {policy_token_hash,...safe}=d'),'hash is stripped from public list');
+assert.match(edge,/has_policy_token:!!policy_token_hash/,'only the provisioning boolean is returned');
 assert.match(sql,/before update of allowed,enabled/);
 assert.match(sql,/new\.policy_version := old\.policy_version \+ 1/);
 assert.match(sql,/policy_token_hash text/);

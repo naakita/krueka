@@ -61,10 +61,10 @@ async function userAction(req:Request,b:any):Promise<unknown>{
  const p=await actor(req);
  switch(b.action){
  case "list": {
-  const devices=await guard(db.from("aula_devices").select("id,label,enabled,allowed,kiosk_enabled,kiosk_observed,kiosk_error,desktop_mode,desktop_mode_observed,agent_version,last_seen,created_at,policy_version,policy_applied_version,policy_last_seen,policy_applied_at,policy_apply_error").eq("institution_id",p.institution_id).order("created_at",{ascending:true}).limit(100));
+  const devices=await guard(db.from("aula_devices").select("id,label,enabled,allowed,kiosk_enabled,kiosk_observed,kiosk_error,desktop_mode,desktop_mode_observed,agent_version,last_seen,created_at,policy_version,policy_applied_version,policy_last_seen,policy_applied_at,policy_apply_error,policy_token_hash").eq("institution_id",p.institution_id).order("created_at",{ascending:true}).limit(100));
   const ids=(devices||[]).map((d:any)=>d.id);
   const requests=ids.length?await guard(db.from("aula_requests").select("id,device_id,domain,reason,status,created_at").in("device_id",ids).order("created_at",{ascending:false}).limit(200)):[];
-  return {devices:(devices||[]).map((d:any)=>({...d,allowed:allowed(d.allowed)})),requests};
+  return {devices:(devices||[]).map((d:any)=>{const {policy_token_hash,...safe}=d;return {...safe,has_policy_token:!!policy_token_hash,allowed:allowed(d.allowed)};}),requests};
  }
  case "create": {
   assert(typeof b.label==="string"&&b.label.trim().length>0&&b.label.length<=80,"Nombre de PC inválido");
