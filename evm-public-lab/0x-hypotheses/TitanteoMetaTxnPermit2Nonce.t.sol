@@ -82,7 +82,9 @@ contract TitanteoMetaTxnPermit2NonceTest is Test {
         (ISignatureTransfer.PermitTransferFrom memory permit, bytes[] memory actions,
             ISettlerBase.AllowedSlippage memory slippage) = _case();
         bytes memory sig = _sign(permit, actions, slippage, address(settler));
+        vm.chainId(31337); // deployment-only local exception in SettlerBase
         MainnetSettlerMetaTxn other = new MainnetSettlerMetaTxn(bytes20(0));
+        vm.chainId(31338); // restore Permit2 EIP712 domain for the test
         vm.expectRevert();
         other.executeMetaTxn(slippage, actions, bytes32(0), owner, sig);
         assertEq(_bitmap(owner), 0, "wrong spender burned nonce");
