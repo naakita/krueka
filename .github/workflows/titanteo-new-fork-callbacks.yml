@@ -33,13 +33,25 @@ jobs:
           git submodule update --init --recursive
           cp ../evm-public-lab/0x-hypotheses/TitanteoNewForkCallbacks.t.sol test/unit/TitanteoNewForkCallbacks.t.sol
           echo "UPSTREAM_SOURCE_SHA=$(git rev-parse HEAD)"
+      - name: Install upstream Solidity compilers using official isolated build targets
+        working-directory: original-0x
+        timeout-minutes: 9
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          FOUNDRY_SOLC_VERSION=0.8.34 forge build -- src/chains/Base/TakerSubmitted.sol
+          FOUNDRY_SOLC_VERSION=0.8.25 forge build -- src/deployer/Deployer.sol src/allowanceholder/AllowanceHolder.sol
+          FOUNDRY_SOLC_VERSION=0.8.26 forge build -- lib/v4-core/src/PoolManager.sol
+          FOUNDRY_SOLC_VERSION=0.8.28 FOUNDRY_EVM_VERSION=london FOUNDRY_OPTIMIZER_RUNS=1000000 forge build -- src/multicall/MultiCall.sol
+          echo "UPSTREAM_PINNED_COMPILERS_AVAILABLE"
       - name: Baseline positive and negative tests against unmodified upstream
         working-directory: original-0x
         shell: bash
         timeout-minutes: 9
         env:
           FOUNDRY_FFI: 'false'
-          FOUNDRY_SOLC_VERSION: '0.8.34'
         run: |
           set -euo pipefail
           forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --fuzz-runs 32 -vv | tee "$RUNNER_TEMP/new-fork-original.log"
@@ -68,7 +80,6 @@ jobs:
         timeout-minutes: 8
         env:
           FOUNDRY_FFI: 'false'
-          FOUNDRY_SOLC_VERSION: '0.8.34'
         run: |
           set +e
           forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --match-test 'testNamiRejectsWrongUniswapCallback' -vv > "$RUNNER_TEMP/new-fork-mutant.log" 2>&1
