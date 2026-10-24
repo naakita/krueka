@@ -85,6 +85,18 @@ async function userAction(req:Request,b:any):Promise<unknown>{
   await audit(p.institution_id,d.id,p.id,"policy_token_issued");
   return {id:d.id,label:d.label,token,endpoint:URL+"/functions/v1/aula-control",policy_version:d.policy_version};
  }
+ case "lock_all": {
+  assert(typeof b.enabled==="boolean","Estado de navegación inválido");
+  const ds=await guard(db.from("aula_devices").select("id,enabled").eq("institution_id",p.institution_id).limit(100));
+  let changed=0;
+  for(const d of ds){
+   if(d.enabled===b.enabled)continue;
+   await guard(db.from("aula_devices").update({enabled:b.enabled}).eq("id",d.id).eq("institution_id",p.institution_id));
+   await audit(p.institution_id,d.id,p.id,b.enabled?"restrict_all_requested":"unrestrict_all_requested");
+   changed++;
+  }
+  return {ok:true,affected:changed,total:ds.length,enabled:b.enabled};
+ }
  case "allow_all": {
   const v=domain(b.domain);
   assert(typeof b.add==="boolean","Indicá si el dominio se autoriza o se quita");
