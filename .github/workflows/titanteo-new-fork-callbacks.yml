@@ -39,9 +39,10 @@ jobs:
         timeout-minutes: 9
         env:
           FOUNDRY_FFI: 'false'
+          FOUNDRY_SOLC_VERSION: '0.8.34'
         run: |
           set -euo pipefail
-          forge test --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --fuzz-runs 32 -vv | tee "$RUNNER_TEMP/new-fork-original.log"
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --fuzz-runs 32 -vv | tee "$RUNNER_TEMP/new-fork-original.log"
           grep -F '[PASS] testAeroValidPoolCallbackSucceeds()' "$RUNNER_TEMP/new-fork-original.log"
           grep -F '[PASS] testNamiValidAlgebraCallbackSucceeds()' "$RUNNER_TEMP/new-fork-original.log"
           grep -F '[PASS] testNamiRejectsWrongUniswapCallback()' "$RUNNER_TEMP/new-fork-original.log"
@@ -67,9 +68,10 @@ jobs:
         timeout-minutes: 8
         env:
           FOUNDRY_FFI: 'false'
+          FOUNDRY_SOLC_VERSION: '0.8.34'
         run: |
           set +e
-          forge test --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --match-test 'testNamiRejectsWrongUniswapCallback' -vv > "$RUNNER_TEMP/new-fork-mutant.log" 2>&1
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --match-test 'testNamiRejectsWrongUniswapCallback' -vv > "$RUNNER_TEMP/new-fork-mutant.log" 2>&1
           rc=$?
           set -e
           tail -45 "$RUNNER_TEMP/new-fork-mutant.log"
