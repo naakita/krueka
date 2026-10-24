@@ -56,7 +56,7 @@ jobs:
           set -euo pipefail
           forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoHyperEvmNestedSelect.t.sol' -vvv | tee "$RUNNER_TEMP/hyperevm-original.log"
           grep -F '[PASS] testNestedSelectCannotCallHyperCoreWriter()' "$RUNNER_TEMP/hyperevm-original.log"
-          grep -F '[PASS] testFailedCoreWriterTrialThenAllowedPoolCommitsWithoutLeak()' "$RUNNER_TEMP/hyperevm-original.log"
+          grep -F '[PASS] testRejectedCoreWriterTrialThenAllowedPoolCommitsWithoutLeak()' "$RUNNER_TEMP/hyperevm-original.log"
           echo "UPSTREAM_HYPEREVM_NESTED_SELECT_BASELINE_PASSED"
       - name: Mutate guard only in disposable local clone
         working-directory: original-0x
