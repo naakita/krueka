@@ -122,3 +122,34 @@ Referencias:
 - https://school.edclub.com/help/user-guide/introduction/technical-requirements.html
 - https://code.org/en-US/about/it-requirements
 - https://learn.microsoft.com/en-us/deployedge/edge-learnmmore-url-list-filter-format
+
+
+## Sincronización permanente de permisos web — 24/10/2026
+
+**Objetivo:** el docente autoriza o quita dominios desde el panel de Krueka; Windows actualiza las políticas administradas de Edge y Chrome automáticamente sin repetir un instalador por cada cambio. El agente `KruekaAula.exe` 0.5 actual informa la lista deseada, pero no confirma que Windows haya aplicado `URLAllowlist`/`URLBlocklist`. Esta integración usa un sincronizador de políticas separado de su ejecutable original para no interrumpir Office/quiosco.
+
+### Una sola instalación por PC
+
+1. Entrar a `https://www.krueka.com/app.html` con cuenta docente o administración y abrir **Control de computadoras**.
+2. Para la PC correspondiente, pulsar **Instalar sincronizador web**; el panel genera **una credencial diferente del token del agente principal**. Los datos se muestran una vez. Guardarlos fuera del alcance de alumnos y nunca enviarlos en capturas o chats.
+3. Descargar `Krueka-PolicySync.ps1` e `INSTALAR-SINCRONIZACION-WEB-ADMIN.cmd` desde la carpeta `windows` y mantener ambos en la misma carpeta local. En esa PC, ejecutar el CMD haciendo clic derecho → **Ejecutar como administrador**. Introducir el ID y la credencial al ser solicitados. La credencial no figura en parámetros del proceso ni en la tarea programada; queda cifrada mediante DPAPI de la máquina y resguardada por ACL para SYSTEM y administradores en `C:\ProgramData\Krueka\PolicySync`.
+4. La instalación crea la tarea de Windows `Krueka-PolicySync`, que se ejecuta como **SYSTEM cada minuto**, sin exigir que el alumno inicie sesión ni que el profesor abra el navegador. La primera ejecución se solicita de inmediato. No se modifican credenciales del agente anterior, cuentas de Windows, Assigned Access/quiosco, Office ni el firewall.
+5. En el panel, presionar **Actualizar** y comprobar la línea **Sincronización de páginas: Permisos aplicados en Windows · Versión N/N**. La confirmación significa que la tarea validó las entradas del Registro; no es un test de apertura real. Ejecutar `COMPROBAR-SINCRONIZACION-WEB.cmd` (o `Krueka-PolicySync.ps1 -Mode Status`) en Windows con cuenta administradora para ver fecha/versión y errores. Si el equipo está desconectado el último estado se conserva y se reintenta al recuperar Internet.
+
+### Cambios diarios desde el profesor
+
+- **+ Autorizar web / Quitar** en cada PC: solo modifica esa computadora.
+- **Autorizar página a todas las PCs** y **Quitar página de todas**: actualiza los equipos de la institución con una operación administrativa; el servidor incrementa la versión de permisos donde hay cambios.
+- **Restringir Internet en todas** y **Liberar Internet en todas**: afectan el bloqueo general de las PCs; usar liberar solo cuando esté realmente autorizado. El sistema no altera automáticamente los valores actuales de `enabled`.
+- El sincronizador consulta `aula-control` por `policy_pull` y aplica listas limpias de dominios en `HKLM:\SOFTWARE\Policies\Microsoft\Edge\URLAllowlist` y `...\Google\Chrome\URLAllowlist`. Con navegación restringida instala `URLBlocklist=['*']`. Con navegación liberada retira las entradas de `URLBlocklist`. Incluye Krueka, Supabase, el acceso local `127.0.0.1:47821` y `www.google.com/recaptcha/`. **El servidor es la fuente de verdad**: revocar un dominio elimina las excepciones antiguas previamente instaladas por scripts.
+- Antes de cualquier escritura crea copias de seguridad `.reg` en `C:\ProgramData\Krueka\PolicySync\Backups`. Si el servidor no responde o envía una política inválida, conserva la última configuración local y reintenta en el ciclo siguiente.
+- `policy_report` comunica versión aplicada, hora y error acotado. El panel diferencia **sin instalar**, **desconectado**, **pendiente**, **con error** y **registrado por Windows**. El secreto de sincronización nunca se muestra en los estados ni se incorpora al repositorio.
+
+### Seguridad y límites
+
+- El sincronizador de Windows debe instalarse **una sola vez por PC** con permisos de administrador. No se puede hacerlo de forma remota mediante el repositorio web porque el antiguo agente no implementa ejecución remota de instaladores. No rotar su token actual.
+- Las directivas de Edge/Chrome admiten actualización dinámica, aunque una directiva de dominio/MDM puede sobreponerse. Para diagnóstico, consultar `edge://policy` → **Recargar directivas** y probar una lección real.
+- La sincronización **solo gestiona Edge y Chrome**. Brave permanece sometido a los controles específicos establecidos por el administrador (por ejemplo, bloqueo por firewall). No elimina esas reglas ni intenta abrir Brave.
+- Un alumno con contraseñas de administrador, otro navegador portable o arranque externo todavía puede eludir protecciones si Windows no tiene control de aplicaciones y cuentas correcto; continuar con Assigned Access multiapp y cuentas estándar.
+- Cambiar la **clave del sincronizador** desde el panel invalida exclusivamente esa credencial (NO el token del agente original) y requiere volver a introducir la nueva clave en esa PC una vez; no hacerlo para cambios cotidianos de páginas.
+- La sincronización de sitios no cambia el modo Office ni repara agentes desconectados. Si una PC no logra comunicarse con el servidor, seguirá aplicando su última política conocida. No declarar protegidas todas las PCs sin comprobarlas localmente.
