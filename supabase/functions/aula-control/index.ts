@@ -28,6 +28,14 @@ function domain(raw:unknown):string{
 }
 // Recursos esenciales: la web, el backend, el cliente JS y la verificacion docente.
 const CORE_DOMAINS = ["krueka.com","www.krueka.com","janebfpnknapvntfqolf.supabase.co","cdn.jsdelivr.net","challenges.cloudflare.com"];
+const EDUCATIONAL_DEFAULTS = [
+ "betesda-educacion.edclub.com","static.typingclub.com","fonts.googleapis.com","fonts.gstatic.com",
+ "edclub.com","www.edclub.com","school.edclub.com","edclub.app","edclub.dev",
+ "typingclub.com","www.typingclub.com",
+ "code.org","www.code.org","studio.code.org","videos.code.org","contentful-videos.code.org",
+ "codeprojects.org","downloads.computinginthecore.org","codeaiprojects.org","www.codeaiprojects.org",
+ "api.pusherapp.com","ws.pusherapp.com"
+];
 function allowed(arr:any):string[]{return [...new Set([...CORE_DOMAINS, ...(Array.isArray(arr)?arr:[]).filter(v=>typeof v==="string").map(v=>domain(v))])].sort().slice(0,80);}
 function assert(ok:any,message:string,code=400):void{if(!ok)fail(code,message);}
 async function guard(query:any):Promise<any>{const {data,error}=await query;if(error)fail(500,"Error de almacenamiento: "+error.code);return data;}
@@ -61,7 +69,7 @@ async function userAction(req:Request,b:any):Promise<unknown>{
  case "create": {
   assert(typeof b.label==="string"&&b.label.trim().length>0&&b.label.length<=80,"Nombre de PC inválido");
   const token=hex(bytes(32));
-  const d=await guard(db.from("aula_devices").insert({label:b.label.trim(),institution_id:p.institution_id,token_hash:await digest(token),created_by:p.id}).select("id,label").single());
+  const d=await guard(db.from("aula_devices").insert({label:b.label.trim(),institution_id:p.institution_id,token_hash:await digest(token),created_by:p.id,allowed:allowed(EDUCATIONAL_DEFAULTS)}).select("id,label").single());
   await audit(p.institution_id,d.id,p.id,"device_created",{label:d.label});
   return {id:d.id,token,hub_url:URL+"/functions/v1/aula-control"};
  }

@@ -78,6 +78,9 @@ jobs:
       - run: node tests/asistencia-grado.test.cjs
       - run: node --check js/aula-control.js
       - run: node tests/aula-office-state.test.cjs
+      - run: node tests/aula-educational-allowlist.test.cjs
+      - run: pwsh -NoProfile -Command '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile("windows/Autorizar-EdClub-CodeOrg-Krueka.ps1",[ref]$tokens,[ref]$errors) | Out-Null; if($errors.Count){$errors | Out-String | Write-Error; exit 1}'
+      - run: pwsh -NoProfile -Command '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile("windows/Configurar-Krueka-Alumnos.ps1",[ref]$tokens,[ref]$errors) | Out-Null; if($errors.Count){$errors | Out-String | Write-Error; exit 1}'
       - run: node tests/aula-office-offline.test.cjs
       - run: pwsh -NoProfile -Command '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile("windows/Diagnosticar-Office-Krueka.ps1",[ref]$tokens,[ref]$errors) | Out-Null; if($errors.Count){$errors | Out-String | Write-Error; exit 1}'
       - run: node tests/aula-brave-protection.test.cjs

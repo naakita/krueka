@@ -98,3 +98,27 @@ Guías oficiales: https://learn.microsoft.com/windows/configuration/kiosk/ y htt
 **Precaución:** el programa de la PC podría usar un nombre de servicio/tarea distinto a «Krueka». Si no se detecta, el resultado es **inconcluso**, no una confirmación de desinstalación. Los scripts no reescriben la configuración del quiosco, no cambian los permisos del sistema ni pueden ejecutar reparaciones remotas por sí solos. No prometer que el problema esté resuelto hasta observar una sincronización nueva con `desktop_mode_observed=office` y una prueba real con el usuario del alumno.
 
 Documentación oficial de Windows: https://learn.microsoft.com/en-us/windows/configuration/kiosk/
+
+
+## Autorizaciones educativas de BEI: EdClub y Code.org — 24/10/2026
+
+El docente autorizó para las 8 PCs registradas de BEI:
+- **Mecanografía:** `https://betesda-educacion.edclub.com/` y todas sus rutas. EdClub requiere además subdominios de `edclub.com`, `edclub.dev`, `edclub.app`, `typingclub.com`, `static.typingclub.com` y Google Fonts.
+- **Programación:** `https://studio.code.org/` y rutas, subdominios `code.org`, vídeos propios `videos.code.org` y `contentful-videos.code.org`, herramientas Web Lab y Python Lab (`codeprojects.org`, `codeaiprojects.org`, `downloads.computinginthecore.org`) y simulación en Pusher cuando se use. Se restringe `www.google.com` a `/recaptcha/` en las directivas locales, sin permitir búsquedas de Google.
+- No se autoriza YouTube general; Code.org ofrece reproductor propio de respaldo. Algunas actividades que requieran integración externa opcional podrían necesitar excepciones adicionales tras prueba supervisada.
+
+**Estado:** la actualización de `aula_devices.allowed` ya quedó registrada en Supabase para las ocho PCs BEI, conservando las autorizaciones previas. El agente solicita la lista en su próxima sincronización, pero Krueka no recibe un reporte de carga de cada URL. Una PC offline seguirá con permisos antiguos hasta reconectar.
+
+**Para comprobar o aplicar localmente en Windows:**
+1. Guardá juntos `Autorizar-EdClub-CodeOrg-Krueka.ps1`, `COMPROBAR-PAGINAS-EDUCATIVAS.cmd` y `AUTORIZAR-PAGINAS-EDUCATIVAS-ADMIN.cmd`.
+2. Primero ejecutá el CMD de comprobación, que solo lee el registro de Edge y Chrome.
+3. Solo si faltan entradas o las bloquea otra directiva, ejecutá `AUTORIZAR-PAGINAS-EDUCATIVAS-ADMIN.cmd` como administrador. Agrega las excepciones HKLM y crea respaldo de las políticas existentes; **no** modifica `URLBlocklist`, quiosco, usuarios, Office ni firewall.
+4. En el perfil del alumno, cerrá/reabrí Edge, visitá `edge://policy` y pulsá Recargar directivas. Después probá **una lección real** de cada plataforma: abrir una lección posterior, imágenes, fuentes y avance de nivel; Code.org video y Blockly.
+5. Si el agente o una directiva de dominio/MDM vuelve a imponer otra lista, la fuente central deberá incluir estos permisos. Las políticas `Configurar-Krueka-Alumnos.ps1` y `Blindar-Sesiones-Krueka.ps1` ya los incorporan para futuras instalaciones.
+
+**Nota técnica:** según Microsoft Edge, en `URLAllowlist` el patrón `https://code.org` cubre las rutas y subdominios del host sin punto inicial, igual que `https://edclub.com`. `https://www.google.com/recaptcha/` solo exceptúa ese prefijo de rutas. Los servidores del agente reciben dominios exactos de Supabase, por lo que las rutas de clase quedan incluidas y subdominios nuevos no registrados aún requieren verificación.
+
+Referencias:
+- https://school.edclub.com/help/user-guide/introduction/technical-requirements.html
+- https://code.org/en-US/about/it-requirements
+- https://learn.microsoft.com/en-us/deployedge/edge-learnmmore-url-list-filter-format

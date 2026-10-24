@@ -35,6 +35,11 @@ const AulaControl = {
   const ds=AulaControl.cache.devices||[],rs=AulaControl.cache.requests||[];
   const alive=d=>d.last_seen&&(Date.now()-Date.parse(d.last_seen)<125000);
   const pending=rs.filter(r=>r.status==="pending");
+  const educativo=d=>["betesda-educacion.edclub.com","studio.code.org"].every(x=>(d.allowed||[]).includes(x));
+  const educativoEstado=d=>'<div class="note" style="margin-top:10px"><b>Plataformas educativas:</b> '+
+    (educativo(d)?'EdClub y Code.org autorizadas en Krueka': 'EdClub / Code.org pendientes de configurar')+
+    (educativo(d)?(alive(d)?' · comprobar actividades completas en esta PC':' · pendientes de sincronización (PC desconectada)'):'')+
+    '</div>';
   const officePendiente=d=>d.desktop_mode==="office" && d.desktop_mode_observed!=="office";
   const offline=d=>!alive(d);
   const diagnosticoPc='https://github.com/naakita/krueka/tree/main/windows';
@@ -67,6 +72,7 @@ const AulaControl = {
     '<div class="grid3" style="margin-bottom:18px"><div class="kpi"><b>'+ds.length+'</b><span>Computadoras registradas</span></div><div class="kpi"><b>'+ds.filter(alive).length+'</b><span>Conectadas recientemente</span></div><div class="kpi"><b>'+pending.length+'</b><span>Solicitudes pendientes</span></div></div>'+
     (ds.length?ds.map(d=>'<div class="card" style="margin:12px 0"><div class="row" style="align-items:center;justify-content:space-between"><div><b>'+esc(d.label)+'</b> <span class="tag '+(alive(d)?'green':'orange')+'">'+(alive(d)?'Conectada':'Sin conexión reciente')+'</span><div class="note">'+esc(d.id)+' · Quiosco '+(d.kiosk_enabled?'activado':'desactivado')+' · Modo '+(d.desktop_mode==='office'?'Ofimática':'Solo Krueka')+' (PC: '+(d.desktop_mode_observed==='office'?'Ofimática':d.desktop_mode_observed==='edge'?'Solo Krueka':'sin confirmar')+') · '+(d.last_seen?'Última conexión '+new Date(d.last_seen).toLocaleString("es-PY"):'Aún no instalada')+'</div></div><span class="tag '+(d.enabled?'blue':'orange')+'">'+(d.enabled?'Web restringida':'Navegación liberada')+'</span></div>'+
        estadoOffice(d)+
+       educativoEstado(d)+
        '<div class="row" style="margin-top:12px"><button class="btn sm" onclick="AulaControl.codigo(\''+d.id+'\')">Generar código</button> '+actionBtns(d)+'<button class="btn sec sm" onclick="AulaControl.agregar(\''+d.id+'\')">+ Autorizar web</button><button class="btn sec sm" onclick="AulaControl.renombrar(\''+d.id+'\')">Renombrar</button>'+modoButton(d)+'<button class="btn sec sm" onclick="AulaControl.renovarToken(\''+d.id+'\')">Nuevo token</button><button class="btn sec sm" onclick="AulaControl.kiosco(\''+d.id+'\','+(!d.kiosk_enabled)+')">'+(d.kiosk_enabled?'Desactivar quiosco':'Activar quiosco')+'</button></div>'+
        '<div class="note" style="margin-top:10px"><b>Brave: sin verificación del bloqueo real</b> (agente '+esc(d.agent_version||'sin versión')+'). La versión del agente no demuestra que Windows impida navegar con Brave.</div>'+ 
        '<div class="note" style="margin-top:10px">Permitidas: '+(d.allowed||[]).map(a=>'<span style="display:inline-flex;gap:4px;margin:3px;padding:4px 6px;border:1px solid var(--line);border-radius:6px">'+esc(a)+(AulaControl.dominiosBase.includes(a)?'':' <button aria-label="Quitar" onclick="AulaControl.quitar(\''+d.id+'\',\''+a+'\')" style="border:0;background:none;color:var(--red);cursor:pointer">×</button>')+'</span>').join('')+'</div></div>').join(''):'<div class="alert info">Todavía no hay PCs. Usá «Registrar PC» y después instalá el agente Windows.</div>')+

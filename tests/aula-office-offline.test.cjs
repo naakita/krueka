@@ -2,7 +2,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const root=path.resolve(__dirname,'..'),read=n=>fs.readFileSync(path.join(root,n),'utf8');
 const js=read('js/aula-control.js'),html=read('app.html'),ps=read('windows/Diagnosticar-Office-Krueka.ps1');
 new vm.Script(js);
-assert.match(html,/js\/aula-control\.js\?v=20261022a/);
+assert.match(html,/js\/aula-control\.js\?v=20261024a/);
 assert.match(js,/PC sin conexión: Krueka no puede confirmar ni aplicar Office/);
 assert.match(js,/PC desconectada · revisar agente/);
 assert.match(ps,/\[ValidateSet\("Comprobar","ReiniciarAgente"\)\]/);

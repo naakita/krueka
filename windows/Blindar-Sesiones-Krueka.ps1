@@ -7,7 +7,12 @@ $backup=Join-Path $env:ProgramData "Krueka\Respaldo-Politicas"
 $fast="HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"
 $sites=@("https://www.krueka.com/*","https://krueka.com/*",
  "https://janebfpnknapvntfqolf.supabase.co/*","https://cdn.jsdelivr.net/*",
- "https://challenges.cloudflare.com/*","http://127.0.0.1:47821/*")
+ "https://challenges.cloudflare.com/*","http://127.0.0.1:47821/*",
+ "https://betesda-educacion.edclub.com","https://edclub.com","https://edclub.dev","https://edclub.app",
+ "https://typingclub.com","https://fonts.googleapis.com","https://fonts.gstatic.com",
+ "https://code.org","https://codeaiprojects.org","https://codeprojects.org",
+ "https://downloads.computinginthecore.org","https://api.pusherapp.com",
+ "https://www.google.com/recaptcha/")
 function EsAdmin {
  $user=[Security.Principal.WindowsIdentity]::GetCurrent()
  return ([Security.Principal.WindowsPrincipal]::new($user)).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
