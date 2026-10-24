@@ -1,0 +1,102 @@
+name: Titanteo 0x Tempo resolved alias receive policy (local)
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoTempoResolvedAliasPolicy.t.sol'
+      - '.github/workflows/titanteo-tempo-resolved-alias.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-tempo-resolved-alias
+  cancel-in-progress: true
+jobs:
+  tempo-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Clone pinned original 0x and submodules
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git original-0x
+          cd original-0x
+          git checkout 9a5f9f9ee9f5f056cb9846048b36fa18562b1983
+          git submodule update --init --recursive
+          test "$(git rev-parse HEAD)" = "9a5f9f9ee9f5f056cb9846048b36fa18562b1983"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoTempoResolvedAliasPolicy.t.sol test/unit/TitanteoTempoResolvedAliasPolicy.t.sol
+          echo "PINNED_ORIGINAL_0X_SOURCE"
+      - name: Build official compiler versions without external RPC
+        working-directory: original-0x
+        timeout-minutes: 12
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          FOUNDRY_SOLC_VERSION=0.8.17 FOUNDRY_EVM_VERSION=london forge build -- lib/permit2/src/Permit2.sol
+          FOUNDRY_SOLC_VERSION=0.8.25 forge build -- src/deployer/Deployer.sol src/allowanceholder/AllowanceHolder.sol
+          FOUNDRY_SOLC_VERSION=0.8.26 forge build -- lib/v4-core/src/PoolManager.sol
+          FOUNDRY_SOLC_VERSION=0.8.28 FOUNDRY_EVM_VERSION=london FOUNDRY_OPTIMIZER_RUNS=1000000 forge build -- src/multicall/MultiCall.sol
+          FOUNDRY_SOLC_VERSION=0.8.34 forge build -- src/chains/Tempo/TakerSubmitted.sol
+      - name: Verify alias authorization invariants on original 0x in ephemeral EVM
+        working-directory: original-0x
+        timeout-minutes: 7
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_GAS_LIMIT: '50000000'
+          FOUNDRY_BLOCK_GAS_LIMIT: '50000000'
+          FOUNDRY_CODE_SIZE_LIMIT: '200000'
+        run: |
+          set -euo pipefail
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoTempoResolvedAliasPolicy.t.sol' --fuzz-runs 64 -vv | tee "$RUNNER_TEMP/tempo-alias-baseline.log"
+          grep -F '[PASS] testRejectsResolvedAliasEvenWhenOriginalAllowed()' "$RUNNER_TEMP/tempo-alias-baseline.log"
+          grep -F '[PASS] testAllowsAliasOnlyWhenResolvedPolicyAllows()' "$RUNNER_TEMP/tempo-alias-baseline.log"
+          grep -F 'Suite result: ok.' "$RUNNER_TEMP/tempo-alias-baseline.log"
+          echo "TITANTEO_TEMPO_ALIAS_BASELINE_PASSED"
+      - name: Introduce synthetic alias-resolution bypass in temporary clone only
+        working-directory: original-0x
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("src/chains/Tempo/BlockTempoSystemContracts.sol")
+          s=p.read_text()
+          needle="ITempoAddressRegistry(_TEMPO_ADDRESS_REGISTRY).resolveRecipient(recipient)"
+          assert s.count(needle)==1, s.count(needle)
+          p.write_text(s.replace(needle,"recipient /* SYNTHETIC_ALIAS_RESOLUTION_BYPASS */"))
+          print("SYNTHETIC_ALIAS_BYPASS_IN_TEST_CLONE")
+          PY
+      - name: Prove independent regression catches synthetic bypass (not compile failure)
+        working-directory: original-0x
+        timeout-minutes: 7
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_GAS_LIMIT: '50000000'
+          FOUNDRY_BLOCK_GAS_LIMIT: '50000000'
+          FOUNDRY_CODE_SIZE_LIMIT: '200000'
+        run: |
+          set +e
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoTempoResolvedAliasPolicy.t.sol' --match-test testRejectsResolvedAliasEvenWhenOriginalAllowed -vv > "$RUNNER_TEMP/tempo-alias-mutant.log" 2>&1
+          rc=$?
+          set -e
+          tail -35 "$RUNNER_TEMP/tempo-alias-mutant.log"
+          test "$rc" -ne 0
+          if grep -Eq 'Compiler run failed|Compilation failed|ParserError|TypeError|^Error \([0-9]+\):|vm.getCode: no bytecode' "$RUNNER_TEMP/tempo-alias-mutant.log"; then
+            echo "ERROR: fixture or compiler failure is not a valid negative control"
+            exit 1
+          fi
+          grep -F '[FAIL:' "$RUNNER_TEMP/tempo-alias-mutant.log"
+          echo "TITANTEO_SYNTHETIC_TEMPO_ALIAS_BYPASS_DETECTED"
