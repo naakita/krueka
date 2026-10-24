@@ -66,7 +66,7 @@ jobs:
           grep -F '[PASS] testChangedSlippageRecipientRejectedBeforeNonceUse()' "$RUNNER_TEMP/permit2-original.log"
           grep -F '[PASS] testDifferentSettlerContractCannotReuseSignature()' "$RUNNER_TEMP/permit2-original.log"
           grep -F '[PASS] testDifferentSignerCannotUseSignature()' "$RUNNER_TEMP/permit2-original.log"
-          grep -F '[PASS] testFailedFinalSlippageRollsBackPermit2Nonce()' "$RUNNER_TEMP/permit2-original.log"
+          grep -F '[PASS] testRevertedFinalSlippageRollsBackPermit2Nonce()' "$RUNNER_TEMP/permit2-original.log"
           grep -F '[PASS] testChangedChainIdCannotReplaySignature()' "$RUNNER_TEMP/permit2-original.log"
           grep -F '[PASS] testFuzz_ChangedActionsCannotReuseWitness' "$RUNNER_TEMP/permit2-original.log"
           grep -F '[PASS] testFuzz_ChangedPermitNonceCannotReuseSignature' "$RUNNER_TEMP/permit2-original.log"
