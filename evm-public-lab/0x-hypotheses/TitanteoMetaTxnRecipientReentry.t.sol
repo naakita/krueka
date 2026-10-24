@@ -94,9 +94,9 @@ contract TitanteoMetaTxnRecipientReentryTest is Test {
 
         bytes memory aliceSig = _sign(ALICE_PK, alicePermit, aliceActions, aliceSlippage);
         bytes memory bobSig = _sign(BOB_PK, bobPermit, bobActions, bobSlippage);
-        bytes memory nested = abi.encodeCall(
-            BaseSettlerMetaTxn.executeMetaTxn,
-            (bobSlippage, bobActions, bytes32(0), bob, bobSig)
+        bytes memory nested = abi.encodeWithSelector(
+            settler.executeMetaTxn.selector,
+            bobSlippage, bobActions, bytes32(0), bob, bobSig
         );
         receiver.arm(address(settler), nested);
         vm.deal(address(settler), 1 ether);
