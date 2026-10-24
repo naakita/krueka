@@ -34,10 +34,13 @@ const AulaControl = {
   const box=$("aula-cuerpo");if(!box)return;
   const ds=AulaControl.cache.devices||[],rs=AulaControl.cache.requests||[];
   const alive=d=>d.last_seen&&(Date.now()-Date.parse(d.last_seen)<125000);
+  const webAlive=d=>d.policy_last_seen&&(Date.now()-Date.parse(d.policy_last_seen)<180000);
+  const connected=d=>alive(d)||webAlive(d);
+  const connectedLabel=d=>alive(d)?'Agente conectado':webAlive(d)?'Web conectada · quiosco sin conexión':'Sin conexión reciente';
   const pending=rs.filter(r=>r.status==="pending");
   const policyState=d=>{
    if(!d.policy_last_seen)return '<span class="tag orange">Sincronizador no instalado</span>';
-   const fresh=Date.now()-Date.parse(d.policy_last_seen)<180000;
+   const fresh=webAlive(d);
    if(!fresh)return '<span class="tag orange">Sincronizador desconectado</span>';
    if(d.policy_apply_error)return '<span class="tag red">Error de directivas</span>';
    if(Number(d.policy_applied_version)!==Number(d.policy_version))return '<span class="tag orange">Permisos pendientes</span>';
@@ -50,7 +53,7 @@ const AulaControl = {
   const educativo=d=>["betesda-educacion.edclub.com","studio.code.org"].every(x=>(d.allowed||[]).includes(x));
   const educativoEstado=d=>'<div class="note" style="margin-top:10px"><b>Plataformas educativas:</b> '+
     (educativo(d)?'EdClub y Code.org autorizadas en Krueka': 'EdClub / Code.org pendientes de configurar')+
-    (educativo(d)?(alive(d)?' · comprobar actividades completas en esta PC':' · pendientes de sincronización (PC desconectada)'):'')+
+    (educativo(d)?(webAlive(d)?' · comprobar una actividad real en la PC':alive(d)?' · comprobar actividades completas; conector web sin confirmar':' · pendientes de sincronización (PC desconectada)'):'')+
     '</div>';
   const officePendiente=d=>d.desktop_mode==="office" && d.desktop_mode_observed!=="office";
   const offline=d=>!alive(d);
@@ -82,8 +85,8 @@ const AulaControl = {
   const actionBtns=d=>'<button class="btn sm '+(d.enabled?'sec':'ok')+'" onclick="AulaControl.bloquear(\''+d.id+'\','+!d.enabled+')">'+(d.enabled?'Liberar navegación':'Restablecer bloqueo')+'</button> ';
   box.innerHTML='<div class="row" style="align-items:center;justify-content:space-between;margin-bottom:15px"><div><h2 style="margin:0">Aula conectada</h2><span class="note">El sincronizador web consulta cambios cada minuto, una vez instalado en Windows. El agente antiguo no confirma directivas.</span></div><div class="row"><button class="btn sec sm" onclick="AulaControl.cargar()">↻ Actualizar</button><button class="btn sm" onclick="AulaControl.crear()">+ Registrar PC</button></div></div>'+
     '<div class="row" style="margin-bottom:14px;gap:7px;flex-wrap:wrap"><button class="btn sm" onclick="AulaControl.dominioGeneral(true)">+ Autorizar página a todas las PCs</button><button class="btn sm sec" onclick="AulaControl.dominioGeneral(false)">Quitar página de todas</button><button class="btn sm sec" onclick="AulaControl.bloqueoGeneral(true)">Restringir Internet en todas</button><button class="btn sm sec" onclick="AulaControl.bloqueoGeneral(false)">Liberar Internet en todas</button></div>'+
-    '<div class="grid3" style="margin-bottom:18px"><div class="kpi"><b>'+ds.length+'</b><span>Computadoras registradas</span></div><div class="kpi"><b>'+ds.filter(alive).length+'</b><span>Conectadas recientemente</span></div><div class="kpi"><b>'+pending.length+'</b><span>Solicitudes pendientes</span></div></div>'+
-    (ds.length?ds.map(d=>'<div class="card" style="margin:12px 0"><div class="row" style="align-items:center;justify-content:space-between"><div><b>'+esc(d.label)+'</b> <span class="tag '+(alive(d)?'green':'orange')+'">'+(alive(d)?'Conectada':'Sin conexión reciente')+'</span><div class="note">'+esc(d.id)+' · Quiosco '+(d.kiosk_enabled?'activado':'desactivado')+' · Modo '+(d.desktop_mode==='office'?'Ofimática':'Solo Krueka')+' (PC: '+(d.desktop_mode_observed==='office'?'Ofimática':d.desktop_mode_observed==='edge'?'Solo Krueka':'sin confirmar')+') · '+(d.last_seen?'Última conexión '+new Date(d.last_seen).toLocaleString("es-PY"):'Aún no instalada')+'</div></div><span class="tag '+(d.enabled?'blue':'orange')+'">'+(d.enabled?'Web restringida':'Navegación liberada')+'</span></div>'+
+    '<div class="grid3" style="margin-bottom:18px"><div class="kpi"><b>'+ds.length+'</b><span>Computadoras registradas</span></div><div class="kpi"><b>'+ds.filter(connected).length+'</b><span>Conectadas: web o agente</span></div><div class="kpi"><b>'+pending.length+'</b><span>Solicitudes pendientes</span></div></div>'+
+    (ds.length?ds.map(d=>'<div class="card" style="margin:12px 0"><div class="row" style="align-items:center;justify-content:space-between"><div><b>'+esc(d.label)+'</b> <span class="tag '+(connected(d)?'green':'orange')+'">'+connectedLabel(d)+'</span><div class="note">'+esc(d.id)+' · Quiosco '+(d.kiosk_enabled?'activado':'desactivado')+' · Modo '+(d.desktop_mode==='office'?'Ofimática':'Solo Krueka')+' (PC: '+(d.desktop_mode_observed==='office'?'Ofimática':d.desktop_mode_observed==='edge'?'Solo Krueka':'sin confirmar')+') · '+(d.last_seen?'Última conexión '+new Date(d.last_seen).toLocaleString("es-PY"):'Aún no instalada')+'</div></div><span class="tag '+(d.enabled?'blue':'orange')+'">'+(d.enabled?'Web restringida':'Navegación liberada')+'</span></div>'+
        estadoOffice(d)+
        educativoEstado(d)+
        policyDetail(d)+
@@ -150,7 +153,7 @@ const AulaControl = {
   modal.setAttribute("aria-labelledby","aula-cred-titulo");
   modal.style.cssText="background:var(--panel,#fff);color:var(--tx,#222);border-radius:15px;max-width:630px;width:100%;max-height:90vh;overflow:auto;padding:22px;box-shadow:0 20px 70px rgba(0,0,0,.3)";
   modal.innerHTML='<h2 id="aula-cred-titulo" style="font-size:20px;margin:0 0 8px">'+(sincronizador?'Sincronización Web - credencial única':renovado?'Token nuevo generado':'Registrar computadora')+'</h2>'+
-   '<p class="sub" style="margin-bottom:15px">'+(sincronizador?'Instalá una sola vez el archivo <b>Krueka-PolicySync.ps1</b> en esta PC desde Windows. Cuando te solicite ID y credencial, usá los datos de abajo. Después, los permisos se sincronizan automáticamente cada minuto.':'Estos datos se muestran una sola vez. Copialos y guardalos donde solo tenga acceso el administrador.')+'</p>'+
+   '<p class="sub" style="margin-bottom:15px">'+(sincronizador?'Instalá una sola vez <b>Krueka-Conector-PC.ps1</b> usando el kit del Conector de PC de Krueka. Cuando te solicite ID y credencial, usá los datos de abajo. Después, Krueka enviará los cambios de páginas automáticamente cada minuto.':'Estos datos se muestran una sola vez. Copialos y guardalos donde solo tenga acceso el administrador.')+'</p>'+
    '<div id="aula-cred-campos"></div>'+
    '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px"><button class="btn" type="button" id="aula-copiar-todo">📋 Copiar todos los datos</button><button class="btn sec" type="button" id="aula-cred-cerrar">Cerrar</button></div>'+
    '<p id="aula-copy-status" role="status" aria-live="polite" style="font-size:12px;min-height:18px;margin:12px 0 0"></p>'+
