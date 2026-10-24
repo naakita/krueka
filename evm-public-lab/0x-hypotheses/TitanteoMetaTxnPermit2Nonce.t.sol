@@ -103,7 +103,7 @@ contract TitanteoMetaTxnPermit2NonceTest is Test {
         assertEq(_bitmap(owner), uint256(1) << NONCE);
     }
 
-    function testFailedFinalSlippageRollsBackPermit2Nonce() public {
+    function testRevertedFinalSlippageRollsBackPermit2Nonce() public {
         (ISignatureTransfer.PermitTransferFrom memory permit, bytes[] memory actions,
             ISettlerBase.AllowedSlippage memory slippage) = _case();
         uint256 beforeBalance = token.balanceOf(owner);
