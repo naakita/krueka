@@ -54,7 +54,7 @@ jobs:
           FOUNDRY_FFI: 'false'
         run: |
           set -euo pipefail
-          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --fuzz-runs 32 -vv | tee "$RUNNER_TEMP/new-fork-original.log"
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --fuzz-runs 32 -vvvv | tee "$RUNNER_TEMP/new-fork-original.log"
           grep -F '[PASS] testAeroValidPoolCallbackSucceeds()' "$RUNNER_TEMP/new-fork-original.log"
           grep -F '[PASS] testNamiValidAlgebraCallbackSucceeds()' "$RUNNER_TEMP/new-fork-original.log"
           grep -F '[PASS] testNamiRejectsWrongUniswapCallback()' "$RUNNER_TEMP/new-fork-original.log"
