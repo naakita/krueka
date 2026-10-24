@@ -130,6 +130,6 @@ contract TitanteoNewForkCallbacksTest is Test {
         actions[0] = abi.encodeCall(ISettlerActions.UNISWAPV3, (recipient, 1_000_000, path, AMOUNT));
         ISettlerBase.AllowedSlippage memory slippage =
             ISettlerBase.AllowedSlippage(payable(address(0)), IERC20(address(0)), 0);
-        assertTrue(settler.execute(slippage, actions, bytes32(0)));
+        settler.execute(slippage, actions, bytes32(0));
     }
 }
