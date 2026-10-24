@@ -68,8 +68,12 @@ contract TitanteoMetaTxnPermit2NonceTest is Test {
         (ISignatureTransfer.PermitTransferFrom memory permit, bytes[] memory actions,
             ISettlerBase.AllowedSlippage memory slippage) = _case();
         bytes memory sig = _sign(permit, actions, slippage, address(settler));
-        ISettlerBase.AllowedSlippage memory forged = slippage;
-        forged.recipient = payable(makeAddr("unapproved-recipient"));
+        // Solidity memory structs alias on assignment; make a true independent copy.
+        ISettlerBase.AllowedSlippage memory forged = ISettlerBase.AllowedSlippage({
+            recipient: payable(makeAddr("unapproved-recipient")),
+            buyToken: slippage.buyToken,
+            minAmountOut: slippage.minAmountOut
+        });
         vm.expectRevert();
         _exec(actions, forged, owner, sig, bytes32(0));
         assertEq(_bitmap(owner), 0, "bad witness burned nonce");
