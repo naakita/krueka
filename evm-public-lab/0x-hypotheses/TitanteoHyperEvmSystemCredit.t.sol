@@ -37,7 +37,7 @@ contract TitanteoHyperEvmSystemCreditTest is Test {
         bytes[] memory actions = new bytes[](1);
         actions[0] = abi.encodeCall(
             ISettlerActions.POSITIVE_SLIPPAGE,
-            (payable(destination), asset, uint256(0), uint256(1_000_000), uint256(1_000_000))
+            (payable(destination), address(asset), uint256(0), uint256(1_000_000), uint256(1_000_000))
         );
         vm.prank(taker);
         settler.execute(
