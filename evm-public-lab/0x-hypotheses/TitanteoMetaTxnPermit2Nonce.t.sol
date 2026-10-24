@@ -7,7 +7,7 @@ import {Test} from "@forge-std/Test.sol";
 import {MockERC20} from "@solmate/test/utils/mocks/MockERC20.sol";
 import {IERC20} from "@forge-std/interfaces/IERC20.sol";
 import {ISignatureTransfer} from "@permit2/interfaces/ISignatureTransfer.sol";
-import {MainnetSettlerMetaTxn} from "src/chains/Mainnet/MetaTxn.sol";
+import {BaseSettlerMetaTxn} from "src/chains/Base/MetaTxn.sol";
 import {ISettlerActions} from "src/ISettlerActions.sol";
 import {ISettlerBase} from "src/interfaces/ISettlerBase.sol";
 
@@ -29,7 +29,7 @@ contract TitanteoMetaTxnPermit2NonceTest is Test {
     bytes32 private constant SLIPPAGE_ACTIONS_TYPEHASH =
         keccak256("SlippageAndActions(address recipient,address buyToken,uint256 minAmountOut,bytes[] actions)");
 
-    MainnetSettlerMetaTxn private settler;
+    BaseSettlerMetaTxn private settler;
     MockERC20 private token;
     address private owner;
 
@@ -37,7 +37,7 @@ contract TitanteoMetaTxnPermit2NonceTest is Test {
         vm.chainId(31337); // Settler's explicit local-constructor exception
         address template = deployCode("Permit2.sol:Permit2");
         vm.etch(PERMIT2_ADDR, template.code);
-        settler = new MainnetSettlerMetaTxn(bytes20(0));
+        settler = new BaseSettlerMetaTxn(bytes20(0));
         token = new MockERC20("Titanteo Local", "TLOC", 18);
         owner = vm.addr(OWNER_PK);
         token.mint(owner, AMOUNT * 4);
@@ -83,7 +83,7 @@ contract TitanteoMetaTxnPermit2NonceTest is Test {
             ISettlerBase.AllowedSlippage memory slippage) = _case();
         bytes memory sig = _sign(permit, actions, slippage, address(settler));
         vm.chainId(31337); // deployment-only local exception in SettlerBase
-        MainnetSettlerMetaTxn other = new MainnetSettlerMetaTxn(bytes20(0));
+        BaseSettlerMetaTxn other = new BaseSettlerMetaTxn(bytes20(0));
         vm.chainId(31338); // restore Permit2 EIP712 domain for the test
         vm.expectRevert();
         other.executeMetaTxn(slippage, actions, bytes32(0), owner, sig);
