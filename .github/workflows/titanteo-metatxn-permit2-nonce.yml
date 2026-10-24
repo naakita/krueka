@@ -56,9 +56,12 @@ jobs:
         shell: bash
         env:
           FOUNDRY_FFI: 'false'
+          FOUNDRY_GAS_LIMIT: '50000000'
+          FOUNDRY_BLOCK_GAS_LIMIT: '50000000'
+          FOUNDRY_CODE_SIZE_LIMIT: '200000'
         run: |
           set -euo pipefail
-          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoMetaTxnPermit2Nonce.t.sol' --fuzz-runs 64 -vv | tee "$RUNNER_TEMP/permit2-original.log"
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoMetaTxnPermit2Nonce.t.sol' --fuzz-runs 64 -vvvv | tee "$RUNNER_TEMP/permit2-original.log"
           grep -F '[PASS] testValidSignatureConsumesNonceAndCannotReplay()' "$RUNNER_TEMP/permit2-original.log"
           grep -F '[PASS] testChangedSlippageRecipientRejectedBeforeNonceUse()' "$RUNNER_TEMP/permit2-original.log"
           grep -F '[PASS] testDifferentSettlerContractCannotReuseSignature()' "$RUNNER_TEMP/permit2-original.log"
