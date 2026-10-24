@@ -1,0 +1,97 @@
+name: Titanteo 0x HyperEVM system credit recipient boundary (local)
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoHyperEvmSystemCredit.t.sol'
+      - '.github/workflows/titanteo-hyperevm-system-credit.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-hyperevm-system-credit
+  cancel-in-progress: true
+jobs:
+  original-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Checkout pinned original 0x source, no RPC
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git original-0x
+          cd original-0x
+          git checkout 9a5f9f9ee9f5f056cb9846048b36fa18562b1983
+          git submodule update --init --recursive
+          cp ../evm-public-lab/0x-hypotheses/TitanteoHyperEvmSystemCredit.t.sol test/unit/TitanteoHyperEvmSystemCredit.t.sol
+          echo "ORIGINAL_SOURCE_SHA=$(git rev-parse HEAD)"
+      - name: Prepare official compiler artifacts
+        working-directory: original-0x
+        timeout-minutes: 10
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          FOUNDRY_SOLC_VERSION=0.8.34 forge build -- src/chains/HyperEvm/TakerSubmitted.sol
+          FOUNDRY_SOLC_VERSION=0.8.25 forge build -- src/deployer/Deployer.sol src/allowanceholder/AllowanceHolder.sol
+          FOUNDRY_SOLC_VERSION=0.8.26 forge build -- lib/v4-core/src/PoolManager.sol
+          FOUNDRY_SOLC_VERSION=0.8.28 FOUNDRY_EVM_VERSION=london FOUNDRY_OPTIMIZER_RUNS=1000000 forge build -- src/multicall/MultiCall.sol
+      - name: Original-source regression and bounded fuzzing
+        working-directory: original-0x
+        timeout-minutes: 8
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_GAS_LIMIT: '50000000'
+          FOUNDRY_BLOCK_GAS_LIMIT: '50000000'
+          FOUNDRY_CODE_SIZE_LIMIT: '200000'
+        run: |
+          set -euo pipefail
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoHyperEvmSystemCredit.t.sol' --fuzz-runs 128 -vv | tee "$RUNNER_TEMP/hyper-credit-original.log"
+          grep -F '[PASS] testRejectsNativeSystemCreditFundedBySettler()' "$RUNNER_TEMP/hyper-credit-original.log"
+          grep -F '[PASS] testRejectsTokenSystemCreditFundedBySettler()' "$RUNNER_TEMP/hyper-credit-original.log"
+          grep -F '[PASS] testAllowsOrdinaryRecipientAsControl()' "$RUNNER_TEMP/hyper-credit-original.log"
+          grep -F '[PASS] testFuzz_RejectsTokenCreditForEveryIndex' "$RUNNER_TEMP/hyper-credit-original.log"
+          echo "UPSTREAM_HYPEREVM_SYSTEM_CREDIT_GUARD_PASSED"
+      - name: Create synthetic guard bypass in disposable copy only
+        working-directory: original-0x
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/chains/HyperEvm/BlockHyperEvmSystemContracts.sol')
+          s=p.read_text()
+          old='revert HyperCoreSystemAddress(recipient);'
+          new='return; // TITANTEO_SYNTHETIC_HYPERCORE_CREDIT_BYPASS'
+          assert s.count(old)==1, s.count(old)
+          p.write_text(s.replace(old,new))
+          print('SYNTHETIC_HYPERCORE_CREDIT_GUARD_REMOVED')
+          PY
+      - name: Confirm test detects synthetic bug (not a fixture error)
+        working-directory: original-0x
+        timeout-minutes: 8
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_GAS_LIMIT: '50000000'
+          FOUNDRY_BLOCK_GAS_LIMIT: '50000000'
+          FOUNDRY_CODE_SIZE_LIMIT: '200000'
+        run: |
+          set +e
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoHyperEvmSystemCredit.t.sol' --match-test 'testRejectsNativeSystemCreditFundedBySettler' -vv > "$RUNNER_TEMP/hyper-credit-mutant.log" 2>&1
+          rc=$?
+          set -e
+          tail -35 "$RUNNER_TEMP/hyper-credit-mutant.log"
+          if [ "$rc" -eq 0 ]; then echo 'ERROR: synthetic defect escaped detection'; exit 1; fi
+          if grep -Eq 'Compiler run failed|Compilation failed|ParserError|TypeError|^Error \\([0-9]+\\):|vm.getCode: no bytecode' "$RUNNER_TEMP/hyper-credit-mutant.log"; then
+            echo 'ERROR: compilation or fixture failure is not security evidence'; exit 1
+          fi
+          grep -F '[FAIL:' "$RUNNER_TEMP/hyper-credit-mutant.log"
+          echo "SYNTHETIC_HYPERCORE_CREDIT_BYPASS_DETECTED"
