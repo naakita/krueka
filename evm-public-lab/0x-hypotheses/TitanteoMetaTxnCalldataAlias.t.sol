@@ -209,7 +209,7 @@ contract TitanteoMetaTxnCalldataAliasTest is Test {
         bytes[] memory signedActions = new bytes[](2);
         signedActions[0] = actions[0];
         signedActions[1] = abi.encodeCall(
-            ISettlerActions.POSITIVE_SLIPPAGE, (payable(owner), IERC20(address(token)), AMOUNT, 0, 0)
+            ISettlerActions.POSITIVE_SLIPPAGE, (payable(owner), address(token), AMOUNT, 0, 0)
         );
         bytes memory sig = _sign(permit, signedActions, slippage, address(settler));
         bytes memory forged = _raw(signedActions, slippage, sig);
