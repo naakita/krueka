@@ -1,0 +1,87 @@
+name: Titanteo 0x new Aero/Nami callback boundary (local)
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoNewForkCallbacks.t.sol'
+      - '.github/workflows/titanteo-new-fork-callbacks.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-new-fork-callbacks
+  cancel-in-progress: true
+jobs:
+  isolated-source-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Clone original 0x at October 23 commit (no RPC, no real assets)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git original-0x
+          cd original-0x
+          git checkout 9a5f9f9ee9f5f056cb9846048b36fa18562b1983
+          git submodule update --init --recursive
+          cp ../evm-public-lab/0x-hypotheses/TitanteoNewForkCallbacks.t.sol test/unit/TitanteoNewForkCallbacks.t.sol
+          echo "UPSTREAM_SOURCE_SHA=$(git rev-parse HEAD)"
+      - name: Baseline positive and negative tests against unmodified upstream
+        working-directory: original-0x
+        shell: bash
+        timeout-minutes: 9
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          forge test --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --fuzz-runs 32 -vv | tee "$RUNNER_TEMP/new-fork-original.log"
+          grep -F '[PASS] testAeroValidPoolCallbackSucceeds()' "$RUNNER_TEMP/new-fork-original.log"
+          grep -F '[PASS] testNamiValidAlgebraCallbackSucceeds()' "$RUNNER_TEMP/new-fork-original.log"
+          grep -F '[PASS] testNamiRejectsWrongUniswapCallback()' "$RUNNER_TEMP/new-fork-original.log"
+          grep -F '[PASS] testDirectForgedCallbackOutsideSwapRejected()' "$RUNNER_TEMP/new-fork-original.log"
+          echo "UPSTREAM_AERO_NAMI_CALLBACK_BOUNDARY_PASS"
+      - name: Deliberately mutate Nami callback selector ONLY in disposable local clone
+        working-directory: original-0x
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/chains/Base/Common.sol')
+          s = p.read_text()
+          old = 'callbackSelector = uint32(IAlgebraCallback.algebraSwapCallback.selector);'
+          new = 'callbackSelector = uint32(IUniswapV3Callback.uniswapV3SwapCallback.selector); // TITANTEO_SYNTHETIC_WRONG_SELECTOR'
+          assert s.count(old) == 1, s.count(old)
+          p.write_text(s.replace(old, new))
+          print('SYNTHETIC_NAMI_CALLBACK_SELECTOR_MUTATION')
+          PY
+      - name: Negative control must detect mutated callback authorization
+        working-directory: original-0x
+        shell: bash
+        timeout-minutes: 8
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set +e
+          forge test --match-path 'test/unit/TitanteoNewForkCallbacks.t.sol' --match-test 'testNamiRejectsWrongUniswapCallback' -vv > "$RUNNER_TEMP/new-fork-mutant.log" 2>&1
+          rc=$?
+          set -e
+          tail -45 "$RUNNER_TEMP/new-fork-mutant.log"
+          if [ "$rc" -eq 0 ]; then
+            echo "ERROR: intentionally wrong callback was not detected"
+            exit 1
+          fi
+          if grep -Eq 'Compiler run failed|Compilation failed|ParserError|TypeError|^Error \([0-9]+\):|vm.getCode: no bytecode' "$RUNNER_TEMP/new-fork-mutant.log"; then
+            echo "ERROR: build/fixture failed; no valid negative control"
+            exit 1
+          fi
+          grep -F '[FAIL:' "$RUNNER_TEMP/new-fork-mutant.log"
+          grep -F 'testNamiRejectsWrongUniswapCallback' "$RUNNER_TEMP/new-fork-mutant.log"
+          grep -Ei 'next call did not revert|call did not revert|call didn.t revert|expected revert' "$RUNNER_TEMP/new-fork-mutant.log"
+          echo "SYNTHETIC_NAMI_WRONG_CALLBACK_CAUGHT"
