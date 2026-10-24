@@ -1,0 +1,104 @@
+name: Titanteo 0x metaTx recipient reentry payer isolation
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoMetaTxnRecipientReentry.t.sol'
+      - '.github/workflows/titanteo-metatxn-recipient-reentry.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-metatxn-recipient-reentry
+  cancel-in-progress: true
+jobs:
+  isolated-evm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Clone pinned unmodified 0x with dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git original-0x
+          cd original-0x
+          git checkout 9a5f9f9ee9f5f056cb9846048b36fa18562b1983
+          git submodule update --init --recursive
+          test "$(git -C lib/permit2 rev-parse HEAD)" = "cc56ad0f3439c502c246fc5cfcc3db92bb8b7219"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoMetaTxnRecipientReentry.t.sol test/unit/TitanteoMetaTxnRecipientReentry.t.sol
+          echo "PINNED_0X_SHA=$(git rev-parse HEAD)"
+      - name: Build exact official solc versions (no RPC)
+        working-directory: original-0x
+        timeout-minutes: 11
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+        run: |
+          set -euo pipefail
+          FOUNDRY_SOLC_VERSION=0.8.17 FOUNDRY_EVM_VERSION=london forge build -- lib/permit2/src/Permit2.sol
+          FOUNDRY_SOLC_VERSION=0.8.34 forge build -- src/chains/Base/MetaTxn.sol
+          FOUNDRY_SOLC_VERSION=0.8.25 forge build -- src/deployer/Deployer.sol src/allowanceholder/AllowanceHolder.sol
+          FOUNDRY_SOLC_VERSION=0.8.26 forge build -- lib/v4-core/src/PoolManager.sol
+          FOUNDRY_SOLC_VERSION=0.8.28 FOUNDRY_EVM_VERSION=london FOUNDRY_OPTIMIZER_RUNS=1000000 forge build -- src/multicall/MultiCall.sol
+          test -s out/Permit2.sol/Permit2.json
+      - name: Execute signed reentry regression on unmodified 0x
+        working-directory: original-0x
+        timeout-minutes: 7
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_GAS_LIMIT: '50000000'
+          FOUNDRY_BLOCK_GAS_LIMIT: '50000000'
+          FOUNDRY_CODE_SIZE_LIMIT: '200000'
+        run: |
+          set -euo pipefail
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoMetaTxnRecipientReentry.t.sol' -vvv | tee "$RUNNER_TEMP/recipient-reentry-baseline.log"
+          grep -F '[PASS] testRecipientReentryCannotSpendSecondSignersNonceOrChangePayer()' "$RUNNER_TEMP/recipient-reentry-baseline.log"
+          echo "TITANTEO_SIGNED_RECIPIENT_REENTRY_BASELINE_PASSED"
+      - name: Synthetic negative control disables payer guard only in temporary clone
+        working-directory: original-0x
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('src/core/Permit2Payment.sol')
+          s=p.read_text()
+          old='if shl(0x60, slotValue) {'
+          assert s.count(old)==1, s.count(old)
+          p.write_text(s.replace(old, 'if 0 { // TITANTEO_SYNTHETIC_PAYER_GUARD_DISABLED'))
+          print('SYNTHETIC_PAYER_GUARD_DISABLED_IN_CLONE')
+          PY
+      - name: Confirm mutation is detected as a test failure, not a fixture failure
+        working-directory: original-0x
+        timeout-minutes: 7
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_GAS_LIMIT: '50000000'
+          FOUNDRY_BLOCK_GAS_LIMIT: '50000000'
+          FOUNDRY_CODE_SIZE_LIMIT: '200000'
+        run: |
+          set +e
+          forge test --skip 'src/*' --skip 'test/integration/*' --skip 'test/0.8.25/*' --match-path 'test/unit/TitanteoMetaTxnRecipientReentry.t.sol' -vv > "$RUNNER_TEMP/recipient-reentry-mutant.log" 2>&1
+          rc=$?
+          set -e
+          tail -45 "$RUNNER_TEMP/recipient-reentry-mutant.log"
+          if [ "$rc" -eq 0 ]; then
+            echo "ERROR: synthetic guard removal escaped regression"
+            exit 1
+          fi
+          if grep -Eq 'Compiler run failed|Compilation failed|ParserError|TypeError|^Error \([0-9]+\):|vm.getCode: no bytecode' "$RUNNER_TEMP/recipient-reentry-mutant.log"; then
+            echo "ERROR: build or fixture failure is not a valid negative control"
+            exit 1
+          fi
+          grep -F '[FAIL:' "$RUNNER_TEMP/recipient-reentry-mutant.log"
+          echo "TITANTEO_SYNTHETIC_REENTRY_DEFECT_DETECTED"
