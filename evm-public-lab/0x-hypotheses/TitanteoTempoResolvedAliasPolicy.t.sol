@@ -12,7 +12,7 @@ import {ISettlerBase} from "src/interfaces/ISettlerBase.sol";
 import {ReceivePolicyBlocked} from "src/core/SettlerErrors.sol";
 
 contract TitanteoTempoResolvedAliasPolicyTest is Test {
-    address constant TIP20 = 0x20C0000000000000000000000000000000000029;
+    address constant TIP20 = 0x20c0000000000000000000000000000000000029;
     address constant ADDRESS_REGISTRY = 0xfDC0000000000000000000000000000000000000;
     address constant POLICY_REGISTRY = 0x403c000000000000000000000000000000000000;
     TempoSettler internal settler;
