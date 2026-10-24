@@ -45,7 +45,7 @@ jobs:
           set -euo pipefail
           FOUNDRY_SOLC_VERSION=0.8.17 FOUNDRY_EVM_VERSION=london forge build -- lib/permit2/src/Permit2.sol
           test -s out/Permit2.sol/Permit2.json
-          FOUNDRY_SOLC_VERSION=0.8.34 forge build -- src/chains/Mainnet/MetaTxn.sol
+          FOUNDRY_SOLC_VERSION=0.8.34 forge build -- src/chains/Base/MetaTxn.sol
           FOUNDRY_SOLC_VERSION=0.8.25 forge build -- src/deployer/Deployer.sol src/allowanceholder/AllowanceHolder.sol
           FOUNDRY_SOLC_VERSION=0.8.26 forge build -- lib/v4-core/src/PoolManager.sol
           FOUNDRY_SOLC_VERSION=0.8.28 FOUNDRY_EVM_VERSION=london FOUNDRY_OPTIMIZER_RUNS=1000000 forge build -- src/multicall/MultiCall.sol
