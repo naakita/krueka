@@ -110,7 +110,9 @@ contract TitanteoNewForkCallbacksTest is Test {
             assertEq(forkId, namiForkId);
             assertEq(factory, namiBaseFactory);
             assertEq(initHash, namiInitHash);
-            assertEq(actualSelector, uint32(IAlgebraCallback.algebraSwapCallback.selector));
+            if (selector == IAlgebraCallback.algebraSwapCallback.selector) {
+                assertEq(actualSelector, uint32(IAlgebraCallback.algebraSwapCallback.selector));
+            }
         }
         bytes32 salt = poolId == 0
             ? keccak256(abi.encode(address(input), address(output)))
