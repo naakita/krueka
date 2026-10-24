@@ -56,7 +56,7 @@ contract TitanteoHyperEvmNestedSelectTest is Test {
         assertEq(TitanteoHyperCoreWriterObserver(CORE_WRITER).calls(), 0, "system writer invoked");
     }
 
-    function testFailedCoreWriterTrialThenAllowedPoolCommitsWithoutLeak() public {
+    function testRejectedCoreWriterTrialThenAllowedPoolCommitsWithoutLeak() public {
         bytes[][] memory candidates = new bytes[][](2);
         candidates[0] = _single(_coreWriterAction());
         candidates[1] = _single(abi.encodeCall(
