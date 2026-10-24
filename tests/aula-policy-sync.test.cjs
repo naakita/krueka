@@ -17,7 +17,7 @@ assert.match(edge,/eq\("policy_version",d\.policy_version\)/);
 assert.match(edge,/policy_applied_version/);
 assert.match(edge,/policy_last_seen/);
 assert.match(edge,/policy_apply_error/);
-assert.match(edge,/const \\{policy_token_hash,\\.\\.\\.safe\\}=d/,'hash is stripped from public list');
+assert.ok(edge.includes('const {policy_token_hash,...safe}=d'),'hash is stripped from public list');
 assert.match(edge,/has_policy_token:!!policy_token_hash/,'only the provisioning boolean is returned');
 assert.match(sql,/before update of allowed,enabled/);
 assert.match(sql,/new\.policy_version := old\.policy_version \+ 1/);
