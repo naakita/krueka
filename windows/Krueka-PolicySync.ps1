@@ -64,7 +64,6 @@ function AsSafePolicy($data) {
  if(!$clean.Contains("krueka.com") -or !$clean.Contains("janebfpnknapvntfqolf.supabase.co")){
   throw "Faltan dominios esenciales, se preserva la política anterior."
  }
- }
  return @{version=$version;enabled=[bool]$data.enabled;allow=@($clean)+$essential}
 }
 function GetPolicyValues([string]$keyName) {
