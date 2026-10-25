@@ -1,0 +1,63 @@
+name: Titanteo differential POSITIVE_SLIPPAGE Base vs Mainnet
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoNewSlippageDifferential.t.sol'
+      - '.github/workflows/titanteo-slippage-differential.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-slippage-differential
+  cancel-in-progress: true
+jobs:
+  differential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Clone pinned current 0x public source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git target
+          cd target
+          git checkout 9a5f9f9ee9f5f056cb9846048b36fa18562b1983
+          git submodule update --init --recursive
+          echo "PINNED_0X_SOURCE=$(git rev-parse HEAD)"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoNewSlippageDifferential.t.sol test/unit/core/TitanteoNewSlippageDifferential.t.sol
+      - name: Fix local compiler constraints only for opcode compatibility
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          revised=[]
+          for p in Path("target/src").rglob("*.sol"):
+              t=p.read_text()
+              if re.search(r"\bclz\s*\(",t) and "pragma solidity ^0.8.25;" in t:
+                  assert t.count("pragma solidity ^0.8.25;")==1
+                  p.write_text(t.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
+                  revised.append(str(p))
+          print("COMPILER_COMPAT_LOCAL_ONLY",revised)
+          PY
+      - name: Compare 0x Mainnet vs Base paths under identical synthetic states
+        working-directory: target
+        timeout-minutes: 10
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_EVM_VERSION: osaka
+          FOUNDRY_SPARSE_MODE: 'true'
+        run: |
+          set -euo pipefail
+          forge test --match-path test/unit/core/TitanteoNewSlippageDifferential.t.sol --fuzz-runs 2048 -v | tee "$RUNNER_TEMP/differential.log"
+          grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/differential.log"
+          echo "TITANTEO_POSITIVE_SLIPPAGE_DIFFERENTIAL_COMPLETE"
