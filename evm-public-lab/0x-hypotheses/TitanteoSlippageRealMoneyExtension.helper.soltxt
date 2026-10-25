@@ -1,0 +1,25 @@
+// Titanteo Security Lab: new local tests injected into upstream
+// PositiveSlippageUnitTest. No production protocol sources are changed.
+contract TitanteoSlippageReentryObserver {
+    MainnetSettler private immutable settler;
+    bool public attempted;
+    bool public nestedExecutionSucceeded;
+
+    constructor(MainnetSettler target) { settler = target; }
+    receive() external payable {
+        attempted = true;
+        bytes[] memory none = new bytes[](0);
+        try settler.execute(
+            ISettlerBase.AllowedSlippage({
+                recipient: payable(address(0)),
+                buyToken: IERC20(address(0)),
+                minAmountOut: 0
+            }),
+            none, bytes32(0)
+        ) returns (bool ok) {
+            nestedExecutionSucceeded = ok;
+        } catch {
+            nestedExecutionSucceeded = false;
+        }
+    }
+}

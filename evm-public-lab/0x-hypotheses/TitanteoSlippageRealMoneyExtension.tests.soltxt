@@ -1,0 +1,76 @@
+
+    function testFuzz_TitanteoEthSurplusConservation(
+        uint64 rawBalance, uint64 rawExpected, uint24 rawSurplus, uint24 rawCap
+    ) public {
+        uint256 balance = 1 + uint256(rawBalance);
+        uint256 expectedAmount = bound(uint256(rawExpected), 0, balance);
+        uint256 surplusPpm = bound(uint256(rawSurplus), 0, BASIS);
+        uint256 maxPpm = bound(uint256(rawCap), 0, BASIS);
+        vm.deal(address(settler), balance);
+        _execute(ETH_ADDRESS, expectedAmount, surplusPpm, maxPpm);
+        uint256 surplus = balance > expectedAmount ? balance - expectedAmount : 0;
+        uint256 share = surplus * surplusPpm / BASIS;
+        uint256 cap = balance * maxPpm / BASIS;
+        uint256 output = share < cap ? share : cap;
+        assertEq(recipient.balance, output, "ETH excess payout");
+        assertEq(address(settler).balance, balance - output, "ETH conservation failure");
+    }
+
+    function testFuzz_TitanteoSequentialSurplusCannotDoubleSpend(
+        uint64 rawBalance, uint64 rawExpected, uint24 rawSurplus, uint24 rawCap
+    ) public {
+        uint256 balance = 1 + uint256(rawBalance);
+        uint256 expectedAmount = bound(uint256(rawExpected), 0, balance);
+        uint256 surplusPpm = bound(uint256(rawSurplus), 0, BASIS);
+        uint256 maxPpm = bound(uint256(rawCap), 0, BASIS);
+        token.mint(address(settler), balance);
+        bytes[] memory actions = new bytes[](2);
+        bytes memory action = abi.encodeCall(
+            ISettlerActions.POSITIVE_SLIPPAGE,
+            (recipient, address(token), expectedAmount, surplusPpm, maxPpm)
+        );
+        actions[0] = action;
+        actions[1] = action;
+        settler.execute(
+            ISettlerBase.AllowedSlippage({
+                recipient: payable(address(0)),
+                buyToken: IERC20(address(0)), minAmountOut: 0
+            }),
+            actions, bytes32(0)
+        );
+        uint256 total;
+        uint256 currentBalance = balance;
+        for (uint256 i = 0; i < 2; ++i) {
+            uint256 excess = currentBalance > expectedAmount ? currentBalance - expectedAmount : 0;
+            uint256 share = excess * surplusPpm / BASIS;
+            uint256 cap = currentBalance * maxPpm / BASIS;
+            uint256 transferAmount = share < cap ? share : cap;
+            total += transferAmount;
+            currentBalance -= transferAmount;
+        }
+        assertEq(token.balanceOf(recipient), total, "unexpected extra token payout");
+        assertEq(token.balanceOf(address(settler)), balance - total, "double-spend or lost token");
+    }
+
+    function test_TitanteoReentrantEtherRecipientCannotStartNestedSettlement() public {
+        TitanteoSlippageReentryObserver observer = new TitanteoSlippageReentryObserver(settler);
+        vm.deal(address(settler), 2 ether);
+        bytes[] memory actions = new bytes[](1);
+        actions[0] = abi.encodeCall(
+            ISettlerActions.POSITIVE_SLIPPAGE,
+            (payable(address(observer)), address(ETH_ADDRESS), 0, BASIS, BASIS)
+        );
+        settler.execute(
+            ISettlerBase.AllowedSlippage({
+                recipient: payable(address(0)),
+                buyToken: IERC20(address(0)),
+                minAmountOut: 0
+            }),
+            actions, bytes32(0)
+        );
+        assertTrue(observer.attempted(), "recipient callback did not run");
+        assertFalse(observer.nestedExecutionSucceeded(), "reentrant settlement unexpectedly succeeded");
+        assertEq(address(observer).balance, 2 ether, "ETH payout incorrect");
+        assertEq(address(settler).balance, 0, "ETH balance unaccounted");
+    }
+

@@ -1,0 +1,63 @@
+name: Titanteo latest Settler actual ETH and token conservation audit
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - 'evm-public-lab/0x-hypotheses/TitanteoSlippageRealMoneyExtension.*'
+      - '.github/workflows/titanteo-settler-surplus-latest.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-settler-surplus-latest
+  cancel-in-progress: true
+jobs:
+  original-latest-funds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Pin latest official 0x commit without accessing deployed contracts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git target
+          cd target
+          git checkout 9a5f9f9ee9f5f056cb9846048b36fa18562b1983
+          git submodule update --init --recursive
+          echo "PINNED_ORIGINAL_2026_10_23=$(git rev-parse HEAD)"
+      - name: Inject independent tests into upstream test source only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('target/test/unit/core/PositiveSlippageUnitTest.t.sol')
+          c=root.read_text()
+          enter='contract PositiveSlippageUnitTest is Test {'
+          assert c.count(enter)==1
+          helpers=Path('evm-public-lab/0x-hypotheses/TitanteoSlippageRealMoneyExtension.helper.soltxt').read_text()
+          tests=Path('evm-public-lab/0x-hypotheses/TitanteoSlippageRealMoneyExtension.tests.soltxt').read_text()
+          c=c.replace(enter,helpers+'\n'+enter)
+          anchor='    function _executeToken('
+          assert c.count(anchor)==1
+          c=c.replace(anchor,tests+'\n'+anchor)
+          root.write_text(c)
+          print('INJECTED_THREE_NEW_LOCAL_INVARIANTS')
+          PY
+      - name: Run original and new fund-conservation invariants
+        working-directory: target
+        timeout-minutes: 11
+        shell: bash
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_EVM_VERSION: osaka
+        run: |
+          set -euo pipefail
+          forge test --match-path test/unit/core/PositiveSlippageUnitTest.t.sol --fuzz-runs 2048 -v | tee "$RUNNER_TEMP/titanteo-latest-funds.log"
+          grep -E 'Suite result:|Ran [0-9]+ test suites' "$RUNNER_TEMP/titanteo-latest-funds.log"
