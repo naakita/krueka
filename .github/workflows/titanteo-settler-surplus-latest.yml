@@ -62,6 +62,22 @@ jobs:
           echo "d40adc6f9fdbb22a97d32a02fa05688bf2ee7886affc48c9851b0afd4a726b39  $dir/solc-0.8.34" | sha256sum -c -
           chmod +x "$dir/solc-0.8.34"
           "$dir/solc-0.8.34" --version
+      - name: Match official Osaka CLZ compiler constraints in disposable checkout only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          changed=[]
+          for p in Path("target/src").rglob("*.sol"):
+              src=p.read_text()
+              if re.search(r"\bclz\s*\(", src) and "pragma solidity ^0.8.25;" in src:
+                  assert src.count("pragma solidity ^0.8.25;")==1
+                  p.write_text(src.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
+                  changed.append(str(p))
+          assert len(changed)>=3,changed
+          print("LOCAL_CLZ_COMPATIBILITY_ADJUSTED",changed)
+          PY
       - name: Run original and new fund-conservation invariants
         working-directory: target
         timeout-minutes: 11
