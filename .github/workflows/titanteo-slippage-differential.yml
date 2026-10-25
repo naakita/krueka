@@ -33,6 +33,18 @@ jobs:
           git submodule update --init --recursive
           echo "PINNED_0X_SOURCE=$(git rev-parse HEAD)"
           cp ../evm-public-lab/0x-hypotheses/TitanteoNewSlippageDifferential.t.sol test/unit/core/TitanteoNewSlippageDifferential.t.sol
+      - name: Install SHA256-verified Solidity 0.8.34 for current upstream source
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$HOME/.svm/0.8.34"
+          mkdir -p "$dir"
+          curl --fail --location --silent --show-error --retry 2 --max-time 90 \
+            "https://github.com/argotorg/solidity/releases/download/v0.8.34/solc-static-linux" \
+            --output "$dir/solc-0.8.34"
+          echo "d40adc6f9fdbb22a97d32a02fa05688bf2ee7886affc48c9851b0afd4a726b39  $dir/solc-0.8.34" | sha256sum -c -
+          chmod +x "$dir/solc-0.8.34"
+          "$dir/solc-0.8.34" --version
       - name: Fix local compiler constraints only for opcode compatibility
         shell: bash
         run: |
