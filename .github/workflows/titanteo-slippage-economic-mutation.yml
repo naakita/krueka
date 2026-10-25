@@ -1,0 +1,87 @@
+name: Titanteo H57 synthetic economic delta negative control
+on:
+  push:
+    branches:
+      - research/evm-lab-public-tests
+    paths:
+      - '.github/workflows/titanteo-slippage-economic-mutation.yml'
+permissions:
+  contents: read
+concurrency:
+  group: titanteo-slippage-h57-negative
+  cancel-in-progress: true
+jobs:
+  synthetic-economic-defect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.5.1
+          cache: false
+      - name: Clone verified original then apply local-only synthetic economic defect
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --recurse-submodules https://github.com/0xProject/0x-settler.git target
+          cd target
+          git checkout 9a5f9f9ee9f5f056cb9846048b36fa18562b1983
+          git submodule update --init --recursive
+          echo "ORIGINAL_SOURCE_COMMIT=$(git rev-parse HEAD)"
+          cp ../evm-public-lab/0x-hypotheses/TitanteoNewSlippageDifferential.t.sol test/unit/core/TitanteoNewSlippageDifferential.t.sol
+          cd ..
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("target/src/chains/Mainnet/Common.sol")
+          src=p.read_text()
+          original="balance = balance * surplusPpm / Constants.BASIS;"
+          assert src.count(original)==1,src.count(original)
+          p.write_text(src.replace(original, "balance = 0; // SYNTHETIC WRONG PAYOUT FOR DETECTOR SENSITIVITY"))
+          print("SYNTHETIC_MAINNET_SURPLUS_CORRUPTION_APPLIED_LOCAL_ONLY")
+          PY
+      - name: Install SHA256-verified original compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="$HOME/.svm/0.8.34"
+          mkdir -p "$dir"
+          curl --fail --location --silent --show-error --retry 2 --max-time 90             "https://github.com/argotorg/solidity/releases/download/v0.8.34/solc-static-linux"             --output "$dir/solc-0.8.34"
+          echo "d40adc6f9fdbb22a97d32a02fa05688bf2ee7886affc48c9851b0afd4a726b39  $dir/solc-0.8.34" | sha256sum -c -
+          chmod +x "$dir/solc-0.8.34"
+      - name: Align local Osaka CLZ compiler constraints
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          for p in Path("target/src").rglob("*.sol"):
+              s=p.read_text()
+              if re.search(r"\bclz\s*\(",s) and "pragma solidity ^0.8.25;" in s:
+                  assert s.count("pragma solidity ^0.8.25;")==1
+                  p.write_text(s.replace("pragma solidity ^0.8.25;", "pragma solidity ^0.8.34;"))
+          PY
+      - name: Confirm one mixed-asset differential detects intentional mispayment
+        shell: bash
+        timeout-minutes: 10
+        working-directory: target
+        env:
+          FOUNDRY_FFI: 'false'
+          FOUNDRY_EVM_VERSION: osaka
+          FOUNDRY_SPARSE_MODE: 'true'
+        run: |
+          set +e
+          forge test --match-path 'test/unit/core/TitanteoNewSlippageDifferential.t.sol' --match-test 'testFuzz_DifferentialMixedTokenAndNative' --fuzz-runs 256 -v > "$RUNNER_TEMP/synthetic-delta.log" 2>&1
+          result=$?
+          set -e
+          tail -30 "$RUNNER_TEMP/synthetic-delta.log"
+          if [ "$result" -eq 0 ]; then echo "ERROR: detector accepted synthetic wrong payout"; exit 1; fi
+          if grep -Eq 'Compiler run failed|Compilation failed|ParserError|TypeError|^Error \([0-9]+\):' "$RUNNER_TEMP/synthetic-delta.log"; then
+            echo "ERROR: compilation failure, not detector signal"
+            exit 1
+          fi
+          grep -F '[FAIL:' "$RUNNER_TEMP/synthetic-delta.log"
+          grep -E 'token payout depends on chain dispatch|native payout depends on chain dispatch' "$RUNNER_TEMP/synthetic-delta.log"
+          echo "SYNTHETIC_MAINNET_ECONOMIC_PAYOUT_DEFECT_CAUGHT"
