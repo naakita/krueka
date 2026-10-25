@@ -50,6 +50,27 @@ jobs:
           root.write_text(c)
           print('INJECTED_THREE_NEW_LOCAL_INVARIANTS')
           PY
+      - name: Install verified upstream Solidity compiler binaries
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, urllib.request
+          base="https://binaries.soliditylang.org/linux-amd64/"
+          index=json.load(urllib.request.urlopen(base+"list.json", timeout=25))
+          entries={item["path"]:item for item in index["builds"]}
+          for version in ("0.8.25", "0.8.28", "0.8.34", "0.8.37"):
+              name=index["releases"][version]
+              item=entries[name]
+              expected=item["sha256"].removeprefix("0x").lower()
+              data=urllib.request.urlopen(base+name, timeout=55).read()
+              actual=hashlib.sha256(data).hexdigest()
+              assert actual==expected, "official compiler SHA256 mismatch for "+version
+              target=pathlib.Path.home()/".svm"/version/("solc-"+version)
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(data)
+              target.chmod(0o755)
+              print("VERIFIED_OFFICIAL_SOLC",version,actual)
+          PY
       - name: Run original and new fund-conservation invariants
         working-directory: target
         timeout-minutes: 11
