@@ -7,7 +7,7 @@ const blindar=read('windows/Blindar-Sesiones-Krueka.ps1');
 const instalar=read('windows/Configurar-Krueka-Alumnos.ps1');
 const local=read('windows/Autorizar-EdClub-CodeOrg-Krueka.ps1');
 const sql=read('supabase/migrations/20261024081000_aula_educational_edclub_codeorg.sql');
-assert.match(app,/js\/aula-control\.js\?v=20261024c/);
+assert.match(app,/js\/aula-control\.js\?v=20261026a/);
 new vm.Script(ui);
 for(const hostname of [
  'betesda-educacion.edclub.com','studio.code.org','static.typingclub.com',

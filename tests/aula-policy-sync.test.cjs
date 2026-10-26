@@ -7,7 +7,7 @@ const ps=read('windows/Krueka-PolicySync.ps1');
 const sql=read('supabase/migrations/20261024160000_aula_browser_policy_sync.sql');
 const app=read('app.html'),install=read('windows/INSTALAR-SINCRONIZACION-WEB-ADMIN.cmd');
 new vm.Script(ui);
-assert.match(app,/js\/aula-control\.js\?v=20261024c/);
+assert.match(app,/js\/aula-control\.js\?v=20261026a/);
 for(const name of ['policy_pull','policy_report','policy_token','allow_all','lock_all']){
  assert.ok(edge.includes('"'+name+'"'),'Missing backend action '+name);
 }

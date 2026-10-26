@@ -60,7 +60,7 @@ const AulaControl = {
   const diagnosticoPc='https://github.com/naakita/krueka/tree/main/windows';
   // La orden enviada no garantiza que Windows haya aplicado el cambio.
   const modoButton=d=>{
-   if(offline(d))return '<button class="btn sm sec" disabled title="La PC no responde al servidor. Revisar agente Windows en el equipo.">PC desconectada · revisar agente</button>';
+   if(offline(d))return '<button class="btn sm sec" disabled title="El agente original de Office y quiosco no responde al servidor. No afecta a la sincronización web.">'+(webAlive(d)?'Agente Office desconectado':'Agente Windows desconectado')+'</button>';
    const pendiente=officePendiente(d);
    const next=pendiente?"office":d.desktop_mode==="office"?"edge":"office";
    const label=pendiente?"↻ Reintentar Office":d.desktop_mode==="office"?"Volver a solo Krueka":"Habilitar Word, Excel y PowerPoint";
@@ -68,11 +68,12 @@ const AulaControl = {
     '" onclick="AulaControl.modoOfimatica(\''+d.id+'\',\''+next+'\')">'+label+'</button>';
   };
   const estadoOffice=d=>{
-   if(offline(d))return '<div class="alert err" style="margin-top:10px" role="status">'+
-    '<b>⚠ PC sin conexión: Krueka no puede confirmar ni aplicar Office</b>'+
+   if(offline(d))return '<div class="alert '+(webAlive(d)?'info':'err')+'" style="margin-top:10px" role="status">'+
+    '<b>⚠ '+(webAlive(d)?'Control web conectado; agente Office/quiosco sin conexión':'Agente Office/quiosco sin conexión')+'</b>'+
     '<div>El permiso '+(d.desktop_mode==="office"?'de Word, Excel y PowerPoint ya está autorizado':'de Ofimática no está activo')+
-    ', pero el agente no se ha comunicado recientemente. Último contacto: '+(d.last_seen?esc(new Date(d.last_seen).toLocaleString("es-PY")):'nunca registrado')+'.</div>'+
-    '<div style="margin-top:5px">Primero comprobá o reiniciá el agente de Windows en esa PC. No generes otro token ni cambies el quiosco. <a href="'+diagnosticoPc+'" target="_blank" rel="noopener noreferrer">Herramientas de diagnóstico</a>.</div></div>';
+    ', pero el agente original no se comunica. Último contacto del agente: '+(d.last_seen?esc(new Date(d.last_seen).toLocaleString("es-PY")):'nunca registrado')+'. El estado actual de Office no está confirmado.</div>'+
+    (webAlive(d)?'<div style="margin-top:5px">La sincronización de páginas de Edge y Chrome SÍ funciona. No reinstales ni cambies su token web.</div>':'')+
+    '<div style="margin-top:5px">Para controlar Office o el quiosco es necesario recuperar el agente original de Windows. No generes otro token ni desactives el quiosco. <a href="'+diagnosticoPc+'" target="_blank" rel="noopener noreferrer">Diagnóstico del agente</a>.</div></div>';
    if(!officePendiente(d))return "";
    const fallido=!!d.kiosk_error&&d.desktop_mode_observed==="edge";
    return '<div class="alert '+(fallido?'err':'info')+'" style="margin-top:10px" role="status">'+
@@ -86,7 +87,7 @@ const AulaControl = {
   box.innerHTML='<div class="row" style="align-items:center;justify-content:space-between;margin-bottom:15px"><div><h2 style="margin:0">Aula conectada</h2><span class="note">El sincronizador web consulta cambios cada minuto, una vez instalado en Windows. El agente antiguo no confirma directivas.</span></div><div class="row"><button class="btn sec sm" onclick="AulaControl.cargar()">↻ Actualizar</button><button class="btn sm" onclick="AulaControl.crear()">+ Registrar PC</button></div></div>'+
     '<div class="row" style="margin-bottom:14px;gap:7px;flex-wrap:wrap"><button class="btn sm" onclick="AulaControl.dominioGeneral(true)">+ Autorizar página a todas las PCs</button><button class="btn sm sec" onclick="AulaControl.dominioGeneral(false)">Quitar página de todas</button><button class="btn sm sec" onclick="AulaControl.bloqueoGeneral(true)">Restringir Internet en todas</button><button class="btn sm sec" onclick="AulaControl.bloqueoGeneral(false)">Liberar Internet en todas</button></div>'+
     '<div class="grid3" style="margin-bottom:18px"><div class="kpi"><b>'+ds.length+'</b><span>Computadoras registradas</span></div><div class="kpi"><b>'+ds.filter(connected).length+'</b><span>Conectadas: web o agente</span></div><div class="kpi"><b>'+pending.length+'</b><span>Solicitudes pendientes</span></div></div>'+
-    (ds.length?ds.map(d=>'<div class="card" style="margin:12px 0"><div class="row" style="align-items:center;justify-content:space-between"><div><b>'+esc(d.label)+'</b> <span class="tag '+(connected(d)?'green':'orange')+'">'+connectedLabel(d)+'</span><div class="note">'+esc(d.id)+' · Quiosco '+(d.kiosk_enabled?'activado':'desactivado')+' · Modo '+(d.desktop_mode==='office'?'Ofimática':'Solo Krueka')+' (PC: '+(d.desktop_mode_observed==='office'?'Ofimática':d.desktop_mode_observed==='edge'?'Solo Krueka':'sin confirmar')+') · '+(d.last_seen?'Última conexión '+new Date(d.last_seen).toLocaleString("es-PY"):'Aún no instalada')+'</div></div><span class="tag '+(d.enabled?'blue':'orange')+'">'+(d.enabled?'Web restringida':'Navegación liberada')+'</span></div>'+
+    (ds.length?ds.map(d=>'<div class="card" style="margin:12px 0"><div class="row" style="align-items:center;justify-content:space-between"><div><b>'+esc(d.label)+'</b> <span class="tag '+(connected(d)?'green':'orange')+'">'+connectedLabel(d)+'</span><div class="note">'+esc(d.id)+' · Quiosco '+(d.kiosk_enabled?'activado':'desactivado')+' · Modo '+(d.desktop_mode==='office'?'Ofimática':'Solo Krueka')+' ('+(alive(d)?'PC: ':'Último modo reportado: ')+(d.desktop_mode_observed==='office'?'Ofimática':d.desktop_mode_observed==='edge'?'Solo Krueka':'sin confirmar')+(alive(d)?')':'; sin confirmar ahora)')+' · '+(d.last_seen?'Último contacto del agente '+new Date(d.last_seen).toLocaleString("es-PY"):'Agente sin contacto registrado')+'</div></div><span class="tag '+(d.enabled?'blue':'orange')+'">'+(d.enabled?'Web restringida':'Navegación liberada')+'</span></div>'+
        estadoOffice(d)+
        educativoEstado(d)+
        policyDetail(d)+
