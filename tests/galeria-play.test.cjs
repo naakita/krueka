@@ -30,7 +30,7 @@ class El {
  constructor(tag='div'){this.tagName=tag.toUpperCase();this.children=[];this.dataset={};this.listeners={};this.attributes={};this.style={};this.className='';this._html='';this.classList={toggle(){},add(){},remove(){}};}
  appendChild(x){this.children.push(x);return x;}
  replaceChildren(...x){this.children=[...x];}
- set innerHTML(x){this._html=x;this.children=[];}
+ set innerHTML(x){this._html=x;this.children=[];if(x.includes('tile-content'))this.children=[new El('img'),new El('button'),new El('button')];}
  get innerHTML(){return this._html;}
  setAttribute(k,v){this.attributes[k]=v;}
  addEventListener(k,f){this.listeners[k]=f;}
