@@ -3,8 +3,8 @@ const root=path.resolve(__dirname,'..'),read=n=>fs.readFileSync(path.join(root,n
 const js=read('js/aula-control.js'),html=read('app.html'),ps=read('windows/Diagnosticar-Office-Krueka.ps1');
 new vm.Script(js);
 assert.match(html,/js\/aula-control\.js\?v=20261024c/);
-assert.match(js,/PC sin conexión: Krueka no puede confirmar ni aplicar Office/);
-assert.match(js,/PC desconectada · revisar agente/);
+assert.match(js,/Agente Office\/quiosco sin conexión/);
+assert.match(js,/Agente Windows desconectado/);
 assert.match(ps,/\[ValidateSet\("Comprobar","ReiniciarAgente"\)\]/);
 assert.match(ps,/Get-CimInstance Win32_Service/);
 assert.match(ps,/Get-ScheduledTask/);
@@ -20,11 +20,19 @@ const target={innerHTML:''},ctx={$:x=>x==='aula-cuerpo'?target:null,esc:x=>Strin
 vm.createContext(ctx);vm.runInContext(js,ctx);
 vm.runInContext('AulaControl.cache={devices:[{id:"device-test",label:"PC 02 BEI",enabled:true,kiosk_enabled:true,desktop_mode:"office",desktop_mode_observed:null,kiosk_error:"",agent_version:"0.5",last_seen:"2026-10-21T11:06:50Z",allowed:["krueka.com"]}],requests:[]};AulaControl.render()',ctx);
 assert.match(target.innerHTML,/PC 02 BEI/);
-assert.match(target.innerHTML,/PC sin conexión: Krueka no puede confirmar ni aplicar Office/);
-assert.match(target.innerHTML,/PC desconectada · revisar agente/);
-assert.match(target.innerHTML,/disabled title="La PC no responde/);
+assert.match(target.innerHTML,/Agente Office\/quiosco sin conexión/);
+assert.match(target.innerHTML,/Agente Windows desconectado/);
+assert.match(target.innerHTML,/disabled title="El agente original de Office/);
 assert.doesNotMatch(target.innerHTML,/modoOfimatica\('device-test','office'\)/);
+// Caso real PC05: la sincronización de páginas confirma cambios, pero el agente clásico sigue desconectado.
+vm.runInContext('AulaControl.cache.devices[0].policy_last_seen=new Date().toISOString();AulaControl.cache.devices[0].policy_applied_version=4;AulaControl.cache.devices[0].policy_version=4;AulaControl.cache.devices[0].desktop_mode_observed="office";AulaControl.render()',ctx);
+assert.match(target.innerHTML,/Control web conectado; agente Office\/quiosco sin conexión/);
+assert.match(target.innerHTML,/La sincronización de páginas de Edge y Chrome SÍ funciona/);
+assert.match(target.innerHTML,/Agente Office desconectado/);
+assert.match(target.innerHTML,/Último modo reportado: Ofimática; sin confirmar ahora/);
+assert.match(target.innerHTML,/Permisos aplicados en Windows/);
+assert.doesNotMatch(target.innerHTML,/modoOfimatica\('device-test','edge'\)/);
 vm.runInContext('AulaControl.cache.devices[0].last_seen=new Date().toISOString();AulaControl.cache.devices[0].desktop_mode_observed="office";AulaControl.render()',ctx);
-assert.doesNotMatch(target.innerHTML,/PC sin conexión: Krueka no puede confirmar ni aplicar Office/);
+assert.doesNotMatch(target.innerHTML,/Agente Office\/quiosco sin conexión/);
 assert.match(target.innerHTML,/modoOfimatica\('device-test','edge'\)/);
 console.log('PASS: PC sin contacto no admite nuevos reintentos y se explica la recuperación local.');
