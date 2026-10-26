@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f5f9fc">
+<title>Galería Krueka · Imágenes educativas para tus trabajos</title>
+<meta name="description" content="Ilustraciones educativas gratuitas de medio ambiente, tecnología, Paraguay, geografía e historia para descargar y usar en tareas escolares.">
+<link rel="canonical" href="https://www.krueka.com/galeria.html"><link rel="icon" href="logo.svg">
+<link rel="stylesheet" href="css/recursos.css?v=20261026a">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="js/galeria-krueka.js?v=20261026a" defer></script>
+</head><body>
+<a class="skip" href="#contenido">Saltar al contenido</a>
+<header class="top"><div class="top-inner"><a class="brand" href="index.html"><img src="logo.svg" alt="">Krueka <small>Galería</small></a>
+<nav class="navlinks" aria-label="Secciones de Krueka"><a href="index.html">Inicio</a><a href="actividades-clase.html">Actividades</a><a href="galeria.html" aria-current="page">Galería</a><a href="juegos.html">Juegos</a><a href="app.html">Mi aula</a></nav></div></header>
+<main class="container" id="contenido">
+<section class="hero"><div><span class="eyebrow">Biblioteca visual educativa · Uso gratuito</span><h1>Galería Krueka</h1><p>Elegí una imagen para tu documento. Descargá ilustraciones originales en PNG para Word, Excel y PowerPoint, sin salir a buscar en Internet.</p></div><div class="hero-symbol" aria-hidden="true">🌎</div></section>
+<div class="callout"><b>Para los alumnos:</b> elegí una categoría, tocá <b>Descargar PNG</b> y en Word usá <b>Insertar → Imágenes → Este dispositivo</b>. Las ilustraciones creadas por Krueka se pueden utilizar gratuitamente en trabajos educativos. Las fotos aportadas por la comunidad pueden tener su propia atribución.</div>
+<div class="section-heading"><div><h2>Explorá las colecciones</h2><p class="sub" id="gallery-count">Preparando ilustraciones…</p></div><a class="btn secondary" href="juegos.html">Cuando termines tu tarea: Juegos Krueka</a></div>
+<div class="toolbar"><label class="search"><span class="skip">Buscar imágenes educativas</span><input id="gallery-search" type="search" placeholder="Buscar: reciclaje, bosque, tecnología, Paraguay…" autocomplete="off"></label><label><span class="skip">Seleccionar categoría</span><select id="gallery-category"><option value="Todas">Todas las categorías</option></select></label></div>
+<div id="gallery-categories" class="pills" aria-label="Filtrar por categoría"></div>
+<div id="gallery-grid" class="grid" aria-live="polite"></div>
+<section class="panel" id="community-section" aria-labelledby="community-title"><h2 id="community-title">Biblioteca de la comunidad educativa</h2><p class="sub">Los docentes registrados pueden proponer imágenes de uso educativo. Un administrador de Krueka debe aprobarlas antes de que aparezcan en la galería pública. No subas fotos de alumnos, datos personales ni material sin permiso.</p>
+<div id="community-status" class="status" role="status">La galería original funciona sin conexión a servicios externos adicionales. Buscando aportes aprobados…</div>
+<div id="community-grid" class="grid"></div>
+<div id="gallery-staff" hidden>
+ <h3>Enviar una imagen para revisión</h3>
+ <form id="gallery-upload-form" class="formgrid">
+  <label>Título de la imagen<input name="title" required minlength="3" maxlength="90" placeholder="Ej.: Bosque nativo del Paraguay"></label>
+  <label>Categoría<select name="category" id="gallery-upload-category"></select></label>
+  <label class="wide">Descripción breve<input name="description" maxlength="260" placeholder="Qué muestra la imagen y para qué tema sirve"></label>
+  <label class="wide">Archivo JPG, PNG o WebP, máximo 2 MB<input name="photo" required type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"></label>
+  <div><button class="btn teal" type="submit">Enviar para aprobación</button></div>
+ </form>
+ <div id="gallery-upload-status" role="status" class="status"></div>
+</div>
+<div id="gallery-admin" hidden><h3>Imágenes pendientes de aprobación</h3><div id="gallery-pending" class="pending"></div></div>
+</section>
+</main><footer>Galería Krueka · Recursos para estudiar y crear · <a href="index.html">Volver a Krueka</a></footer></body></html>
