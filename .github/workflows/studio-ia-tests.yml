@@ -76,6 +76,10 @@ jobs:
       - run: node --check js/club-gestion.js
       - run: node --check js/asistencia-grado.js
       - run: node tests/asistencia-grado.test.cjs
+      - run: node --check js/galeria-krueka.js
+      - run: node --check js/juegos-krueka.js
+      - run: node --check js/alumno.js
+      - run: node tests/galeria-play.test.cjs
       - run: node --check js/aula-control.js
       - run: node tests/aula-office-state.test.cjs
       - run: node tests/aula-policy-sync.test.cjs
