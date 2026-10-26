@@ -2,7 +2,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const root=path.resolve(__dirname,'..'),read=n=>fs.readFileSync(path.join(root,n),'utf8');
 const js=read('js/aula-control.js'),html=read('app.html'),ps=read('windows/Diagnosticar-Office-Krueka.ps1');
 new vm.Script(js);
-assert.match(html,/js\/aula-control\.js\?v=20261024c/);
+assert.match(html,/js\/aula-control\.js\?v=20261026a/);
 assert.match(js,/Agente Office\/quiosco sin conexión/);
 assert.match(js,/Agente Windows desconectado/);
 assert.match(ps,/\[ValidateSet\("Comprobar","ReiniciarAgente"\)\]/);
