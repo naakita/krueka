@@ -139,6 +139,12 @@ const Alumno = { aula:null, codigo:"", yo:null, equipo:[], hist:null,
           : '<p class="sub">El profesor todavía no corrigió tu trabajo.</p>'}
       </div>` : ""}
 
+      <div class="card"><h2>Recursos para tu trabajo</h2><p class="sub">Buscá imágenes de medio ambiente, Paraguay y otras materias sin usar buscadores externos.</p><a class="btn sec" href="galeria.html" target="_blank" rel="noopener noreferrer">Abrir Galería Krueka</a></div>
+      <div class="card"><h2>Recreo educativo · Krueka Play</h2>
+       ${cerrado
+        ? '<p class="alert ok">¡Ya entregaste! Ahora podés jugar cuando te autorice tu docente.</p><a class="btn" href="juegos.html" target="_blank" rel="noopener noreferrer">Abrir los juegos educativos</a>'
+        : '<p class="sub">Primero terminá y entregá tu trabajo. Cuando esté entregado, verás el acceso a los juegos aquí.</p>'}
+      </div>
       ${Alumno.cardHistorial()}`;
 
     if(et.entrega && !cerrado && typeof Oficina !== "undefined"){
