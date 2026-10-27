@@ -94,12 +94,63 @@ const UI = {
     if(r==="admin")   return [["control","Control docente"],["clase","Clase de hoy"],["planificacion","Planificación y actividades"],["entregas","Entregas"],["estructura","Cursos y materias"],["usuarios","Usuarios y roles"],["gestalumnos","Gestion de alumnos"],["aula","Control de PCs"]];
     return [["control","Panel"]];
   },
+  /* Mantener todos los accesos por rol, pero mostrar sólo las secciones frecuentes.
+     Los módulos de otros equipos agregan pestañas a UI.menus(); no se pierde ninguna. */
   construirNav(){
-    const m = UI.menus();
-    $("nav").setAttribute("role", "tablist");
-    $("nav").setAttribute("aria-label", "Secciones de la plataforma");
-    $("nav").innerHTML = m.map(([k,t])=>`<button data-k="${k}" role="tab" aria-selected="false" title="${t}" onclick="UI.ir('${k}')">${t}</button>`).join("");
-    UI.ir(m[0][0]);
+    const m = UI.menus().filter(([k])=>/^[a-z0-9-]+$/.test(k));
+    const rol = St.perfil?.role;
+    const preferidos = rol==="admin"
+      ? ["control","asistencia-grado","clase","entregas","aula"]
+      : rol==="director"
+      ? ["control","asistencia-grado","planes","aula"]
+      : rol==="docente"
+      ? ["clase","planificacion","alumnos","entregas","aula"]
+      : ["control"];
+    const principales = preferidos.filter(k=>m.some(([id])=>id===k)).slice(0,5);
+    if(!principales.length&&m.length)principales.push(m[0][0]);
+    const restantes=m.filter(([k])=>!principales.includes(k));
+    const grupos=[
+      ["Docencia y actividades",["planificacion","planeamiento","planilla","tareas","capacidades","taller","miscursos","clase","entregas","asistencia-grado"]],
+      ["Gestión escolar",["usuarios","gestalumnos","alumnos","estructura","control","resumen","planes","planeamientos","conducta"]],
+      ["Seguimiento e informes",["panel","auditoria","vigilancia","decisions","aula"]],
+      ["Club de Informática",["club","audclub","club-alumnos","club-finanzas"]]
+    ];
+    const asignados=new Set();
+    const categorias=grupos.map(([nombre,keys])=>{
+      const items=restantes.filter(([k])=>keys.includes(k));
+      items.forEach(([k])=>asignados.add(k));
+      return {nombre,items};
+    }).filter(g=>g.items.length);
+    const otros=restantes.filter(([k])=>!asignados.has(k));
+    if(otros.length)categorias.push({nombre:"Otras herramientas",items:otros});
+    const boton=([k,t])=>`<button type="button" data-k="${k}" role="tab" aria-selected="false" title="${esc(t)}" onclick="UI.ir('${k}')">${esc(t)}</button>`;
+    const nav=$("nav");
+    nav.setAttribute("role","navigation");
+    nav.setAttribute("aria-label","Secciones de la plataforma");
+    nav.innerHTML='<div class="nav-main" role="tablist" aria-label="Secciones principales">'+
+      m.filter(([k])=>principales.includes(k)).sort((a,b)=>principales.indexOf(a[0])-principales.indexOf(b[0])).map(boton).join("")+
+      '</div>'+
+      (restantes.length?'<details class="nav-more" id="nav-more">'+
+        '<summary aria-label="Mostrar otras secciones">☰ Más opciones <span class="more-count">('+restantes.length+')</span></summary>'+
+        '<div class="nav-more-panel">'+categorias.map(g=>'<section class="nav-group"><h3>'+esc(g.nombre)+'</h3>'+
+        g.items.map(boton).join("")+'</section>').join("")+'</div></details>':'');
+    if(!UI._navCompactListeners){
+      UI._navCompactListeners=true;
+      document.addEventListener("click",e=>{
+        const more=$("nav-more");
+        if(more?.open&&(!more.contains(e.target)||e.target.closest("button[data-k]")))more.open=false;
+        const recursos=document.querySelector("#screen-app .app-resources");
+        if(recursos?.open&&(!recursos.contains(e.target)||e.target.closest(".app-resources-menu a")))recursos.open=false;
+      });
+      document.addEventListener("keydown",e=>{
+        if(e.key!=="Escape")return;
+        for(const sel of ["#nav-more","#screen-app .app-resources"]){
+          const details=document.querySelector(sel);
+          if(details?.open){details.open=false;details.querySelector("summary")?.focus();}
+        }
+      });
+    }
+    if(m.length)UI.ir(m[0][0]);
   },
   ir(k){
     St.tab = k;
