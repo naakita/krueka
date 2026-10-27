@@ -1,0 +1,56 @@
+/* Barra de navegación compacta del panel escolar.
+   Mantiene los accesos de cada rol, sin envolver el menú en varias filas. */
+#screen-app .topbar{position:sticky;top:0;z-index:60;overflow:visible;box-shadow:0 2px 12px rgba(32,66,107,.035)}
+#screen-app .topbar .in{max-width:1480px;min-height:58px;margin:auto;padding:7px 15px;gap:12px;display:flex;align-items:center;flex-wrap:nowrap}
+#screen-app .app-brand{display:flex;align-items:center;gap:8px;flex:0 1 207px;min-width:0;max-width:215px}
+#screen-app .app-brand .marca{height:30px!important;width:auto;max-width:45px;padding:4px 6px;border-radius:7px;object-fit:contain;flex:none}
+#screen-app .app-brand .logo-inst{max-width:37px}
+#screen-app .app-brand-titles{min-width:0;display:flex;flex-direction:column;justify-content:center;line-height:1.23}
+#screen-app .app-brand-titles b{font-size:14px;letter-spacing:-.02em;line-height:1.25}
+#screen-app .app-brand-titles #who{max-width:162px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10.5px}
+#screen-app .nav{display:flex;align-items:center;flex:1 1 auto;min-width:0;margin:0;gap:4px;flex-wrap:nowrap}
+#screen-app .nav-main{display:flex;align-items:center;gap:3px;min-width:0;flex:1 1 auto;white-space:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+#screen-app .nav-main::-webkit-scrollbar{height:0}
+#screen-app .nav button{white-space:nowrap;min-height:35px;padding:7px 10px;font-size:12px;line-height:1.2;font-weight:620;letter-spacing:-.01em;border-radius:8px}
+#screen-app .nav button:hover{background:var(--soft);color:var(--tx)}
+#screen-app .nav button:focus-visible,#screen-app .topbar summary:focus-visible,#screen-app .app-actions a:focus-visible,#screen-app .app-actions button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+#screen-app .nav button[aria-selected="true"]{background:var(--blue-bg);color:var(--blue);font-weight:740}
+#screen-app .nav-more{position:relative;flex:0 0 auto;z-index:3}
+#screen-app .nav-more>summary{display:flex;align-items:center;gap:5px;list-style:none;cursor:pointer;padding:7px 10px;border-radius:8px;border:1px solid var(--line);font-size:12px;font-weight:750;background:var(--panel);white-space:nowrap;color:var(--tx);min-height:36px;user-select:none}
+#screen-app .nav-more>summary::-webkit-details-marker{display:none}
+#screen-app .nav-more>summary:hover,#screen-app .nav-more[open]>summary,#screen-app .nav-more:has(button[aria-selected="true"])>summary{background:var(--blue-bg);border-color:var(--blue-bg);color:var(--blue)}
+#screen-app .nav-more .more-count{color:var(--tx2);font-size:11px;font-weight:550}
+#screen-app .nav-more-panel{position:absolute;top:calc(100% + 10px);right:0;width:min(510px,calc(100vw - 26px));max-height:min(70vh,540px);overflow-y:auto;border:1px solid var(--line);background:var(--panel);box-shadow:0 18px 42px rgba(21,43,74,.19);border-radius:14px;padding:15px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;z-index:90}
+#screen-app .nav-more:not([open]) .nav-more-panel{display:none}
+#screen-app .nav-group{min-width:0;display:flex;flex-direction:column;gap:2px}
+#screen-app .nav-group h3{font-size:10px;color:var(--tx2);font-weight:790;letter-spacing:.08em;text-transform:uppercase;margin:0 0 4px;padding:0 7px}
+#screen-app .nav-group button{display:block;text-align:left;width:100%;height:auto;min-height:34px;white-space:normal;padding:7px 9px;line-height:1.3}
+#screen-app .app-actions{display:flex;align-items:center;flex:0 0 auto;gap:6px;margin-left:auto}
+#screen-app .app-actions .btn{padding:7px 10px;min-height:35px;font-size:12px;white-space:nowrap}
+#screen-app .app-resources{position:relative}
+#screen-app .app-resources>summary{list-style:none;padding:7px 10px;min-height:35px;border-radius:8px;font-size:12px;background:var(--soft);border:1px solid var(--line);cursor:pointer;white-space:nowrap;font-weight:650}
+#screen-app .app-resources>summary::-webkit-details-marker{display:none}
+#screen-app .app-resources-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:185px;padding:7px;background:var(--panel);border:1px solid var(--line);box-shadow:0 14px 36px #182e4330;border-radius:12px;display:flex;flex-direction:column;gap:4px;z-index:91}
+#screen-app .app-resources:not([open]) .app-resources-menu{display:none}
+#screen-app .app-resources-menu a{display:block;text-decoration:none;color:var(--tx);padding:9px 10px;border-radius:7px;font-weight:650;font-size:13px}
+#screen-app .app-resources-menu a:hover{background:var(--blue-bg);color:var(--blue)}
+#screen-app .wrap{max-width:1260px;padding-top:17px}
+@media(max-width:1000px){
+ #screen-app .app-brand{flex:0 1 150px}
+ #screen-app .app-brand .logo-inst{display:none}
+ #screen-app .app-brand-titles #who{max-width:95px}
+ #screen-app .nav button{padding:7px 8px}
+}
+@media(max-width:760px){
+ #screen-app .topbar .in{flex-wrap:wrap;row-gap:6px;padding:7px 10px}
+ #screen-app .app-brand{flex:1 1 auto;max-width:none}
+ #screen-app .app-brand-titles #who{max-width:190px}
+ #screen-app .app-actions{margin-left:auto;order:1}
+ #screen-app .nav{order:2;flex:1 0 100%;min-width:0;border-top:1px solid var(--line);padding-top:6px}
+ #screen-app .nav-more-panel{right:0;max-height:65vh}
+ #screen-app .wrap{padding:12px 12px 50px}
+}
+@media(max-width:480px){
+ #screen-app .nav-more-panel{grid-template-columns:1fr}
+ #screen-app .app-actions .btn{padding:7px 9px}
+}
