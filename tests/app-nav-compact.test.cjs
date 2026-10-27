@@ -39,9 +39,7 @@ const env={document:doc,window:{},supabase:{createClient(){return {auth:{},from(
 vm.createContext(env);
 vm.runInContext(core,env);
 vm.runInContext('const navOriginal=UI.menus.bind(UI);UI.menus=function(){return navOriginal().concat([["asistencia-grado","Asistencia por grado"],["planeamientos","Planeamientos"],["panel","Panel completo"],["auditoria","Auditoría"],["capacidades","Capacidades"],["planilla","Planilla R.S.A."],["club","Club de informática"],["audclub","Auditoría club"],["club-alumnos","Alumnos club"],["club-finanzas","Finanzas club"],["decisions","Decisiones (piloto)"]]);};',env);
-env.Direccion={vControl(){}};
-env.Docente={vClase(){},vPlanificacion(){}};
-env.AulaControl={vista(){}};
+vm.runInContext('UI.ir=function(k){St.tab=k;};',env); // La navegación se prueba sin cargar vistas y sin hacer consultas a Supabase.
 function check(role,main){
  vm.runInContext('St.perfil={role:"'+role+'"};UI.construirNav();',env);
  const html=get('nav').innerHTML;
