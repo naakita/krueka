@@ -153,3 +153,18 @@ Referencias:
 - Un alumno con contraseñas de administrador, otro navegador portable o arranque externo todavía puede eludir protecciones si Windows no tiene control de aplicaciones y cuentas correcto; continuar con Assigned Access multiapp y cuentas estándar.
 - Cambiar la **clave del sincronizador** desde el panel invalida exclusivamente esa credencial (NO el token del agente original) y requiere volver a introducir la nueva clave en esa PC una vez; no hacerlo para cambios cotidianos de páginas.
 - La sincronización de sitios no cambia el modo Office ni repara agentes desconectados. Si una PC no logra comunicarse con el servidor, seguirá aplicando su última política conocida. No declarar protegidas todas las PCs sin comprobarlas localmente.
+
+
+## Diagnóstico de páginas que siguen bloqueadas después de pulsar Autorizar (31/10/2026)
+
+**Problema real comprobado:** el botón del panel escribe `allowed` en Supabase y el conector confirma que guardó `URLAllowlist`/`URLBlocklist` en `HKLM`. Esto NO demuestra que Edge/Chrome utilice esas directivas en la cuenta del alumno. En PC06 se confirmó versión 12/12 incluso con `enabled=false` y el navegador seguía mostrando «Tu organización no te permite ver este sitio».
+
+**Causas a descartar antes de autorizar más dominios:**
+- Otra política efectiva de usuario, organización, perfil o navegador distinta de la lista `HKLM` que administra el conector.
+- Dos tareas de sincronización instaladas: `Krueka-Conector-PC` (kit v1.1) y `Krueka-PolicySync` (versión distinta). Ambas escriben las mismas subclaves, con formato diferente; si las dos funcionan pueden sobrescribir directivas.
+- Navegador sin recargar políticas o usuario de Windows distinto al usado para comprobar; bloqueo específico de Brave por firewall o herramientas de terceros.
+- Sitio principal permitido pero otros dominios secundarios necesarios no autorizados; en ese caso la web generalmente se abre pero alguna función no funciona.
+
+**Comprobación segura SIN reinstalar:** descargar en la misma carpeta `DIAGNOSTICAR-REGLAS-REALES-KRUEKA.ps1` y `COMPROBAR-REGLAS-REALES-KRUEKA.cmd`; ejecutar el CMD **desde la cuenta que usa el alumno**. Es exclusivamente de lectura: lista las políticas de Edge/Chrome de HKLM, HKCU y otras cuentas cargadas y señala si están instalados ambos sincronizadores. **No elimina tareas, no desactiva Internet ni muestra tokens.** En el mismo navegador que falla abrir `edge://policy` o `chrome://policy` → **Recargar directivas**, revisar `URLAllowlist` y `URLBlocklist`, origen/ámbito/nivel/estado y enviar una captura. Si ambas tareas están activas, comprobar la identidad y cuál es el conector correcto antes de desactivar solo la redundante con acceso administrador. No cambiar el token ni borrar la configuración del agente.
+
+Desde 31/10/2026 el panel distingue **«Reglas guardadas en Windows»** de una prueba efectiva de apertura web. Al agregar una página avisa que se guardó en servidor y que hace falta confirmar en el navegador. Esto no requiere reinstalar el conector Windows, pues solo cambia textos y diagnósticos de la aplicación web.
