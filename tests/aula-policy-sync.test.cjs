@@ -7,7 +7,7 @@ const ps=read('windows/Krueka-PolicySync.ps1');
 const sql=read('supabase/migrations/20261024160000_aula_browser_policy_sync.sql');
 const app=read('app.html'),install=read('windows/INSTALAR-SINCRONIZACION-WEB-ADMIN.cmd');
 new vm.Script(ui);
-assert.match(app,/js\/aula-control\.js\?v=20261026a/);
+assert.match(app,/js\/aula-control\.js\?v=20261031a/);
 for(const name of ['policy_pull','policy_report','policy_token','allow_all','lock_all']){
  assert.ok(edge.includes('"'+name+'"'),'Missing backend action '+name);
 }
@@ -52,7 +52,7 @@ vm.runInContext('AulaControl.cache={devices:[{id:"11111111-1111-1111-1111-111111
 assert.match(box.innerHTML,/Permisos pendientes/);
 assert.match(box.innerHTML,/Versión 2\/3/);
 vm.runInContext('AulaControl.cache.devices[0].policy_applied_version=3;AulaControl.render();',ctx);
-assert.match(box.innerHTML,/Permisos aplicados en Windows/);
+assert.match(box.innerHTML,/Reglas guardadas en Windows/);
 vm.runInContext('AulaControl.cache.devices[0].policy_last_seen=null;AulaControl.render();',ctx);
 assert.match(box.innerHTML,/Sincronizador no instalado/);
 console.log('PASS: versionado de permisos web, control aula, token propio y task Windows.');
