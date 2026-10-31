@@ -44,12 +44,12 @@ const AulaControl = {
    if(!fresh)return '<span class="tag orange">Sincronizador desconectado</span>';
    if(d.policy_apply_error)return '<span class="tag red">Error de directivas</span>';
    if(Number(d.policy_applied_version)!==Number(d.policy_version))return '<span class="tag orange">Permisos pendientes</span>';
-   return '<span class="tag green">Permisos aplicados en Windows</span>';
+   return '<span class="tag green">Reglas guardadas en Windows</span>';
   };
   const policyDetail=d=>'<div class="note" style="margin-top:8px"><b>Sincronización de páginas:</b> '+
     policyState(d)+' · Versión '+esc(String(d.policy_applied_version||0))+'/'+esc(String(d.policy_version||1))+
     (d.policy_apply_error?'<div style="color:var(--red)">Error del equipo: '+esc(d.policy_apply_error)+'</div>':'')+
-    '<div>Edge y Chrome se actualizan mediante una tarea de Windows instalada una sola vez. La confirmación corresponde a directivas de Windows, no a una prueba de apertura del sitio.</div></div>';
+    '<div><b>Importante:</b> esta confirmación comprueba solo la lista del Registro de Windows, no las directivas efectivas del navegador. Pueden existir otros instaladores, políticas de usuario o un navegador distinto que sigan bloqueando.</div>'+    '<div>Si el sitio aparece como bloqueado: comprobá las políticas reales con el <a href="https://github.com/naakita/krueka/tree/main/windows" target="_blank" rel="noopener noreferrer">diagnóstico de Edge/Chrome</a> y consultá <b>edge://policy</b> o <b>chrome://policy</b> desde la sesión del alumno.</div></div>';
   const educativo=d=>["betesda-educacion.edclub.com","studio.code.org"].every(x=>(d.allowed||[]).includes(x));
   const educativoEstado=d=>'<div class="note" style="margin-top:10px"><b>Plataformas educativas:</b> '+
     (educativo(d)?'EdClub y Code.org autorizadas en Krueka': 'EdClub / Code.org pendientes de configurar')+
@@ -107,7 +107,7 @@ const AulaControl = {
   const entrada=prompt(add?"Página que querés autorizar en TODAS las PCs del aula (ej. code.org):":"Página que querés quitar de TODAS las PCs (ej. code.org):");
   if(!entrada?.trim())return;
   if(!confirm((add?"Autorizar ":"Quitar ")+entrada+" en todas las computadoras de tu institución? Las PCs conectadas y con sincronizador actualizarán la regla automáticamente."))return;
-  AulaControl.ejecutar("allow_all",{domain:entrada,add},x=>alert("Guardado: "+x.affected+" de "+x.total+" computadoras modificadas. Las PCs con sincronizador recibirán el cambio automáticamente."));
+  AulaControl.ejecutar("allow_all",{domain:entrada,add},x=>alert("Permiso guardado para "+x.affected+" de "+x.total+" computadoras. Las conectadas recibirán la lista en el siguiente ciclo; comprobá en el navegador de una PC que el sitio abre. La versión aplicada solo comprueba el Registro."));
  },
  bloqueoGeneral(enabled){
   const msg=enabled?"¿Restablecer la restricción de Internet en TODAS las PCs? Solo quedarán los dominios autorizados.":"¿LIBERAR toda la navegación web en TODAS las PCs? Esta opción permite sitios no autorizados mientras siga activa.";
@@ -222,7 +222,7 @@ const AulaControl = {
  },
  agregar(id){
   const d=prompt("Dominio autorizado (por ejemplo wikipedia.org)");
-  if(d)AulaControl.ejecutar("allow",{device_id:id,domain:d,add:true});
+  if(d)AulaControl.ejecutar("allow",{device_id:id,domain:d,add:true},()=>alert("Permiso guardado en Krueka. El conector lo recibirá en su próxima sincronización (aprox. 1 minuto). La confirmación del Registro NO garantiza que el navegador del alumno abra la página: probá el sitio y revisá las directivas efectivas si sigue bloqueado."));
  },
  quitar(id,domain){
   if(confirm("¿Quitar autorización de "+domain+"?"))AulaControl.ejecutar("allow",{device_id:id,domain,add:false});
