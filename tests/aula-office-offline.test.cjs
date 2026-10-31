@@ -2,7 +2,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const root=path.resolve(__dirname,'..'),read=n=>fs.readFileSync(path.join(root,n),'utf8');
 const js=read('js/aula-control.js'),html=read('app.html'),ps=read('windows/Diagnosticar-Office-Krueka.ps1');
 new vm.Script(js);
-assert.match(html,/js\/aula-control\.js\?v=20261026a/);
+assert.match(html,/js\/aula-control\.js\?v=20261031a/);
 assert.match(js,/Agente Office\/quiosco sin conexión/);
 assert.match(js,/Agente Windows desconectado/);
 assert.match(ps,/\[ValidateSet\("Comprobar","ReiniciarAgente"\)\]/);
@@ -30,7 +30,7 @@ assert.match(target.innerHTML,/Control web conectado; agente Office\/quiosco sin
 assert.match(target.innerHTML,/La sincronización de páginas de Edge y Chrome SÍ funciona/);
 assert.match(target.innerHTML,/Agente Office desconectado/);
 assert.match(target.innerHTML,/Último modo reportado: Ofimática; sin confirmar ahora/);
-assert.match(target.innerHTML,/Permisos aplicados en Windows/);
+assert.match(target.innerHTML,/Reglas guardadas en Windows/);
 assert.doesNotMatch(target.innerHTML,/modoOfimatica\('device-test','edge'\)/);
 vm.runInContext('AulaControl.cache.devices[0].last_seen=new Date().toISOString();AulaControl.cache.devices[0].desktop_mode_observed="office";AulaControl.render()',ctx);
 assert.doesNotMatch(target.innerHTML,/Agente Office\/quiosco sin conexión/);
