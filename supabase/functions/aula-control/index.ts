@@ -202,10 +202,20 @@ async function policyAgent(req:Request,b:any):Promise<unknown>{
   assert(Number.isSafeInteger(version)&&version>=1,"Versión inválida");
   const error=typeof b.error==="string"?b.error.slice(0,320):"";
   const update:any={policy_last_seen:new Date().toISOString(),policy_apply_error:error||null};
-  if(!error&&version===d.policy_version){
-   update.policy_applied_version=version;
-   update.policy_applied_at=new Date().toISOString();
-  }else if(!error){update.policy_apply_error="La versión aplicada no coincide con la más reciente";}
+  if(version===d.policy_version){
+   if(!error){
+    update.policy_applied_version=version;
+    update.policy_applied_at=new Date().toISOString();
+   }else{
+    // If Windows rejects a browser policy, an old successful version is NOT proof
+    // that the current restrictions are effective. Distinguish failed from applied.
+    update.policy_applied_version=0;
+    update.policy_applied_at=null;
+   }
+  }else{
+   // Ignore stale acks/errors from another task cycle; never overwrite recent success.
+   return {ok:true,desired_version:d.policy_version,applied:false,stale:true};
+  }
   await guard(db.from("aula_devices").update(update).eq("id",id).eq("policy_version",d.policy_version));
   return {ok:true,desired_version:d.policy_version,applied:!error&&version===d.policy_version};
  }
