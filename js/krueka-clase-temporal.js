@@ -184,7 +184,7 @@ $('create-form').addEventListener('submit',async e=>{
    try{await uploadGuide(r.activity.id,pdf);}
    catch(err){
     message('teacher-message','La clase y su código se crearon, pero NO se pudo adjuntar el PDF: '+err.message+' Subilo desde Mis clases antes de compartir el código.',true);
-    await loadClasses();return;
+    resetClassFilters();await loadClasses();return;
    }
   }
   $('create-form').reset();resetClassFilters();await loadClasses();
