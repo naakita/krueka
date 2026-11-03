@@ -67,11 +67,43 @@ function safeFileName(s:string){
 async function handleStaff(req:Request,staff:{id:string,email:string},form:Record<string,unknown>){
  const action=String(form.action||"");
  if(action==="list-classes"){
+  // Paginación real: no cortar el historial a 100 actividades.
+  // Cada consulta se limita al propietario autenticado. No se devuelven códigos ni archivos.
+  const pageSize=12;
+  const rawPage=Number(form.page??0);
+  const page=Number.isSafeInteger(rawPage)&&rawPage>=0&&rawPage<=100000?rawPage:0;
+  const search=escape(form.search,80);
+  const grade=escape(form.grade,80);
+  const status=String(form.status||"all");
+  const sort=String(form.sort||"recent");
+  const month=String(form.month||"");
+  if(!["all","open","closed"].includes(status)||!["recent","oldest"].includes(sort)||
+      (month!==""&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)))
+   return fail(req,"Revisá los filtros del historial.");
+  let query=supa.from("krueka_live_activities")
+   .select("id,title,grade,subject,accepting,created_at,closed_at,pdf_name",{count:"exact"})
+   .eq("teacher_id",staff.id);
+  const literal=(v:string)=>v.replace(/[\\%_]/g,"\\ if(action==="list-classes"){
   const {data,error}=await supa.from("krueka_live_activities")
    .select("id,title,grade,subject,accepting,created_at,closed_at,pdf_name")
    .eq("teacher_id",staff.id).order("created_at",{ascending:false}).limit(100);
   if(error)return fail(req,"No se pudieron cargar tus actividades.",503);
   return json(req,{ok:true,classes:data||[]});
+ }");
+  if(search)query=query.ilike("title","%"+literal(search)+"%");
+  if(grade)query=query.ilike("grade","%"+literal(grade)+"%");
+  if(status!=="all")query=query.eq("accepting",status==="open");
+  if(month){
+   const year=Number(month.slice(0,4)),m=Number(month.slice(5,7));
+   const start=new Date(Date.UTC(year,m-1,1)).toISOString();
+   const end=new Date(Date.UTC(year,m,1)).toISOString();
+   query=query.gte("created_at",start).lt("created_at",end);
+  }
+  const ascending=sort==="oldest";
+  const {data,error,count}=await query.order("created_at",{ascending})
+   .order("id",{ascending}).range(page*pageSize,(page+1)*pageSize-1);
+  if(error)return fail(req,"No se pudieron cargar tus actividades.",503);
+  return json(req,{ok:true,classes:data||[],total:count??0,page,page_size:pageSize});
  }
  if(action==="create-class"){
   const title=escape(form.title,140),grade=escape(form.grade,100),
