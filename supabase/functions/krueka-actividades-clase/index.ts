@@ -83,13 +83,7 @@ async function handleStaff(req:Request,staff:{id:string,email:string},form:Recor
   let query=supa.from("krueka_live_activities")
    .select("id,title,grade,subject,accepting,created_at,closed_at,pdf_name",{count:"exact"})
    .eq("teacher_id",staff.id);
-  const literal=(v:string)=>v.replace(/[\\%_]/g,"\\ if(action==="list-classes"){
-  const {data,error}=await supa.from("krueka_live_activities")
-   .select("id,title,grade,subject,accepting,created_at,closed_at,pdf_name")
-   .eq("teacher_id",staff.id).order("created_at",{ascending:false}).limit(100);
-  if(error)return fail(req,"No se pudieron cargar tus actividades.",503);
-  return json(req,{ok:true,classes:data||[]});
- }");
+  const literal=(v:string)=>v.replace(/[\\%_]/g,(c)=>"\\"+c);
   if(search)query=query.ilike("title","%"+literal(search)+"%");
   if(grade)query=query.ilike("grade","%"+literal(grade)+"%");
   if(status!=="all")query=query.eq("accepting",status==="open");
