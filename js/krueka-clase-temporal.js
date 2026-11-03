@@ -10,6 +10,7 @@ const $=id=>document.getElementById(id);
 const teacherMode=new URLSearchParams(location.search).get('docente')==='1';
 $('student').hidden=teacherMode;$('teacher').hidden=!teacherMode;
 let sb=null,classes=[],selected=null,items=[],studentPdfUrl=null;
+let classPage=0,classMeta={total:0,page:0,page_size:12},classRequestId=0,classSearchTimer=null;
 function resetPdf(){
  if(studentPdfUrl){URL.revokeObjectURL(studentPdfUrl);studentPdfUrl=null;}
  $('student-pdf-frame').removeAttribute('src');
@@ -116,8 +117,43 @@ async function uploadGuide(activityId,file){
  data.set('action','upload-guide');data.set('activity_id',activityId);data.set('guide',file);
  return api(data,await token());
 }
+function classFilters(){
+ return {page:classPage,search:$('class-search').value.trim(),
+  grade:$('class-grade').value.trim(),status:$('class-status').value,
+  month:$('class-month').value,sort:$('class-sort').value};
+}
 async function loadClasses(){
- const r=await staff('list-classes');classes=r.classes||[];renderClasses();
+ const request=++classRequestId;
+ $('class-results').textContent='Buscando actividades…';
+ const r=await staff('list-classes',classFilters());
+ if(request!==classRequestId)return; // Ignorar resultados de filtros anteriores.
+ classes=r.classes||[];
+ classMeta={total:Number(r.total)||0,page:Number(r.page)||0,page_size:Number(r.page_size)||12};
+ if(classPage>0&&!classes.length&&classMeta.total>0){
+  classPage=Math.max(0,Math.ceil(classMeta.total/classMeta.page_size)-1);
+  return loadClasses();
+ }
+ renderClasses();
+}
+function resetClassFilters(){
+ $('class-search').value='';$('class-grade').value='';
+ $('class-status').value='all';$('class-month').value='';$('class-sort').value='recent';
+ classPage=0;
+}
+function scheduleClassLoad(delayed=false){
+ classPage=0;clearTimeout(classSearchTimer);
+ const go=()=>loadClasses().catch(err=>message('teacher-message',err.message,true));
+ if(delayed)classSearchTimer=setTimeout(go,280);else go();
+}
+function renderClassPages(){
+ const target=$('class-pages');target.replaceChildren();
+ const {total,page_size}=classMeta;
+ if(total<=page_size)return;
+ const pages=Math.ceil(total/page_size);
+ const prev=button('← Anteriores','secondary',()=>{classPage--;loadClasses().catch(err=>message('teacher-message',err.message,true));});
+ const next=button('Siguientes →','secondary',()=>{classPage++;loadClasses().catch(err=>message('teacher-message',err.message,true));});
+ prev.disabled=classPage<=0;next.disabled=classPage>=pages-1;
+ target.append(prev,el('span','note','Página '+(classPage+1)+' de '+pages),next);
 }
 function showCode(code){
  $('new-code').textContent=code;$('new-code-box').hidden=false;
@@ -151,18 +187,35 @@ $('create-form').addEventListener('submit',async e=>{
     await loadClasses();return;
    }
   }
-  $('create-form').reset();await loadClasses();
+  $('create-form').reset();resetClassFilters();await loadClasses();
   message('teacher-message','Clase creada'+(pdf?' y PDF asociado correctamente.':'.')+' Compartí el código con tus alumnos.');
  }catch(err){message('teacher-message',err.message,true);}
  finally{b.disabled=false;}
 });
 function renderClasses(){
  $('classes').replaceChildren();
- if(!classes.length){$('classes').append(el('p','note','No tenés actividades. Creá tu primera clase a la izquierda.'));return;}
+ const {total,page_size}=classMeta;
+ const start=total?classPage*page_size+1:0;
+ const end=Math.min((classPage+1)*page_size,total);
+ $('class-results').textContent=total
+  ?'Mostrando '+start+'–'+end+' de '+total+' actividad(es) · Ordenadas por fecha'
+  :'0 actividades con estos filtros';
+ if(!classes.length){
+  $('classes').append(el('p','note',total===0?
+   'No hay actividades con esos filtros. Probá limpiar filtros o revisar otra fecha.':
+   'No hay actividades en esta página. Probá la anterior.'));
+  renderClassPages();return;
+ }
  classes.forEach(c=>{
   const card=el('article','item'),header=el('div','activity-head');
   const group=el('div'),title=el('div','itemtitle',c.title),detail=el('small','',c.grade+' · '+c.subject);
   group.append(title,detail);
+  const created=new Date(c.created_at);
+  if(!Number.isNaN(created.getTime()))group.append(el('p','class-date','Creada: '+created.toLocaleString('es-PY',{dateStyle:'short',timeStyle:'short'})));
+  if(c.closed_at){
+   const closed=new Date(c.closed_at);
+   if(!Number.isNaN(closed.getTime()))group.append(el('p','class-date','Cerrada: '+closed.toLocaleString('es-PY',{dateStyle:'short',timeStyle:'short'})));
+  }
   header.append(group,el('span','tag'+(!c.accepting?' closed':''),c.accepting?'● Código habilitado':'● Clase cerrada'));
   card.append(header);
   card.append(el('p','note',c.pdf_name?'📄 Guía PDF: '+c.pdf_name:'Todavía no tiene PDF adjunto.'));
@@ -202,6 +255,7 @@ function renderClasses(){
   }
   card.append(actions);$('classes').append(card);
  });
+ renderClassPages();
 }
 async function loadSubmissions(){
  if(!selected)return;
@@ -249,10 +303,17 @@ function renderSubmissions(){
  });
 }
 $('refresh-classes').onclick=async()=>{try{await loadClasses()}catch(err){message('teacher-message',err.message,true)}};
+$('class-search').addEventListener('input',()=>scheduleClassLoad(true));
+$('class-grade').addEventListener('input',()=>scheduleClassLoad(true));
+for(const id of ['class-sort','class-status','class-month']){
+ $(id).addEventListener('change',()=>scheduleClassLoad());
+}
+$('class-clear').addEventListener('click',()=>{resetClassFilters();loadClasses().catch(err=>message('teacher-message',err.message,true));});
 $('refresh-submissions').onclick=loadSubmissions;
 $('filter-student').oninput=renderSubmissions;
 $('sign-out').onclick=async()=>{
  await sb.auth.signOut();$('teacher-board').hidden=true;$('teacher-login').hidden=false;
+ classRequestId++;clearTimeout(classSearchTimer);resetClassFilters();
  selected=null;items=[];$('new-code-box').hidden=true;$('new-code').textContent='';
 };
 async function enter(){
