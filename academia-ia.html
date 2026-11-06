@@ -277,10 +277,10 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     feedback(n,right?'Correcto. No basta con pedir algo: debemos elegir la herramienta adecuada y comprobar su resultado.':'Probá otra respuesta. Pensá qué herramienta o prueba permitiría verificar el resultado.',right);
     if(right)mark(n);
   });});
-  fields().forEach(function(k){el(k).addEventListener('input',function(){showCompiled();if(saved(2)){delete state.entries.m2;localSave();updateMeter();feedback(2,'Modificaste tu prompt. Volvé a presionar «Revisar mi prompt» para guardar la nueva versión.',false);}});});
+  fields().forEach(function(k){el(k).addEventListener('input',function(){showCompiled();if(saved(2)){delete state.entries.m2;saveCloud();updateMeter();feedback(2,'Modificaste tu prompt. Volvé a presionar «Revisar mi prompt» para guardar la nueva versión.',false);}});});
   el('evaluate').onclick=evaluate;
-  el('load-example').onclick=function(){var e=examples[el('area').value];fields().forEach(function(k){el(k).value=e[k];});delete state.entries.m2;localSave();updateMeter();showCompiled();feedback(2,'Este es un ejemplo de aprendizaje. Modificalo para crear tu propio pedido y luego revisalo.',false);};
-  el('clear').onclick=function(){fields().forEach(function(k){el(k).value='';});delete state.entries.m2;localSave();updateMeter();showCompiled();feedback(2,'Ahora escribí tus propias cinco instrucciones.',false);};
+  el('load-example').onclick=function(){var e=examples[el('area').value];fields().forEach(function(k){el(k).value=e[k];});delete state.entries.m2;saveCloud();updateMeter();showCompiled();feedback(2,'Este es solo un ejemplo. Cambiá el objetivo, el formato y los criterios de verificación para crear tu propio pedido.',false);};
+  el('clear').onclick=function(){fields().forEach(function(k){el(k).value='';});delete state.entries.m2;saveCloud();updateMeter();showCompiled();feedback(2,'Ahora escribí tus propias cinco instrucciones.',false);};
   el('copy-prompt').onclick=function(){
     var text=promptText();if(!text.trim())return;
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){feedback(2,'Prompt copiado. Ahora podés pegarlo en un chat de IA permitido para tu edad.',true);}).catch(function(){el('compiled').focus();el('compiled').select();});}
