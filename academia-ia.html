@@ -110,7 +110,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
             <span class="step">MISIÓN 3 · TU PROPIO PROMPT</span><h2>Construí tu propio prompt</h2>
             <p>Elegí un tema y completá las <b>seis piezas</b> de un prompt profesional. Usá cantidades, objetivos y comprobaciones concretas; adaptá los ejemplos a una tarea propia.</p>
             <label for="area">¿Qué área querés practicar?</label>
-            <select id="area"><option value="juegos">🎮 Videojuegos</option><option value="marketing">🎨 Marketing digital</option><option value="programacion">💻 Programación web</option></select>
+            <select id="area"><option value="juegos">🎮 Videojuegos</option><option value="marketing">🎨 Marketing digital</option><option value="programacion">💻 Programación web</option><option value="estudio">📚 Estudio guiado</option></select>
             <div class="actions"><button class="btn secondary" id="load-example" type="button">Ver ejemplo de esta área</button><button class="btn ghost" id="clear" type="button">Escribir el mío desde cero</button></div>
             <label for="goal">1. OBJETIVO · ¿Qué querés conseguir?</label><textarea id="goal" maxlength="350" placeholder="Quiero conseguir que…"></textarea>
             <label for="context">2. CONTEXTO · ¿Qué tenés actualmente?</label><textarea id="context" maxlength="350" placeholder="Mi proyecto ya tiene…"></textarea>
@@ -182,7 +182,8 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   var examples={
     juegos:{goal:'Quiero que mi juego de plataformas tenga monedas coleccionables.',context:'Ya tengo un personaje que corre y salta; el escenario funciona.',instruction:'Agregá tres monedas al nivel y un contador de puntos.',format:'Mostrá pasos numerados de los cambios y de cómo probar cada moneda.',limits:'No cambies el movimiento del personaje ni las plataformas existentes.',check:'Voy a jugar, tocar tres monedas y verificar que desaparezcan y sumen tres puntos.'},
     marketing:{goal:'Quiero preparar un anuncio para una feria escolar.',context:'Mi marca ficticia vende jugos naturales y el público son familias.',instruction:'Proponé un texto publicitario de máximo 30 palabras y tres títulos posibles.',format:'Devolvé tres títulos numerados y el anuncio final de máximo 30 palabras.',limits:'No inventes precios ni promociones; usá palabras claras.',check:'Voy a revisar si el anuncio explica el producto y tiene una invitación a visitar el stand.'},
-    programacion:{goal:'Quiero corregir un botón que no funciona en mi página.',context:'Tengo archivos HTML, CSS y JavaScript. El botón debería mostrar un mensaje.',instruction:'Revisá el fragmento que voy a pegar y decime qué debo comprobar primero.',format:'Respondé con tres pasos numerados y una explicación breve.',limits:'No reescribas toda la web; guiame con pistas antes de dar código.',check:'Voy a pulsar el botón y verificar que aparezca el mensaje sin afectar otras funciones.'}
+    programacion:{goal:'Quiero corregir un botón que no funciona en mi página.',context:'Tengo archivos HTML, CSS y JavaScript. El botón debería mostrar un mensaje.',instruction:'Revisá el fragmento que voy a pegar y decime qué debo comprobar primero.',format:'Respondé con tres pasos numerados y una explicación breve.',limits:'No reescribas toda la web; guiame con pistas antes de dar código.',check:'Voy a pulsar el botón y verificar que aparezca el mensaje sin afectar otras funciones.'},
+    estudio:{goal:'Quiero comprender la diferencia entre energía renovable y no renovable.',context:'Soy alumno de 13 años y ya leí una página de mi libro escolar.',instruction:'Explicame las ideas principales con dos ejemplos y después haceme tres preguntas para comprobar lo que entendí.',format:'Presentá una explicación de 100 palabras y luego tres preguntas numeradas, sin respuestas.',limits:'No hagas la tarea por mí ni inventes citas o datos estadísticos; si falta información, preguntame.',check:'Responderé las preguntas y compararé los conceptos con el libro antes de dar por correcta la explicación.'}
   };
   function el(id){return document.getElementById(id);}
   function notify(msg,error){var e=el('login-msg');e.textContent=msg;e.style.color=error?'#ffd0d0':'';}
@@ -326,7 +327,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     if(Object.keys(selected).length!==questions.length){feedback(5,'Contestá las seis preguntas antes de corregir.',false);return;}
     var score=questions.reduce(function(total,q,i){return total+(selected[i]===q[2]?1:0);},0);
     if(score>=5){mark(5,{score:score,total:questions.length});feedback(5,'¡Aprobaste! '+score+' de 6. Completá las misiones anteriores para recibir tu insignia.',true);}
-    else feedback(5,'Obtuviste '+score+' de 6. Repasá las explicaciones de las misiones y volvé a intentar.',false);
+    else {var wrong=questions.map(function(q,i){return selected[i]===q[2]?null:(i+1);}).filter(function(n){return n!==null;});feedback(5,'Obtuviste '+score+' de 6. Repasá las situaciones '+wrong.join(', ')+', verificá los motivos y volvé a intentar.',false);}
   };
   renderExam();
   el('export').onclick=function(){
