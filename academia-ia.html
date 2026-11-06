@@ -63,6 +63,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
       <form id="teacher-login-form">
         <label for="teacher-email">Correo docente</label><input id="teacher-email" type="email" autocomplete="username" required placeholder="Correo registrado">
         <label for="teacher-password">Contraseña</label><input id="teacher-password" type="password" autocomplete="current-password" required>
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAAEIqJeQrYo8E9sKD" data-language="es" data-theme="dark" style="margin-top:16px"></div>
         <div class="actions"><button class="btn" id="teacher-login-button" type="submit">Entrar al panel docente →</button></div>
       </form>
       <p id="teacher-login-status" class="small muted" role="status" aria-live="polite">Esta sección requiere una cuenta docente o administradora activa.</p>
@@ -199,6 +200,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   <footer>Krueka · Club de Informática · Nunca compartas nombres completos, contraseñas, teléfonos, direcciones ni fotografías personales con una IA.</footer>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script>
 (function(){
   'use strict';
@@ -396,7 +398,8 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     var button=el('teacher-login-button');button.disabled=true;teacherStatus('Verificando credenciales docentes…',false);
     try{
       var client=getTeacherAuthClient();
-      var credentials=await client.auth.signInWithPassword({email:el('teacher-email').value.trim(),password:el('teacher-password').value});
+      var captcha=document.querySelector('#teacher-login-form [name="cf-turnstile-response"]');
+      var credentials=await client.auth.signInWithPassword({email:el('teacher-email').value.trim(),password:el('teacher-password').value,options:{captchaToken:captcha&&captcha.value||undefined}});
       el('teacher-password').value='';
       if(credentials.error)throw credentials.error;
       if(!(await teacherAllowed())){
@@ -404,7 +407,10 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
         throw Error('Esta cuenta no tiene permisos de docente o administrador en Krueka.');
       }
       showTeacherBoard();
-    }catch(error){teacherStatus(error.message||'No fue posible iniciar sesión docente.',true);}
+     }catch(error){var message=String(error.message||'No fue posible iniciar sesión docente.');
+      teacherStatus(/captcha/i.test(message)?'No pudimos completar la verificación de seguridad. Volvé a intentarlo.':message,true);
+      try{if(window.turnstile)window.turnstile.reset();}catch(e){}
+    }
     finally{button.disabled=false;}
   };
   document.querySelectorAll('[data-preview-step]').forEach(function(button){
