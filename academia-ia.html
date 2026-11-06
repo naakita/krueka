@@ -23,6 +23,7 @@ label{display:block;font-weight:700;margin:13px 0 5px}input,textarea,select{widt
 .choice{width:100%;display:block;text-align:left;padding:13px;margin:10px 0;border:1px solid #516b95;background:#1b2d51;color:#fff;border-radius:12px}.choice:hover{background:#294371}.choice.selected{border-color:var(--mint);background:#23485a}.choice.correct{border-color:#7ee0b2}.choice.wrong{border-color:#f2a4a4}
 .result{border-radius:12px;padding:13px;margin-top:12px;background:#1b3350;border:1px solid #587ca7}.result.good{border-color:#529e8e;background:#183f3d}.result.warn{border-color:#b89a59;background:#3b332c}.result[hidden]{display:none}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.mini{border:1px solid #3d5279;border-radius:12px;background:#182947;padding:13px}.mini b{display:block;margin:0 0 7px;color:#d5f6f0}.progress-mark{font-size:.82rem;color:var(--mint);font-weight:800}
+.quiz-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0;background:#111d39}.quiz-card legend{font-weight:700}.quiz-card button{display:block;width:100%;padding:10px;margin:7px 0;text-align:left;background:#203254;color:#fff;border:1px solid #536b95;border-radius:8px}.quiz-card button[aria-pressed=true]{background:#24564e;border-color:var(--mint)}
 ul{padding-left:20px}.example-dim{border-left:4px solid #d98181;background:#302c40}.example-bright{border-left:4px solid #66c6ac}
 #app[hidden],#login[hidden],#academy[hidden],section[hidden],div[hidden],p[hidden]{display:none!important}
 footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{opacity:.65;pointer-events:none}
@@ -172,6 +173,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   var session=null,step=0,saving=false,savePending=false,isTeacherDemo=false;
   var teacherAuthClient=null;
   var state={version:1,entries:{}};
+  var MISSION_COUNT=6;
   var examples={
     juegos:{goal:'Quiero que mi juego de plataformas tenga monedas coleccionables.',context:'Ya tengo un personaje que corre y salta; el escenario funciona.',instruction:'Agregá tres monedas al nivel y un contador de puntos.',limits:'No cambies el movimiento del personaje ni las plataformas existentes.',check:'Voy a jugar, tocar tres monedas y verificar que desaparezcan y sumen tres puntos.'},
     marketing:{goal:'Quiero preparar un anuncio para una feria escolar.',context:'Mi marca ficticia vende jugos naturales y el público son familias.',instruction:'Proponé un texto publicitario de máximo 30 palabras y tres títulos posibles.',limits:'No inventes precios ni promociones; usá palabras claras.',check:'Voy a revisar si el anuncio explica el producto y tiene una invitación a visitar el stand.'},
@@ -192,14 +194,15 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   function localRead(){try{var d=JSON.parse(localStorage.getItem(localKey())||'null');return d&&d.entries&&typeof d.entries==='object'?d:null;}catch(e){return null;}}
   function saved(n){return !!(state.entries&&state.entries['m'+n]&&state.entries['m'+n].done);}
   function updateMeter(){
-    var n=0;for(var i=0;i<4;i++)if(saved(i))n++;
-    el('counter').textContent=n+' de 4 completadas';el('meter').style.width=(n*25)+'%';
+    var n=0;for(var i=0;i<MISSION_COUNT;i++)if(saved(i))n++;
+    el('counter').textContent=n+' de '+MISSION_COUNT+' completadas';el('meter').style.width=(n/MISSION_COUNT*100)+'%';
     document.querySelectorAll('[data-step]').forEach(function(b){var id=Number(b.getAttribute('data-step'));b.classList.toggle('done',saved(id));b.setAttribute('aria-current',String(id===step));b.querySelector('.num').textContent=saved(id)?'✓':String(id+1);});
-    for(var j=0;j<3;j++)el('next-'+j).disabled=!saved(j);
-    el('finish').disabled=!saved(3)||!saved(2);
-    el('certificate').hidden=!(saved(3)&&saved(2));
+    for(var j=0;j<5;j++)el('next-'+j).disabled=!saved(j);
+    var complete=true;for(var k=0;k<MISSION_COUNT;k++)if(!saved(k))complete=false;
+    el('finish').disabled=!complete;
+    el('certificate').hidden=!complete;
   }
-  function openStep(i){step=i;for(var x=0;x<4;x++)el('lesson-'+x).hidden=x!==i;updateMeter();window.scrollTo({top:0,behavior:'auto'});if(i===3)el('final-prompt').textContent=state.entries.m2&&state.entries.m2.prompt||'Primero completá tu prompt en la misión 3.';}
+  function openStep(i){step=i;for(var x=0;x<MISSION_COUNT;x++)el('lesson-'+x).hidden=x!==i;updateMeter();window.scrollTo({top:0,behavior:'auto'});if(i===3)el('final-prompt').textContent=state.entries.m2&&state.entries.m2.prompt||'Primero completá tu prompt en la misión 3.';}
   function fields(){return ['goal','context','instruction','limits','check'];}
   function promptText(){var f=fields(),labels=['OBJETIVO','CONTEXTO','INSTRUCCIÓN','LÍMITES','COMPROBACIÓN'];return f.map(function(k,i){return labels[i]+': '+el(k).value.trim();}).join('\n\n');}
   function showCompiled(){el('compiled').value=promptText();}
@@ -232,6 +235,8 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
       el('area').value=state.entries.m2.area||'juegos';
       showCompiled();
     }
+    var stages=state.entries&&state.entries.m4&&state.entries.m4.stages;
+    ['stage-clarify','stage-build','stage-review'].forEach(function(k){el(k).value=stages&&stages[k]||'';});
   }
   function openTeacherDemo(){
     session=null;isTeacherDemo=true;
@@ -276,7 +281,49 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){feedback(2,'Prompt copiado. Ahora podés pegarlo en un chat de IA permitido para tu edad.',true);}).catch(function(){el('compiled').focus();el('compiled').select();});}
     else {el('compiled').focus();el('compiled').select();document.execCommand('copy');feedback(2,'Prompt seleccionado para copiar.',true);}
   };
-  el('finish').onclick=function(){el('certificate').hidden=false;el('certificate').scrollIntoView({block:'nearest'});};
+  el('finish').onclick=function(){if(el('finish').disabled)return;el('certificate').hidden=false;el('certificate').scrollIntoView({block:'nearest'});};
+
+  var stageFields=['stage-clarify','stage-build','stage-review'];
+  el('save-dialog').onclick=function(){
+    var values=stageFields.map(function(k){return el(k).value.trim();});
+    var all=values.join('\n\n');
+    if(privateText(all)){feedback(4,'Eliminá información personal, teléfonos, correos y contraseñas antes de guardar.',false);return;}
+    if(values.some(function(v){return v.length<45;})){feedback(4,'Describí las tres etapas con al menos 45 caracteres: aclarar, modificar y comprobar.',false);return;}
+    var stages={};stageFields.forEach(function(k,i){stages[k]=values[i];});
+    mark(4,{prompt:all,stages:stages});
+    feedback(4,'Tres pedidos guardados. Ahora sabés pedir aclaraciones, modificar de manera limitada y verificar resultados.',true);
+  };
+  stageFields.forEach(function(k){el(k).addEventListener('input',function(){
+    if(saved(4)){delete state.entries.m4;saveCloud();updateMeter();feedback(4,'Modificaste el diálogo; revisalo de nuevo antes de continuar.',false);}
+  });});
+  var questions=[
+    ['Una IA afirma una fecha histórica sin fuente.',['La copiás sin revisar.','La verificás en una fuente confiable.','Le pedís que suene más segura.'],1],
+    ['¿Qué pedido es más preciso?',['Explicá variables con un juego y dos ejemplos para 13 años en 100 palabras.','Explicame todo.','Hacé toda mi tarea.'],0],
+    ['La IA necesita un presupuesto que no conocés.',['Que invente el monto.','Que no hable del costo.','Que haga preguntas y declare sus suposiciones.'],2],
+    ['La IA dice que corrigió tu juego.',['Lo entregás sin abrir.','Probás el cambio y las funciones existentes.','Borrás el proyecto.'],1],
+    ['¿Qué podés compartir al pedir ayuda?',['Un problema ficticio sin datos personales.','Contraseñas y teléfonos de amigos.','Documentos de identidad.'],0],
+    ['Necesitás tres pasos y fuentes reales.',['Da igual, hacé algo.','Decime cualquier cosa.','Respondé en tres pasos; si no conocés la fuente, avisá y no inventes.'],2]
+  ],selected={};
+  function renderExam(){
+    var holder=el('final-quiz');holder.textContent='';
+    questions.forEach(function(q,i){
+      var group=document.createElement('fieldset');group.className='quiz-card';
+      var title=document.createElement('legend');title.textContent=(i+1)+'. '+q[0];group.appendChild(title);
+      q[1].forEach(function(answer,j){
+        var button=document.createElement('button');button.type='button';button.textContent=String.fromCharCode(65+j)+'. '+answer;
+        button.setAttribute('aria-pressed','false');
+        button.onclick=function(){selected[i]=j;Array.prototype.forEach.call(group.querySelectorAll('button'),function(b,k){b.setAttribute('aria-pressed',String(k===j));});};
+        group.appendChild(button);
+      });holder.appendChild(group);
+    });
+  }
+  el('grade-final').onclick=function(){
+    if(Object.keys(selected).length!==questions.length){feedback(5,'Contestá las seis preguntas antes de corregir.',false);return;}
+    var score=questions.reduce(function(total,q,i){return total+(selected[i]===q[2]?1:0);},0);
+    if(score>=5){mark(5,{score:score,total:questions.length});feedback(5,'¡Aprobaste! '+score+' de 6. Completá las misiones anteriores para recibir tu insignia.',true);}
+    else feedback(5,'Obtuviste '+score+' de 6. Repasá las explicaciones de las misiones y volvé a intentar.',false);
+  };
+  renderExam();
   el('export').onclick=function(){
     var text='KRUEKA · MIS PROMPTS\n\n'+Object.keys(state.entries||{}).map(function(k){var v=state.entries[k];return k+' · '+(v.date||'')+'\n'+(v.prompt||'Actividad completada');}).join('\n\n');
     var blob=new Blob([text],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='mis-prompts-krueka.txt';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
