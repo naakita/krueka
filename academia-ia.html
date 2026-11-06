@@ -22,12 +22,12 @@ h1{font-size:clamp(1.9rem,5vw,3.5rem);line-height:1.12;margin:.6rem 0 1rem}h2{fo
 label{display:block;font-weight:700;margin:13px 0 5px}input,textarea,select{width:100%;padding:12px;border:1px solid #6b7fa8;border-radius:10px;color:#fff;background:#101b36}textarea{min-height:95px;resize:vertical}select{max-width:480px}input::placeholder,textarea::placeholder{color:#a8b7d4}input:disabled{opacity:.5}
 .choice{width:100%;display:block;text-align:left;padding:13px;margin:10px 0;border:1px solid #516b95;background:#1b2d51;color:#fff;border-radius:12px}.choice:hover{background:#294371}.choice.selected{border-color:var(--mint);background:#23485a}.choice.correct{border-color:#7ee0b2}.choice.wrong{border-color:#f2a4a4}
 .result{border-radius:12px;padding:13px;margin-top:12px;background:#1b3350;border:1px solid #587ca7}.result.good{border-color:#529e8e;background:#183f3d}.result.warn{border-color:#b89a59;background:#3b332c}.result[hidden]{display:none}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.mini{border:1px solid #3d5279;border-radius:12px;background:#182947;padding:13px}.mini b{display:block;margin:0 0 7px;color:#d5f6f0}.progress-mark{font-size:.82rem;color:var(--mint);font-weight:800}.lesson-guide{margin:16px 0;padding:14px 17px;border:1px solid #49678a;border-radius:12px;background:#122341}.lesson-guide summary{cursor:pointer;color:var(--mint);font-weight:800}.lesson-guide li{margin:7px 0}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.mini{border:1px solid #3d5279;border-radius:12px;background:#182947;padding:13px}.mini b{display:block;margin:0 0 7px;color:#d5f6f0}.progress-mark{font-size:.82rem;color:var(--mint);font-weight:800}.entry-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}.entry-option{border:1px solid #49638c;border-radius:16px;padding:23px;text-align:left;background:#17294b;color:#f0f5ff;display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:240px}.entry-option:hover,.entry-option:focus-visible{border-color:var(--mint);background:#20365c}.entry-symbol{font-size:2rem}.entry-option strong{font-size:1.25rem}.entry-option span:not(.entry-symbol){color:#c6d5ef}.entry-option b{color:var(--mint);margin-top:auto}.access-panel h1,.entry-shell h1{font-size:clamp(1.55rem,4vw,2.45rem)}.teacher-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;flex-wrap:wrap}.preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.preview-card{border:1px solid #3f5279;border-radius:14px;padding:18px;background:#192744}.preview-card p{color:var(--muted)}.preview-card .btn{margin-top:10px}.lesson-guide{margin:16px 0;padding:14px 17px;border:1px solid #49678a;border-radius:12px;background:#122341}.lesson-guide summary{cursor:pointer;color:var(--mint);font-weight:800}.lesson-guide li{margin:7px 0}
 .quiz-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0;background:#111d39}.quiz-card legend{font-weight:700}.quiz-card button{display:block;width:100%;padding:10px;margin:7px 0;text-align:left;background:#203254;color:#fff;border:1px solid #536b95;border-radius:8px}.quiz-card button[aria-pressed=true]{background:#24564e;border-color:var(--mint)}
 ul{padding-left:20px}.example-dim{border-left:4px solid #d98181;background:#302c40}.example-bright{border-left:4px solid #66c6ac}
 #app[hidden],#login[hidden],#academy[hidden],section[hidden],div[hidden],p[hidden]{display:none!important}
 footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{opacity:.65;pointer-events:none}
-@media(max-width:780px){.split{grid-template-columns:1fr}.side{position:static}.cards{grid-template-columns:1fr}.hero{padding:20px}.card{padding:16px}}
+@media(max-width:780px){.split{grid-template-columns:1fr}.side{position:static}.cards,.entry-options,.preview-grid{grid-template-columns:1fr}.hero{padding:20px}.card{padding:16px}.entry-option{min-height:190px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -35,18 +35,48 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
 <div class="wrap" id="app">
   <header><a class="brand" href="index.html"><img src="logo.svg" alt="Krueka"><span>ACADEMIA IA · JUNIORS</span></a><nav class="headlinks" aria-label="Navegación"><a href="studio.html">Studio de juegos</a><a href="index.html">Inicio</a><button id="logout" class="btn ghost small" type="button" hidden>Salir</button></nav></header>
   <main>
-    <section id="login" class="card" style="max-width:600px;margin:8vh auto 0">
-      <span class="pill">CURSO GRATUITO · SIN INSTALAR NADA</span>
-      <h1>Entendé la IA y aprendé a pedir resultados exactos.</h1>
-      <p>Curso intensivo de cuatro clases: entendé cómo se utiliza la inteligencia artificial, aprendé a formular pedidos exactos y comprobá si sus respuestas sirven. Seis misiones, sin correos ni instalaciones.</p>
+    <section id="entry" class="card entry-shell" style="max-width:760px;margin:7vh auto 0">
+      <span class="pill">ACADEMIA KRUEKA · APRENDER A TU RITMO</span>
+      <h1>Bienvenidos a la Academia IA</h1>
+      <p class="muted">Elegí cómo querés ingresar. Las clases, actividades y evaluaciones aparecen después del acceso.</p>
+      <div class="entry-options">
+        <button id="entry-student" class="entry-option" type="button"><span class="entry-symbol" aria-hidden="true">🎒</span><strong>Soy alumno</strong><span>Ingresar con mi código personal de Krueka, sin correo electrónico.</span><b>Entrar como alumno →</b></button>
+        <button id="entry-teacher" class="entry-option" type="button"><span class="entry-symbol" aria-hidden="true">🧑‍🏫</span><strong>Soy docente</strong><span>Ingresar con las credenciales de docente de Krueka y probar las clases desde mi panel.</span><b>Entrar como docente →</b></button>
+      </div>
+    </section>
+    <section id="login" class="card access-panel" style="max-width:520px;margin:7vh auto 0" hidden>
+      <span class="pill">ACCESO DE ALUMNOS</span>
+      <h1>Ingresá a tu academia</h1>
+      <p class="muted">Usá tu código personal del Club de seis caracteres. No necesitás correo electrónico.</p>
       <form id="login-form">
         <label for="code">Código personal del Club</label>
-        <input id="code" maxlength="6" minlength="6" pattern="[A-Za-z0-9]{6}" required placeholder="6 letras o números" autocomplete="off" spellcheck="false">
-        <div class="actions"><button id="login-btn" type="submit" class="btn">Entrar a mi academia →</button></div>
+        <input id="code" maxlength="6" minlength="6" pattern="[A-Za-z0-9]{6}" required placeholder="ABC123" autocomplete="off" spellcheck="false">
+        <div class="actions"><button id="login-btn" type="submit" class="btn">Entrar a mis clases →</button></div>
       </form>
-      <div id="teacher-demo-entry" hidden style="border-top:1px solid var(--line);padding-top:15px;margin-top:16px"><p class="small muted">¿Sos profesor o administrador de Krueka?</p><button id="teacher-demo" class="btn secondary" type="button">🧑‍🏫 Entrar al modo DEMO docente</button><p class="small muted" id="teacher-demo-status" role="status" aria-live="polite">La demostración no accede a cuentas ni trabajos de alumnos.</p></div>
-      <p id="login-msg" class="small muted" role="status" aria-live="polite">Usá el mismo código que tenés para Krueka Studio. No necesitás crear una cuenta externa.</p>
-      <p class="small muted">Si todavía no tenés código del Club, pedíselo al profesor. Nunca lo compartas con otros alumnos.</p>
+      <p id="login-msg" class="small muted" role="status" aria-live="polite">Si todavía no tenés código, pedíselo al profesor. No lo compartas con otros alumnos.</p>
+      <button id="back-student" type="button" class="btn secondary">← Volver a la Academia</button>
+    </section>
+    <section id="teacher-login" class="card access-panel" style="max-width:520px;margin:7vh auto 0" hidden>
+      <span class="pill">ACCESO EXCLUSIVO PARA DOCENTES</span>
+      <h1>Ingresá como docente</h1>
+      <p class="muted">Utilizá las credenciales de tu cuenta docente de Krueka. Las demostraciones se habilitan solamente dentro del panel.</p>
+      <form id="teacher-login-form">
+        <label for="teacher-email">Correo docente</label><input id="teacher-email" type="email" autocomplete="username" required placeholder="Correo registrado">
+        <label for="teacher-password">Contraseña</label><input id="teacher-password" type="password" autocomplete="current-password" required>
+        <div class="actions"><button class="btn" id="teacher-login-button" type="submit">Entrar al panel docente →</button></div>
+      </form>
+      <p id="teacher-login-status" class="small muted" role="status" aria-live="polite">Esta sección requiere una cuenta docente o administradora activa.</p>
+      <button id="back-teacher" type="button" class="btn secondary">← Volver a la Academia</button>
+    </section>
+    <section id="teacher-board" class="card teacher-board" style="max-width:1000px;margin:3vh auto 0" hidden>
+      <div class="teacher-head"><div><span class="pill">PANEL DOCENTE · ACADEMIA IA</span><h1>Mis clases y demostraciones</h1><p class="muted">Elegí una clase para verla como alumno. Las pruebas no modifican las entregas ni los avances reales.</p></div><button id="teacher-logout" class="btn secondary" type="button">Cerrar sesión docente</button></div>
+      <div class="preview-grid">
+        <article class="preview-card"><span class="step">CLASE 1</span><h2>Comprender la IA</h2><p>Fundamentos, tipos de IA y pedidos precisos.</p><button class="btn secondary" data-preview-step="0" type="button">Probar clase 1</button></article>
+        <article class="preview-card"><span class="step">CLASE 2</span><h2>Construir prompts</h2><p>Objetivo, contexto, tarea, formato, límites y comprobación.</p><button class="btn secondary" data-preview-step="2" type="button">Probar clase 2</button></article>
+        <article class="preview-card"><span class="step">CLASE 3</span><h2>Verificar y mejorar</h2><p>Evaluar resultados y pedir cambios por etapas.</p><button class="btn secondary" data-preview-step="3" type="button">Probar clase 3</button></article>
+        <article class="preview-card"><span class="step">CLASE 4</span><h2>Evaluación final</h2><p>Repaso y resolución de situaciones prácticas.</p><button class="btn secondary" data-preview-step="5" type="button">Probar clase 4</button></article>
+      </div>
+      <p id="teacher-board-status" class="small muted" role="status" aria-live="polite">Seleccioná una clase para entrar al modo de práctica.</p>
     </section>
 
     <div id="academy" hidden>
@@ -244,16 +274,19 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     var stages=state.entries&&state.entries.m4&&state.entries.m4.stages;
     ['stage-clarify','stage-build','stage-review'].forEach(function(k){el(k).value=stages&&stages[k]||'';});
   }
-  function openTeacherDemo(){
+  function openTeacherDemo(startStep){
     session=null;isTeacherDemo=true;
     state=localRead()||{version:1,entries:{}};
-    el('login').hidden=true;el('academy').hidden=false;el('logout').hidden=false;
+    el('entry').hidden=true;el('login').hidden=true;el('teacher-login').hidden=true;el('teacher-board').hidden=true;
+    el('academy').hidden=false;el('logout').hidden=false;el('logout').textContent='← Volver a mis clases';
     el('teacher-demo-banner').hidden=false;
-    restorePromptFields();updateMeter();openStep(0);
+    restorePromptFields();updateMeter();openStep(typeof startStep==='number'?startStep:0);
     el('save-status').textContent='Modo DEMO docente · guardado local separado de los alumnos.';
   }
   function open(sessionData){
-    isTeacherDemo=false;el('teacher-demo-banner').hidden=true;session=sessionData;el('login').hidden=true;el('academy').hidden=false;el('logout').hidden=false;
+    isTeacherDemo=false;el('teacher-demo-banner').hidden=true;session=sessionData;
+    el('entry').hidden=true;el('teacher-login').hidden=true;el('teacher-board').hidden=true;
+    el('login').hidden=true;el('academy').hidden=false;el('logout').hidden=false;el('logout').textContent='Salir';
     var old=localRead();if(old)state=old;
     updateMeter();el('save-status').textContent='Recuperando avance de Krueka…';
     rpc('club_ai_academy_state',{p_token:session.token}).then(function(d){
@@ -334,11 +367,19 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     var text='KRUEKA · MIS PROMPTS\n\n'+Object.keys(state.entries||{}).map(function(k){var v=state.entries[k];return k+' · '+(v.date||'')+'\n'+(v.prompt||'Actividad completada');}).join('\n\n');
     var blob=new Blob([text],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='mis-prompts-krueka.txt';a.click();setTimeout(function(){URL.revokeObjectURL(url);},1000);
   };
-  el('logout').onclick=function(){
-    var token=session&&session.token;session=null;isTeacherDemo=false;state={version:1,entries:{}};try{sessionStorage.removeItem(SESSION);}catch(e){}
-    el('academy').hidden=true;el('login').hidden=false;el('logout').hidden=true;el('code').value='';notify('Sesión cerrada. El siguiente alumno puede ingresar.',false);
-    if(token)rpc('club_studio_salir',{p_token:token}).catch(function(){});
-  };
+  function showEntry(){
+    el('entry').hidden=false;el('login').hidden=true;el('teacher-login').hidden=true;
+    el('teacher-board').hidden=true;el('academy').hidden=true;el('logout').hidden=true;
+  }
+  function showStudentLogin(){showEntry();el('entry').hidden=true;el('login').hidden=false;el('code').focus();}
+  function showTeacherLogin(){showEntry();el('entry').hidden=true;el('teacher-login').hidden=false;el('teacher-email').focus();}
+  function showTeacherBoard(){showEntry();el('entry').hidden=true;el('teacher-board').hidden=false;el('teacher-board-status').textContent='Elegí una clase para probarla en modo docente.';}
+  function teacherStatus(message,error){var e=el('teacher-login-status');e.textContent=message;e.style.color=error?'#ffd0d0':'';}
+  function getTeacherAuthClient(){
+    if(!window.supabase||typeof window.supabase.createClient!=='function')throw Error('No se pudo cargar el acceso de Krueka. Actualizá la página.');
+    if(!teacherAuthClient)teacherAuthClient=window.supabase.createClient(BASE,PUB,{auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false}});
+    return teacherAuthClient;
+  }
   async function teacherAllowed(){
     if(!teacherAuthClient)return false;
     var current=await teacherAuthClient.auth.getSession();
@@ -346,23 +387,52 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     var result=await teacherAuthClient.rpc('club_ai_teacher_demo_allowed');
     return !result.error&&result.data===true;
   }
-  async function checkTeacherAccess(){
-    var entry=el('teacher-demo-entry');
-    entry.hidden=true;
+  el('entry-student').onclick=showStudentLogin;
+  el('entry-teacher').onclick=showTeacherLogin;
+  el('back-student').onclick=showEntry;
+  el('back-teacher').onclick=showEntry;
+  el('teacher-login-form').onsubmit=async function(e){
+    e.preventDefault();
+    var button=el('teacher-login-button');button.disabled=true;teacherStatus('Verificando credenciales docentes…',false);
     try{
-      if(!window.supabase||typeof window.supabase.createClient!=='function')return;
-      teacherAuthClient=window.supabase.createClient(BASE,PUB);
-      entry.hidden=!(await teacherAllowed());
-    }catch(e){entry.hidden=true;}
-  }
-  el('teacher-demo').onclick=async function(){
-    var button=el('teacher-demo');
-    button.disabled=true;el('teacher-demo-status').textContent='Comprobando permisos del profesor…';
-    try{
-      if(!(await teacherAllowed()))throw Error('Esta función requiere una sesión activa con rol docente o administrador.');
-      openTeacherDemo();
-    }catch(e){el('teacher-demo-entry').hidden=true;notify('Ingresá primero a Krueka como docente o administrador y luego volvé a esta página.',true);}
+      var client=getTeacherAuthClient();
+      var credentials=await client.auth.signInWithPassword({email:el('teacher-email').value.trim(),password:el('teacher-password').value});
+      el('teacher-password').value='';
+      if(credentials.error)throw credentials.error;
+      if(!(await teacherAllowed())){
+        await client.auth.signOut();
+        throw Error('Esta cuenta no tiene permisos de docente o administrador en Krueka.');
+      }
+      showTeacherBoard();
+    }catch(error){teacherStatus(error.message||'No fue posible iniciar sesión docente.',true);}
     finally{button.disabled=false;}
+  };
+  document.querySelectorAll('[data-preview-step]').forEach(function(button){
+    button.addEventListener('click',async function(){
+      button.disabled=true;el('teacher-board-status').textContent='Comprobando permisos de docente…';
+      try{
+        if(!(await teacherAllowed()))throw Error('Tu sesión docente terminó. Volvé a ingresar.');
+        openTeacherDemo(Number(button.getAttribute('data-preview-step')));
+      }catch(error){el('teacher-board-status').textContent=error.message||'No se pudo abrir la demostración.';}
+      finally{button.disabled=false;}
+    });
+  });
+  el('teacher-logout').onclick=async function(){
+    el('teacher-logout').disabled=true;
+    try{if(teacherAuthClient)await teacherAuthClient.auth.signOut();}
+    catch(error){el('teacher-board-status').textContent='No se pudo cerrar la sesión: '+error.message;el('teacher-logout').disabled=false;return;}
+    el('teacher-email').value='';el('teacher-password').value='';
+    el('teacher-logout').disabled=false;showEntry();
+  };
+  el('logout').onclick=function(){
+    if(isTeacherDemo){
+      isTeacherDemo=false;session=null;state={version:1,entries:{}};
+      el('teacher-demo-banner').hidden=true;showTeacherBoard();return;
+    }
+    var token=session&&session.token;session=null;state={version:1,entries:{}};
+    try{sessionStorage.removeItem(SESSION);}catch(e){}
+    el('code').value='';showEntry();
+    if(token)rpc('club_studio_salir',{p_token:token}).catch(function(){});
   };
   el('login-form').onsubmit=function(e){
     e.preventDefault();var code=el('code').value.trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(code)){notify('Ingresá las seis letras o números de tu código.',true);return;}
@@ -374,10 +444,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
       open(d);
     }).catch(function(e){notify(e.message||'Error de conexión.',true);}).then(function(){el('login-btn').disabled=false;});
   };
-  showCompiled();openStep(0);checkTeacherAccess();
-  try{var existing=JSON.parse(sessionStorage.getItem(SESSION)||'null');
-    if(existing&&existing.token&&existing.student&&existing.expiresAt&&Date.parse(existing.expiresAt)>Date.now())open(existing);
-  }catch(e){}
+  showCompiled();openStep(0);showEntry();
 })();
 </script>
 </body>
