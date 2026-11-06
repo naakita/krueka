@@ -63,13 +63,15 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
       </section>
       <div class="split">
         <aside class="card side">
-          <h2>Mis cuatro misiones</h2>
-          <p class="small muted" id="counter">0 de 4 completadas</p>
+          <h2>Mis seis misiones</h2>
+          <p class="small muted" id="counter">0 de 6 completadas</p>
           <div class="meter" aria-hidden="true"><span id="meter"></span></div>
           <button type="button" data-step="0" aria-current="true"><span class="num">1</span>Conocé las herramientas</button>
           <button type="button" data-step="1"><span class="num">2</span>Elegí el mejor prompt</button>
           <button type="button" data-step="2"><span class="num">3</span>Construí tu prompt</button>
           <button type="button" data-step="3"><span class="num">4</span>Comprobá y mejorá</button>
+          <button type="button" data-step="4"><span class="num">5</span>Pedí por etapas</button>
+          <button type="button" data-step="5"><span class="num">6</span>Evaluación final</button>
           <p id="save-status" class="small muted" role="status" aria-live="polite">Cargando progreso…</p>
           <button id="export" type="button" class="btn secondary" style="width:100%">Guardar una copia de mis prompts</button>
         </aside>
@@ -128,8 +130,31 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
             <div class="result" id="feedback-3" hidden></div>
             <h3>Tu próximo desafío</h3>
             <p id="final-prompt" class="example">Primero terminá la misión 3 para mostrar acá tu propio prompt.</p>
-            <div class="actions"><button class="btn secondary" type="button" data-prev="2">← Revisar mi prompt</button><button class="btn" id="finish" type="button" disabled>Terminé mi entrenamiento ✓</button></div>
-            <div class="result good" id="certificate" hidden><strong>¡Misión cumplida!</strong><p>Aprendiste a formular pedidos y comprobar las respuestas. El siguiente paso es utilizar tus instrucciones en un proyecto real.</p><div class="actions"><a class="btn secondary" href="studio.html">Ir a Krueka Studio</a><a class="btn ghost" href="https://editor.gdevelop.io/" target="_blank" rel="noopener noreferrer">Probar GDevelop</a></div></div>
+            <div class="actions"><button class="btn secondary" type="button" data-prev="2">← Revisar mi prompt</button><button class="btn" id="next-3" type="button" data-next="4" disabled>Pedidos por etapas →</button></div>
+          </section>
+          <section id="lesson-4" hidden>
+            <span class="step">MISIÓN 5 · APLICACIÓN</span><h2>Pedí con precisión y mejorá por etapas</h2>
+            <p>Cuando una tarea es compleja, pedí primero las aclaraciones, después una acción limitada y al final comprobaciones concretas. Evitá que la IA invente lo que desconoce.</p>
+            <div class="example">CASO: tenés una web escolar. Querés que un botón cambie el color de un título, sin alterar el menú ni otras páginas.</div>
+            <label for="stage-clarify">1. ¿Qué debe preguntarte la IA antes de empezar?</label>
+            <textarea id="stage-clarify" maxlength="600" placeholder="Antes de modificar la web, preguntame..."></textarea>
+            <label for="stage-build">2. ¿Cuál es el pedido exacto, con formato y límites?</label>
+            <textarea id="stage-build" maxlength="600" placeholder="Modificá solamente... Conservá... Respondé en..."></textarea>
+            <label for="stage-review">3. ¿Qué pruebas y correcciones necesitás?</label>
+            <textarea id="stage-review" maxlength="600" placeholder="Verificá tres cosas... Si falla, corregí..."></textarea>
+            <div class="actions"><button id="save-dialog" class="btn" type="button">Revisar y guardar mis tres pedidos</button></div>
+            <div id="feedback-4" class="result" hidden></div>
+            <p class="small muted">La revisión solo comprueba la estructura. No conversa con una IA externa.</p>
+            <div class="actions"><button class="btn secondary" type="button" data-prev="3">← Volver</button><button class="btn" id="next-4" data-next="5" type="button" disabled>Evaluación final →</button></div>
+          </section>
+          <section id="lesson-5" hidden>
+            <span class="step">MISIÓN 6 · EVALUACIÓN</span><h2>Comprobá tus conocimientos</h2>
+            <p>Respondé seis situaciones reales sobre prompts, privacidad, fuentes y pruebas. Aprobás con 5 de 6 correctas y todas las misiones anteriores terminadas.</p>
+            <div id="final-quiz"></div>
+            <div class="actions"><button class="btn secondary" type="button" data-prev="4">← Repasar</button><button class="btn" id="grade-final" type="button">Corregir mis respuestas</button></div>
+            <div id="feedback-5" class="result" hidden></div>
+            <div class="actions"><button class="btn" id="finish" type="button" disabled>Ver insignia del curso ✓</button></div>
+            <div class="result good" id="certificate" hidden><strong>¡Curso intensivo completado!</strong><p>Superaste seis misiones sobre inteligencia artificial y prompts precisos. Esta es una insignia de práctica de Krueka, no una certificación externa.</p><div class="actions"><a class="btn secondary" href="studio.html">Aplicar en Krueka Studio</a></div></div>
           </section>
         </div>
       </div>
