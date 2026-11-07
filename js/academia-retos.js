@@ -44,7 +44,7 @@ var missions=[
 ]
 ];
 var COUNT=missions.reduce(function(n,m){return n+m.length;},0);
-var root=document.getElementById('micro-course'), api=null, active=0, index=0, decision=null, msg='';
+var root=document.getElementById('micro-course'), api=null, active=0, index=0, decision=null, msg='', viewMode='hub', currentLab=null;
 if(!root)return;
 function h(tag,cls,value){var e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=value;return e;}
 function add(p,n){p.appendChild(n);return n;}
@@ -99,7 +99,197 @@ function checkWriting(value){
  if(step.extra&&!step.extra.test(v)){msg='Acordate de lo que debe conservarse. '+step.hint;decision='wrong';render(v);return;}
  getProgress().writing[step.key]=v;mark();msg='¡Listo! Ese detalle hace tu pedido más claro.';decision='right';render();
 }
+
+/* La portada y los juegos extra son independientes del avance obligatorio de 25 retos. */
+var worldDescriptions=[
+ 'Elegí las herramientas que sirven para resolver problemas.',
+ 'Aprendé a dar instrucciones que no dejan dudas.',
+ 'Construí tu propio pedido profesional por partes.',
+ 'Detectá errores y comprobá lo que la IA dice.',
+ 'Aprendé a conversar, mejorar y corregir.',
+ 'Superá el desafío y obtené tu insignia.'
+];
+function bonusData(){
+ var p=getProgress();
+ p.bonus=p.bonus||{};
+ p.bonus.detective=p.bonus.detective||{};
+ p.bonus.promptLab=p.bonus.promptLab||{};
+ p.bonus.pixel=p.bonus.pixel||{position:0,gems:[]};
+ return p.bonus;
+}
+function earnedBonuses(){
+ var b=bonusData();
+ return Number(!!b.detective.done)+Number(!!b.promptLab.done)+Number(!!b.pixel.done);
+}
+function hub(){
+ if(!api)return;
+ viewMode='hub';
+ root.replaceChildren();
+ var home=add(root,h('div','adv-root'));
+ var hero=add(home,h('section','adv-hero'));
+ add(hero,h('div','adv-kicker','KRUEKA · ACADEMIA DE CREADORES'));
+ add(hero,h('h1','','¡Tu próxima aventura digital empieza acá!'));
+ add(hero,h('p','','No vas a leer un libro entero: vas a decidir, crear, jugar y descubrir. Completá retos, desbloqueá mundos y aprendé a usar la IA con criterio.'));
+ var finished=numDone()===COUNT;
+ add(hero,button(finished?'🏆 Ver mi insignia →':numDone()?'🚀 Continuar mi aventura →':'🚀 Comenzar mi aventura →','adv-big-button',function(){
+   viewMode='mission';
+   active=firstAvailable();index=firstStep(active);
+   if(finished)renderCompleted();else render();
+ }));
+ var stats=add(hero,h('div','adv-stats'));
+ add(stats,h('span','','⭐ '+(numDone()*10+earnedBonuses()*30)+' XP ganados'));
+ add(stats,h('span','','🧩 '+numDone()+'/'+COUNT+' retos'));
+ add(stats,h('span','','🏅 '+earnedBonuses()+'/3 insignias extra'));
+ add(home,h('h2','adv-heading','🗺️ Elegí tu mundo'));
+ add(home,h('p','adv-sub','Se desbloquean a medida que avanzás. Podés volver a practicar en cualquier momento.'));
+ var worlds=add(home,h('section','adv-worlds'));
+ chapterNames.forEach(function(title,i){
+   var allowed=!!api.teacherDemo||i<=firstAvailable()||fullyDone(i);
+   var world=button('','adv-world',function(){if(!allowed)return;active=i;index=firstStep(i);viewMode='mission';decision=null;msg='';render();});
+   world.disabled=!allowed;
+   world.appendChild(h('span','adv-world-emoji',chapterIcons[i]));
+   world.appendChild(h('strong','',title));
+   world.appendChild(h('small','',worldDescriptions[i]));
+   world.appendChild(h('em','',fullyDone(i)?'✓ COMPLETADO':allowed?'► ENTRAR':'🔒 BLOQUEADO'));
+   worlds.appendChild(world);
+ });
+ add(home,h('h2','adv-heading','🎮 Laboratorios para experimentar'));
+ add(home,h('p','adv-sub','Minijuegos opcionales. Podés jugarlos sin perder el avance de las misiones.'));
+ var labs=add(home,h('section','adv-labs'));
+ [
+  ['detective','🔍','Detective de Internet','Descubrí pistas falsas y aprendé a verificar.'],
+  ['promptLab','🧱','Fábrica de prompts','Combiná piezas para crear un pedido preciso.'],
+  ['pixel','👾','Misión Pixel','Mové tu héroe, reuní gemas y probá tu lógica.']
+ ].forEach(function(x){
+  var done=!!bonusData()[x[0]].done;
+  var lab=button('','adv-lab',function(){currentLab=x[0];viewMode='bonus';renderBonus();});
+  lab.appendChild(h('span','',x[1]));lab.appendChild(h('strong','',x[2]));lab.appendChild(h('p','',x[3]));lab.appendChild(h('b','',done?'✓ COMPLETADO · +30 XP':'JUGAR · +30 XP'));
+  labs.appendChild(lab);
+ });
+ add(home,h('p','adv-muted','Tu progreso se guarda con tu código. Estos laboratorios son simulaciones educativas: no generan contenido mediante una IA real.'));
+}
+function labShell(label,title,desc){
+ root.replaceChildren();
+ var wrap=add(root,h('div','adv-root'));
+ wrap.appendChild(button('← Volver al mapa','adv-back',hub));
+ var panel=add(wrap,h('section','adv-game'));
+ add(panel,h('div','adv-label','LABORATORIO INTERACTIVO · '+label));
+ add(panel,h('h2','',title));
+ add(panel,h('p','',desc));
+ return panel;
+}
+function awardBonus(key){
+ var b=bonusData()[key];
+ if(!b.done){b.done=true;if(api.save)api.save();}
+}
+var cases=[
+ {claim:'«Esta noticia es verdadera porque la compartieron 900 personas».',choices:['La cantidad de compartidos demuestra que es real','Necesito revisar fuente, fecha y contenido','Si tiene muchas reacciones, ya está verificada'],correct:1,why:'Una noticia viral también puede ser falsa. Buscá el origen y contrastá con fuentes confiables.'},
+ {claim:'Una IA inventó una página web como fuente, pero el enlace no abre.',choices:['No la uso hasta conseguir una fuente verificable','La incluyo igual porque parece profesional','Invento otra dirección web parecida'],correct:0,why:'Las fuentes tienen que existir y respaldar lo que se afirma.'},
+ {claim:'Un chatbot te pide la contraseña de tu compañero para hacer un trabajo escolar.',choices:['Se la paso si el trabajo es urgente','Le envío una captura con datos del compañero','No comparto secretos ni datos personales'],correct:2,why:'Nunca necesitás compartir contraseñas ni datos privados para practicar.'}
+];
+function renderDetective(){
+ var b=bonusData().detective;
+ if(b.done)return bonusWin('detective','🔍 ¡Detective experto!','Reconocés señales de riesgo y sabés comprobar información.');
+ var i=0;while(b[i])i++;
+ var c=cases[i],box=labShell('DETECTIVE','🔍 ¿Detectás la trampa?','Observá la situación y elegí la acción más segura. '+(i+1)+' de '+cases.length);
+ add(box,h('div','adv-challenge',c.claim));
+ var opts=add(box,h('div','adv-options'));
+ c.choices.forEach(function(choice,j){
+  opts.appendChild(button(choice,'adv-option',function(){
+   if(j!==c.correct){
+     feedbackBonus(box,'Todavía no: pensá si tenés una prueba o solo una afirmación.',false);return;
+   }
+   b[i]=true;if(api.save)api.save();
+   feedbackBonus(box,'✓ '+c.why,true);
+   opts.querySelectorAll('button').forEach(function(el){el.disabled=true;});
+   box.appendChild(button(i===cases.length-1?'¡Laboratorio superado! →':'Siguiente caso →','adv-button',function(){
+      if(i===cases.length-1)awardBonus('detective');renderDetective();
+   }));
+  }));
+ });
+}
+var builderParts=[
+ {title:'1. Objetivo',options:['Hacé algo lindo','Creá un juego 2D donde se recojan cristales','Decidí vos todo'],correct:1,hint:'Elegí una meta concreta que pueda comprobarse.'},
+ {title:'2. Contexto',options:['No importa qué tengo','La idea está en mi cabeza','Ya existe un personaje que puede moverse a izquierda y derecha'],correct:2,hint:'La IA necesita saber qué hay construido.'},
+ {title:'3. Formato',options:['Devolvé 4 pasos numerados con los cambios','Explicá como quieras','Escribí un montón de texto'],correct:0,hint:'El formato define cómo recibir los resultados.'},
+ {title:'4. Límites',options:['Cambiá todo el proyecto','Conservá los controles y no inventes archivos','Borrá lo que no conozcas'],correct:1,hint:'Marcá qué cosas no debe cambiar.'},
+ {title:'5. Comprobación',options:['Decí que está terminado','Que se vea bonito','Indicá cómo probar que se recojan 3 cristales y se sumen puntos'],correct:2,hint:'Una buena prueba debe poder hacerse jugando.'}
+];
+function assembledPrompt(){
+ var values=bonusData().promptLab.values||{};
+ return builderParts.map(function(part,i){return values[i]===undefined?'□ '+part.title+' pendiente':part.title+': '+part.options[values[i]];}).join('\n\n');
+}
+function renderBuilder(){
+ var b=bonusData().promptLab;
+ if(b.done)return bonusWin('promptLab','🧱 ¡Prompt construido!','Armá, probá y mejorá tus pedidos con detalles concretos.',assembledPrompt());
+ b.values=b.values||{};
+ var i=0;while(b.values[i]!==undefined)i++;
+ var part=builderParts[i],box=labShell('FÁBRICA DE PROMPTS','🧱 Construí un pedido exacto','Elegí la pieza correcta para mejorar el prompt. '+(i+1)+' de '+builderParts.length);
+ add(box,h('div','adv-label',part.title));
+ var opts=add(box,h('div','adv-options'));
+ part.options.forEach(function(choice,j){opts.appendChild(button(choice,'adv-option',function(){
+   if(j!==part.correct){feedbackBonus(box,'Todavía no. '+part.hint,false);return;}
+   b.values[i]=j;
+   if(api.save)api.save();
+   if(i===builderParts.length-1)awardBonus('promptLab');
+   renderBuilder();
+ }));});
+ add(box,h('h3','','Vista previa de tu prompt'));
+ add(box,h('pre','adv-choice-preview',assembledPrompt()));
+}
+function renderPixel(){
+ var game=bonusData().pixel;
+ if(game.done)return bonusWin('pixel','👾 ¡Todas las gemas!','Probaste los controles y comprobaste que el objetivo se cumple.');
+ var box=labShell('MISIÓN PIXEL','👾 Rescatá los cristales','Mové tu explorador con los botones. Reuní los tres cristales sin salir del camino.');
+ var row=add(box,h('div','adv-stats'));add(row,h('span','','💎 '+game.gems.length+'/3 cristales'));
+ var board=add(box,h('div','adv-track'));board.setAttribute('role','group');board.setAttribute('aria-label','Tablero con seis posiciones');
+ var gems=[1,3,5];
+ for(var i=0;i<6;i++){
+   var n=h('span',game.gems.includes(i)?'adv-collected':i===game.position?'adv-player':'',
+     i===game.position?'🧑‍🚀':gems.includes(i)&&!game.gems.includes(i)?'💎':'·');
+   n.setAttribute('aria-label','Posición '+(i+1)+(i===game.position?' explorador':'')+(gems.includes(i)?' cristal':''));
+   board.appendChild(n);
+ }
+ var controls=add(box,h('div','adv-pad'));
+ function move(offset){
+   game.position=Math.min(5,Math.max(0,game.position+offset));
+   if(gems.includes(game.position)&&!game.gems.includes(game.position))game.gems.push(game.position);
+   if(game.gems.length===gems.length)awardBonus('pixel');
+   else if(api.save)api.save();
+   renderPixel();
+ }
+ var left=button('←','adv-button adv-secondary',function(){move(-1);});left.disabled=game.position===0;left.setAttribute('aria-label','Mover a la izquierda');
+ var right=button('→','adv-button',function(){move(1);});right.disabled=game.position===5;right.setAttribute('aria-label','Mover a la derecha');
+ controls.appendChild(left);controls.appendChild(right);
+ add(box,h('p','adv-muted','Prueba de lógica: las reglas se cumplen solo si el personaje realmente recoge los tres cristales.'));
+}
+function feedbackBonus(panel,message,success){
+ var old=panel.querySelector('.adv-feedback');if(old)old.remove();
+ var e=add(panel,h('div','adv-feedback'+(success?'':' adv-hint'),message));
+ e.setAttribute('role','status');return e;
+}
+function bonusWin(key,title,subtitle,prompt){
+ var panel=labShell('MISIÓN COMPLETADA',title,subtitle);
+ add(panel,h('div','adv-trophy','🏅'));
+ add(panel,h('p','adv-announce','+30 XP · Desafío registrado en tu avance'));
+ if(prompt){
+   add(panel,h('pre','adv-choice-preview',prompt));
+   panel.appendChild(button('Copiar prompt','adv-button adv-secondary',function(){
+     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(prompt).catch(function(){});
+   }));
+ }
+ panel.appendChild(button('Volver a mis mundos →','adv-button',hub));
+}
+function renderBonus(){
+ if(!api)return;
+ viewMode='bonus';
+ if(currentLab==='detective')renderDetective();
+ else if(currentLab==='promptLab')renderBuilder();
+ else renderPixel();
+}
+
 function header(){
+ var home=add(root,h('div','adv-backwrap'));home.appendChild(button('← Volver a mis mundos','adv-back',hub));
  var wrap=add(root,h('section','mi-top'));
  var eyebrow=add(wrap,h('div','mi-eyebrow','🚀 LABORATORIO IA · APRENDÉ HACIENDO'));
  var stats=add(wrap,h('div','mi-stats'));
@@ -169,6 +359,7 @@ function renderCompleted(){
  add(box,h('p','','Completaste '+numDone()+' desafíos de elección, práctica y comprobación.'));
  add(box,h('p','mi-caption','Esta es una insignia interna de práctica de Krueka, no una certificación externa.'));
  var actions=add(box,h('div','mi-actions'));
+ actions.appendChild(button('Volver a mis mundos','mi-secondary',hub));
  actions.appendChild(button('Repasar mis misiones','mi-primary',function(){active=0;index=0;decision=null;msg='';render();}));
  actions.appendChild(button('Copiar mi prompt','mi-secondary',function(){
    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(promptText()).then(function(){statusLabel('Prompt copiado.');}).catch(function(){});
@@ -177,9 +368,14 @@ function renderCompleted(){
 window.KruekaRetos={
  open:function(config){
    api=config;active=Math.min(5,Math.max(0,config.teacherDemo?(config.start||0):firstAvailable()));index=firstStep(active);decision=null;msg='';
-   if(!config.teacherDemo&&numDone()===COUNT)renderCompleted();else render();
+   viewMode=config.teacherDemo?'mission':'hub';
+   if(viewMode==='hub')hub();
+   else if(numDone()===COUNT&&!config.teacherDemo)renderCompleted();else render();
  },
- refresh:function(){if(!api)return;if(!api.teacherDemo&&active>firstAvailable())active=firstAvailable();index=firstStep(active);decision=null;msg='';
+ refresh:function(){if(!api)return;if(!api.teacherDemo&&active>firstAvailable())active=firstAvailable();
+   if(viewMode==='hub'){hub();return;}
+   if(viewMode==='bonus'){renderBonus();return;}
+   index=firstStep(active);decision=null;msg='';
    if(!api.teacherDemo&&numDone()===COUNT)renderCompleted();else render();
  },
  saveStatus:statusLabel,
