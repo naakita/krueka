@@ -132,6 +132,10 @@ function storyboard(){
      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(prompt).then(function(){feedback(panel,'Prompt copiado.');}).catch(function(){feedback(panel,'No se pudo copiar; revisá los permisos del navegador.');});
      else feedback(panel,'No hay acceso al portapapeles; usá las escenas como guía.');
    },'ruta-btn ruta-alt'));
+   panel.appendChild(btn('💾 Guardar historia (.txt)',function(){
+    var body=d.title+'\n\nPersonaje: '+d.hero+'\n\n'+d.scenes.map(function(t,i){return 'ESCENA '+(i+1)+'\n'+t;}).join('\n\n');
+    download(body,'mi-historia-krueka.txt','text/plain;charset=utf-8');
+   },'ruta-btn ruta-alt'));
    finish(panel,1);
  }
 }
@@ -152,8 +156,18 @@ function miniApp(){
    add(preview,e('h3','',d.name));add(preview,e('p','',d.info));
    preview.appendChild(btn(d.label,function(){feedback(preview,d.response);}));
    panel.appendChild(btn('🔍 Probar y revisar la app',function(){feedback(panel,'Probá el botón de la vista previa y verificá que aparezca la respuesta correcta.');},'ruta-btn ruta-alt'));
+   panel.appendChild(btn('💾 Descargar miniapp (.html)',function(){download(appHtml(d),'mi-app-krueka.html','text/html;charset=utf-8');},'ruta-btn ruta-alt'));
    finish(panel,2);
  }
+}
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function appHtml(d){
+ return '<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(d.name)+'</title><style>body{font-family:system-ui;background:#e8f5ff;text-align:center;padding:10vw;color:#142b47}main{background:white;max-width:580px;margin:auto;padding:28px;border-radius:18px}button{background:#197a81;color:white;border:0;border-radius:12px;padding:15px;font:inherit;cursor:pointer}</style><main><h1>'+esc(d.name)+'</h1><p>'+esc(d.info)+'</p><button id="action">'+esc(d.label)+'</button><p id="reply" hidden>'+esc(d.response)+'</p></main><script>document.getElementById("action").addEventListener("click",function(){document.getElementById("reply").hidden=false;});</'+'script></html>';
+}
+function download(t,name,type){
+ if(typeof Blob==='undefined'||typeof URL==='undefined'||!URL.createObjectURL)return;
+ var blob=new Blob([t],{type:type}),url=URL.createObjectURL(blob),a=e('a');a.href=url;a.download=name;a.click();
+ if(typeof setTimeout==='function')setTimeout(function(){URL.revokeObjectURL(url);},1000);
 }
 function render(){if(selected===0)classifier();else if(selected===1)storyboard();else miniApp();}
 window.KruekaRutaIA={mount:mount,open:open,refresh:render,predict:predict};
