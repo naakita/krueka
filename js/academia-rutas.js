@@ -95,14 +95,18 @@ function classifier(){
  var test=field(panel,'Frase para comprobar','Gracias por ser tan amable',d.query||'',95);
  panel.appendChild(btn('🧪 Clasificar frase',function(){
    var t=test.value.trim();if(t.length<5||!safe(t)){feedback(panel,'Usá una frase de prueba sin datos personales.');return;}
-   d.query=t;d.result=predict(d.training,t);d.tests=(d.tests||0)+1;save();render();
+   d.query=t;d.result=predict(d.training,t);d.tests=(d.tests||0)+1;d.reviewed=false;save();render();
  }));
  if(d.result){
-   add(panel,e('div','ruta-result','Predicción: '+d.result+'. ¿Es correcta? El modelo compara palabras; no entiende todo el contexto.'));
-   if(d.tests>=1)finish(panel,0);
+   add(panel,e('div','ruta-result','Predicción: '+d.result+'. ¿Coincide con tu criterio? El modelo compara palabras, no comprende todo el contexto.'));
+   var review=add(panel,e('div','ruta-actions'));
+   review.appendChild(btn('✅ Acertó',function(){d.reviewed=true;d.incorrect=false;save();render();}));
+   review.appendChild(btn('🛠️ Se confundió',function(){d.reviewed=true;d.incorrect=true;save();render();},'ruta-btn ruta-alt'));
+   if(d.incorrect)add(panel,e('p','ruta-info','¡Un error también enseña! Agregá otro ejemplo con la etiqueta correcta y volvé a probar.'));
+   if(d.reviewed&&d.tests>=1)finish(panel,0);
  }
  panel.appendChild(btn('↺ Reiniciar ejemplos',function(){
-   d.training=seeds.map(function(x){return {text:x.text,label:x.label};});d.tests=0;d.result='';d.query='';d.done=false;save();render();
+   d.training=seeds.map(function(x){return {text:x.text,label:x.label};});d.tests=0;d.result='';d.query='';d.reviewed=false;d.incorrect=false;d.done=false;save();render();
  },'ruta-btn ruta-alt'));
 }
 function storyboard(){
