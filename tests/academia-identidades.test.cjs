@@ -40,7 +40,7 @@ function setup(){
    return {data:{ok:false,error:'Acción no simulada'}};
  }};
  new Function('document','window','navigator','confirm',source)(document,window,navigator,()=>true);
- return {root,client,calls,get:E,window,all:()=>flatten(root),on:()=>student};
+ return {root,client,calls,get:E,window,all:()=>flatten(E('ki-students')),on:()=>student};
 }
 test('las identidades se ocultan hasta que inicia sesión un docente',async()=>{
  const t=setup();
