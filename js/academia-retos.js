@@ -191,6 +191,7 @@ function renderDetective(){
  var b=bonusData().detective;
  if(b.done)return bonusWin('detective','🔍 ¡Detective experto!','Reconocés señales de riesgo y sabés comprobar información.');
  var i=0;while(b[i])i++;
+ if(i>=cases.length){awardBonus('detective');return renderDetective();}
  var c=cases[i],box=labShell('DETECTIVE','🔍 ¿Detectás la trampa?','Observá la situación y elegí la acción más segura. '+(i+1)+' de '+cases.length);
  add(box,h('div','adv-challenge',c.claim));
  var opts=add(box,h('div','adv-options'));
