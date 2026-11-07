@@ -4,7 +4,7 @@
 'use strict';
 var doc=document,root=doc.getElementById('academy-identities');
 if(!root)return;
-var teacher=null,students=[],busy=false;
+var teacher=null,students=[],busy=false,sessionCounter=0;
 function $(id){return doc.getElementById(id);}
 function node(tag,value,cls){var n=doc.createElement(tag);if(value!==undefined&&value!==null)n.textContent=String(value);if(cls)n.className=cls;return n;}
 function add(parent,child){parent.appendChild(child);return child;}
@@ -21,7 +21,10 @@ async function api(action,payload){
  return res.data;
 }
 async function reload(){
- var r=await api('list',{});students=r.students||[];
+ var currentTeacher=teacher,currentCounter=sessionCounter;
+ var r=await api('list',{});
+ if(currentTeacher!==teacher||currentCounter!==sessionCounter)return;
+ students=r.students||[];
  renderStudents();renderSelect();
  $('ki-count').textContent=students.filter(function(s){return !!s.email;}).length+' direcciones reservadas · '+students.length+' alumnos';
 }
@@ -152,11 +155,12 @@ $('ki-reserve').addEventListener('submit',async function(ev){
 });
 async function loadTeacher(client){
  teacher=client;
- try{await reload();status('Identidades cargadas. Los buzones todavía no están activos.',false);}
- catch(e){status(errorMessage(e),true);}
+ var currentCounter=++sessionCounter;
+ try{await reload();if(currentCounter===sessionCounter)status('Identidades cargadas. Los buzones todavía no están activos.',false);}
+ catch(e){if(currentCounter===sessionCounter)status(errorMessage(e),true);}
 }
 function clear(){
- teacher=null;students=[];
+ sessionCounter++;teacher=null;students=[];
  $('ki-students').replaceChildren();
  $('ki-student').replaceChildren();
  $('ki-count').textContent='';
