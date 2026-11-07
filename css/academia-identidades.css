@@ -1,0 +1,34 @@
+/* Krueka ID · módulo exclusivo del panel docente de Academia */
+.ki-root{margin:22px 0;border-radius:16px;border:1px solid #597699;background:#162841;overflow:hidden}
+.ki-root>summary{padding:18px 21px;cursor:pointer;font-weight:850;color:#d3fff2;font-size:1.07rem;list-style:inside}
+.ki-root>summary:hover{background:#1f3d55}
+.ki-root[open]>summary{border-bottom:1px solid #516c92}
+.ki-icon{font-size:1.2rem}.ki-counter{font-size:.76rem;color:#c4d0ea;font-weight:600;margin-left:10px}
+.ki-body{padding:19px}
+.ki-notice{padding:14px 17px;border-radius:12px;background:#49361e;border:1px solid #b88c4e;color:#fff0d4;line-height:1.5}
+.ki-notice b{color:#fff}
+.ki-section{padding:16px 0;border-bottom:1px solid #354866}
+.ki-section:last-child{border-bottom:0}
+.ki-section h3{margin:0 0 12px;color:#d1fff0}
+#ki-reserve{display:grid;gap:12px;max-width:630px}
+#ki-reserve>label:not(.ki-consent){font-size:.89rem;font-weight:700}
+#ki-reserve select{width:100%}
+.ki-email-input{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ki-email-input input{min-width:180px;flex:1}
+.ki-email-input span{color:#94f3e2;font-weight:750;letter-spacing:.02em}
+.ki-consent{display:flex;align-items:flex-start;gap:10px;line-height:1.45;max-width:770px;font-weight:500;font-size:.9rem}
+.ki-consent input,.ki-checkline input{width:auto;min-width:18px;min-height:18px;margin-top:2px;flex:none}
+#ki-students{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.ki-student-card{min-width:0;background:#0d1f36;border:1px solid #435e84;border-radius:12px;padding:15px;line-height:1.45}
+.ki-student-card h4{margin:0 0 7px;color:#f2fdff}
+.ki-address{font-weight:800;color:#80f5d3;font-size:1rem;overflow-wrap:anywhere;margin:4px 0}
+.ki-state{font-size:.82rem;color:#ffe0a9}
+.ki-platform-list{padding-left:18px;color:#d2e8fd;font-size:.87rem;margin:8px 0}
+.ki-controls{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.ki-controls select{flex:1;min-width:160px;width:auto}
+.ki-checks{display:grid;gap:7px;margin:10px 0}
+.ki-checks[hidden],.ki-checkline[hidden]{display:none!important}
+.ki-checkline{display:flex;gap:9px;font-size:.81rem;font-weight:500;align-items:flex-start}
+.ki-student-card>.btn{margin:5px 6px 4px 0;white-space:normal}
+.ki-steps{padding-left:23px;max-width:880px;line-height:1.6;color:#d2e3f7}
+@media(max-width:780px){#ki-students{grid-template-columns:1fr}.ki-body{padding:13px}.ki-root>summary{padding:14px}.ki-controls select{min-width:100%}}
