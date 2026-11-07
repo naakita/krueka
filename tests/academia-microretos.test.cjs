@@ -165,6 +165,5 @@ test('los retos guardados siguen al volver del mapa y no se pierden',()=>{
  assert.equal(s.counters().done,1);
  s.click('🚀 Continuar mi aventura →');
  assert.equal(s.counters().done,1);
- s.click('Continuar →');
  assert.equal(s.counters().step,1);
 });
