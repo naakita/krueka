@@ -176,9 +176,12 @@ function renderCompleted(){
 }
 window.KruekaRetos={
  open:function(config){
-   api=config;active=Math.min(5,Math.max(0,config.teacherDemo?(config.start||0):firstAvailable()));index=firstStep(active);decision=null;msg='';render();
+   api=config;active=Math.min(5,Math.max(0,config.teacherDemo?(config.start||0):firstAvailable()));index=firstStep(active);decision=null;msg='';
+   if(!config.teacherDemo&&numDone()===COUNT)renderCompleted();else render();
  },
- refresh:function(){if(!api)return;if(!api.teacherDemo&&active>firstAvailable())active=firstAvailable();index=firstStep(active);decision=null;msg='';render();},
+ refresh:function(){if(!api)return;if(!api.teacherDemo&&active>firstAvailable())active=firstAvailable();index=firstStep(active);decision=null;msg='';
+   if(!api.teacherDemo&&numDone()===COUNT)renderCompleted();else render();
+ },
  saveStatus:statusLabel,
  counts:function(){return {done:numDone(),total:COUNT,mission:active,step:index};}
 };
