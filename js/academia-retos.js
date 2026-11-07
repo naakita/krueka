@@ -166,7 +166,10 @@ function hub(){
   lab.appendChild(h('span','',x[1]));lab.appendChild(h('strong','',x[2]));lab.appendChild(h('p','',x[3]));lab.appendChild(h('b','',done?'✓ COMPLETADO · +30 XP':'JUGAR · +30 XP'));
   labs.appendChild(lab);
  });
- add(home,h('p','adv-muted','Tu progreso se guarda con tu código. Estos laboratorios son simulaciones educativas: no generan contenido mediante una IA real.'));
+ if(window.KruekaRutaIA)window.KruekaRutaIA.mount(home,api,function(i){
+   viewMode='project';window.KruekaRutaIA.open(root,api,i,hub);
+ });
+ add(home,h('p','adv-muted','Tu progreso se guarda con tu código. Los laboratorios son simulaciones educativas; las herramientas de IA generativa externas no están integradas.'));
 }
 function labShell(label,title,desc){
  root.replaceChildren();
@@ -376,6 +379,7 @@ window.KruekaRetos={
  refresh:function(){if(!api)return;if(!api.teacherDemo&&active>firstAvailable())active=firstAvailable();
    if(viewMode==='hub'){hub();return;}
    if(viewMode==='bonus'){renderBonus();return;}
+   if(viewMode==='project'){if(window.KruekaRutaIA)window.KruekaRutaIA.refresh();return;}
    index=firstStep(active);decision=null;msg='';
    if(!api.teacherDemo&&numDone()===COUNT)renderCompleted();else render();
  },
