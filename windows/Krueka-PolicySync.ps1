@@ -54,12 +54,12 @@ function AsSafePolicy($data) {
  if($list.Count -lt 1 -or $list.Count -gt 90){throw "La lista excede el límite permitido."}
  $clean=New-Object 'System.Collections.Generic.List[string]'
  foreach($d in $list) {
-  $host=([string]$d).ToLowerInvariant().Trim()
-  if($host.Length -gt 253 -or $host -notmatch '^[a-z0-9]+([a-z0-9.-]*[a-z0-9])?$' -or
-     !$host.Contains(".") -or $host.Contains("..") -or $host.StartsWith("-") -or $host.EndsWith("-")){
+  $allowedDomain=([string]$d).ToLowerInvariant().Trim()
+  if($allowedDomain.Length -gt 253 -or $allowedDomain -notmatch '^[a-z0-9]+([a-z0-9.-]*[a-z0-9])?$' -or
+     !$allowedDomain.Contains(".") -or $allowedDomain.Contains("..") -or $allowedDomain.StartsWith("-") -or $allowedDomain.EndsWith("-")){
    throw "El servidor envió un nombre de dominio no admitido."
   }
-  if(!$clean.Contains($host)){$clean.Add($host)}
+  if(!$clean.Contains($allowedDomain)){$clean.Add($allowedDomain)}
  }
  if(!$clean.Contains("krueka.com") -or !$clean.Contains("janebfpnknapvntfqolf.supabase.co")){
   throw "Faltan dominios esenciales, se preserva la política anterior."
