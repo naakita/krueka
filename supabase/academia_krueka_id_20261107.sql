@@ -80,7 +80,8 @@ begin
     v_student=nullif(p_payload->>'student_id','')::uuid;
     if v_student is null or not exists(
       select 1 from public.academia_students s
-      where s.id=v_student and s.owner_id=v_owner and s.active
+      where s.id=v_student and s.owner_id=v_owner
+        and (p_action='revoke' or s.active)
     ) then
       return jsonb_build_object('ok',false,'error','Alumno activo no encontrado en tu Academia.');
     end if;
