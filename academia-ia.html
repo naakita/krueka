@@ -71,6 +71,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
 </style>
 <link rel="stylesheet" href="css/academia-aventura.css?v=20261106b">
 <link rel="stylesheet" href="css/academia-rutas.css?v=20261106a">
+<link rel="stylesheet" href="css/academia-identidades.css?v=20261107a">
 </head>
 <body>
 <div class="wrap" id="app">
@@ -114,6 +115,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     <section id="teacher-board" class="card teacher-board" style="max-width:1000px;margin:3vh auto 0" hidden>
       <div class="teacher-head"><div><span class="pill">PANEL DOCENTE · ACADEMIA IA</span><h1>Administración de Academia</h1><p class="muted">Registrá alumnos, generá códigos, asigná cursos y prepará nuevas clases. Las demostraciones siguen disponibles más abajo.</p></div><button id="teacher-logout" class="btn secondary" type="button">Cerrar sesión docente</button></div>
       <section id="academy-manager" class="academy-management"></section>
+      <section id="academy-identities" aria-label="Identidades educativas para alumnos"></section>
       <details class="academy-demo-details"><summary>Probar las 4 clases de Introducción a IA</summary>
       <div class="preview-grid">
         <article class="preview-card"><span class="step">CLASE 1</span><h2>Comprender la IA</h2><p>Fundamentos, tipos de IA y pedidos precisos.</p><button class="btn secondary" data-preview-step="0" type="button">Probar clase 1</button></article>
@@ -430,7 +432,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   }
   function showStudentLogin(){showEntry();el('entry').hidden=true;el('login').hidden=false;el('code').focus();}
   function showTeacherLogin(){showEntry();el('entry').hidden=true;el('teacher-login').hidden=false;el('teacher-email').focus();}
-  function showTeacherBoard(){showEntry();el('entry').hidden=true;el('teacher-board').hidden=false;el('teacher-board-status').textContent='Podés probar cualquiera de las clases sin modificar datos reales.';if(window.AcademiaPortal)window.AcademiaPortal.loadTeacher(teacherAuthClient);}
+  function showTeacherBoard(){showEntry();el('entry').hidden=true;el('teacher-board').hidden=false;el('teacher-board-status').textContent='Podés probar cualquiera de las clases sin modificar datos reales.';if(window.AcademiaPortal)window.AcademiaPortal.loadTeacher(teacherAuthClient);if(window.AcademiaIdentidades)window.AcademiaIdentidades.loadTeacher(teacherAuthClient);}
   function teacherStatus(message,error){var e=el('teacher-login-status');e.textContent=message;e.style.color=error?'#ffd0d0':'';}
   function getTeacherAuthClient(){
     if(!window.supabase||typeof window.supabase.createClient!=='function')throw Error('No se pudo cargar el acceso de Krueka. Actualizá la página.');
@@ -483,6 +485,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     try{if(teacherAuthClient)await teacherAuthClient.auth.signOut();}
     catch(error){el('teacher-board-status').textContent='No se pudo cerrar la sesión: '+error.message;el('teacher-logout').disabled=false;return;}
     el('teacher-email').value='';el('teacher-password').value='';
+    if(window.AcademiaIdentidades)window.AcademiaIdentidades.clear();
     el('teacher-logout').disabled=false;showEntry();
   };
   el('logout').onclick=function(){
@@ -524,5 +527,6 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
 <script src="js/academia-rutas.js?v=20261106a" defer></script>
 <script src="js/academia-retos.js?v=20261106b" defer></script>
 <script src="js/academia-gestion.js?v=20261106a" defer></script>
+<script src="js/academia-identidades.js?v=20261107a" defer></script>
 </body>
 </html>
