@@ -88,6 +88,7 @@ jobs:
       - run: node tests/aula-policy-effective-diagnostic.test.cjs
       - run: pwsh -NoProfile -Command '$t=$null; $e=$null; [System.Management.Automation.Language.Parser]::ParseFile("windows/DIAGNOSTICAR-REGLAS-REALES-KRUEKA.ps1",[ref]$t,[ref]$e) | Out-Null; if($e.Count){$e | Out-String | Write-Error; exit 1}'
       - run: pwsh -NoProfile -Command '$t=$null; $e=$null; [System.Management.Automation.Language.Parser]::ParseFile("windows/Krueka-PolicySync.ps1",[ref]$t,[ref]$e) | Out-Null; if($e.Count){$e | Out-String | Write-Error; exit 1}'
+      - run: pwsh -NoProfile -File tests/aula-policy-sync-runtime.ps1
       - run: node tests/aula-educational-allowlist.test.cjs
       - run: pwsh -NoProfile -Command '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile("windows/Autorizar-EdClub-CodeOrg-Krueka.ps1",[ref]$tokens,[ref]$errors) | Out-Null; if($errors.Count){$errors | Out-String | Write-Error; exit 1}'
       - run: pwsh -NoProfile -Command '$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile("windows/Configurar-Krueka-Alumnos.ps1",[ref]$tokens,[ref]$errors) | Out-Null; if($errors.Count){$errors | Out-String | Write-Error; exit 1}'
