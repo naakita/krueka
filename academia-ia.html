@@ -341,7 +341,11 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
       if(!d.ok)throw Error(d.error||'Sesión inválida.');
       if(d.data&&d.data.entries&&typeof d.data.entries==='object') {
         var cloud=d.data,local=localRead();
-        if(local&&Object.keys(local.entries).length>Object.keys(cloud.entries).length){state=local;saveCloud();}
+        var localMicro=local&&local.entries&&local.entries.microV2&&local.entries.microV2.done;
+        var cloudMicro=cloud&&cloud.entries&&cloud.entries.microV2&&cloud.entries.microV2.done;
+        var localCount=localMicro?Object.keys(localMicro).filter(function(k){return localMicro[k]===true;}).length:0;
+        var cloudCount=cloudMicro?Object.keys(cloudMicro).filter(function(k){return cloudMicro[k]===true;}).length:0;
+        if(local&&(localCount>cloudCount||(localCount===cloudCount&&Object.keys(local.entries).length>Object.keys(cloud.entries).length))){state=local;saveCloud();}
         else {state=cloud;localSave();}
       }
       el('save-status').textContent='✓ Avance recuperado de Krueka.';
