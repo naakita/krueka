@@ -23,7 +23,45 @@ label{display:block;font-weight:700;margin:13px 0 5px}input,textarea,select{widt
 .choice{width:100%;display:block;text-align:left;padding:13px;margin:10px 0;border:1px solid #516b95;background:#1b2d51;color:#fff;border-radius:12px}.choice:hover{background:#294371}.choice.selected{border-color:var(--mint);background:#23485a}.choice.correct{border-color:#7ee0b2}.choice.wrong{border-color:#f2a4a4}
 .result{border-radius:12px;padding:13px;margin-top:12px;background:#1b3350;border:1px solid #587ca7}.result.good{border-color:#529e8e;background:#183f3d}.result.warn{border-color:#b89a59;background:#3b332c}.result[hidden]{display:none}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.mini{border:1px solid #3d5279;border-radius:12px;background:#182947;padding:13px}.mini b{display:block;margin:0 0 7px;color:#d5f6f0}.progress-mark{font-size:.82rem;color:var(--mint);font-weight:800}.entry-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:20px}.entry-option{border:1px solid #49638c;border-radius:16px;padding:23px;text-align:left;background:#17294b;color:#f0f5ff;display:flex;flex-direction:column;align-items:flex-start;gap:12px;min-height:240px}.entry-option:hover,.entry-option:focus-visible{border-color:var(--mint);background:#20365c}.entry-symbol{font-size:2rem}.entry-option strong{font-size:1.25rem}.entry-option span:not(.entry-symbol){color:#c6d5ef}.entry-option b{color:var(--mint);margin-top:auto}.access-panel h1,.entry-shell h1{font-size:clamp(1.55rem,4vw,2.45rem)}.teacher-head{display:flex;justify-content:space-between;gap:15px;align-items:flex-start;flex-wrap:wrap}.preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.preview-card{border:1px solid #3f5279;border-radius:14px;padding:18px;background:#192744}.preview-card p{color:var(--muted)}
-.academy-management{margin:20px 0}.am-columns,.am-catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:15px 0}.am-box{border:1px solid #425a81;background:#182747;border-radius:15px;padding:18px;min-width:0}.am-box form{display:grid;gap:10px}.am-box form .btn{justify-self:start}.am-box h2{color:#c7f5eb}.am-record{background:#10203c;border:1px solid #41577c;border-radius:12px;padding:15px;margin:12px 0}.am-record h3{margin:5px 0}.am-record .btn{font-size:.86rem;padding:8px 12px;min-height:38px}.am-check{display:flex;align-items:center;gap:8px;font-size:.88rem;margin:7px 0;font-weight:400}.am-check input{width:auto}.am-editor{border:1px solid #506e92;border-radius:12px;padding:12px;margin-top:12px}.am-editor summary,.academy-demo-details summary{cursor:pointer;color:var(--mint);font-weight:800}.am-lesson-editor{margin:13px 0;border:1px solid #455f83;border-radius:10px;padding:10px}.am-lesson-editor input,.am-lesson-editor textarea{display:block;width:100%;margin:7px 0}.am-code{font-size:1.35rem;font-weight:800;letter-spacing:.09em;overflow-wrap:anywhere}.academy-demo-details{margin-top:23px;padding-top:18px;border-top:1px solid #49607e}.academy-demo-details .preview-grid{margin-top:15px}.am-student-area{margin:5vh auto;max-width:1000px}.am-preserve{white-space:pre-wrap}.preview-card .btn{margin-top:10px}.lesson-guide{margin:16px 0;padding:14px 17px;border:1px solid #49678a;border-radius:12px;background:#122341}.lesson-guide summary{cursor:pointer;color:var(--mint);font-weight:800}.lesson-guide li{margin:7px 0}
+.academy-management{margin:20px 0}.am-columns,.am-catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:15px 0}.am-box{border:1px solid #425a81;background:#182747;border-radius:15px;padding:18px;min-width:0}.am-box form{display:grid;gap:10px}.am-box form .btn{justify-self:start}.am-box h2{color:#c7f5eb}.am-record{background:#10203c;border:1px solid #41577c;border-radius:12px;padding:15px;margin:12px 0}.am-record h3{margin:5px 0}.am-record .btn{font-size:.86rem;padding:8px 12px;min-height:38px}.am-check{display:flex;align-items:center;gap:8px;font-size:.88rem;margin:7px 0;font-weight:400}.am-check input{width:auto}.am-editor{border:1px solid #506e92;border-radius:12px;padding:12px;margin-top:12px}.am-editor summary,.academy-demo-details summary{cursor:pointer;color:var(--mint);font-weight:800}.am-lesson-editor{margin:13px 0;border:1px solid #455f83;border-radius:10px;padding:10px}.am-lesson-editor input,.am-lesson-editor textarea{display:block;width:100%;margin:7px 0}.am-code{font-size:1.35rem;font-weight:800;letter-spacing:.09em;overflow-wrap:anywhere}.academy-demo-details{margin-top:23px;padding-top:18px;border-top:1px solid #49607e}.academy-demo-details .preview-grid{margin-top:15px}.am-student-area{margin:5vh auto;max-width:1000px}.am-preserve{white-space:pre-wrap}.preview-card .btn{margin-top:10px}
+#academy>section.hero,#academy>details.lesson-guide,#academy>.split{display:none!important}
+#micro-course{max-width:900px;margin:14px auto 28px}
+.mi-top,.mi-card{background:#172341;border:1px solid #425b82;border-radius:18px;padding:22px}
+.mi-top{margin-bottom:16px}
+.mi-eyebrow{font-size:.75rem;color:#79efd6;font-weight:800;letter-spacing:.055em}
+.mi-stats{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0 10px;font-size:1.07rem}
+.mi-stats span{color:#79efd6;font-weight:850}
+.mi-meter{height:13px;background:#0b1830;border:1px solid #405477;border-radius:99px;overflow:hidden}
+.mi-meter span{display:block;height:100%;border-radius:99px;background:#66e5ce;transition:width .2s ease}
+.mi-caption{font-size:.88rem;color:#bdcde4}
+.mi-save{font-size:.78rem;color:#9fb3d5;margin:10px 0 0}
+.mi-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0 0 16px}
+.mi-tab{padding:12px 6px;background:#13213d;color:#e5ecfa;border:1px solid #4a5d7d;border-radius:13px;font-size:1.1rem;font-weight:750}
+.mi-tab:disabled{opacity:.4;cursor:not-allowed}
+.mi-tab.mi-active{border-color:#68e4cc;background:#184b4c;color:#fff}
+.mi-tab.mi-finished:not(.mi-active){border-color:#4c9e88}
+.mi-card{min-height:320px}
+.mi-card h2{margin:10px 0 8px;font-size:clamp(1.5rem,3vw,2.1rem)}
+.mi-pill{color:#79efd6;letter-spacing:.07em;font-weight:800;font-size:.74rem}
+.mi-tip{background:#0e3144;color:#d0f5ea;border-radius:11px;padding:10px 13px;font-size:1rem;line-height:1.4}
+.mi-step{font-size:.82rem;color:#a8c1e3;margin:20px 0 8px;font-weight:800}
+.mi-question{font-size:clamp(1.12rem,2.5vw,1.45rem);line-height:1.4;margin:8px 0 16px}
+.mi-choices{display:grid;gap:10px}
+.mi-choice{background:#23365d;color:white;text-align:left;padding:15px 18px;min-height:58px;border-radius:13px;border:1px solid #5b739b;font-size:1rem;font-weight:650;cursor:pointer}
+.mi-choice:hover:not(:disabled),.mi-choice:focus-visible{background:#2b5273;border-color:#80f6db}
+.mi-choice:disabled{opacity:.7;cursor:default}
+.mi-input{display:block;width:100%;min-height:110px;border-radius:12px;padding:14px;font-size:1rem;line-height:1.5;margin-bottom:15px;background:#101d38;color:#f4f8ff;border:1px solid #6381a9}
+.mi-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:16px 0 6px}
+.mi-primary,.mi-secondary,.mi-back{border-radius:10px;border:1px solid #6c8cbd;padding:11px 17px;min-height:46px;font-size:.98rem;font-weight:800;cursor:pointer}
+.mi-primary{background:#6ce7d0;color:#06182c;border-color:#6ce7d0}.mi-primary:hover{background:#a1f6e7}
+.mi-secondary{background:#2c4068;color:#fff}.mi-back{background:transparent;color:#b6cff2;border-color:transparent}
+.mi-feedback{padding:12px 14px;border-radius:11px;margin-top:16px;font-size:.98rem;line-height:1.4}
+.mi-ok{background:#1e5047;border:1px solid #58ba91;color:#e0fff5}.mi-note{background:#43371e;border:1px solid #e8b465;color:#ffeec8}
+.mi-note-small{color:#9eb5d6;font-size:.8rem;margin-top:20px}.mi-footer{margin-top:18px}
+.mi-prompt{white-space:pre-wrap;overflow-wrap:anywhere;color:#e4f7f1;background:#0c1b31;border:1px solid #497178;padding:15px;border-radius:12px;line-height:1.55;max-height:280px;overflow:auto;font-size:.9rem}
+.mi-success{text-align:center}.mi-trophy{font-size:4.4rem}
+@media(max-width:640px){.mi-top,.mi-card{padding:16px}.mi-nav{gap:5px}.mi-tab{padding:10px 2px}.mi-actions>*{width:100%}.mi-question{font-size:1.1rem}}
+.lesson-guide{margin:16px 0;padding:14px 17px;border:1px solid #49678a;border-radius:12px;background:#122341}.lesson-guide summary{cursor:pointer;color:var(--mint);font-weight:800}.lesson-guide li{margin:7px 0}
 .quiz-card{border:1px solid var(--line);border-radius:12px;padding:12px;margin:14px 0;background:#111d39}.quiz-card legend{font-weight:700}.quiz-card button{display:block;width:100%;padding:10px;margin:7px 0;text-align:left;background:#203254;color:#fff;border:1px solid #536b95;border-radius:8px}.quiz-card button[aria-pressed=true]{background:#24564e;border-color:var(--mint)}
 ul{padding-left:20px}.example-dim{border-left:4px solid #d98181;background:#302c40}.example-bright{border-left:4px solid #66c6ac}
 #app[hidden],#login[hidden],#academy[hidden],section[hidden],div[hidden],p[hidden]{display:none!important}
@@ -87,6 +125,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
 
     <div id="academy" hidden>
       <section id="teacher-demo-banner" class="hint" hidden><strong>🧑‍🏫 MODO DEMO DOCENTE</strong> · Estás probando la Academia sin un alumno. Los cambios se guardan únicamente en este navegador; no afectan los registros reales.</section>
+      <div id="micro-course" aria-live="polite"></div>
       <section class="hero">
         <span class="pill">APRENDER → PRACTICAR → COMPROBAR</span>
         <h1>Tu curso intensivo de IA y prompts</h1>
@@ -263,13 +302,13 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   }
   function saveCloud(){
     localSave();
-    if(isTeacherDemo){el('save-status').textContent='✓ Prueba del profesor guardada solo en este navegador.';return;}
+    if(isTeacherDemo){el('save-status').textContent='✓ Prueba del profesor guardada solo en este navegador.';if(window.KruekaRetos)window.KruekaRetos.saveStatus('✓ Demo guardada solo en esta computadora.');return;}
     if(!session||!session.token)return;if(saving){savePending=true;return;}
-    saving=true;var snapshot=JSON.stringify(state);el('save-status').textContent='Guardando en Krueka…';
+    saving=true;var snapshot=JSON.stringify(state);el('save-status').textContent='Guardando en Krueka…';if(window.KruekaRetos)window.KruekaRetos.saveStatus('Guardando el avance…');
     rpc(session.kind==='academia'?'academia_student_progress':'club_ai_academy_state',session.kind==='academia'?{p_token:session.token,p_course:session.courseId,p_data:state}:{p_token:session.token,p_data:state}).then(function(d){
       if(!d.ok)throw Error(d.error||'No se guardó.');
-      el('save-status').textContent='✓ Progreso guardado en Krueka.';
-    }).catch(function(e){el('save-status').textContent='⚠ Guardado en esta PC; sin sincronizar: '+e.message;}).then(function(){saving=false;if(savePending||snapshot!==JSON.stringify(state)){savePending=false;saveCloud();}});
+      el('save-status').textContent='✓ Progreso guardado en Krueka.';if(window.KruekaRetos)window.KruekaRetos.saveStatus('✓ Avance guardado en Krueka.');
+    }).catch(function(e){el('save-status').textContent='⚠ Guardado en esta PC; sin sincronizar: '+e.message;if(window.KruekaRetos)window.KruekaRetos.saveStatus('⚠ Avance local: falta sincronizar.');}).then(function(){saving=false;if(savePending||snapshot!==JSON.stringify(state)){savePending=false;saveCloud();}});
   }
   function restorePromptFields(){
     if(state.entries&&state.entries.m2&&state.entries.m2.fields){
@@ -289,6 +328,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     el('teacher-demo-banner').hidden=false;
     restorePromptFields();updateMeter();openStep(typeof startStep==='number'?startStep:0);
     el('save-status').textContent='Modo DEMO docente · guardado local separado de los alumnos.';
+    if(window.KruekaRetos)window.KruekaRetos.open({getState:function(){return state;},save:saveCloud,complete:mark,teacherDemo:true,start:typeof startStep==='number'?startStep:0});
   }
   function open(sessionData){
     isTeacherDemo=false;el('teacher-demo-banner').hidden=true;session=sessionData;
@@ -296,6 +336,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
     el('login').hidden=true;el('academy').hidden=false;el('logout').hidden=false;el('logout').textContent='Salir';
     var old=localRead();state=old||{version:1,entries:{}};
     updateMeter();el('save-status').textContent='Recuperando avance de Krueka…';
+    if(window.KruekaRetos)window.KruekaRetos.open({getState:function(){return state;},save:saveCloud,complete:mark,teacherDemo:false,start:0});
     rpc(session.kind==='academia'?'academia_student_progress':'club_ai_academy_state',session.kind==='academia'?{p_token:session.token,p_course:session.courseId}:{p_token:session.token}).then(function(d){
       if(!d.ok)throw Error(d.error||'Sesión inválida.');
       if(d.data&&d.data.entries&&typeof d.data.entries==='object') {
@@ -306,7 +347,9 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
       el('save-status').textContent='✓ Avance recuperado de Krueka.';
       restorePromptFields();
       updateMeter();
-    }).catch(function(e){el('save-status').textContent='⚠ Sin conexión de guardado: '+e.message+'. Podés guardar una copia.';});
+      if(window.KruekaRetos)window.KruekaRetos.refresh();
+      if(window.KruekaRetos)window.KruekaRetos.saveStatus('✓ Progreso recuperado de Krueka.');
+    }).catch(function(e){el('save-status').textContent='⚠ Sin conexión de guardado: '+e.message+'. Podés guardar una copia.';if(window.KruekaRetos)window.KruekaRetos.saveStatus('⚠ Sin conexión: avance conservado en esta computadora.');});
   }
   document.querySelectorAll('[data-step]').forEach(function(b){b.addEventListener('click',function(){openStep(Number(b.getAttribute('data-step')));});});
   document.querySelectorAll('[data-next]').forEach(function(b){b.addEventListener('click',function(){openStep(Number(b.getAttribute('data-next')));});});
@@ -472,6 +515,7 @@ footer{font-size:.78rem;color:#b7c4e1;text-align:center;margin-top:25px}.busy{op
   showCompiled();openStep(0);showEntry();
 })();
 </script>
+<script src="js/academia-retos.js?v=20261107a" defer></script>
 <script src="js/academia-gestion.js?v=20261106a" defer></script>
 </body>
 </html>
