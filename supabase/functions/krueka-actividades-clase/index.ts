@@ -117,7 +117,7 @@ async function materialDownload(req:Request,code:string,materialId:string){
  if(!fresh||fresh.id!==a.id||fresh.code_hash!==a.code_hash)
   return fail(req,"El código dejó de estar disponible.",403);
  const inline=m.mime_type==="application/pdf"||m.mime_type.startsWith("image/");
- const filename=encodeURIComponent(m.file_name).replace(/['()]/g,escape);
+ const filename=encodeURIComponent(m.file_name);
  return new Response(file,{headers:{...cors(req),"Content-Type":m.mime_type,
   "Content-Disposition":(inline?"inline":"attachment")+"; filename*=UTF-8''"+filename,
   "X-Content-Type-Options":"nosniff","Content-Security-Policy":"sandbox"}});
