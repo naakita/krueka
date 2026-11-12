@@ -5,7 +5,7 @@ new vm.Script(client);
 for(const id of ['class-search','class-sort','class-grade','class-status','class-month','class-clear','class-results','class-pages']){
  assert.ok(html.includes('id="'+id+'"'),'Falta filtro de historial: '+id);
 }
-assert.ok(html.includes('js/krueka-clase-temporal.js?v=20261103a'));
+assert.ok(html.includes('js/krueka-clase-temporal.js?v=20261112b'));
 for(const label of ['Más recientes primero','Más antiguas primero','Abiertas','Cerradas','Mes de creación'])assert.ok(html.includes(label),'Falta '+label);
 for(const part of ['classFilters()','renderClassPages()','Creada: ','Cerrada: ','classRequestId','classMeta','Mostrando ','scheduleClassLoad']){
  assert.ok(client.includes(part),'Falta '+part);
