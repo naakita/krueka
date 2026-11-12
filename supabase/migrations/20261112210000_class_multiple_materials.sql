@@ -36,3 +36,24 @@ update storage.buckets set
  'image/jpeg','image/png','image/webp','image/gif','application/zip'
  ]::text[]
 where id='krueka-actividades-clase';
+
+-- Serializa altas simultáneas y cierres; evita superar el límite con cargas concurrentes.
+create or replace function public.krueka_live_materials_guard()
+returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
+declare v_accepting boolean;
+begin
+ select accepting into v_accepting from public.krueka_live_activities
+ where id=new.activity_id for update;
+ if not coalesce(v_accepting,false) then
+  raise exception 'La actividad está cerrada';
+ end if;
+ if (select count(*) from public.krueka_live_materials where activity_id=new.activity_id)>=20 then
+  raise exception 'El límite de 20 archivos fue alcanzado';
+ end if;
+ return new;
+end;$$;
+drop trigger if exists krueka_live_materials_guard_trigger on public.krueka_live_materials;
+create trigger krueka_live_materials_guard_trigger
+before insert on public.krueka_live_materials for each row
+execute function public.krueka_live_materials_guard();
+revoke all on function public.krueka_live_materials_guard() from public,anon,authenticated;
