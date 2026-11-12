@@ -145,7 +145,7 @@ $('lookup-form').addEventListener('submit',async e=>{
   $('activity-instructions').textContent=g.instructions;
   $('activity-view').hidden=false;$('upload-form').reset();message('upload-message','');
   resetPdf();renderStudentMaterials(code,g.materials||[]);
-  if(g.has_pdf&&!(g.materials||[]).length)loadStudentPdf(code,g.pdf_name);
+  if(g.has_pdf)loadStudentPdf(code,g.pdf_name);
   $('activity-view').scrollIntoView({behavior:'smooth',block:'start'});
  }catch(err){$('activity-view').hidden=true;resetPdf();clearMaterials();message('lookup-message',err.message,true);}
  finally{btn.disabled=false}
