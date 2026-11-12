@@ -10,6 +10,7 @@ const $=id=>document.getElementById(id);
 const teacherMode=new URLSearchParams(location.search).get('docente')==='1';
 $('student').hidden=teacherMode;$('teacher').hidden=!teacherMode;
 let sb=null,classes=[],selected=null,items=[],studentPdfUrl=null;
+let materialUrls=[];
 let classPage=0,classMeta={total:0,page:0,page_size:12},classRequestId=0,classSearchTimer=null;
 function resetPdf(){
  if(studentPdfUrl){URL.revokeObjectURL(studentPdfUrl);studentPdfUrl=null;}
@@ -65,8 +66,71 @@ async function loadStudentPdf(code,name){
   message('pdf-message','');
  }catch(err){if(normalizeCode($('student-code').value)===code)message('pdf-message',err.message,true);}
 }
+
+const materialExt=/\.(pdf|docx|xlsx|pptx|doc|xls|ppt|odt|ods|odp|txt|csv|rtf|jpg|jpeg|png|webp|gif|zip)$/i;
+function validateMaterials(files){
+ if(files.length>20)throw Error('Se permiten hasta 20 materiales por actividad.');
+ for(const file of files){
+  if(!materialExt.test(file.name)||file.size<1||file.size>10*1024*1024)
+   throw Error('Revisá "'+file.name+'": formato no admitido o tamaño superior a 10 MB.');
+ }
+}
+async function uploadMaterials(activityId,files){
+ validateMaterials(files);
+ const results=[];
+ for(const file of files){
+  const data=new FormData();
+  data.set('action','upload-material');data.set('activity_id',activityId);data.set('material',file);
+  try{await api(data,await token());results.push(file.name);}
+  catch(err){throw Error('Se subieron '+results.length+' archivo(s), pero falló "'+file.name+'": '+err.message);}
+ }
+ return results.length;
+}
+function clearMaterials(){
+ for(const url of materialUrls)URL.revokeObjectURL(url);
+ materialUrls=[];
+ $('student-materials').hidden=true;
+ $('student-materials-list').replaceChildren();
+ message('materials-message','');
+}
+async function fetchMaterial(code,id){
+ const response=await fetch(API,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},
+  body:JSON.stringify({action:'material',code,material_id:id}),cache:'no-store'});
+ if(!response.ok){
+  let msg='No se pudo abrir el archivo.';
+  try{const data=await response.json();msg=data.error||msg;}catch(_){}
+  throw Error(msg);
+ }
+ return response.blob();
+}
+function renderStudentMaterials(code,materials){
+ clearMaterials();
+ if(!materials.length)return;
+ $('student-materials').hidden=false;
+ for(const m of materials){
+  const item=el('div','item'),name=el('strong','',m.file_name),bar=el('div','toolbar');
+  item.append(name);
+  if(m.size_bytes)item.append(el('p','note',Math.ceil(m.size_bytes/1024)+' KB'));
+  const pdf=m.mime_type==='application/pdf',img=/^image\//.test(m.mime_type);
+  async function open(download){
+   const target=download?null:window.open('about:blank','_blank');
+   try{
+    const blob=await fetchMaterial(code,m.id);
+    if(normalizeCode($('student-code').value)!==code){target?.close();return;}
+    const url=URL.createObjectURL(blob);materialUrls.push(url);
+    if(download){
+     const a=document.createElement('a');a.href=url;a.download=m.file_name;document.body.append(a);a.click();a.remove();
+    }else if(target){target.location.href=url;}
+    else{message('materials-message','El navegador bloqueó la pestaña. Usá Descargar.',true);}
+   }catch(err){target?.close();message('materials-message',err.message,true);}
+  }
+  if(pdf||img)bar.append(button('↗ Ver archivo','secondary',()=>open(false)));
+  bar.append(button('↓ Descargar','secondary',()=>open(true)));
+  item.append(bar);$('student-materials-list').append(item);
+ }
+}
 function normalizeCode(s){return String(s||'').toUpperCase().replace(/[\s-]/g,'');}
-$('student-code').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g,'').slice(0,14);$('activity-view').hidden=true;resetPdf();});
+$('student-code').addEventListener('input',e=>{e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g,'').slice(0,14);$('activity-view').hidden=true;resetPdf();clearMaterials();});
 $('lookup-form').addEventListener('submit',async e=>{
  e.preventDefault();message('lookup-message','');
  const code=normalizeCode($('student-code').value);
@@ -80,9 +144,10 @@ $('lookup-form').addEventListener('submit',async e=>{
   $('activity-info').append(el('span','',g.grade),el('span','',g.subject));
   $('activity-instructions').textContent=g.instructions;
   $('activity-view').hidden=false;$('upload-form').reset();message('upload-message','');
-  if(g.has_pdf)loadStudentPdf(code,g.pdf_name);else resetPdf();
+  resetPdf();renderStudentMaterials(code,g.materials||[]);
+  if(g.has_pdf&&!(g.materials||[]).length)loadStudentPdf(code,g.pdf_name);
   $('activity-view').scrollIntoView({behavior:'smooth',block:'start'});
- }catch(err){$('activity-view').hidden=true;resetPdf();message('lookup-message',err.message,true);}
+ }catch(err){$('activity-view').hidden=true;resetPdf();clearMaterials();message('lookup-message',err.message,true);}
  finally{btn.disabled=false}
 });
 $('upload-form').addEventListener('submit',async e=>{
@@ -171,24 +236,24 @@ $('copy-link').addEventListener('click',()=>copyText('https://www.krueka.com/act
 $('create-form').addEventListener('submit',async e=>{
  e.preventDefault();message('teacher-message','');const b=$('create-button');b.disabled=true;
  try{
-  const pdf=$('new-pdf').files[0];
-  const instructions=$('new-instructions').value.trim()||(pdf?'Leé el PDF de esta actividad, realizá el trabajo según las instrucciones y entregá tu archivo aquí.':'');
-  if(!pdf&&instructions.length<15)throw Error('Escribí una consigna de al menos 15 caracteres o adjuntá un PDF.');
-  if(pdf&&(!/\.pdf$/i.test(pdf.name)||pdf.size>10*1024*1024||pdf.size<100))throw Error('Adjuntá un PDF válido de hasta 10 MB.');
+  const files=Array.from($('new-pdf').files);
+  validateMaterials(files);
+  const instructions=$('new-instructions').value.trim()||(files.length?'Revisá los materiales de esta actividad, realizá el trabajo solicitado y entregá tu archivo aquí.':'');
+  if(!files.length&&instructions.length<15)throw Error('Escribí una consigna de al menos 15 caracteres o adjuntá un documento.');
   const r=await staff('create-class',{
    grade:$('new-grade').value,subject:$('new-subject').value,
    title:$('new-title').value,instructions
   });
   showCode(r.code);
-  if(pdf){
-   try{await uploadGuide(r.activity.id,pdf);}
+  if(files.length){
+   try{await uploadMaterials(r.activity.id,files);}
    catch(err){
-    message('teacher-message','La clase y su código se crearon, pero NO se pudo adjuntar el PDF: '+err.message+' Subilo desde Mis clases antes de compartir el código.',true);
+    message('teacher-message','La actividad y el código se crearon, pero hubo un problema con los materiales: '+err.message+' Podés completarlos desde Mis clases.',true);
     resetClassFilters();await loadClasses();return;
    }
   }
   $('create-form').reset();resetClassFilters();await loadClasses();
-  message('teacher-message','Clase creada'+(pdf?' y PDF asociado correctamente.':'.')+' Compartí el código con tus alumnos.');
+  message('teacher-message','Actividad creada'+(files.length?' con '+files.length+' material(es).':'.')+' Compartí el código con tus alumnos.');
  }catch(err){message('teacher-message',err.message,true);}
  finally{b.disabled=false;}
 });
@@ -218,25 +283,47 @@ function renderClasses(){
   }
   header.append(group,el('span','tag'+(!c.accepting?' closed':''),c.accepting?'● Código habilitado':'● Clase cerrada'));
   card.append(header);
-  card.append(el('p','note',c.pdf_name?'📄 Guía PDF: '+c.pdf_name:'Todavía no tiene PDF adjunto.'));
+  const materialsBox=el('div','note','Cargando materiales…');
+  card.append(materialsBox);
+  (async()=>{
+   try{
+    const r=await staff('list-materials',{activity_id:c.id});
+    materialsBox.replaceChildren();
+    const files=r.materials||[];
+    if(!files.length)materialsBox.append(el('p','note','Todavía no hay materiales adjuntos.'));
+    files.forEach(m=>{
+     const line=el('div','toolbar');
+     line.append(el('span','note','📎 '+m.file_name));
+     if(c.accepting)line.append(button('Quitar','danger',async()=>{
+      if(!confirm('¿Eliminar "'+m.file_name+'" de esta actividad?'))return;
+      try{await staff('delete-material',{activity_id:c.id,material_id:m.id});
+       message('teacher-message','Material eliminado.');await loadClasses();}
+      catch(err){message('teacher-message',err.message,true);}
+     }));
+     materialsBox.append(line);
+    });
+   }catch(err){materialsBox.textContent='No se pudo cargar la lista de materiales.';}
+  })();
   const actions=el('div','toolbar');
   actions.append(button('📂 Ver entregas','secondary',async()=>{
    selected=c;$('selected-title').textContent=c.title;$('submissions-panel').hidden=false;
    $('submissions-panel').scrollIntoView({behavior:'smooth',block:'start'});await loadSubmissions();
   }));
   if(c.accepting){
-   const pdfInput=el('input');pdfInput.type='file';pdfInput.accept='.pdf,application/pdf';pdfInput.hidden=true;
-   pdfInput.setAttribute('aria-label','Elegí el PDF de '+c.title);
-   pdfInput.addEventListener('change',async()=>{
-    const pdf=pdfInput.files[0];if(!pdf)return;
+   const materialInput=el('input');materialInput.type='file';materialInput.multiple=true;
+   materialInput.accept='.pdf,.docx,.xlsx,.pptx,.doc,.xls,.ppt,.odt,.ods,.odp,.txt,.csv,.rtf,.jpg,.jpeg,.png,.webp,.gif,.zip';
+   materialInput.hidden=true;
+   materialInput.setAttribute('aria-label','Elegí materiales para '+c.title);
+   materialInput.addEventListener('change',async()=>{
+    const files=Array.from(materialInput.files);if(!files.length)return;
     try{
-     await uploadGuide(c.id,pdf);
-     message('teacher-message','Guía PDF asociada a '+c.title+'.');
+     await uploadMaterials(c.id,files);
+     message('teacher-message',files.length+' material(es) agregados a '+c.title+'.');
      await loadClasses();
     }catch(err){message('teacher-message',err.message,true);}
-    finally{pdfInput.value='';}
+    finally{materialInput.value='';}
    });
-   actions.append(button(c.pdf_name?'↻ Cambiar PDF':'📄 Adjuntar PDF','secondary',()=>pdfInput.click()),pdfInput);
+   actions.append(button('＋ Agregar archivos','secondary',()=>materialInput.click()),materialInput);
    actions.append(button('↻ Nuevo código','secondary',async()=>{
     if(!confirm('¿Generar un código nuevo para '+c.title+'? El anterior dejará de funcionar.'))return;
     try{
