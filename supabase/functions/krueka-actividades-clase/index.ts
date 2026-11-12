@@ -4,6 +4,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const ORIGINS = new Set(["https://krueka.com", "https://www.krueka.com"]);
 const STORAGE = "krueka-actividades-clase";
 const MAX = 10 * 1024 * 1024;
+const MAX_MATERIALS=20;
 const URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supa = createClient(URL, SERVICE_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -64,6 +65,97 @@ function validFile(bytes:Uint8Array,ext:string){
 function safeFileName(s:string){
  return s.replace(/[^A-Za-z0-9 _().\-\u00c0-\u024f]/g,"").replace(/\s+/g," ").slice(0,175)||"trabajo";
 }
+
+const MATERIAL_MIME:Record<string,string>={
+ ...MIME,
+ ".doc":"application/msword",".xls":"application/vnd.ms-excel",".ppt":"application/vnd.ms-powerpoint",
+ ".odt":"application/vnd.oasis.opendocument.text",".ods":"application/vnd.oasis.opendocument.spreadsheet",
+ ".odp":"application/vnd.oasis.opendocument.presentation",
+ ".txt":"text/plain",".csv":"text/csv",".rtf":"application/rtf",
+ ".jpg":"image/jpeg",".jpeg":"image/jpeg",".png":"image/png",
+ ".webp":"image/webp",".gif":"image/gif",".zip":"application/zip"
+};
+function validateMaterial(bytes:Uint8Array,ext:string){
+ if(ext in MIME)return validFile(bytes,ext);
+ if(bytes.length<1)return false;
+ const zip=bytes[0]===0x50&&bytes[1]===0x4b&&bytes[2]===0x03&&bytes[3]===0x04;
+ if([".odt",".ods",".odp",".zip"].includes(ext)){
+  if(!zip)return false;
+  const content=new TextDecoder("latin1").decode(bytes);
+  if(/(?:^|[/\\])[^/\\]*\.(?:exe|dll|bat|cmd|ps1|js|vbs|scr|msi)(?:\u0000|$)/i.test(content))return false;
+  if(ext!==".zip"&&!content.includes("mimetype"))return false;
+  return true;
+ }
+ if([".doc",".xls",".ppt"].includes(ext))
+  return bytes.length>=512&&[0xd0,0xcf,0x11,0xe0,0xa1,0xb1,0x1a,0xe1].every((v,i)=>bytes[i]===v);
+ if(ext===".png")return [137,80,78,71,13,10,26,10].every((v,i)=>bytes[i]===v);
+ if(ext===".jpg"||ext===".jpeg")return bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
+ if(ext===".gif")return new TextDecoder().decode(bytes.slice(0,6)).match(/^GIF8[79]a$/)!==null;
+ if(ext===".webp")return new TextDecoder().decode(bytes.slice(0,4))==="RIFF"&&new TextDecoder().decode(bytes.slice(8,12))==="WEBP";
+ if(ext===".rtf")return new TextDecoder().decode(bytes.slice(0,5))==="{\\rtf";
+ if(ext===".txt"||ext===".csv")return !bytes.includes(0)&&!new TextDecoder("utf-8",{fatal:false}).decode(bytes).includes("\ufffd");
+ return false;
+}
+async function materialList(activityId:string){
+ const {data,error}=await supa.from("krueka_live_materials")
+  .select("id,file_name,mime_type,size_bytes,uploaded_at")
+  .eq("activity_id",activityId).order("uploaded_at",{ascending:true}).order("id",{ascending:true}).limit(MAX_MATERIALS);
+ if(error)throw Error("No se pudo consultar los materiales.");
+ return data||[];
+}
+async function materialDownload(req:Request,code:string,materialId:string){
+ if(!/^[A-HJ-NP-Z2-9]{12}$/.test(code)||!uuid(materialId))
+  return fail(req,"Código o archivo no válido.",403);
+ const a=await activityByCode(code);
+ if(!a)return fail(req,"El código no existe o la clase terminó.",403);
+ const {data:m,error}=await supa.from("krueka_live_materials")
+  .select("id,object_path,file_name,mime_type").eq("activity_id",a.id).eq("id",materialId).maybeSingle();
+ if(error||!m)return fail(req,"Material no encontrado.",404);
+ const {data:file,error:downloadError}=await supa.storage.from(STORAGE).download(m.object_path);
+ if(downloadError||!file)return fail(req,"No se pudo descargar el material.",503);
+ const fresh=await activityByCode(code);
+ if(!fresh||fresh.id!==a.id||fresh.code_hash!==a.code_hash)
+  return fail(req,"El código dejó de estar disponible.",403);
+ const inline=m.mime_type==="application/pdf"||m.mime_type.startsWith("image/");
+ const filename=encodeURIComponent(m.file_name).replace(/['()]/g,escape);
+ return new Response(file,{headers:{...cors(req),"Content-Type":m.mime_type,
+  "Content-Disposition":(inline?"inline":"attachment")+"; filename*=UTF-8''"+filename,
+  "X-Content-Type-Options":"nosniff","Content-Security-Policy":"sandbox"}});
+}
+async function uploadMaterial(req:Request,form:FormData){
+ const staff=await teacher(req);
+ if(!staff)return fail(req,"Iniciá sesión como docente.",403);
+ const id=String(form.get("activity_id")||""),file=form.get("material");
+ if(!uuid(id))return fail(req,"Actividad incorrecta.");
+ if(!(file instanceof File)||file.size<1||file.size>MAX)
+  return fail(req,"Elegí un archivo de hasta 10 MB.");
+ const ext=/\.[a-z0-9]+$/i.exec(file.name)?.[0].toLowerCase()||"";
+ if(!MATERIAL_MIME[ext])return fail(req,"Tipo de documento no admitido por seguridad.");
+ const {data:a,error:ae}=await supa.from("krueka_live_activities")
+  .select("id").eq("id",id).eq("teacher_id",staff.id).eq("accepting",true).maybeSingle();
+ if(ae||!a)return fail(req,"Clase cerrada o sin autorización.",403);
+ const {count,error:ce}=await supa.from("krueka_live_materials")
+  .select("id",{count:"exact",head:true}).eq("activity_id",id);
+ if(ce)return fail(req,"No se pudo comprobar el límite de archivos.",503);
+ if((count||0)>=MAX_MATERIALS)return fail(req,"Cada actividad admite hasta 20 materiales.",400);
+ const bytes=new Uint8Array(await file.arrayBuffer());
+ if(!validateMaterial(bytes,ext))return fail(req,"El formato o contenido del archivo no es válido.");
+ const path="materials/"+id+"/"+crypto.randomUUID()+ext;
+ const {error:ue}=await supa.storage.from(STORAGE)
+  .upload(path,new Blob([bytes],{type:MATERIAL_MIME[ext]}),
+  {contentType:MATERIAL_MIME[ext],upsert:false,cacheControl:"0"});
+ if(ue)return fail(req,"No se pudo guardar el documento.",503);
+ const name=safeFileName(file.name).slice(0,175);
+ const {data:active,error:check}=await supa.from("krueka_live_activities")
+  .select("id").eq("id",id).eq("teacher_id",staff.id).eq("accepting",true).maybeSingle();
+ if(check||!active){await supa.storage.from(STORAGE).remove([path]);return fail(req,"La clase se cerró durante la carga.",403);}
+ const {data:saved,error:se}=await supa.from("krueka_live_materials")
+  .insert({activity_id:id,file_name:name,object_path:path,mime_type:MATERIAL_MIME[ext],size_bytes:file.size})
+  .select("id,file_name,mime_type,size_bytes,uploaded_at").single();
+ if(se||!saved){await supa.storage.from(STORAGE).remove([path]);return fail(req,"No se pudo registrar el archivo o se alcanzó el límite.",503);}
+ return json(req,{ok:true,material:saved});
+}
+
 async function handleStaff(req:Request,staff:{id:string,email:string},form:Record<string,unknown>){
  const action=String(form.action||"");
  if(action==="list-classes"){
@@ -118,6 +210,27 @@ async function handleStaff(req:Request,staff:{id:string,email:string},form:Recor
  const {data:activity,error:ae}=await supa.from("krueka_live_activities")
   .select("id,title,teacher_id,accepting,pdf_path,pdf_name").eq("id",id).eq("teacher_id",staff.id).maybeSingle();
  if(ae||!activity)return fail(req,"La actividad no existe o no te pertenece.",404);
+ if(action==="list-materials"){
+  try{return json(req,{ok:true,materials:await materialList(id)});}
+  catch{return fail(req,"No se pudieron consultar los materiales.",503);}
+ }
+ if(action==="delete-material"){
+  if(!activity.accepting)return fail(req,"No se pueden modificar clases cerradas.",403);
+  const mid=String(form.material_id||"");
+  if(!uuid(mid))return fail(req,"Material incorrecto.");
+  const {data:m,error:me}=await supa.from("krueka_live_materials")
+   .select("id,object_path").eq("activity_id",id).eq("id",mid).maybeSingle();
+  if(me||!m)return fail(req,"El archivo no existe.",404);
+  const {error:de}=await supa.from("krueka_live_materials").delete()
+   .eq("activity_id",id).eq("id",mid);
+  if(de)return fail(req,"No se pudo quitar el archivo.",503);
+  if(activity.pdf_path===m.object_path){
+   await supa.from("krueka_live_activities").update({pdf_path:null,pdf_name:null})
+    .eq("id",id).eq("teacher_id",staff.id);
+  }
+  await supa.storage.from(STORAGE).remove([m.object_path]);
+  return json(req,{ok:true});
+ }
  if(action==="reissue-code"){
   if(!activity.accepting)return fail(req,"La clase cerrada no admite nuevos códigos.",403);
   const code=randomCode(),hash=await sha(code);
@@ -236,6 +349,7 @@ async function upload(req:Request){
  let form:FormData;
  try{form=await req.formData();}catch{return fail(req,"No se pudo leer el documento.",400);}
  if(form.get("action")==="upload-guide")return await uploadGuide(req,form);
+ if(form.get("action")==="upload-material")return await uploadMaterial(req,form);
  const code=codeOf(form.get("code")),student=escape(form.get("student"),90),file=form.get("document");
  if(!/^[A-HJ-NP-Z2-9]{12}$/.test(code))return fail(req,"Código no válido o clase cerrada.",403);
  if(student.length<3)return fail(req,"Escribí tu nombre y apellido.");
@@ -281,13 +395,15 @@ Deno.serve(async(req:Request)=>{
   let body:Record<string,unknown>={};
   try{body=await req.json();}catch{return fail(req,"Solicitud incorrecta.");}
   if(body.action==="guide")return await studentPdf(req,codeOf(body.code));
+  if(body.action==="material")return await materialDownload(req,codeOf(body.code),String(body.material_id||""));
   if(body.action==="lookup"){
    const code=codeOf(body.code);
    if(!/^[A-HJ-NP-Z2-9]{12}$/.test(code))return fail(req,"Código no válido o clase cerrada.",403);
    const data=await activityByCode(code);
    if(!data)return fail(req,"El código no existe o la clase ya terminó.",403);
    return json(req,{ok:true,activity:{title:data.title,grade:data.grade,subject:data.subject,
-      instructions:data.instructions,has_pdf:!!data.pdf_path,pdf_name:data.pdf_name||null}});
+      instructions:data.instructions,has_pdf:!!data.pdf_path,pdf_name:data.pdf_name||null,
+      materials:await materialList(data.id)}});
   }
   const staff=await teacher(req);
   if(!staff)return fail(req,"Ingresá con una cuenta docente autorizada y correo verificado.",403);
