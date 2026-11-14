@@ -37,6 +37,7 @@ jobs:
       - run: node tests/studio-odyssey-browser.test.cjs
       - run: node tests/studio-3d-toolbox.test.cjs
       - run: node tests/studio-academy.test.cjs
+      - run: node tests/club-talleres-browser.test.cjs
       - run: node --test tests/academia-ia.test.cjs
       - run: node --test tests/academia-ia-teacher-demo.test.cjs
       - run: node tests/studio-creative.test.cjs
