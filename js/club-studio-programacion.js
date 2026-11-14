@@ -23,7 +23,27 @@ var sample={'index.html':html,'style.css':css,'script.js':script,'LEEME.md':'# M
 StudioKits.create=function(id){return id==='arcade-web'?Object.assign({},sample):originalCreate(id)};
 if(window.StudioCreative&&Array.isArray(StudioCreative.paths))StudioCreative.paths.unshift({id:'programacion',icon:'⌘',title:'Programación web',tag:'HTML · CSS · JS',color:'mint',text:'Creá videojuegos escribiendo código y probalos en vivo.',first:'arcade-web',kits:['arcade-web','web']});
 var paths=['index.html','style.css','script.js'],panel=null,shell=null,editor=null,preview=null,previewParent=null,previewSibling=null,timer=null,activeFile='index.html',active=false;
-function isWeb(s){return paths.every(n=>typeof s.files[n]==='string')&&!s.files['game-config.js'];}
+function isWeb(s){return !!s.files && typeof s.files['index.html']==='string';}
+function actualPaths(s){
+ const html=String(s.files['index.html']||'');
+ const find=(tag,attr,ext)=>{
+  const regex=new RegExp('<'+tag+'\\b[^>]*?'+attr+'=["\\x27]([^"\\x27]+)["\\x27][^>]*>','gi');
+  let match,last=null;
+  while((match=regex.exec(html))){
+   const loc=match[1].replace(/^\.\//,'').split(/[?#]/)[0];
+   if(loc.endsWith(ext)&&typeof s.files[loc]==='string')last=loc;
+  }
+  return last;
+ };
+ const css=find('link','href','.css')||Object.keys(s.files).find(n=>n.endsWith('.css'));
+ const js=find('script','src','.js')||Object.keys(s.files).find(n=>n.endsWith('.js')&&n!=='game-config.js');
+ return {'index.html':'index.html','style.css':css||null,'script.js':js||null};
+}
+function tabPath(s,name){
+ if(name==='preview')return name;
+ const map=actualPaths(s);
+ return map[name]|| (typeof s.files[name]==='string'?name:null);
+}
 function state(text){const el=shell?.querySelector('#kp-program-state');if(el)el.textContent=text;}
 function mount(s){
  const p=document.getElementById('krueka-studio');if(!p)return;
@@ -72,11 +92,11 @@ function mount(s){
  editor.addEventListener('focus',()=>{if(s.cloudReady&&!s.busy)s.checkpoint();});
  editor.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();editor.setRangeText('  ',editor.selectionStart,editor.selectionEnd,'end');editor.dispatchEvent(new Event('input',{bubbles:true}));}});
  editor.addEventListener('input',()=>{
-   if(!s.cloudReady||s.busy||!isWeb(s)||!paths.includes(activeFile)){editor.value=s.files[activeFile]||'';return;}
+   if(!s.cloudReady||s.busy||!isWeb(s)||!activeFile||typeof s.files[activeFile]!=='string'){editor.value=s.files[activeFile]||'';return;}
    try{s.validFiles({...s.files,[activeFile]:editor.value});}
    catch(err){editor.value=s.files[activeFile]||'';state('Límite del proyecto: '+err.message);return;}
    s.files[activeFile]=editor.value;s.changed();state('Cambios pendientes de guardar…');
-   clearTimeout(timer);timer=setTimeout(()=>{if(active&&isWeb(s)){s.preview='index.html';s.renderPreviewOptions();s.renderPreview();}},700);
+   clearTimeout(timer);timer=setTimeout(()=>{if(active&&isWeb(s)){s.preview='index.html';s.renderPreviewOptions();s.renderPreview();state('✓ Vista previa actualizada con los cambios de código.');}},700);
  });
  shell.querySelector('#kp-program-save').onclick=async()=>{if(s.busy||!s.cloudReady)return;state('Guardando…');const ok=await s.save();state(ok?'✓ Proyecto guardado en Krueka':'No se pudo guardar. Revisá la conexión e intentá de nuevo.');};
  shell.querySelector('#kp-program-submit').onclick=async()=>{if(s.busy||!s.cloudReady)return;state('Enviando a revisión…');await s.submit();};
@@ -96,12 +116,13 @@ function mount(s){
 }
 function choose(s,name){
  if(!shell)return;
- activeFile=name;
- const onlyPreview=name==='preview';
+ const onlyPreview=name==='preview',real=tabPath(s,name);
+ if(!onlyPreview&&!real){state('Ese tipo de archivo no existe en este proyecto.');return;}
+ activeFile=onlyPreview?'preview':real;
  shell.classList.toggle('kp-preview-only',onlyPreview);
  shell.querySelectorAll('[data-kp-file]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kpFile===name)));
- const filename=shell.querySelector('#kp-program-filename');if(filename)filename.textContent=onlyPreview?'':name;
- if(!onlyPreview){editor.value=s.files[name]||'';editor.focus();}
+ const filename=shell.querySelector('#kp-program-filename');if(filename)filename.textContent=onlyPreview?'':real;
+ if(!onlyPreview){editor.value=s.files[real]||'';editor.focus();}
  if(onlyPreview&&active)s.renderPreview();
 }
 function sync(s){
@@ -110,8 +131,18 @@ function sync(s){
  shell.querySelector('#kp-program-title').textContent=String(s.title||'Mi videojuego').slice(0,80);
  shell.querySelector('#kp-program-create').hidden=ok;
  editor.hidden=!ok;
+ const detected=actualPaths(s);
+ shell.querySelectorAll('[data-kp-file]').forEach(b=>{
+  const key=b.dataset.kpFile;
+  if(key==='preview')return;
+  b.disabled=key!=='index.html'&&!detected[key];
+  b.title=detected[key]?'Editar '+detected[key]:'Este proyecto no contiene ese archivo';
+ });
  editor.readOnly=s.busy||!s.cloudReady;
- if(ok&&activeFile!=='preview'&&document.activeElement!==editor)editor.value=s.files[activeFile]||'';
+ if(ok&&activeFile!=='preview'&&document.activeElement!==editor){
+  if(typeof s.files[activeFile]!=='string')activeFile='index.html';
+  editor.value=s.files[activeFile]||'';
+ }
  shell.querySelector('#kp-program-run').disabled=!ok;
  shell.querySelector('#kp-program-save').disabled=s.busy||!s.cloudReady;
  shell.querySelector('#kp-program-submit').disabled=s.busy||!s.cloudReady;
@@ -125,7 +156,10 @@ function show(s){
  shell.querySelector('#kp-program-preview-slot').appendChild(preview);
  shell.hidden=false;active=true;
  panel.classList.add('kp-program-mode');
- sync(s);choose(s,activeFile);s.preview='index.html';s.renderPreviewOptions();s.renderPreview();
+ sync(s);
+ const key=activeFile==='preview'?'preview':
+   Object.entries(actualPaths(s)).find(([,v])=>v===activeFile)?.[0]||'index.html';
+ choose(s,key);s.preview='index.html';s.renderPreviewOptions();s.renderPreview();
 }
 function hide(s){
  if(!shell||!active)return;
