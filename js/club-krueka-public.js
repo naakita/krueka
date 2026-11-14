@@ -39,9 +39,8 @@ function render(){
   const icon=document.createElement('div');icon.className='card-icon';icon.textContent=c.icon;
   const h=document.createElement('h3');h.textContent=String(item.title||'Creación del Club').slice(0,80);
   const p=document.createElement('p');p.textContent=c.name+' · Obra aprobada';
-  const btn=document.createElement('button');btn.type='button';
-  btn.textContent=item.category==='juegos'?'▶ Jugar':'👁 Ver creación';
-  btn.onclick=()=>open(item,btn);
+  const btn=document.createElement('a');btn.className='ck-open-public';btn.href='club-krueka-obra.html?obra='+encodeURIComponent(item.id);btn.target='_blank';btn.rel='noopener noreferrer';
+  btn.textContent=item.category==='juegos'?'▶ Jugar en nueva pestaña':'👁 Abrir creación ↗';
   card.append(icon,h,p,btn);cards.appendChild(card);
  }
 }
@@ -100,7 +99,7 @@ async function load(){
   const data=await rpc('club_krueka_public_galeria',{});
   items=Array.isArray(data)?data:[];render();
   const chosen=new URLSearchParams(location.search).get('obra');
-  if(chosen){const target=items.find(i=>String(i.id)===chosen);if(target&&!active)open(target,null);}
+  if(chosen){const target=items.find(i=>String(i.id)===chosen);if(target)location.replace('club-krueka-obra.html?obra='+encodeURIComponent(target.id));}
  }catch(e){items=[];cards.replaceChildren();setStatus('No pudimos cargar la galería. Comprobá la conexión e intentá de nuevo.');}
 }
 document.getElementById('reload').onclick=load;
