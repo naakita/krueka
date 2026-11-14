@@ -14,17 +14,21 @@ const KEY='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
 const status=document.getElementById('status'),cards=document.getElementById('cards'),player=document.getElementById('player'),frame=document.getElementById('game-frame');
 const title=document.getElementById('player-title');let approved=[];
 function renderGame(g){
- const files=g.files||{};let html=String(files['index.html']||''),css=String(files['style.css']||''),js=String(files['script.js']||'');
- const style='<style>'+css.replace(/<\x2fstyle/gi,'<\\/style')+'<\/style>';
- const script='<script>'+js.replace(/<\x2fscript/gi,'<\\/script')+'<\/script>';
+ const files=g.files||{},css=String(files['style.css']||'');
+ let html=String(files['index.html']||'');
+ const style='<style>'+css.replace(/<\/style/gi,'<\\/style')+'</style>';
  html=html.replace(/<link\b[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/gi,style);
- html=html.replace(/<script\b[^>]*src=["'](?:\.\/)?script\.js["'][^>]*><\x2fscript>/gi,script);
- // Only local, static assets are supported. No network, no forms or navigation.
+ html=html.replace(/<script\b[^>]*src=["'](?:\.\/)?([a-z0-9_-]+\.js)["'][^>]*><\x2fscript>/gi,
+  (tag,name)=>Object.prototype.hasOwnProperty.call(files,name)
+   ?'<script>'+String(files[name]||'').replace(/<\x2fscript/gi,'<\\/script')+'<\x2fscript>'
+   :tag);
+ // The approved game runs in a sandbox without network or form submissions.
  const csp='<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;unsafe-inline&#39;; style-src &#39;unsafe-inline&#39;; img-src data: blob:; font-src data:; media-src data: blob:; connect-src &#39;none&#39;; form-action &#39;none&#39;; base-uri &#39;none&#39;">';
  if(/<head\b[^>]*>/i.test(html))html=html.replace(/<head\b[^>]*>/i,m=>m+csp);
  else html=csp+html;
  return html;
 }
+
 function openGame(g){
  player.hidden=false;title.textContent=g.title;frame.srcdoc=renderGame(g);player.scrollIntoView({behavior:'smooth',block:'start'});
  try{history.replaceState(null,'','?j='+encodeURIComponent(g.id));}catch(_e){}
