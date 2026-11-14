@@ -24,8 +24,8 @@ function buildPreview(files){
   csp=csp.replace('script-src &#39;unsafe-inline&#39;;','script-src &#39;unsafe-inline&#39; &#39;wasm-unsafe-eval&#39; https://cdn.jsdelivr.net;')
          .replace('connect-src &#39;none&#39;;','connect-src https://cdn.jsdelivr.net; worker-src blob:;');
  }
- if(/<iframe[^>]+src=["']https:\/\/(?:www\.youtube-nocookie\.com|player\.vimeo\.com)/i.test(html)){
-    csp=csp.replace('base-uri &#39;none&#39;;','frame-src https://www.youtube-nocookie.com https://player.vimeo.com; base-uri &#39;none&#39;;');
+ if(html.includes('https://www.youtube-nocookie.com/embed/')||html.includes('https://player.vimeo.com/video/')){
+    csp=csp.replace('base-uri &#39;none&#39;','frame-src https://www.youtube-nocookie.com https://player.vimeo.com; base-uri &#39;none&#39;');
   }
  if(/<head\b[^>]*>/i.test(doc))return doc.replace(/<head\b[^>]*>/i,match=>match+csp);
  return csp+doc;
