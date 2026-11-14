@@ -142,9 +142,32 @@ StudioIA.buildPreview=function(path){
   .replace("connect-src 'none';","connect-src https://cdn.jsdelivr.net; worker-src blob:;");
 };
 const baseShow=StudioIA.showTab,baseRefresh=StudioIA.refreshAll,baseLock=StudioIA.lock,baseCreateKit=StudioIA.createKit;
-let shell=null,area=null,tab=null,currentTab='python',running=false;
+let shell=null,area=null,tab=null,currentTab='python',running=false,previewTimer=null;
 function isPython(s){return s?.files?.[MARKER]==='python-pyodide-v1'&&typeof s.files[PYFILE]==='string';}
 function info(s){return shell?.querySelector('#kp-program-state');}
+function statePython(t){const el=info();if(el)el.textContent=t;}
+function wirePythonInGeneralEditor(s){
+ const el=document.getElementById('ks-editor');
+ if(!el||el.dataset.pythonLiveWired==='yes')return;
+ el.dataset.pythonLiveWired='yes';
+ el.addEventListener('input',()=>{
+   if(!isPython(s)||s.current!==PYFILE||!s.cloudReady||s.busy)return;
+   const code=el.value;
+   const files={...s.files,[PYFILE]:code,'script.js':bootstrap(code)};
+   try{s.validFiles(files);}catch(err){
+     const state=document.getElementById('ks-save');
+     if(state)state.textContent='Límite de código: '+err.message;
+     return;
+   }
+   s.files=files;s.changed();
+   clearTimeout(s.previewTimer);
+   s.previewTimer=setTimeout(()=>{
+     if(isPython(s)&&s.cloudReady&&!s.busy&&document.getElementById('ks-frame')){
+       s.preview='index.html';s.renderPreviewOptions();s.renderPreview();
+     }
+   },1800);
+ });
+}
 function showPython(s){
  currentTab='python';
  shell.classList.remove('kp-preview-only');area.hidden=false;shell.querySelector('#kp-program-editor').hidden=true;
@@ -175,7 +198,15 @@ function integrate(s){
    try{s.validFiles(next);}catch(e){const el=info(s);if(el)el.textContent='Archivo demasiado grande: '+e.message;return;}
    s.files=next;s.changed();
    const el=info(s);if(el)el.textContent='Código Python modificado · Guardado automático pendiente';
-   const run=shell.querySelector('#kp-program-run');if(run)run.title='Ejecutar el código Python modificado';
+   statePython('Código modificado · la vista previa se actualizará cuando termines de escribir.');
+   clearTimeout(previewTimer);
+   previewTimer=setTimeout(()=>{
+     if(running&&isPython(s)&&s.cloudReady&&!s.busy){
+       s.preview='index.html';s.renderPreviewOptions();s.renderPreview();
+       statePython('✓ Vista previa de Python actualizada.');
+     }
+   },1800);
+   const run=shell.querySelector('#kp-program-run');if(run)run.title='Ejecutar ahora el código Python modificado';
   });
   nav.querySelector('[data-kp-file="preview"]').addEventListener('click',()=>{currentTab='preview';tab.setAttribute('aria-pressed','false');});
   p.querySelector('#kp-program-new').onclick=()=>{p.querySelector('.kp-program-menu').open=false;chooseLanguage(s);};
@@ -197,12 +228,12 @@ function integrate(s){
  }
 }
 StudioIA.showTab=function(name){
- if(name!=='programacion'){running=false;}
+ if(name!=='programacion'){running=false;clearTimeout(previewTimer);}
  const r=baseShow.apply(this,arguments);
  if(name==='programacion'){running=true;currentTab=isPython(this)?'python':'index.html';integrate(this);}
  return r;
 };
-StudioIA.refreshAll=function(){const r=baseRefresh.apply(this,arguments);if(running)integrate(this);return r;};
+StudioIA.refreshAll=function(){const r=baseRefresh.apply(this,arguments);wirePythonInGeneralEditor(this);if(running)integrate(this);return r;};
 StudioIA.lock=function(){const r=baseLock.apply(this,arguments);if(running)integrate(this);return r;};
 StudioIA.createKit=async function(id){await baseCreateKit.apply(this,arguments);if(id==='arcade-python'&&isPython(this))this.showTab('programacion');};
 window.StudioPython={starter,kit,isPython,bootstrap};
