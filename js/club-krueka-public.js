@@ -54,6 +54,7 @@ function buildPreview(files){
  let doc=html.replace(/<link\b[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/gi,style)
   .replace(/<script\b[^>]*src=["'](?:\.\/)?script\.js["'][^>]*><\/script>/gi,script);
  const csp='<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;unsafe-inline&#39;; style-src &#39;unsafe-inline&#39;; img-src data: blob:; font-src data:; media-src data: blob:; connect-src &#39;none&#39;; form-action &#39;none&#39;; base-uri &#39;none&#39;">';
+ if(/<head\b[^>]*>/i.test(doc))return doc.replace(/<head\b[^>]*>/i,match=>match+csp);
  return csp+doc;
 }
 async function open(item,trigger){
