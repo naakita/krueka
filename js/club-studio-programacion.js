@@ -20,7 +20,51 @@ var script=[
 'document.getElementById("reiniciar").onclick=()=>{puntos=0;document.getElementById("puntos").textContent=0;jugador.x=300;jugador.y=170;nuevaEstrella();dibujar()};dibujar();'
 ].join('\n');
 var sample={'index.html':html,'style.css':css,'script.js':script,'LEEME.md':'# Mi juego web\nCambiá el título en HTML, los colores en CSS y velocidad:22 en JavaScript. Probá, guardá y enviá al profe. Nunca publiques datos personales.'};
-StudioKits.create=function(id){return id==='arcade-web'?Object.assign({},sample):originalCreate(id)};
+const templates={
+ 'pagina-web':{title:'Mi página web',description:'Armá una página con encabezado, menú, texto e imágenes.',heading:'Mi página web',body:'<p>Contá de qué trata tu página.</p>',script:'// Agregá interacciones a tu página.'},
+ 'aplicacion-web':{title:'Mi aplicación web',description:'Creá una aplicación sencilla que responde a lo que hace el usuario.',heading:'Lista de tareas',body:'<form id="tareas"><label>Nueva tarea <input name="tarea" required></label><button>Agregar</button></form><ul id="lista"></ul>',script:`const form = document.getElementById('tareas');
+form.addEventListener('submit', event => {
+ event.preventDefault();
+ const texto = form.elements.tarea.value.trim();
+ if (!texto) return;
+ const item = document.createElement('li');
+ item.textContent = texto;
+ document.getElementById('lista').append(item);
+ form.reset();
+});`}
+};
+for(const [id,template] of Object.entries(templates))StudioKits.catalog.push({id,icon:id==='pagina-web'?'🌐':'📱',title:template.title,description:template.description,tag:'HTML · CSS · JavaScript'});
+function webTemplate(id){
+ const t=templates[id];
+ return {
+  'index.html':'<!doctype html>\n<html lang="es">\n<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+t.title+'</title><link rel="stylesheet" href="style.css"></head>\n<body>\n<main>\n<h1>'+t.heading+'</h1>\n'+t.body+'\n</main>\n<script src="script.js"></script>\n</body>\n</html>',
+  'style.css':'*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui;color:#173052;background:#eaf3fb}main{max-width:720px;margin:auto;padding:clamp(16px,5vw,45px)}a{color:#12568d}button,input{font:inherit;padding:8px}img{max-width:100%;height:auto}details{margin:10px 0}',
+  'script.js':t.script,
+  'tipo-club.txt':id==='pagina-web'?'paginas':'aplicaciones'
+ };
+}
+StudioKits.create=function(id){
+ if(id==='arcade-web')return {...sample};
+ return Object.hasOwn(templates,id)?webTemplate(id):originalCreate(id);
+};
+const blocks={
+ encabezado:['Encabezado','<h2>Nuevo encabezado</h2>'],
+ menu:['Menú','<nav aria-label="Menú"><a href="#seccion">Ir a la sección</a></nav><section id="seccion"><h2>Sección</h2></section>'],
+ submenu:['Submenú','<details><summary>Más opciones</summary><a href="#seccion">Ver sección</a></details>'],
+ texto:['Texto','<p>Escribí tu texto aquí.</p>'],
+ imagen:['Imagen','<img alt="Describí la imagen" width="240" height="120" src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27240%27 height=%27120%27%3E%3Crect width=%27240%27 height=%27120%27 fill=%27%23cee5f5%27/%3E%3C/svg%3E">'],
+ boton:['Botón','<button type="button">Mi botón</button>'],
+ formulario:['Formulario','<form><label>Respuesta <input name="respuesta"></label><button type="button">Listo</button></form>']
+};
+function insertBlock(html,key){
+ if(!Object.hasOwn(blocks,key))return html;
+ const code='\n'+blocks[key][1]+'\n';
+ const closing=/<\/main\s*>/i.test(html)?/<\/main\s*>/i:/<\/body\s*>/i;
+ return closing.test(html)?html.replace(closing,match=>code+match):html+code;
+}
+function starterFor(s){
+ return {paginas:'pagina-web',aplicaciones:'aplicacion-web'}[s.files?.['tipo-club.txt']]||'arcade-web';
+}
 if(window.StudioCreative&&Array.isArray(StudioCreative.paths))StudioCreative.paths.unshift({id:'programacion',icon:'⌘',title:'Programación web',tag:'HTML · CSS · JS',color:'mint',text:'Creá videojuegos escribiendo código y probalos en vivo.',first:'arcade-web',kits:['arcade-web','web']});
 var paths=['index.html','style.css','script.js'],panel=null,shell=null,editor=null,preview=null,previewParent=null,previewSibling=null,timer=null,activeFile='index.html',active=false;
 function isWeb(s){return !!s.files && typeof s.files['index.html']==='string';}
@@ -50,7 +94,7 @@ function mount(s){
  if(panel===p&&shell?.isConnected)return;
  panel=p;active=false;activeFile='index.html';
  preview=p.querySelector('.ks-preview');previewParent=preview?.parentNode||null;previewSibling=preview?.nextSibling||null;
- const tab=document.createElement('button');tab.type='button';tab.className='ks-btn';tab.dataset.tab='programacion';tab.textContent='⌘ Programar juegos';tab.classList.add('kp-entry-highlight');tab.onclick=()=>s.showTab('programacion');p.querySelector('.ks-tabs').prepend(tab);
+ const tab=document.createElement('button');tab.type='button';tab.className='ks-btn';tab.dataset.tab='programacion';tab.textContent='⌘ Programación web';tab.classList.add('kp-entry-highlight');tab.onclick=()=>s.showTab('programacion');p.querySelector('.ks-tabs').prepend(tab);
  shell=document.createElement('section');shell.id='kp-program-shell';shell.className='kp-program-shell';shell.hidden=true;shell.setAttribute('aria-label','Espacio de programación web');
  shell.innerHTML=
  '<header class="kp-program-header">'+
@@ -65,7 +109,7 @@ function mount(s){
    '<button type="button" id="kp-program-save" class="kp-program-btn">Guardar</button>'+
    '<button type="button" id="kp-program-submit" class="kp-program-btn kp-program-primary">Enviar al profe</button>'+
    '<details class="kp-program-menu"><summary>Proyecto ▾</summary><div class="kp-program-dropdown">'+
-    '<button type="button" id="kp-program-new">＋ Nuevo juego</button>'+
+    '<button type="button" id="kp-program-new">＋ Nuevo proyecto</button>'+
     '<button type="button" id="kp-program-list">Mis proyectos</button>'+
     '<button type="button" id="kp-program-rename">Cambiar nombre</button>'+
     '<button type="button" id="kp-program-export">Descargar</button>'+
@@ -77,10 +121,11 @@ function mount(s){
  '<main class="kp-program-body">'+
   '<section class="kp-program-code" aria-label="Editor de código">'+
    '<div class="kp-program-pane-head"><strong id="kp-program-filename">index.html</strong><span>Escribí tu código</span></div>'+
-   '<div id="kp-program-create" class="kp-program-create" hidden><h2>Elegí un juego web</h2><p>Este proyecto utiliza otro tipo de editor. No vamos a modificarlo.</p><button type="button" id="kp-program-start">Crear juego con HTML, CSS y JavaScript</button></div>'+
+   '<div id="kp-program-create" class="kp-program-create" hidden><h2>Elegí un proyecto web</h2><p>Este proyecto utiliza otro tipo de editor. No vamos a modificarlo.</p><button type="button" id="kp-program-start">Crear con HTML, CSS y JavaScript</button></div>'+
+   '<details class="kp-blocks" id="kp-blocks"><summary>Bloques HTML</summary><div id="kp-block-list"></div><p id="kp-block-drop">Arrastrá un bloque aquí o pulsá su nombre.</p></details>'+
    '<textarea id="kp-program-editor" spellcheck="false" aria-label="Editor de código del archivo elegido"></textarea>'+
   '</section>'+
-  '<section class="kp-program-preview" aria-label="Vista previa del videojuego">'+
+  '<section class="kp-program-preview" aria-label="Vista previa del proyecto">'+
    '<div class="kp-program-pane-head"><strong>Vista previa</strong><button type="button" id="kp-program-run">▶ Ejecutar</button></div>'+
    '<div id="kp-program-preview-slot"></div>'+
   '</section>'+
@@ -88,6 +133,28 @@ function mount(s){
  '<footer class="kp-program-footer"><span id="kp-program-state" role="status">Tu código se guarda en Krueka.</span><span>HTML: estructura · CSS: diseño · JavaScript: comportamiento</span></footer>';
  p.appendChild(shell);
  editor=shell.querySelector('#kp-program-editor');
+ const addBlock=key=>{
+  if(s.busy||!s.cloudReady||starterFor(s)==='arcade-web'||!Object.hasOwn(blocks,key))return;
+  const before=s.files['index.html'],after=insertBlock(before,key);
+  choose(s,'index.html');
+  editor.value=after;editor.dispatchEvent(new Event('input',{bubbles:true}));
+  editor.focus();
+ };
+ const tray=shell.querySelector('#kp-block-list'),drop=shell.querySelector('#kp-block-drop');
+ for(const [key,[label]] of Object.entries(blocks)){
+  const button=document.createElement('button');
+  button.type='button';button.draggable=true;button.textContent=label;
+  button.onclick=()=>addBlock(key);
+  button.ondragstart=event=>{event.dataTransfer.setData('application/x-krueka-block',key);event.dataTransfer.effectAllowed='copy';};
+  tray.append(button);
+ }
+ for(const target of [drop,editor]){
+  target.addEventListener('dragover',event=>{if(event.dataTransfer.types.includes('application/x-krueka-block'))event.preventDefault();});
+  target.addEventListener('drop',event=>{
+   const key=event.dataTransfer.getData('application/x-krueka-block');
+   if(key){event.preventDefault();addBlock(key);}
+  });
+ }
  shell.querySelectorAll('[data-kp-file]').forEach(b=>b.onclick=()=>choose(s,b.dataset.kpFile));
  editor.addEventListener('focus',()=>{if(s.cloudReady&&!s.busy)s.checkpoint();});
  editor.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();editor.setRangeText('  ',editor.selectionStart,editor.selectionEnd,'end');editor.dispatchEvent(new Event('input',{bubbles:true}));}});
@@ -102,7 +169,7 @@ function mount(s){
  shell.querySelector('#kp-program-submit').onclick=async()=>{if(s.busy||!s.cloudReady)return;state('Enviando a revisión…');await s.submit();};
  shell.querySelector('#kp-program-run').onclick=()=>{if(!isWeb(s)){state('Primero elegí un proyecto web.');return;}s.preview='index.html';s.renderPreviewOptions();s.renderPreview();const iframe=shell.querySelector('#ks-frame');if(iframe)iframe.focus();state('Vista previa actualizada.');};
  shell.querySelector('#kp-program-back').onclick=()=>s.showTab('home');
- shell.querySelector('#kp-program-new').onclick=()=>{shell.querySelector('.kp-program-menu').open=false;s.createKit('arcade-web');};
+ shell.querySelector('#kp-program-new').onclick=()=>{shell.querySelector('.kp-program-menu').open=false;s.createKit(starterFor(s));};
  shell.querySelector('#kp-program-start').onclick=()=>s.createKit('arcade-web');
  shell.querySelector('#kp-program-list').onclick=()=>{shell.querySelector('.kp-program-menu').open=false;s.showProjects();};
  shell.querySelector('#kp-program-export').onclick=()=>{shell.querySelector('.kp-program-menu').open=false;s.download();};
@@ -131,6 +198,7 @@ function sync(s){
  shell.querySelector('#kp-program-title').textContent=String(s.title||'Mi videojuego').slice(0,80);
  shell.querySelector('#kp-program-create').hidden=ok;
  editor.hidden=!ok;
+ shell.querySelector('#kp-blocks').hidden=!ok||starterFor(s)==='arcade-web';
  const detected=actualPaths(s);
  shell.querySelectorAll('[data-kp-file]').forEach(b=>{
   const key=b.dataset.kpFile;
@@ -226,7 +294,7 @@ if(!studio.__liveCodeInstalled){
  studio.__liveCodeInstalled=true;
 }
 if(!studio.__programacionInstalled){
- const originalShow=studio.showTab,originalRefresh=studio.refreshAll,originalKit=studio.createKit,originalLock=studio.lock,originalSubmit=studio.submit;
+ const originalShow=studio.showTab,originalRefresh=studio.refreshAll,originalKit=studio.createKit,originalSwitch=studio.switchProject,originalLock=studio.lock,originalSubmit=studio.submit;
  studio.showTab=function(name){
   if(name!=='programacion')hide(this);
   const result=originalShow.apply(this,arguments);
@@ -238,7 +306,11 @@ if(!studio.__programacionInstalled){
  studio.createKit=async function(id){
   const before=this.projectId;
   await originalKit.apply(this,arguments);
-  if(id==='arcade-web'&&this.projectId!==before&&isWeb(this))this.showTab('programacion');
+  if((id==='arcade-web'||Object.hasOwn(templates,id))&&this.projectId!==before&&isWeb(this))this.showTab('programacion');
+ };
+ studio.switchProject=async function(id){
+  await originalSwitch.apply(this,arguments);
+  if(this.projectId===id&&starterFor(this)!=='arcade-web')this.showTab('programacion');
  };
  studio.submit=async function(){
   const restore=active;
@@ -253,5 +325,5 @@ if(!studio.__programacionInstalled){
  };
  studio.__programacionInstalled=true;
 }
-window.StudioProgramacion={kit,isWeb,mount,sync,choose};
+window.StudioProgramacion={kit,isWeb,mount,sync,choose,insertBlock,starterFor};
 })();

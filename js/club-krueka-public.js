@@ -6,7 +6,7 @@ const API='https://janebfpnknapvntfqolf.supabase.co/rest/v1/rpc/club_krueka_publ
 const KEY='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
 const cats=[
  ['todos','🌟','Todas'],
- ['juegos','🎮','Videojuegos'],['blogs','📰','Blogs'],
+ ['juegos','🎮','Videojuegos'],['paginas','🌐','Páginas web'],['aplicaciones','📱','Aplicaciones web'],['blogs','📰','Blogs'],
  ['historietas','💬','Historietas'],['cuentos','📖','Cuentos'],
  ['dramas','🎭','Dramas'],['animes','✨','Anime original'],
  ['flyers','📣','Afiches'],['dibujos','🎨','Dibujos'],
@@ -15,6 +15,8 @@ const cats=[
 const demo=Array.isArray(window.KruekaEjemplos?.catalog)?window.KruekaEjemplos.catalog:[];
 const category=Object.fromEntries(cats.map(([id,emoji,name])=>[id,{id,emoji,name}]));
 const colors={
+ paginas:['#236e94','#265c75','#142647'],
+ aplicaciones:['#485db3','#3d756e','#162144'],
  juegos:['#173a91','#7032b7','#0d0d35'],
  blogs:['#0c6780','#17637d','#0f1c37'],
  historietas:['#9d326b','#6a287c','#1b123d'],
@@ -45,17 +47,16 @@ function makeButton(text,parent,pressed,clicked){
  b.setAttribute('aria-pressed',String(pressed));b.onclick=clicked;parent.append(b);
 }
 function initFilters(){
- const nav=document.getElementById('categories'),strip=document.getElementById('filter-strip');
- nav.replaceChildren();strip.replaceChildren();
+ const nav=document.getElementById('categories');
+ nav.replaceChildren();
  for(const [id,emoji,label] of cats){
   makeButton(emoji+' '+label,nav,filter===id,()=>chooseCategory(id));
-  makeButton(emoji+' '+label,strip,filter===id,()=>chooseCategory(id));
  }
  document.querySelectorAll('[data-scope]').forEach(b=>{
   b.onclick=()=>{scope=b.dataset.scope;document.querySelectorAll('[data-scope]').forEach(v=>v.setAttribute('aria-pressed',String(v.dataset.scope===scope)));render();};
  });
 }
-function chooseCategory(id){filter=id;document.querySelectorAll('#categories button,#filter-strip button').forEach((v,i)=>v.setAttribute('aria-pressed',String(cats[i%cats.length][0]===id)));render();}
+function chooseCategory(id){filter=id;document.querySelectorAll('#categories button').forEach((v,i)=>v.setAttribute('aria-pressed',String(cats[i][0]===id)));render();}
 function matches(item){
  if(filter!=='todos'&&item.category!==filter)return false;
  if(term&&!String(item.title+' '+(item.short||'')+' '+(category[item.category]?.name||'')).toLowerCase().includes(term))return false;

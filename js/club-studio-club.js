@@ -5,6 +5,8 @@
 if(window.ClubKrueka||!window.StudioIA||!window.StudioKits||!window.StudioCreative)return;
 const categories=[
  {id:'juegos',icon:'🎮',name:'Videojuegos',desc:'Creá niveles, personajes y desafíos.',kit:'arcade-web',kits:['arcade-web','arcade-python','stars','race','platform','odyssey3d']},
+ {id:'paginas',icon:'🌐',name:'Páginas web',desc:'Creá una página con bloques o código.',kit:'pagina-web'},
+ {id:'aplicaciones',icon:'📱',name:'Aplicaciones web',desc:'Creá una aplicación interactiva con bloques y código.',kit:'aplicacion-web'},
  {id:'blogs',icon:'📰',name:'Blogs',desc:'Publicá ideas, novedades y artículos.'},
  {id:'historietas',icon:'💬',name:'Historietas',desc:'Diseñá viñetas y diálogos.'},
  {id:'cuentos',icon:'📖',name:'Cuentos',desc:'Inventá historias y aventuras.'},
@@ -33,7 +35,7 @@ function color(value){return /^#[0-9a-f]{6}$/i.test(value||'')?value:'#237fc3';}
 function isLongWork(kind){return kind==='cuentos'||kind==='dramas';}
 function normalized(raw){
  const d=raw&&typeof raw==='object'?raw:{};
- const category=categories.find(x=>x.id===d.kind&&!['juegos','animaciones','videos'].includes(x.id))?.id||'cuentos';
+ const category=categories.find(x=>x.id===d.kind&&Object.hasOwn(texts,x.id))?.id||'cuentos';
  const base=defaultData(category),longWork=isLongWork(category);
  const panels=longWork&&Array.isArray(d.panels)&&d.panels.length?d.panels:base.panels;
  const baseData={kind:category,title:String(d.title||base.title).slice(0,80),subtitle:String(d.subtitle||base.subtitle).slice(0,140),
@@ -122,7 +124,10 @@ function updateCreative(s,d){
  if(s.busy||!s.cloudReady||!isCreative(s))return false;
  try{
   const files={...s.files,...build(d)};
-  s.validFiles(files);s.files=files;s.title=String(d.title||'Mi creación').slice(0,80);
+  s.validFiles(files);
+  const title=String(d.title||'Mi creación').slice(0,80);
+  if(title===s.title&&Object.keys(files).every(name=>files[name]===s.files[name]))return true;
+  s.files=files;s.title=title;
   s.changed();work.querySelector('#ck-status').textContent='Cambios pendientes de guardar…';
   clearTimeout(pending);pending=setTimeout(()=>{if(work&&!work.hidden){s.preview='index.html';s.renderPreviewOptions();s.renderPreview();}},600);
   return true;
