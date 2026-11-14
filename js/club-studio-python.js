@@ -209,7 +209,11 @@ function integrate(s){
    const run=shell.querySelector('#kp-program-run');if(run)run.title='Ejecutar ahora el código Python modificado';
   });
   nav.querySelector('[data-kp-file="preview"]').addEventListener('click',()=>{currentTab='preview';tab.setAttribute('aria-pressed','false');});
-  p.querySelector('#kp-program-new').onclick=()=>{p.querySelector('.kp-program-menu').open=false;chooseLanguage(s);};
+  p.querySelector('#kp-program-new').onclick=()=>{
+   p.querySelector('.kp-program-menu').open=false;
+   const kit=window.StudioProgramacion?.starterFor(s);
+   if(kit&&kit!=='arcade-web')s.createKit(kit);else chooseLanguage(s);
+  };
   p.querySelector('#kp-program-start').onclick=()=>chooseLanguage(s);
  }
  const python=isPython(s);

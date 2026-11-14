@@ -155,3 +155,10 @@
  }
  #krueka-studio .ks-preview.ks-live-code #ks-frame{grid-column:1;grid-row:2}
 }
+
+#krueka-studio .kp-blocks{padding:8px 12px;background:#142139;color:#edf5ff;font-size:12px}
+#krueka-studio .kp-blocks[hidden]{display:none}
+#krueka-studio .kp-blocks summary{cursor:pointer;font-weight:700}
+#krueka-studio #kp-block-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+#krueka-studio #kp-block-list button{padding:5px 8px;color:inherit;background:#244362;border:1px solid #567fa7;border-radius:6px;cursor:grab}
+#krueka-studio #kp-block-drop{margin:7px 0 0;padding:7px;border:1px dashed #6982a3;border-radius:6px;color:#c9dcf5}
