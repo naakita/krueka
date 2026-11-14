@@ -4,7 +4,7 @@
 'use strict';
 if(window.ClubKrueka||!window.StudioIA||!window.StudioKits||!window.StudioCreative)return;
 const categories=[
- {id:'juegos',icon:'🎮',name:'Videojuegos',desc:'Creá niveles, personajes y desafíos.',kit:'arcade-web',kits:['arcade-web','stars','race','platform','odyssey3d']},
+ {id:'juegos',icon:'🎮',name:'Videojuegos',desc:'Creá niveles, personajes y desafíos.',kit:'arcade-web',kits:['arcade-web','arcade-python','stars','race','platform','odyssey3d']},
  {id:'blogs',icon:'📰',name:'Blogs',desc:'Publicá ideas, novedades y artículos.'},
  {id:'historietas',icon:'💬',name:'Historietas',desc:'Diseñá viñetas y diálogos.'},
  {id:'cuentos',icon:'📖',name:'Cuentos',desc:'Inventá historias y aventuras.'},
