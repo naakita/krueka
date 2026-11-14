@@ -78,6 +78,17 @@ for(const model of list){
  const path=creative.paths.find(x=>x.id===model.category);
  if(path&&!path.kits.includes(id))path.kits.push(id);
 }
+// Una copia de blog, historieta, cuento, drama, anime o afiche se abre en
+// su taller visual; el videojuego se abre directamente en el editor de código.
+const originalCreateProject=studio.createKit;
+studio.createKit=async function(id){
+ const r=await originalCreateProject.apply(this,arguments);
+ if(typeof id==='string'&&id.startsWith('modelo-')){
+  if(club.isCreative(this))this.showTab('club-work');
+  else if(id==='modelo-neon')this.showTab('programacion');
+ }
+ return r;
+};
 // El modelo público se prueba sin cuenta. Para guardarlo como proyecto,
 // el alumno decide explícitamente crear su copia cuando ya entró con código.
 let asked=false;
