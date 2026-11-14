@@ -1,0 +1,15 @@
+/* Recursos visuales por taller: fotos comprimidas, enlaces, videos y figuras 3D */
+#krueka-studio .cm-assets{display:grid;gap:10px;min-width:0;border:1px solid #3b657f;border-radius:12px;padding:14px;background:#14253e}
+#krueka-studio .cm-assets>strong{font-size:14px;color:#a0edee}
+#krueka-studio .cm-assets>p{font-size:11px;color:#acc9e1;margin:0}
+#krueka-studio .cm-upload{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid #37516c;padding-bottom:9px}
+#krueka-studio .cm-upload>span{flex:1;min-width:105px;font-size:11px;font-weight:750}
+#krueka-studio .cm-upload input{font-size:11px;max-width:210px;color:#d7eaff}
+#krueka-studio .cm-upload button{background:#1e3f60;color:white;border:1px solid #426d8c;border-radius:7px;padding:6px 10px;font:700 11px system-ui;cursor:pointer}
+#krueka-studio .cm-upload small{font-size:11px;color:#96cbdd}
+#krueka-studio .cm-link{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#krueka-studio .cm-scene{display:grid;grid-template-columns:1fr 1fr;gap:10px;border:1px solid #466b83;border-radius:10px;padding:10px}
+#krueka-studio .cm-scene legend{font-size:12px;color:#9edeea;font-weight:850;padding:0 6px}
+#krueka-studio .cm-scene input[type=range]{width:100%}
+#krueka-studio .cm-scene .ct-field{min-width:0}
+@media(max-width:560px){#krueka-studio .cm-link,#krueka-studio .cm-scene{grid-template-columns:1fr}}
