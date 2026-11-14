@@ -56,7 +56,11 @@ function buildPreview(files){
    (tag,name)=>Object.prototype.hasOwnProperty.call(files,name)
      ?'<script>'+String(files[name]||'').replace(/<\/script/gi,'<\\/script')+'</script>'
      :tag);
- const csp='<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;unsafe-inline&#39;; style-src &#39;unsafe-inline&#39;; img-src data: blob:; font-src data:; media-src data: blob:; connect-src &#39;none&#39;; form-action &#39;none&#39;; base-uri &#39;none&#39;">';
+ let csp='<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;unsafe-inline&#39;; style-src &#39;unsafe-inline&#39;; img-src data: blob:; font-src data:; media-src data: blob:; connect-src &#39;none&#39;; form-action &#39;none&#39;; base-uri &#39;none&#39;">';
+ if(/<meta\s+name=["']krueka-python-runtime["']\s+content=["']pyodide["']/i.test(html)){
+  csp=csp.replace('script-src &#39;unsafe-inline&#39;;','script-src &#39;unsafe-inline&#39; &#39;wasm-unsafe-eval&#39; https://cdn.jsdelivr.net;')
+         .replace('connect-src &#39;none&#39;;','connect-src https://cdn.jsdelivr.net; worker-src blob:;');
+ }
  if(/<head\b[^>]*>/i.test(doc))return doc.replace(/<head\b[^>]*>/i,match=>match+csp);
  return csp+doc;
 }
