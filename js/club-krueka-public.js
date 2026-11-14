@@ -1,107 +1,128 @@
-/* Galería pública de Club Krueka. Lectura de obras aprobadas solamente. */
+/* Galería pública Club Krueka: catálogo visual.
+   Obras de alumnos: sólo RPC de aprobados. Ejemplos: archivos estáticos propios, etiquetados. */
 (function(){
 'use strict';
-const URL='https://janebfpnknapvntfqolf.supabase.co/rest/v1/rpc/';
+const API='https://janebfpnknapvntfqolf.supabase.co/rest/v1/rpc/club_krueka_public_galeria';
 const KEY='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
 const cats=[
- {id:'todos',name:'Todas',icon:'🌟'},{id:'juegos',name:'Videojuegos',icon:'🎮'},
- {id:'blogs',name:'Blogs',icon:'📰'},{id:'historietas',name:'Historietas',icon:'💬'},
- {id:'cuentos',name:'Cuentos',icon:'📖'},{id:'dramas',name:'Dramas',icon:'🎭'},
- {id:'animes',name:'Anime original',icon:'✨'},{id:'flyers',name:'Afiches',icon:'📣'},
- {id:'dibujos',name:'Dibujos',icon:'🎨'},{id:'animaciones',name:'Animaciones',icon:'🎞️'},
- {id:'videos',name:'Videos',icon:'🎬'}
+ ['todos','🌟','Todas'],
+ ['juegos','🎮','Videojuegos'],['blogs','📰','Blogs'],
+ ['historietas','💬','Historietas'],['cuentos','📖','Cuentos'],
+ ['dramas','🎭','Dramas'],['animes','✨','Anime original'],
+ ['flyers','📣','Afiches'],['dibujos','🎨','Dibujos'],
+ ['animaciones','🎞️','Animaciones'],['videos','🎬','Videos']
 ];
-const filters=document.getElementById('filters'),status=document.getElementById('gallery-status'),
- cards=document.getElementById('gallery-cards'),viewer=document.getElementById('viewer'),
- frame=document.getElementById('viewer-frame');
-let items=[],selected='todos',active=null,busy=false,lastFocus=null;
-function rpc(name,data){
- return fetch(URL+name,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify(data||{})})
- .then(async r=>{const value=await r.json();if(!r.ok)throw Error(value.message||'No se pudo consultar la galería.');return value;});
+const demo=Array.isArray(window.KruekaEjemplos?.catalog)?window.KruekaEjemplos.catalog:[];
+const category=Object.fromEntries(cats.map(([id,emoji,name])=>[id,{id,emoji,name}]));
+const colors={
+ juegos:['#173a91','#7032b7','#0d0d35'],
+ blogs:['#0c6780','#17637d','#0f1c37'],
+ historietas:['#9d326b','#6a287c','#1b123d'],
+ cuentos:['#2b9271','#236e94','#122a43'],
+ dramas:['#ae5278','#54247d','#1b1439'],
+ animes:['#8f44d2','#2966bb','#141441'],
+ flyers:['#e86c32','#d34882','#642d71'],
+ dibujos:['#b64bba','#5265c5','#1a1a56'],
+ animaciones:['#138fab','#5555c7','#101c45'],
+ videos:['#b94d6c','#5856c4','#1a1c44']
+};
+const sections={
+ alumnos:document.getElementById('alumnos'),
+ ejemplos:document.getElementById('ejemplos')
+};
+const elems={
+ studentCount:document.getElementById('student-count'),
+ demoCount:document.getElementById('demo-count'),
+ studentCards:document.getElementById('gallery-cards'),
+ demoCards:document.getElementById('example-cards'),
+ status:document.getElementById('gallery-status'),
+ total:document.getElementById('total'),
+ spotlight:document.getElementById('destacado')
+};
+let approved=[],scope='todas',filter='todos',term='',loaded=false;
+function makeButton(text,parent,pressed,clicked){
+ const b=document.createElement('button');b.type='button';b.textContent=text;
+ b.setAttribute('aria-pressed',String(pressed));b.onclick=clicked;parent.append(b);
 }
-function setStatus(message){status.textContent=message;}
-function catFor(id){return cats.find(c=>c.id===id)||cats[1];}
-function filterControls(){
- filters.replaceChildren(...cats.map(c=>{
-  const b=document.createElement('button');b.type='button';b.textContent=c.icon+' '+c.name;
-  b.setAttribute('aria-pressed',String(c.id===selected));
-  b.onclick=()=>{selected=c.id;filterControls();render();};
-  return b;
- }));
+function initFilters(){
+ const nav=document.getElementById('categories'),strip=document.getElementById('filter-strip');
+ nav.replaceChildren();strip.replaceChildren();
+ for(const [id,emoji,label] of cats){
+  makeButton(emoji+' '+label,nav,filter===id,()=>chooseCategory(id));
+  makeButton(emoji+' '+label,strip,filter===id,()=>chooseCategory(id));
+ }
+ document.querySelectorAll('[data-scope]').forEach(b=>{
+  b.onclick=()=>{scope=b.dataset.scope;document.querySelectorAll('[data-scope]').forEach(v=>v.setAttribute('aria-pressed',String(v.dataset.scope===scope)));render();};
+ });
+}
+function chooseCategory(id){filter=id;document.querySelectorAll('#categories button,#filter-strip button').forEach((v,i)=>v.setAttribute('aria-pressed',String(cats[i%cats.length][0]===id)));render();}
+function matches(item){
+ if(filter!=='todos'&&item.category!==filter)return false;
+ if(term&&!String(item.title+' '+(item.short||'')+' '+(category[item.category]?.name||'')).toLowerCase().includes(term))return false;
+ return true;
+}
+function cardFor(item,example){
+ const cat=category[item.category]||category.juegos;
+ const palette=example?item.colors:(colors[item.category]||colors.juegos);
+ const a=document.createElement('article');a.className='card';
+ const link=document.createElement('a');link.className='card-link';
+ link.href=example?'club-krueka-ejemplo.html?ejemplo='+encodeURIComponent(item.id):
+   'club-krueka-obra.html?obra='+encodeURIComponent(item.id);
+ link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label',(example?'Probar ejemplo: ':'Abrir obra aprobada: ')+String(item.title||'Creación'));
+ const cover=document.createElement('div');cover.className='cover';cover.style.setProperty('--a',palette[0]);cover.style.setProperty('--b',palette[1]);cover.style.setProperty('--c',palette[2]);
+ const graphic=document.createElement('span');graphic.className='cover-emoji';graphic.textContent=example?item.icon:cat.emoji;
+ const secondary=document.createElement('span');secondary.className='mini-emoji';secondary.textContent=example?item.secondary:'✦';
+ const tag=document.createElement('span');tag.className='cover-label';tag.textContent=example?'💡 MODELO DEL CLUB':'✓ OBRA APROBADA';
+ cover.append(graphic,secondary,tag);
+ const info=document.createElement('div');info.className='card-info';
+ const meta=document.createElement('span');meta.className='card-meta';meta.textContent=cat.name+(example?' · Ejemplo original':' · Alumno del club');
+ const title=document.createElement('h3');title.textContent=String(item.title||'Mi creación').slice(0,80);
+ const desc=document.createElement('p');desc.textContent=example?String(item.short||'').slice(0,130):'Creación publicada y aprobada para explorar.';
+ const cta=document.createElement('span');cta.className='card-action';cta.textContent=cat.id==='juegos'?'▶ Jugar en nueva pestaña':'👁 Explorar en nueva pestaña';
+ info.append(meta,title,desc,cta);link.append(cover,info);a.append(link);
+ return a;
+}
+function emptyMessage(parent,title,description){
+ const box=document.createElement('div');box.className='status';
+ const strong=document.createElement('strong');strong.textContent=title;
+ const p=document.createElement('p');p.textContent=description;box.append(strong,p);parent.append(box);
 }
 function render(){
- cards.replaceChildren();
- const visible=items.filter(i=>selected==='todos'||i.category===selected);
- if(!items.length){setStatus('Todavía no hay obras publicadas. Los trabajos aparecerán aquí después de ser aprobados por el docente.');return;}
- setStatus(visible.length?visible.length+' creaciones aprobadas para explorar.':'No hay creaciones en esta categoría todavía.');
- for(const item of visible){
-  const c=catFor(item.category),card=document.createElement('article');card.className='card';
-  const icon=document.createElement('div');icon.className='card-icon';icon.textContent=c.icon;
-  const h=document.createElement('h3');h.textContent=String(item.title||'Creación del Club').slice(0,80);
-  const p=document.createElement('p');p.textContent=c.name+' · Obra aprobada';
-  const btn=document.createElement('a');btn.className='ck-open-public';btn.href='club-krueka-obra.html?obra='+encodeURIComponent(item.id);btn.target='_blank';btn.rel='noopener noreferrer';
-  btn.textContent=item.category==='juegos'?'▶ Jugar en nueva pestaña':'👁 Abrir creación ↗';
-  card.append(icon,h,p,btn);cards.appendChild(card);
+ const s=approved.filter(matches),m=demo.filter(matches);
+ const showStudent=scope!=='ejemplos',showDemo=scope!=='alumnos';
+ sections.alumnos.hidden=!showStudent;sections.ejemplos.hidden=!showDemo;
+ elems.spotlight.hidden=Boolean(term)||(scope==='alumnos')||filter!=='todos';
+ elems.studentCards.replaceChildren();elems.demoCards.replaceChildren();
+ if(showStudent){
+  for(const item of s)elems.studentCards.append(cardFor(item,false));
+  if(!s.length)emptyMessage(elems.studentCards,loaded?'Todavía no hay obras en esta selección.':'Conectando con las creaciones…',loaded?'Probá otra categoría o explorá los modelos del Club.':'Esperá unos segundos.');
  }
-}
-function buildPreview(files){
- const html=String(files['index.html']||''),css=String(files['style.css']||'');
- const safeCss=css.replace(/<\/style/gi,'<\\/style');
- let doc=html.replace(/<link\b[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/gi,
-   '<style>'+safeCss+'</style>');
- // Only named project files returned by the approved-only RPC can run.
- // Their order in index.html is preserved for game-config.js before game.js.
- doc=doc.replace(/<script\b[^>]*src=["'](?:\.\/)?([a-z0-9_-]+\.js)["'][^>]*><\/script>/gi,
-   (tag,name)=>Object.prototype.hasOwnProperty.call(files,name)
-     ?'<script>'+String(files[name]||'').replace(/<\/script/gi,'<\\/script')+'</script>'
-     :tag);
- let csp='<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;unsafe-inline&#39;; style-src &#39;unsafe-inline&#39;; img-src data: blob:; font-src data:; media-src data: blob:; connect-src &#39;none&#39;; form-action &#39;none&#39;; base-uri &#39;none&#39;">';
- if(/<meta\s+name=["']krueka-python-runtime["']\s+content=["']pyodide["']/i.test(html)){
-  csp=csp.replace('script-src &#39;unsafe-inline&#39;;','script-src &#39;unsafe-inline&#39; &#39;wasm-unsafe-eval&#39; https://cdn.jsdelivr.net;')
-         .replace('connect-src &#39;none&#39;;','connect-src https://cdn.jsdelivr.net; worker-src blob:;');
+ if(showDemo){
+  for(const item of m)elems.demoCards.append(cardFor(item,true));
+  if(!m.length)emptyMessage(elems.demoCards,'Sin modelos con ese filtro','Probá otra categoría o cambiá la búsqueda.');
  }
- if(/<head\b[^>]*>/i.test(doc))return doc.replace(/<head\b[^>]*>/i,match=>match+csp);
- return csp+doc;
+ elems.studentCount.textContent=s.length+' creaciones';
+ elems.demoCount.textContent=m.length+' modelos';
+ elems.total.textContent=(showStudent?s.length:0)+(showDemo?m.length:0)+' resultados';
+ elems.status.textContent=loaded?s.length+' obras aprobadas en esta selección.':'Cargando creaciones aprobadas…';
 }
-
-async function open(item,trigger){
- if(busy)return;busy=true;setStatus('Abriendo la creación aprobada…');
- try{
-  const project=await rpc('club_krueka_public_obra',{p_project:item.id});
-  if(!project?.files)throw Error('La obra no está disponible.');
-  active=item;lastFocus=trigger||document.activeElement;
-  frame.srcdoc=buildPreview(project.files);
-  document.getElementById('viewer-title').textContent=String(item.title||'Creación del Club').slice(0,80);
-  document.getElementById('viewer-category').textContent=catFor(item.category).name+' · Club Krueka';
-  viewer.hidden=false;document.body.style.overflow='hidden';
-  document.getElementById('viewer-close').focus();
-  setStatus('Explorando una obra aprobada.');
-  try{history.replaceState(null,'','?obra='+encodeURIComponent(item.id)+'#creaciones');}catch(_e){}
- }catch(e){setStatus('No se pudo abrir esta creación: '+e.message);}finally{busy=false;}
-}
-function close(){
- frame.removeAttribute('srcdoc');viewer.hidden=true;document.body.style.overflow='';
- active=null;if(lastFocus&&lastFocus.isConnected)lastFocus.focus();
- try{history.replaceState(null,'',location.pathname+'#creaciones');}catch(_e){}
-}
-document.getElementById('viewer-close').onclick=close;
-viewer.addEventListener('click',e=>{if(e.target===viewer)close();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!viewer.hidden)close();});
-document.getElementById('viewer-share').onclick=async()=>{
- if(!active)return;const url=location.origin+location.pathname+'?obra='+encodeURIComponent(active.id);
- try{await navigator.clipboard.writeText(url);document.getElementById('viewer-share').textContent='✓ Enlace copiado';}
- catch(_e){prompt('Copiá el enlace de esta creación:',url);}
-};
 async function load(){
- if(busy)return;
- setStatus('Cargando las creaciones aprobadas…');
+ elems.status.textContent='Consultando los proyectos aprobados del Club…';
  try{
-  const data=await rpc('club_krueka_public_galeria',{});
-  items=Array.isArray(data)?data:[];render();
-  const chosen=new URLSearchParams(location.search).get('obra');
-  if(chosen){const target=items.find(i=>String(i.id)===chosen);if(target)location.replace('club-krueka-obra.html?obra='+encodeURIComponent(target.id));}
- }catch(e){items=[];cards.replaceChildren();setStatus('No pudimos cargar la galería. Comprobá la conexión e intentá de nuevo.');}
+  const res=await fetch(API,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:'{}'});
+  const data=await res.json();
+  if(!res.ok||!Array.isArray(data))throw Error('No se pudo consultar');
+  approved=data.filter(item=>item&&typeof item.id==='string'&&typeof item.title==='string');
+  loaded=true;render();
+  const selected=new URLSearchParams(location.search).get('obra');
+  if(selected&&approved.some(p=>String(p.id)===selected))location.replace('club-krueka-obra.html?obra='+encodeURIComponent(selected));
+ }catch(_err){
+  approved=[];loaded=true;render();
+  elems.status.textContent='No pudimos comprobar las publicaciones. Verificá internet y pulsá Actualizar obras.';
+ }
 }
 document.getElementById('reload').onclick=load;
-filterControls();load();
+document.getElementById('search-form').onsubmit=e=>{e.preventDefault();term=document.getElementById('search').value.trim().toLocaleLowerCase('es');render();};
+document.getElementById('search').addEventListener('input',e=>{term=String(e.target.value||'').trim().toLocaleLowerCase('es');render()});
+initFilters();render();load();
 })();
