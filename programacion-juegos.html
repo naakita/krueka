@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0b1732"><title>Arcade de Programación · Krueka</title><link rel="icon" href="logo.svg"><style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,Arial;background:#09152d;color:#ebf5ff}a{color:#8bdeff}header{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:15px max(18px,calc((100vw - 1150px)/2));background:#0d2042;border-bottom:1px solid #3b557d}header a{font-weight:700;text-decoration:none}header img{width:34px;vertical-align:middle;margin-right:9px}main{max-width:1150px;margin:auto;padding:26px 18px}h1{font-size:clamp(27px,4vw,43px);margin:0 0 8px}p{color:#b6cbe6}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:15px;margin-top:22px}.game{padding:19px;border:1px solid #35527a;border-radius:15px;background:#102548;display:flex;flex-direction:column;gap:8px}.game h2{margin:3px 0;font-size:19px}.game p{margin:0;font-size:13px}.button{background:#56b8ff;color:#05162b;border:0;border-radius:9px;padding:10px 14px;font:inherit;font-weight:800;cursor:pointer;display:inline-block;text-decoration:none}.game .button{margin-top:auto}.player{margin-top:20px}.player[hidden]{display:none}.player-bar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:10px}.player iframe{display:block;width:100%;height:min(68vh,590px);background:white;border:1px solid #6b8fb3;border-radius:13px}.status{margin:20px 0;color:#b7d0ed}.hint{padding:14px;border-left:3px solid #6dd4ff;background:#102548;border-radius:6px;margin:16px 0}footer{text-align:center;border-top:1px solid #244369;padding:17px;color:#afc7dd}@media(max-width:620px){header{padding:14px}main{padding:18px 14px}.player iframe{height:440px}}</style></head>
+<body><header><a href="index.html"><img src="logo.svg" alt="">Krueka · Arcade</a><a href="studio.html">Crear un juego ↗</a></header>
+<main><span>CLUB DE INFORMÁTICA</span><h1>🎮 Arcade de Programación</h1><p>Jugá a los videojuegos creados por estudiantes. Cada juego fue enviado y aprobado antes de aparecer aquí.</p><div class="hint">Para crear tu propio juego, entrá al <a href="studio.html">taller de programación</a> con tu código del Club. Tus proyectos permanecen privados hasta que los revise el docente.</div>
+<div id="status" role="status" class="status">Buscando juegos aprobados…</div><div id="cards" class="cards"></div>
+<section id="player" class="player" hidden><div class="player-bar"><h2 id="player-title">Juego</h2><button class="button" id="close-game" type="button">Cerrar juego</button></div><iframe id="game-frame" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Juego aprobado"></iframe><p>Probá los controles con el teclado o los botones del juego. Al cerrar se detiene la partida.</p></section>
+</main><footer>Krueka · Aprender creando · Juegos escolares aprobados</footer>
+<script>
+(function(){
+'use strict';
+const API='https://janebfpnknapvntfqolf.supabase.co/rest/v1/rpc/club_programacion_galeria';
+const KEY='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
+const status=document.getElementById('status'),cards=document.getElementById('cards'),player=document.getElementById('player'),frame=document.getElementById('game-frame');
+const title=document.getElementById('player-title');let approved=[];
+function renderGame(g){
+ const files=g.files||{};let html=String(files['index.html']||''),css=String(files['style.css']||''),js=String(files['script.js']||'');
+ const style='<style>'+css.replace(/<\x2fstyle/gi,'<\\/style')+'<\/style>';
+ const script='<script>'+js.replace(/<\x2fscript/gi,'<\\/script')+'<\/script>';
+ html=html.replace(/<link\b[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/gi,style);
+ html=html.replace(/<script\b[^>]*src=["'](?:\.\/)?script\.js["'][^>]*><\x2fscript>/gi,script);
+ // Only local, static assets are supported. No network, no forms or navigation.
+ const csp='<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;unsafe-inline&#39;; style-src &#39;unsafe-inline&#39;; img-src data: blob:; font-src data:; media-src data: blob:; connect-src &#39;none&#39;; form-action &#39;none&#39;; base-uri &#39;none&#39;">';
+ if(/<head\b[^>]*>/i.test(html))html=html.replace(/<head\b[^>]*>/i,m=>m+csp);
+ else html=csp+html;
+ return html;
+}
+function openGame(g){
+ player.hidden=false;title.textContent=g.title;frame.srcdoc=renderGame(g);player.scrollIntoView({behavior:'smooth',block:'start'});
+ try{history.replaceState(null,'','?j='+encodeURIComponent(g.id));}catch(_e){}
+}
+document.getElementById('close-game').onclick=()=>{frame.removeAttribute('srcdoc');player.hidden=true;try{history.replaceState(null,'',location.pathname)}catch(_e){}};
+fetch(API,{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY},body:'{}'}).then(async r=>{if(!r.ok)throw Error('Respuesta de Krueka: '+r.status);return r.json()}).then(list=>{
+ approved=Array.isArray(list)?list:[];status.textContent=approved.length?'Elegí un juego para comenzar.':'Todavía no hay videojuegos publicados. ¡Pronto aparecerán los primeros proyectos aprobados!';
+ approved.forEach(g=>{
+  if(!g||!g.id||!g.files)return;
+  const card=document.createElement('article');card.className='game';
+  const emoji=document.createElement('div');emoji.textContent='🕹️';emoji.style.fontSize='38px';
+  const h=document.createElement('h2');h.textContent=String(g.title||'Videojuego').slice(0,80);
+  const p=document.createElement('p');p.textContent='Creación aprobada por el docente';
+  const btn=document.createElement('button');btn.type='button';btn.className='button';btn.textContent='▶ Jugar';btn.onclick=()=>openGame(g);
+  card.append(emoji,h,p,btn);cards.append(card);
+ });
+ const id=new URLSearchParams(location.search).get('j');
+ const chosen=approved.find(g=>String(g.id)===id);if(chosen)openGame(chosen);
+}).catch(()=>{status.textContent='No pudimos cargar los juegos aprobados. Revisá la conexión e intentá de nuevo.'});
+})();
+<\/script></body></html>
