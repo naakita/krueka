@@ -100,3 +100,58 @@
 #krueka-studio #kp-program-python-tab[hidden],
 #krueka-studio .kp-program-tabs button[hidden]{display:none!important}
 #krueka-studio #kp-python-editor:focus{box-shadow:inset 0 0 0 1px #32bd9e}
+
+/* Modo Liveweave: codigo a la izquierda y juego a la derecha SIN ocultarlo. */
+#krueka-studio .ks-tabs {overflow-x:auto;scrollbar-width:thin;flex-wrap:nowrap}
+#krueka-studio .ks-tabs .kp-entry-highlight{
+ flex:0 0 auto;white-space:nowrap;background:#176a92;color:#f0fdff;
+ border:1px solid #4ce1f2;font-weight:850;
+}
+#krueka-studio.ks-live-edit-mode .ks-main {
+ grid-template-columns:minmax(215px,19%) minmax(0,81%);
+}
+#krueka-studio .ks-preview.ks-live-code {
+ display:grid!important;
+ grid-template-columns:minmax(290px,46%) minmax(0,54%)!important;
+ grid-template-rows:minmax(0,1fr);
+ height:100%;
+ min-width:0;
+}
+#krueka-studio .ks-preview.ks-live-code #ks-code {
+ grid-column:1;grid-row:1;display:grid;
+ grid-template-columns:minmax(105px,24%) minmax(0,1fr);
+ min-height:0;min-width:0;height:100%;
+ border-right:2px solid #2a536c;background:#0a1222;
+}
+#krueka-studio .ks-preview.ks-live-code #ks-frame {
+ grid-column:2;grid-row:1;
+ display:block!important;min-width:0;width:100%;height:100%;
+ background:#fff;
+}
+#krueka-studio .ks-preview.ks-live-code .ks-editor {
+ min-width:0;min-height:0;font:13px/1.6 Consolas,ui-monospace,monospace;
+ padding:15px 12px;tab-size:2;white-space:pre;overflow:auto;
+ background:#091627;color:#e2f0ff;
+}
+#krueka-studio .ks-preview.ks-live-code .ks-files {min-width:0;overflow:auto;padding:6px}
+#krueka-studio .ks-preview.ks-live-code .ks-file {
+ font-size:11px;white-space:normal;overflow-wrap:anywhere;line-height:1.4;
+}
+#krueka-studio.ks-live-edit-mode .ks-previewbar {overflow-x:auto;scrollbar-width:thin}
+#krueka-studio.ks-live-edit-mode .ks-previewbar > * {flex-shrink:0}
+#krueka-studio.ks-live-edit-mode #ks-code-btn {
+ background:#124e70;border-color:#5cdaf2;
+}
+@media(max-width:850px){
+ #krueka-studio.ks-live-edit-mode .ks-main{
+  grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,26%) minmax(0,74%);
+ }
+ #krueka-studio .ks-preview.ks-live-code{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:minmax(170px,50%) minmax(170px,50%);
+ }
+ #krueka-studio .ks-preview.ks-live-code #ks-code{
+  grid-column:1;grid-row:1;border-right:0;border-bottom:2px solid #2a536c;
+ }
+ #krueka-studio .ks-preview.ks-live-code #ks-frame{grid-column:1;grid-row:2}
+}
