@@ -28,6 +28,7 @@ function normalize(raw){
   points:Array.isArray(s.points)?s.points.slice(0,100).map(p=>[Math.max(0,Math.min(600,Math.round(Number(p?.[0])||0))),Math.max(0,Math.min(320,Math.round(Number(p?.[1])||0)))]):[]
  })).filter(s=>s.points.length>0):[];
  return {...d,tools:{
+  ...t,
   layout:opts.layouts.includes(t.layout)?t.layout:opts.layouts[0],
   backdrop:hex(t.backdrop,defaultBackdrops[0]),
   ink:hex(t.ink,'#193959'),
@@ -42,6 +43,7 @@ function normalize(raw){
   effect:['Flotar','Deslizar','Zoom suave'].includes(t.effect)?t.effect:'Flotar',
   bubble:['Redondo','Rectangular','Narración'].includes(t.bubble)?t.bubble:'Redondo',
   perScene:(Array.isArray(t.perScene)?t.perScene:[]).slice(0,3).concat([{}, {}, {}]).slice(0,3).map((p,i)=>({
+    ...p,
     character:clip(p?.character|| (i%2?'🐱':'🦊'),8),
     speaker:clip(p?.speaker|| (i%2?'Amigo':'Protagonista'),36),
     stage:clip(p?.stage||'En un lugar especial',105),
