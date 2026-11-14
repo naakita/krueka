@@ -6,6 +6,10 @@ const model=window.KruekaEjemplos?.get(id);
 const status=document.getElementById('status');
 if(!model){status.textContent='Este modelo no existe. Volvé a la galería para elegir otro.';return;}
 const files=window.KruekaEjemplos.make(model);
+const challenges={"neon":"Cambiá los colores de la nave, agregá una estrella especial y mejorá la puntuación.","blog":"Escribí una noticia del Club, agregá una ilustración propia y enlazá una fuente.","comic":"Inventá dos personajes y contá una aventura en tres viñetas con diálogos.","cuento":"Cambiá el escenario e inventá dos finales diferentes para que el lector elija.","drama":"Escribí tres actos, creá un conflicto y prepará la solución con tus personajes.","anime":"Diseñá un personaje original y hacelo aparecer en tres escenas diferentes.","flyer":"Diseñá un afiche para una actividad imaginaria con título, fecha y mensaje.","dibujo":"Combiná al menos tres herramientas para inventar la mascota de tu videojuego.","animacion":"Cambiá el movimiento, la velocidad y el color del robot, y contá qué pasó.","video":"Planificá una historia corta en cuatro escenas, con principio, desarrollo y final."};
+const prompt=document.getElementById('model-challenge');
+if(prompt)prompt.textContent='🎯 Tu desafío: '+(challenges[model.id]||'Creá una versión original y personalizala.');
+
 const esc=s=>String(s||'').replace(/<\/script/gi,'<\\/script');
 let doc=String(files['index.html']||'');
 doc=doc.replace(/<link\b[^>]*href=["']style\.css["'][^>]*>/gi,'<style>'+esc(files['style.css'])+'</style>');
