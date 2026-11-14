@@ -46,11 +46,11 @@ fetch(API,{method:'POST',headers:{'Content-Type':'application/json',apikey:KEY},
   const emoji=document.createElement('div');emoji.textContent='🕹️';emoji.style.fontSize='38px';
   const h=document.createElement('h2');h.textContent=String(g.title||'Videojuego').slice(0,80);
   const p=document.createElement('p');p.textContent='Creación aprobada por el docente';
-  const btn=document.createElement('button');btn.type='button';btn.className='button';btn.textContent='▶ Jugar';btn.onclick=()=>openGame(g);
+  const btn=document.createElement('a');btn.className='button';btn.href='club-krueka-obra.html?obra='+encodeURIComponent(g.id);btn.target='_blank';btn.rel='noopener noreferrer';btn.textContent='▶ Jugar en nueva pestaña';
   card.append(emoji,h,p,btn);cards.append(card);
  });
  const id=new URLSearchParams(location.search).get('j');
- const chosen=approved.find(g=>String(g.id)===id);if(chosen)openGame(chosen);
+ const chosen=approved.find(g=>String(g.id)===id);if(chosen)location.replace('club-krueka-obra.html?obra='+encodeURIComponent(chosen.id));
 }).catch(()=>{status.textContent='No pudimos cargar los juegos aprobados. Revisá la conexión e intentá de nuevo.'});
 })();
 </script></body></html>
