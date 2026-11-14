@@ -153,9 +153,20 @@ async function openViewer(s,item){
   box.scrollIntoView({block:'nearest',behavior:'smooth'});
  }catch(e){info.textContent='No se pudo abrir esta creación: '+e.message;}
 }
+function ensureHome(s){
+ const home=panel?.querySelector('#ks-creative-home');if(!home)return;
+ const heading=home.querySelector('.kc-welcome h2');if(heading)heading.textContent='¿Qué querés crear hoy?';
+ const desc=home.querySelector('.kc-welcome p');if(desc)desc.textContent='Elegí una idea, prepará tu obra y compartila con el Club cuando el profe la apruebe.';
+ if(home.querySelector('.ck-home-actions'))return;
+ const bar=document.createElement('div');bar.className='ck-home-actions';
+ const btn=document.createElement('button');btn.type='button';btn.className='ks-btn primary';btn.textContent='🌟 Explorar creaciones del Club';btn.onclick=()=>s.showTab('club-gallery');
+ const p=document.createElement('p');p.textContent='También podés continuar tus proyectos anteriores desde Mis proyectos.';
+ bar.append(btn,p);home.prepend(bar);
+}
 const originalShow=studio.showTab,originalKit=studio.createKit,originalSwitch=studio.switchProject,originalClose=studio.close;
 studio.showTab=function(name){
  const result=originalShow.apply(this,arguments);mount(this);
+ if(name==='home')ensureHome(this);
  work.hidden=name!=='club-work';gallery.hidden=name!=='club-gallery';
  panel.classList.toggle('ck-club-gallery-open',name==='club-gallery');
  if(name==='club-work'){
