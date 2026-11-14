@@ -25,8 +25,9 @@ function video(s){
 }
 function normalize(raw){
  const b=baseN(raw),t=raw?.tools||{},images=t.images||{};
+ const keys=['cover',...(b.panels||[]).map((_,i)=>String(i))];
  return {...b,tools:{...b.tools,
-  images:Object.fromEntries(['cover','0','1','2'].map(k=>[k,image(images[k])])),
+  images:Object.fromEntries(keys.map(k=>[k,image(images[k])])),
   links:Array.from({length:3},(_,i)=>({label:String(t.links?.[i]?.label||'').slice(0,65),url:link(t.links?.[i]?.url)})),
   video:video(t.video),
   perScene:b.tools.perScene.map((p,i)=>{const x=t.perScene?.[i]||{};return {...p,
@@ -50,7 +51,7 @@ function enhance(raw,files){
  if(t.images.cover)html=html.replace('<div class="ck-cover">','<div class="ck-cover"><img class="cm-cover-img" alt="Imagen de portada" src="'+t.images.cover+'">');
  let index=0;
  html=html.replace(/(<article class="ck-panel\b[\s\S]*?)(<\/article>)/g,(match,start,end)=>{
-  if(index>=3)return match;
+  if(index>=d.panels.length)return match;
   const i=index++,scene=t.perScene[i],src=t.images[String(i)];
   let element='';
   if(scene.visual==='Imagen'&&src)element='<img class="cm-panel-img" alt="Ilustración de la escena '+(i+1)+'" src="'+src+'">';
@@ -66,12 +67,12 @@ function enhance(raw,files){
  return {...output,'index.html':html,'style.css':output['style.css']+'\n'+cssExtra,'obra.json':JSON.stringify(d)};
 }
 function field(label,value,fn,type='text'){
- const l=document.createElement('label');l.className='ct-field',span=document.createElement('span');span.textContent=label;l.append(span);
+ const l=document.createElement('label');l.className='ct-field';const span=document.createElement('span');span.textContent=label;l.append(span);
  const input=document.createElement('input');input.type=type;input.maxLength=450;input.value=value||'';
  input.addEventListener('change',()=>fn(input.value));l.append(input);return l;
 }
 function selector(label,arr,value,fn){
- const l=document.createElement('label');l.className='ct-field',span=document.createElement('span');span.textContent=label;l.append(span);
+ const l=document.createElement('label');l.className='ct-field';const span=document.createElement('span');span.textContent=label;l.append(span);
  const e=document.createElement('select');arr.forEach(v=>{const option=document.createElement('option');option.value=v;option.textContent=v;e.append(option)});
  e.value=value;e.onchange=()=>fn(e.value);l.append(e);return l;
 }
@@ -94,11 +95,11 @@ function render(work,s,raw,onChange){
  baseR(work,s,raw,onChange);
  const d=normalize(raw),t=d.tools,host=work.querySelector('#ck-specific-tools');if(!host)return;
  const current=()=>{try{return normalize(JSON.parse(s.files['obra.json']))}catch(e){return d}};
- const change=fn=>{const v=current();fn(v);onChange(v)};
+ const change=fn=>{const v=current();fn(v);return onChange(v)};
  const panel=document.createElement('section');panel.className='cm-assets';
  const h=document.createElement('strong');h.textContent='🖼️ Imágenes para tu obra';panel.append(h);
  const hint=document.createElement('p');hint.textContent='Imágenes propias en JPG, PNG o WebP. Se comprimen y guardan en tu proyecto. Evitá fotografías y datos personales.';panel.append(hint);
- function uploader(name,key){
+ function uploader(name,key,target=panel){
   const line=document.createElement('div');line.className='cm-upload';
   const l=document.createElement('span');l.textContent=name;
   const input=document.createElement('input');input.type='file';input.accept='image/png,image/jpeg,image/webp';input.setAttribute('aria-label',name);
@@ -106,15 +107,20 @@ function render(work,s,raw,onChange){
   input.onchange=async()=>{
    if(!input.files?.[0])return;input.disabled=true;message.textContent='Comprimiendo…';
    try{const data=await compact(input.files[0]);if(!s.cloudReady||s.busy)throw Error('El proyecto no está disponible.');
-    change(d=>{d.tools.images[key]=data;if(key!=='cover'&&kinds.includes(d.kind))d.tools.perScene[Number(key)].visual='Imagen'});
+    if(!change(d=>{d.tools.images[key]=data;if(key!=='cover'&&kinds.includes(d.kind))d.tools.perScene[Number(key)].visual='Imagen'}))throw Error('La imagen no cabe en este proyecto.');
     message.textContent='✓ Imagen incorporada';
    }catch(e){message.textContent='⚠ '+e.message}finally{input.disabled=false;input.value=''}
   };
-  const remove=document.createElement('button');remove.type='button';remove.textContent='Quitar';remove.onclick=()=>{change(d=>d.tools.images[key]='');message.textContent='Imagen quitada'};
-  line.append(l,input,remove,message);panel.append(line);
+  const remove=document.createElement('button');remove.type='button';remove.textContent='Quitar';remove.onclick=()=>{if(change(d=>d.tools.images[key]=''))message.textContent='Imagen quitada'};
+  line.append(l,input,remove,message);target.append(line);
  }
  uploader('Imagen de portada','cover');
- if(d.kind==='blogs'||kinds.includes(d.kind))for(let i=0;i<3;i++)uploader('Imagen parte '+(i+1),String(i));
+ if(d.kind==='blogs'||kinds.includes(d.kind)){
+  for(let i=0;i<d.panels.length;i++){
+   const section=work.querySelectorAll('.ck-scene')[i];
+   uploader('Imagen parte '+(i+1),String(i),section||panel);
+  }
+ }
  host.append(panel);
  if(d.kind==='blogs'){
   const box=document.createElement('section');box.className='cm-assets';
@@ -136,10 +142,10 @@ function render(work,s,raw,onChange){
   host.append(box);
  }
  if(kinds.includes(d.kind)){
-  const box=document.createElement('section');box.className='cm-assets';
-  const title=document.createElement('strong');title.textContent='🧊 Personajes, dibujos y figuras 3D por escena';box.append(title);
+  const box=document.createElement('details');box.className='cm-assets';
+  const title=document.createElement('summary');title.textContent='🧊 Personajes, dibujos y figuras 3D por escena';box.append(title);
   const note=document.createElement('p');note.textContent='Elegí personaje, imagen o figura 3D básica; modificá forma, giro y color.';box.append(note);
-  for(let i=0;i<3;i++){
+  for(let i=0;i<d.panels.length;i++){
    const scene=t.perScene[i],group=document.createElement('fieldset');group.className='cm-scene';
    const legend=document.createElement('legend');legend.textContent='Escena '+(i+1);group.append(legend);
    const update=(key,value)=>change(d=>d.tools.perScene[i][key]=value);

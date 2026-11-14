@@ -30,13 +30,19 @@ function defaultData(id){
  return {kind:id,title:cat.name==='Dibujos'?'Mi ilustración': 'Mi '+cat.name.toLowerCase(),subtitle:'Una creación original del Club Krueka',art:id==='animes'?'⚡':id==='dibujos'?'🦊':id==='dramas'?'🎭':id==='cuentos'?'🏰':id==='flyers'?'🌟':id==='historietas'?'🐱':'💡',color:'#237fc3',panels:(texts[id]||[]).map((t,i)=>({title:t,text:['Presento mi idea y lo que quiero contar.','Aquí sucede algo interesante. ¿Qué pasará después?','Este es el resultado de mi creación.'][i]}))};
 }
 function color(value){return /^#[0-9a-f]{6}$/i.test(value||'')?value:'#237fc3';}
+function isLongWork(kind){return kind==='cuentos'||kind==='dramas';}
 function normalized(raw){
  const d=raw&&typeof raw==='object'?raw:{};
  const category=categories.find(x=>x.id===d.kind&&!['juegos','animaciones','videos'].includes(x.id))?.id||'cuentos';
- const base=defaultData(category);
+ const base=defaultData(category),longWork=isLongWork(category);
+ const panels=longWork&&Array.isArray(d.panels)&&d.panels.length?d.panels:base.panels;
  const baseData={kind:category,title:String(d.title||base.title).slice(0,80),subtitle:String(d.subtitle||base.subtitle).slice(0,140),
   color:color(d.color),art:String(d.art||base.art).slice(0,8),
-  panels:[0,1,2].map(i=>({title:String(d.panels?.[i]?.title||base.panels[i].title).slice(0,95),text:String(d.panels?.[i]?.text||base.panels[i].text).slice(0,1200)})),
+  panels:panels.map((p,i)=>{
+   const input=longWork?p:d.panels?.[i];
+   const text=String(input?.text??p.text??'');
+   return {title:String(input?.title??p.title??'').slice(0,95),text:longWork?text:text.slice(0,1200)};
+  }),
   tools:d.tools};
  return window.ClubTalleres?ClubTalleres.normalize(baseData):baseData;
 }
@@ -58,7 +64,7 @@ function build(d){
 }
 const originalCreate=StudioKits.create.bind(StudioKits);
 StudioKits.create=function(id){return texts[id]?build(defaultData(id)):originalCreate(id);};
-for(const c of categories)if(texts[c.id])StudioKits.catalog.push({id:c.id,icon:c.icon,title:c.name,tag:'CREACIÓN ORIGINAL',description:c.desc,challenge:'Escribí tres partes, cambiá el arte y probá el resultado.'});
+for(const c of categories)if(texts[c.id])StudioKits.catalog.push({id:c.id,icon:c.icon,title:c.name,tag:'CREACIÓN ORIGINAL',description:c.desc,challenge:isLongWork(c.id)?'Escribí tu obra, agregá partes y probá la lectura.':'Escribí tres partes, cambiá el arte y probá el resultado.'});
 const paths=StudioCreative.paths;
 paths.length=0;
 for(const c of categories)paths.push({id:c.id,icon:c.icon,title:c.name,tag:'ELEGÍ TU PRÓXIMA CREACIÓN',color:['blue','mint','violet','gold'][paths.length%4],text:c.desc,first:c.kit||c.id,kits:c.kits||[c.kit||c.id]});
@@ -81,19 +87,26 @@ function mount(s){
  const home=p.querySelector('#ks-creative-home');
  if(home){const bar=document.createElement('div');bar.className='ck-home-actions';bar.innerHTML='<button class="ks-btn primary" id="ck-open-gallery">🌟 Ver creaciones de mis compañeros</button><p>Elegí lo que te gusta, creá, guardá y enviá al profe. Solo se comparten obras aprobadas.</p>';home.prepend(bar);bar.querySelector('button').onclick=()=>s.showTab('club-gallery');}
  work=document.createElement('section');work.className='ks-tool ck-editor';work.id='ks-club-work';work.hidden=true;
- work.innerHTML='<div class="ck-editor-head"><h2>✏ Editá tu creación</h2><p>Cambiá el título, los textos y el color. Mirá el resultado a la derecha.</p></div><form id="ck-form"><label>Título<input name="title" maxlength="80" required></label><label>Descripción<input name="subtitle" maxlength="140"></label><div class="ck-row"><label>Color de tu creación<input name="color" type="color"></label><label>Personaje o símbolo<input name="art" maxlength="8"></label></div><div id="ck-specific-tools"></div><div id="ck-scenes"></div><div class="ck-editor-actions"><button type="button" class="ks-btn primary" id="ck-test">▶ Ver mi obra</button><button type="button" class="ks-btn" id="ck-save">Guardar</button><button type="button" class="ks-btn" id="ck-submit">Enviar al profe</button></div><p id="ck-status" role="status"></p></form>';
+ work.innerHTML='<div class="ck-editor-head"><h2>✏ Editá tu creación</h2><p>Cambiá el título, los textos y el color. Mirá el resultado a la derecha.</p></div><form id="ck-form"><label>Título<input name="title" maxlength="80" required></label><label>Descripción<input name="subtitle" maxlength="140"></label><div class="ck-row"><label>Color de tu creación<input name="color" type="color"></label><label>Personaje o símbolo<input name="art" maxlength="8"></label></div><div id="ck-specific-tools"></div><div id="ck-scenes"></div><button type="button" class="ks-btn" id="ck-add-part" hidden></button><div class="ck-editor-actions"><button type="button" class="ks-btn primary" id="ck-test">▶ Ver mi obra</button><button type="button" class="ks-btn" id="ck-save">Guardar</button><button type="button" class="ks-btn" id="ck-submit">Enviar al profe</button></div><p id="ck-status" role="status"></p></form>';
  p.querySelector('.ks-work').appendChild(work);
  work.querySelector('#ck-test').onclick=()=>s.playCurrent();
- work.querySelector('#ck-save').onclick=()=>s.save();
- work.querySelector('#ck-submit').onclick=()=>s.submit();
- work.querySelector('#ck-form').addEventListener('input',()=>{
-  if(!s.cloudReady||s.busy||!isCreative(s))return;
+ const collect=()=>{
   const form=work.querySelector('#ck-form'),old=read(s);
-  const d={...old,title:form.elements.title.value,subtitle:form.elements.subtitle.value,
+  return {...old,title:form.elements.title.value,subtitle:form.elements.subtitle.value,
    color:form.elements.color.value,art:form.elements.art.value,
-   panels:[0,1,2].map(i=>({title:form.elements['panel-title-'+i].value,text:form.elements['panel-text-'+i].value}))};
-  updateCreative(s,d);
- });
+   panels:old.panels.map((_,i)=>({title:form.elements['panel-title-'+i].value,text:form.elements['panel-text-'+i].value}))};
+ };
+ work.querySelector('#ck-save').onclick=()=>{if(updateCreative(s,collect()))s.save();};
+ work.querySelector('#ck-submit').onclick=()=>{if(updateCreative(s,collect()))s.submit();};
+ work.querySelector('#ck-add-part').onclick=()=>{
+  const d=collect();
+  d.panels.push({title:'',text:''});
+  if(updateCreative(s,d)){
+   renderEditor(s);
+   work.querySelector('#ck-scenes fieldset:last-child input').focus();
+  }
+ };
+ work.querySelector('#ck-form').addEventListener('input',()=>{if(isCreative(s))updateCreative(s,collect());});
  gallery=document.createElement('section');gallery.id='ks-club-gallery';gallery.className='ks-tool ck-gallery';gallery.hidden=true;
  gallery.innerHTML='<div class="ck-gallery-heading"><div><h2>🌟 Galería del Club Krueka</h2><p>Descubrí proyectos aprobados. Jugá, leé y explorá obras originales.</p></div><button class="ks-btn" id="ck-reload">↻ Actualizar</button></div><div class="ck-filters" id="ck-filters"></div><div id="ck-gallery-status" class="ck-gallery-status" role="status">Abrí la galería para ver las publicaciones.</div><div id="ck-gallery-cards" class="ck-gallery-cards"></div><div id="ck-viewer" class="ck-viewer" hidden><div class="ck-viewer-head"><strong id="ck-viewer-title"></strong><button class="ks-btn" id="ck-close-viewer">Cerrar obra</button></div><iframe id="ck-viewer-frame" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Obra de un estudiante del Club"></iframe></div><p class="ck-safety">Las publicaciones se revisan antes de aparecer. No compartas información personal ni imágenes de otras personas.</p>';
  p.querySelector('.ks-work').appendChild(gallery);
@@ -106,13 +119,14 @@ function mount(s){
 }
 function read(s){try{return normalized(JSON.parse(s.files['obra.json']||'{}'));}catch(_e){return normalized(defaultData('cuentos'));}}
 function updateCreative(s,d){
- if(s.busy||!s.cloudReady||!isCreative(s))return;
+ if(s.busy||!s.cloudReady||!isCreative(s))return false;
  try{
   const files={...s.files,...build(d)};
   s.validFiles(files);s.files=files;s.title=String(d.title||'Mi creación').slice(0,80);
   s.changed();work.querySelector('#ck-status').textContent='Cambios pendientes de guardar…';
   clearTimeout(pending);pending=setTimeout(()=>{if(work&&!work.hidden){s.preview='index.html';s.renderPreviewOptions();s.renderPreview();}},600);
- }catch(e){work.querySelector('#ck-status').textContent='No se pudieron guardar estos cambios: '+e.message;}
+  return true;
+ }catch(e){work.querySelector('#ck-status').textContent='No se guardó esta edición. '+e.message;return false;}
 }
 function renderEditor(s){
  if(!isCreative(s))return;
@@ -120,10 +134,12 @@ function renderEditor(s){
  if(lastId!==s.projectId){s.checkpoint();lastId=s.projectId;}
  form.elements.title.value=d.title;form.elements.subtitle.value=d.subtitle;
  form.elements.color.value=d.color;form.elements.art.value=d.art;
+ const longWork=isLongWork(d.kind),part=d.kind==='dramas'?'Acto':'Capítulo';
+ const add=work.querySelector('#ck-add-part');add.hidden=!longWork;add.textContent='＋ Agregar '+part.toLowerCase();
  const wrap=work.querySelector('#ck-scenes');wrap.replaceChildren(...d.panels.map((p,i)=>{
-  const section=document.createElement('fieldset');section.className='ck-scene';const lg=document.createElement('legend');lg.textContent='Parte '+(i+1);
+  const section=document.createElement('fieldset');section.className='ck-scene';const lg=document.createElement('legend');lg.textContent=(longWork?part:'Parte')+' '+(i+1);
   const l1=document.createElement('label');l1.textContent='Título';const input=document.createElement('input');input.name='panel-title-'+i;input.maxLength=95;input.value=p.title;l1.appendChild(input);
-  const l2=document.createElement('label');l2.textContent='Texto o diálogo';const area=document.createElement('textarea');area.name='panel-text-'+i;area.maxLength=1200;area.rows=3;area.value=p.text;l2.appendChild(area);
+  const l2=document.createElement('label');l2.textContent='Texto o diálogo';const area=document.createElement('textarea');area.name='panel-text-'+i;if(!longWork)area.maxLength=1200;area.rows=longWork?7:3;area.value=p.text;l2.appendChild(area);
   section.append(lg,l1,l2);return section;
  }));
  if(window.ClubTalleres)ClubTalleres.render(work,s,d,updated=>updateCreative(s,updated));
