@@ -1,0 +1,28 @@
+/* Herramientas específicas de los talleres creativos del Club Krueka. */
+#krueka-studio #ck-specific-tools{display:grid;gap:11px;min-width:0}
+#krueka-studio .ct-tools-title{border-radius:12px;border:1px solid #3a6984;background:linear-gradient(115deg,#13364a,#1c2946);padding:13px 14px}
+#krueka-studio .ct-tools-title strong{font-size:15px;color:#b6f4f3}
+#krueka-studio .ct-tools-title p{font-size:12px;color:#bad3ea;margin:5px 0 0}
+#krueka-studio .ct-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;border:1px solid #355574;border-radius:13px;background:#13243e;padding:11px}
+#krueka-studio .ct-field{display:grid;gap:5px;min-width:0;font-size:12px;color:#d7ebf8}
+#krueka-studio .ct-field span{font-size:11px;color:#bfd7ed;font-weight:700}
+#krueka-studio .ct-field :is(input,select){width:100%;max-width:100%;min-width:0;min-height:37px;padding:8px;border-radius:9px;border:1px solid #4a7290;background:#0b1930;color:white;font:12px/1.4 system-ui,sans-serif}
+#krueka-studio .ct-field input[type="color"]{height:37px;padding:3px}
+#krueka-studio .ct-guide{font-size:12px;color:#a7cce5;padding:9px 12px;border-left:3px solid #5adee1;background:#152e43;border-radius:5px}
+#krueka-studio .ct-format{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+#krueka-studio .ct-format button,#krueka-studio .ct-paintbar button{color:#eaf9ff;background:#1b3753;border:1px solid #51728f;border-radius:8px;padding:7px 10px;min-height:33px;font-size:11px;font-weight:700;cursor:pointer}
+#krueka-studio .ct-format button:hover,#krueka-studio .ct-paintbar button:hover{background:#276688}
+#krueka-studio .ct-scene-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-top:12px;border-top:1px solid #35506f}
+#krueka-studio .ct-drawing-box{min-width:0;display:grid;gap:9px;padding:12px;border-radius:13px;border:1px solid #416c7c;background:#15253f}
+#krueka-studio .ct-drawing-box>strong{font-size:14px;color:#9feaf0}
+#krueka-studio .ct-paintbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+#krueka-studio .ct-paintbar button[aria-pressed="true"]{background:#147d91;border-color:#7df2f8;color:#fff}
+#krueka-studio .ct-paintbar input[type="color"]{width:35px;height:34px;border:0;padding:0;cursor:pointer;background:transparent}
+#krueka-studio .ct-paintbar input[type="range"]{width:85px}
+#krueka-studio .ct-canvas{display:block;width:100%;height:auto;max-height:315px;background:#edf4fd;border:2px solid #8cc9e2;border-radius:10px;cursor:crosshair;touch-action:none}
+#krueka-studio .ct-drawing-box small{font-size:11px;color:#a7cee1}
+#krueka-studio .ct-scene-tools label{margin:0}
+@media(max-width:520px){
+ #krueka-studio .ct-controls,#krueka-studio .ct-scene-tools{grid-template-columns:1fr}
+ #krueka-studio .ct-paintbar input[type="range"]{width:60px}
+}
