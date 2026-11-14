@@ -1,0 +1,47 @@
+<!doctype html><html lang="es-PY"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><title>Modelo interactivo · Club Krueka</title>
+<link rel="icon" href="logo.svg">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0e1426;color:#f2f6ff;font:14px/1.4 system-ui,-apple-system,Segoe UI,Arial,sans-serif}
+a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer;border:1px solid #4c647f;background:#1b304e;border-radius:9px;color:white;padding:10px 12px;font-weight:800}
+button:focus-visible,a:focus-visible{outline:3px solid #f5dc82;outline-offset:3px}
+header{height:68px;background:#12213a;border-bottom:1px solid #355170;display:flex;gap:13px;align-items:center;justify-content:space-between;padding:9px 16px}
+header strong{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:80px}
+header a.back{font-weight:900;color:#b3eaf8}
+header .actions{display:flex;align-items:center;gap:7px;white-space:nowrap}
+header .start{background:#a4f7e9;color:#10354b;border-radius:9px;padding:10px 14px;font-weight:900}
+#model-category{display:block;color:#96eaf4;font-size:10px;letter-spacing:.1em;font-weight:900}
+main{height:calc(100dvh - 68px);display:grid;grid-template-rows:minmax(0,1fr) auto}
+#preview-stage{min-height:0;background:#fff}
+#preview-stage iframe{width:100%;height:100%;display:block;border:0;background:#fff}
+#info{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:10px 17px;background:#15233e;border-top:1px solid #385071;font-size:12px;color:#c6d8ee}
+#code-area{display:none;height:40vh;min-height:220px;background:#0a1221;border-top:2px solid #3a8ab1}
+body.code-open main{height:calc(100dvh - 68px - 40vh - 2px)}
+body.code-open #code-area{display:grid;grid-template-rows:auto minmax(0,1fr)}
+#code-tabs{display:flex;gap:5px;padding:8px;background:#152440}
+#code-tabs button[aria-pressed=true]{background:#286c91;border-color:#89def3}
+#source{margin:0;overflow:auto;padding:15px;background:#070e1b;color:#d9f3f1;font:12px/1.5 Consolas,monospace;white-space:pre;tab-size:2}
+#status{padding:30px;color:#a3cee4;text-align:center}
+@media(max-width:800px){header{height:auto;min-height:68px;flex-wrap:wrap}header strong{order:3;flex:1 0 100%;font-size:12px}header .actions{margin-left:auto}header button,header .start{font-size:11px;padding:7px}main{height:calc(100dvh - 91px)}body.code-open main{height:calc(100dvh - 91px - 40vh - 2px)}}
+</style>
+</head><body>
+<header>
+<a class="back" href="club-krueka-galeria.html">← Galería</a>
+<div><span id="model-category">MODELO ORIGINAL · CLUB KRUEKA</span><strong id="model-title">Ejemplo interactivo</strong></div>
+<div class="actions">
+<button type="button" id="show-code">⌘ Ver código</button>
+<button type="button" id="fullscreen">⛶ Pantalla completa</button>
+<a id="start-model" class="start" href="club-krueka.html">✦ Crear mi versión</a>
+</div></header>
+<main><div id="preview-stage"><div id="status">Preparando el modelo del Club…</div><iframe id="preview" hidden sandbox="allow-scripts" referrerpolicy="no-referrer" title="Modelo interactivo del Club Krueka"></iframe></div>
+<div id="info"><span>💡 Ejemplo diseñado por Club Krueka; no es una publicación de estudiantes.</span><span>Explorá, aprendé y creá tu versión.</span></div></main>
+<aside id="code-area" aria-label="Código de este modelo"><div id="code-tabs">
+<button type="button" data-file="index.html" aria-pressed="true">HTML</button>
+<button type="button" data-file="style.css" aria-pressed="false">CSS</button>
+<button type="button" data-file="script.js" aria-pressed="false">JavaScript</button>
+<button type="button" id="copy">Copiar código</button></div>
+<pre id="source"></pre></aside>
+<script src="js/club-krueka-ejemplos.js?v=20261114arcade1" defer></script>
+<script src="js/club-krueka-ejemplo-page.js?v=20261114arcade1" defer></script>
+</body></html>
