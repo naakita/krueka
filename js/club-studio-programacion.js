@@ -22,43 +22,146 @@ var script=[
 var sample={'index.html':html,'style.css':css,'script.js':script,'LEEME.md':'# Mi juego web\nCambiá el título en HTML, los colores en CSS y velocidad:22 en JavaScript. Probá, guardá y enviá al profe. Nunca publiques datos personales.'};
 StudioKits.create=function(id){return id==='arcade-web'?Object.assign({},sample):originalCreate(id)};
 if(window.StudioCreative&&Array.isArray(StudioCreative.paths))StudioCreative.paths.unshift({id:'programacion',icon:'⌘',title:'Programación web',tag:'HTML · CSS · JS',color:'mint',text:'Creá videojuegos escribiendo código y probalos en vivo.',first:'arcade-web',kits:['arcade-web','web']});
-var paths=['index.html','style.css','script.js'],panel=null,view=null,timer=null;
-function isWeb(s){return paths.every(n=>typeof s.files[n]==='string')&&!s.files['game-config.js']}
+var paths=['index.html','style.css','script.js'],panel=null,shell=null,editor=null,preview=null,previewParent=null,previewSibling=null,timer=null,activeFile='index.html',active=false;
+function isWeb(s){return paths.every(n=>typeof s.files[n]==='string')&&!s.files['game-config.js'];}
+function state(text){const el=shell?.querySelector('#kp-program-state');if(el)el.textContent=text;}
 function mount(s){
- var p=document.getElementById('krueka-studio');if(!p||p===panel&&view&&view.isConnected)return;
- panel=p;var tabs=p.querySelector('.ks-tabs'),b=document.createElement('button');b.className='ks-btn';b.dataset.tab='programacion';b.textContent='⌘ Programación';b.onclick=()=>s.showTab('programacion');tabs.appendChild(b);
- view=document.createElement('section');view.id='ks-programacion';view.className='ks-tool kp-coding';view.hidden=true;
- var fields=paths.map(n=>'<label class="kp-code-pane"><span>'+n+'</span><textarea spellcheck="false" data-code="'+n+'" aria-label="Editar '+n+'"></textarea></label>').join('');
- view.innerHTML='<div class="kp-coding-top"><strong>⌘ Programación de videojuegos</strong><div class="kp-coding-actions"><button id="kp-code-play" class="ks-btn primary">▶ Probar</button><button id="kp-code-save" class="ks-btn">Guardar</button><a href="programacion-juegos.html" target="_blank" rel="noopener noreferrer" class="ks-btn kp-gallery-link">Galería ↗</a></div></div><div id="kp-not-web" class="kp-not-web" hidden><h3>Creá un juego web nuevo</h3><p>Este proyecto utiliza otro motor. No vamos a modificarlo.</p><button class="ks-btn primary" id="kp-new-web">＋ Crear juego web</button></div><div class="kp-code-grid" id="kp-code-grid">'+fields+'</div><div class="kp-code-foot"><span id="kp-code-state">Guardá tus cambios.</span><small>Se publica únicamente después de que el profe lo apruebe.</small></div>';
- p.querySelector('.ks-work').appendChild(view);
- view.querySelector('#kp-new-web').onclick=()=>s.createKit('arcade-web');
- view.querySelector('#kp-code-play').onclick=()=>{s.preview='index.html';if(p.querySelector('#ks-code').classList.contains('on'))s.toggleCode();s.playCurrent()};
- view.querySelector('#kp-code-save').onclick=()=>s.save();
- view.querySelectorAll('[data-code]').forEach(e=>{
-  e.addEventListener('focus',()=>{if(s.cloudReady&&!s.busy)s.checkpoint()});
-  e.addEventListener('keydown',ev=>{if(ev.key==='Tab'){ev.preventDefault();e.setRangeText('  ',e.selectionStart,e.selectionEnd,'end');e.dispatchEvent(new Event('input',{bubbles:true}))}});
-  e.addEventListener('input',()=>{
-   var n=e.dataset.code;if(s.busy||!s.cloudReady){e.value=s.files[n]||'';return}
-   try{s.validFiles(Object.assign({},s.files,{[n]:e.value}))}catch(err){e.value=s.files[n]||'';view.querySelector('#kp-code-state').textContent=err.message;return}
-   s.files[n]=e.value;s.changed();view.querySelector('#kp-code-state').textContent='Cambios pendientes…';
-   clearTimeout(timer);timer=setTimeout(()=>{if(!view.hidden){s.preview='index.html';s.renderPreviewOptions();s.renderPreview()}},650);
-  })
+ const p=document.getElementById('krueka-studio');if(!p)return;
+ if(panel===p&&shell?.isConnected)return;
+ panel=p;active=false;activeFile='index.html';
+ preview=p.querySelector('.ks-preview');previewParent=preview?.parentNode||null;previewSibling=preview?.nextSibling||null;
+ const tab=document.createElement('button');tab.type='button';tab.className='ks-btn';tab.dataset.tab='programacion';tab.textContent='⌘ Programación';tab.onclick=()=>s.showTab('programacion');p.querySelector('.ks-tabs').appendChild(tab);
+ shell=document.createElement('section');shell.id='kp-program-shell';shell.className='kp-program-shell';shell.hidden=true;shell.setAttribute('aria-label','Espacio de programación web');
+ shell.innerHTML=
+ '<header class="kp-program-header">'+
+  '<div class="kp-program-brand"><span class="kp-program-mark">⌘</span><div><b>Krueka Code</b><small id="kp-program-title">Mi videojuego</small></div></div>'+
+  '<nav class="kp-program-tabs" aria-label="Elegí qué editar">'+
+   '<button type="button" data-kp-file="index.html">HTML</button>'+
+   '<button type="button" data-kp-file="style.css">CSS</button>'+
+   '<button type="button" data-kp-file="script.js">JavaScript</button>'+
+   '<button type="button" data-kp-file="preview">◉ Vista previa</button>'+
+  '</nav>'+
+  '<div class="kp-program-actions">'+
+   '<button type="button" id="kp-program-save" class="kp-program-btn">Guardar</button>'+
+   '<button type="button" id="kp-program-submit" class="kp-program-btn kp-program-primary">Enviar al profe</button>'+
+   '<details class="kp-program-menu"><summary>Proyecto ▾</summary><div class="kp-program-dropdown">'+
+    '<button type="button" id="kp-program-new">＋ Nuevo juego</button>'+
+    '<button type="button" id="kp-program-list">Mis proyectos</button>'+
+    '<button type="button" id="kp-program-rename">Cambiar nombre</button>'+
+    '<button type="button" id="kp-program-export">Descargar</button>'+
+    '<a href="programacion-juegos.html" target="_blank" rel="noopener noreferrer">Galería de juegos ↗</a>'+
+   '</div></details>'+
+   '<button type="button" id="kp-program-back" class="kp-program-back">Volver</button>'+
+  '</div>'+
+ '</header>'+
+ '<main class="kp-program-body">'+
+  '<section class="kp-program-code" aria-label="Editor de código">'+
+   '<div class="kp-program-pane-head"><strong id="kp-program-filename">index.html</strong><span>Escribí tu código</span></div>'+
+   '<div id="kp-program-create" class="kp-program-create" hidden><h2>Elegí un juego web</h2><p>Este proyecto utiliza otro tipo de editor. No vamos a modificarlo.</p><button type="button" id="kp-program-start">Crear juego con HTML, CSS y JavaScript</button></div>'+
+   '<textarea id="kp-program-editor" spellcheck="false" aria-label="Editor de código del archivo elegido"></textarea>'+
+  '</section>'+
+  '<section class="kp-program-preview" aria-label="Vista previa del videojuego">'+
+   '<div class="kp-program-pane-head"><strong>Vista previa</strong><button type="button" id="kp-program-run">▶ Ejecutar</button></div>'+
+   '<div id="kp-program-preview-slot"></div>'+
+  '</section>'+
+ '</main>'+
+ '<footer class="kp-program-footer"><span id="kp-program-state" role="status">Tu código se guarda en Krueka.</span><span>HTML: estructura · CSS: diseño · JavaScript: comportamiento</span></footer>';
+ p.appendChild(shell);
+ editor=shell.querySelector('#kp-program-editor');
+ shell.querySelectorAll('[data-kp-file]').forEach(b=>b.onclick=()=>choose(s,b.dataset.kpFile));
+ editor.addEventListener('focus',()=>{if(s.cloudReady&&!s.busy)s.checkpoint();});
+ editor.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();editor.setRangeText('  ',editor.selectionStart,editor.selectionEnd,'end');editor.dispatchEvent(new Event('input',{bubbles:true}));}});
+ editor.addEventListener('input',()=>{
+   if(!s.cloudReady||s.busy||!isWeb(s)||!paths.includes(activeFile)){editor.value=s.files[activeFile]||'';return;}
+   try{s.validFiles({...s.files,[activeFile]:editor.value});}
+   catch(err){editor.value=s.files[activeFile]||'';state('Límite del proyecto: '+err.message);return;}
+   s.files[activeFile]=editor.value;s.changed();state('Cambios pendientes de guardar…');
+   clearTimeout(timer);timer=setTimeout(()=>{if(active&&isWeb(s)){s.preview='index.html';s.renderPreviewOptions();s.renderPreview();}},700);
  });
+ shell.querySelector('#kp-program-save').onclick=async()=>{if(s.busy||!s.cloudReady)return;state('Guardando…');const ok=await s.save();state(ok?'✓ Proyecto guardado en Krueka':'No se pudo guardar. Revisá la conexión e intentá de nuevo.');};
+ shell.querySelector('#kp-program-submit').onclick=async()=>{if(s.busy||!s.cloudReady)return;state('Enviando a revisión…');await s.submit();};
+ shell.querySelector('#kp-program-run').onclick=()=>{if(!isWeb(s)){state('Primero elegí un proyecto web.');return;}s.preview='index.html';s.renderPreviewOptions();s.renderPreview();const iframe=shell.querySelector('#ks-frame');if(iframe)iframe.focus();state('Vista previa actualizada.');};
+ shell.querySelector('#kp-program-back').onclick=()=>s.showTab('home');
+ shell.querySelector('#kp-program-new').onclick=()=>{shell.querySelector('.kp-program-menu').open=false;s.createKit('arcade-web');};
+ shell.querySelector('#kp-program-start').onclick=()=>s.createKit('arcade-web');
+ shell.querySelector('#kp-program-list').onclick=()=>{shell.querySelector('.kp-program-menu').open=false;s.showProjects();};
+ shell.querySelector('#kp-program-export').onclick=()=>{shell.querySelector('.kp-program-menu').open=false;s.download();};
+ shell.querySelector('#kp-program-rename').onclick=()=>{
+   shell.querySelector('.kp-program-menu').open=false;
+   const value=prompt('Nombre de tu proyecto',s.title||'Mi videojuego');
+   if(value===null)return;
+   const title=value.trim().slice(0,80);if(!title){state('Escribí un nombre para tu proyecto.');return;}
+   s.title=title;const input=p.querySelector('#ks-title');if(input)input.value=title;s.changed();sync(s);state('Nombre cambiado. Guardá tu proyecto.');
+ };
+}
+function choose(s,name){
+ if(!shell)return;
+ activeFile=name;
+ const onlyPreview=name==='preview';
+ shell.classList.toggle('kp-preview-only',onlyPreview);
+ shell.querySelectorAll('[data-kp-file]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kpFile===name)));
+ const filename=shell.querySelector('#kp-program-filename');if(filename)filename.textContent=onlyPreview?'':name;
+ if(!onlyPreview){editor.value=s.files[name]||'';editor.focus();}
+ if(onlyPreview&&active)s.renderPreview();
 }
 function sync(s){
- if(!view||!view.isConnected)return;var ok=isWeb(s);
- view.querySelector('#kp-not-web').hidden=ok;view.querySelector('#kp-code-grid').hidden=!ok;
- view.querySelectorAll('[data-code]').forEach(e=>{if(document.activeElement!==e)e.value=s.files[e.dataset.code]||'';e.readOnly=s.busy||!s.cloudReady});
- view.querySelector('#kp-code-state').textContent=ok?'HTML: estructura · CSS: diseño · JS: movimiento y reglas':'Primero creá un juego web.';
+ if(!shell?.isConnected)return;
+ const ok=isWeb(s);
+ shell.querySelector('#kp-program-title').textContent=String(s.title||'Mi videojuego').slice(0,80);
+ shell.querySelector('#kp-program-create').hidden=ok;
+ editor.hidden=!ok;
+ editor.readOnly=s.busy||!s.cloudReady;
+ if(ok&&activeFile!=='preview'&&document.activeElement!==editor)editor.value=s.files[activeFile]||'';
+ shell.querySelector('#kp-program-run').disabled=!ok;
+ shell.querySelector('#kp-program-save').disabled=s.busy||!s.cloudReady;
+ shell.querySelector('#kp-program-submit').disabled=s.busy||!s.cloudReady;
+}
+function show(s){
+ mount(s);
+ if(!preview||!previewParent)return;
+ if(panel.querySelector('#ks-code')?.classList.contains('on'))s.toggleCode();
+ if(panel.classList.contains('ks-play-only'))panel.classList.remove('ks-play-only');
+ if(panel.classList.contains('ks-chat-focus')&&window.StudioFocusChat)StudioFocusChat.exit(s);
+ shell.querySelector('#kp-program-preview-slot').appendChild(preview);
+ shell.hidden=false;active=true;
+ panel.classList.add('kp-program-mode');
+ sync(s);choose(s,activeFile);s.preview='index.html';s.renderPreviewOptions();s.renderPreview();
+}
+function hide(s){
+ if(!shell||!active)return;
+ clearTimeout(timer);
+ shell.hidden=true;active=false;panel.classList.remove('kp-program-mode');
+ if(preview&&previewParent){if(previewSibling&&previewSibling.parentNode===previewParent)previewParent.insertBefore(preview,previewSibling);else previewParent.appendChild(preview);}
+ if(document.getElementById('ks-frame'))s.renderPreview();
 }
 var studio=window.StudioIA;
 if(!studio.__programacionInstalled){
- var originalShow=studio.showTab,originalRefresh=studio.refreshAll,originalKit=studio.createKit,originalLock=studio.lock;
- studio.showTab=function(name){var result=originalShow.apply(this,arguments);mount(this);view.hidden=name!=='programacion';panel.classList.toggle('kp-program-mode',name==='programacion');if(name==='programacion'){if(panel.querySelector('#ks-code').classList.contains('on'))this.toggleCode();this.preview='index.html';this.renderPreviewOptions();this.renderPreview();sync(this)}return result};
- studio.refreshAll=function(){var result=originalRefresh.apply(this,arguments);if(view&&!view.hidden)sync(this);return result};
- studio.lock=function(){var result=originalLock.apply(this,arguments);if(view&&!view.hidden)view.querySelectorAll('[data-code]').forEach(e=>e.readOnly=this.busy||!this.cloudReady);return result};
- studio.createKit=async function(id){var before=this.projectId;await originalKit.apply(this,arguments);if(id==='arcade-web'&&this.projectId!==before&&isWeb(this))this.showTab('programacion')};
+ const originalShow=studio.showTab,originalRefresh=studio.refreshAll,originalKit=studio.createKit,originalLock=studio.lock,originalSubmit=studio.submit;
+ studio.showTab=function(name){
+  if(name!=='programacion')hide(this);
+  const result=originalShow.apply(this,arguments);
+  if(name==='programacion')show(this);
+  return result;
+ };
+ studio.refreshAll=function(){const result=originalRefresh.apply(this,arguments);if(active)sync(this);return result;};
+ studio.lock=function(){const result=originalLock.apply(this,arguments);if(active)sync(this);return result;};
+ studio.createKit=async function(id){
+  const before=this.projectId;
+  await originalKit.apply(this,arguments);
+  if(id==='arcade-web'&&this.projectId!==before&&isWeb(this))this.showTab('programacion');
+ };
+ studio.submit=async function(){
+  const restore=active;
+  await originalSubmit.apply(this,arguments);
+  if(restore&&panel?.isConnected&&this.cloudReady){
+   this.showTab('programacion');
+   const message=String(this.history[this.history.length-1]?.text||'');
+   if(message.startsWith('Proyecto enviado al profe'))state('✓ Proyecto enviado al profe. Está pendiente de revisión.');
+   else if(message.startsWith('No se pudo enviar'))state(message);
+   else state('Revisá el estado del proyecto en Mis proyectos.');
+  }
+ };
  studio.__programacionInstalled=true;
 }
-window.StudioProgramacion={kit,isWeb,mount,sync};
+window.StudioProgramacion={kit,isWeb,mount,sync,choose};
 })();
