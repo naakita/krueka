@@ -91,12 +91,18 @@ function mount(s){
  work=document.createElement('section');work.className='ks-tool ck-editor';work.id='ks-club-work';work.hidden=true;
  work.innerHTML='<div class="ck-editor-head"><h2>✏ Editá tu creación</h2><p>Cambiá el título, los textos y el color. Mirá el resultado a la derecha.</p></div><form id="ck-form"><label>Título<input name="title" maxlength="80" required></label><label>Descripción<input name="subtitle" maxlength="140"></label><div class="ck-row"><label>Color de tu creación<input name="color" type="color"></label><label>Personaje o símbolo<input name="art" maxlength="8"></label></div><div id="ck-specific-tools"></div><div id="ck-scenes"></div><button type="button" class="ks-btn" id="ck-add-part" hidden></button><div class="ck-editor-actions"><button type="button" class="ks-btn primary" id="ck-test">▶ Ver mi obra</button><button type="button" class="ks-btn" id="ck-save">Guardar</button><button type="button" class="ks-btn" id="ck-submit">Enviar al profe</button></div><p id="ck-status" role="status"></p></form>';
  p.querySelector('.ks-work').appendChild(work);
- work.querySelector('#ck-test').onclick=()=>s.playCurrent();
  const collect=()=>{
   const form=work.querySelector('#ck-form'),old=read(s);
   return {...old,title:form.elements.title.value,subtitle:form.elements.subtitle.value,
    color:form.elements.color.value,art:form.elements.art.value,
    panels:old.panels.map((_,i)=>({title:form.elements['panel-title-'+i].value,text:form.elements['panel-text-'+i].value}))};
+ };
+ work.querySelector('#ck-test').onclick=()=>{
+  if(!updateCreative(s,collect()))return;
+  clearTimeout(pending);
+  s.preview='index.html';
+  s.renderPreviewOptions();
+  s.playCurrent();
  };
  work.querySelector('#ck-save').onclick=()=>{if(updateCreative(s,collect()))s.save();};
  work.querySelector('#ck-submit').onclick=()=>{if(updateCreative(s,collect()))s.submit();};
@@ -198,6 +204,8 @@ const originalShow=studio.showTab,originalKit=studio.createKit,originalSwitch=st
 studio.showTab=function(name){
  const result=originalShow.apply(this,arguments);mount(this);
  if(name==='home')ensureHome(this);
+ const previewLabel=panel.querySelector('.ks-preview-label');
+ if(previewLabel)previewLabel.textContent=isCreative(this)?'Tu obra':'Vista previa';
  work.hidden=name!=='club-work';gallery.hidden=name!=='club-gallery';
  panel.classList.toggle('ck-club-gallery-open',name==='club-gallery');
  if(name==='club-work'){

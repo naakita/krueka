@@ -41,6 +41,12 @@ const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes',
     verify(!document.getElementById('ks-frame').classList.contains('off'),'vista previa visible');
    }
   }
+  if(creative){
+   document.querySelector('#ck-test').click();
+   const frame=document.querySelector('#ks-frame');
+   verify(!frame.classList.contains('off')&&frame.srcdoc.includes('Auditoría '+id),'Ver mi obra '+id);
+   verify(document.querySelector('.ks-preview-label').textContent==='Tu obra','etiqueta de '+id);
+  }
   if(id==='pagina-web'||id==='aplicacion-web'){
    verify(StudioIA.tab==='programacion','editor web');
    const panel=document.getElementById('kp-blocks');
