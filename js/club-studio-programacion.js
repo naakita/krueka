@@ -22,15 +22,20 @@ var script=[
 var sample={'index.html':html,'style.css':css,'script.js':script,'LEEME.md':'# Mi juego web\nCambiá el título en HTML, los colores en CSS y velocidad:22 en JavaScript. Probá, guardá y enviá al profe. Nunca publiques datos personales.'};
 const templates={
  'pagina-web':{title:'Mi página web',description:'Armá una página con encabezado, menú, texto e imágenes.',heading:'Mi página web',body:'<p>Contá de qué trata tu página.</p>',script:'// Agregá interacciones a tu página.'},
- 'aplicacion-web':{title:'Mi aplicación web',description:'Creá una aplicación sencilla que responde a lo que hace el usuario.',heading:'Lista de tareas',body:'<form id="tareas"><label>Nueva tarea <input name="tarea" required></label><button>Agregar</button></form><ul id="lista"></ul>',script:`const form = document.getElementById('tareas');
-form.addEventListener('submit', event => {
- event.preventDefault();
+ 'aplicacion-web':{title:'Mi aplicación web',description:'Creá una aplicación sencilla que responde a lo que hace el usuario.',heading:'Lista de tareas',body:'<form id="tareas"><label>Nueva tarea <input name="tarea" required></label><button type="button" id="agregar">Agregar</button></form><ul id="lista"></ul>',script:`const form = document.getElementById('tareas');
+function agregarTarea(){
  const texto = form.elements.tarea.value.trim();
  if (!texto) return;
  const item = document.createElement('li');
  item.textContent = texto;
  document.getElementById('lista').append(item);
  form.reset();
+}
+document.getElementById('agregar').addEventListener('click', agregarTarea);
+form.elements.tarea.addEventListener('keydown', event => {
+ if(event.key!=='Enter')return;
+ event.preventDefault();
+ agregarTarea();
 });`}
 };
 for(const [id,template] of Object.entries(templates))StudioKits.catalog.push({id,icon:id==='pagina-web'?'🌐':'📱',title:template.title,description:template.description,tag:'HTML · CSS · JavaScript'});
