@@ -24,7 +24,7 @@ const texts={
  flyers:['¿Qué ofrecemos?','¿Por qué participar?','¡Te esperamos!'],
  dibujos:['Mi personaje','Mis colores','Mi inspiración']
 };
-function safe(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;':'&quot;',"'":'&#39;'}[c]));}
+function safe(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function defaultData(id){
  const cat=categories.find(c=>c.id===id)||categories[0];
  return {kind:id,title:cat.name==='Dibujos'?'Mi ilustración': 'Mi '+cat.name.toLowerCase(),subtitle:'Una creación original del Club Krueka',art:id==='animes'?'⚡':id==='dibujos'?'🦊':id==='dramas'?'🎭':id==='cuentos'?'🏰':id==='flyers'?'🌟':id==='historietas'?'🐱':'💡',color:'#237fc3',panels:(texts[id]||[]).map((t,i)=>({title:t,text:['Presento mi idea y lo que quiero contar.','Aquí sucede algo interesante. ¿Qué pasará después?','Este es el resultado de mi creación.'][i]}))};
