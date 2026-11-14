@@ -30,7 +30,7 @@ function mount(s){
  if(panel===p&&shell?.isConnected)return;
  panel=p;active=false;activeFile='index.html';
  preview=p.querySelector('.ks-preview');previewParent=preview?.parentNode||null;previewSibling=preview?.nextSibling||null;
- const tab=document.createElement('button');tab.type='button';tab.className='ks-btn';tab.dataset.tab='programacion';tab.textContent='⌘ Programación';tab.onclick=()=>s.showTab('programacion');p.querySelector('.ks-tabs').appendChild(tab);
+ const tab=document.createElement('button');tab.type='button';tab.className='ks-btn';tab.dataset.tab='programacion';tab.textContent='⌘ Programar juegos';tab.classList.add('kp-entry-highlight');tab.onclick=()=>s.showTab('programacion');p.querySelector('.ks-tabs').prepend(tab);
  shell=document.createElement('section');shell.id='kp-program-shell';shell.className='kp-program-shell';shell.hidden=true;shell.setAttribute('aria-label','Espacio de programación web');
  shell.innerHTML=
  '<header class="kp-program-header">'+
@@ -135,6 +135,33 @@ function hide(s){
  if(document.getElementById('ks-frame'))s.renderPreview();
 }
 var studio=window.StudioIA;
+// En todas las creaciones (tambien 3D), mostrar codigo y juego a la vez.
+// La escritura ya activa el guardado de Studio y la vista previa con debounce.
+if(!studio.__liveCodeInstalled){
+ const fallbackToggle=studio.toggleCode;
+ studio.toggleCode=function(){
+   const host=document.getElementById('krueka-studio');
+   const view=host?.querySelector('.ks-preview');
+   const code=host?.querySelector('#ks-code');
+   const frame=host?.querySelector('#ks-frame');
+   const button=host?.querySelector('#ks-code-btn');
+   if(!host||!view||!code||!frame||!button)return fallbackToggle.apply(this,arguments);
+   const on=!host.classList.contains('ks-live-edit-mode');
+   const needsPreview=frame.classList.contains('off');
+   host.classList.toggle('ks-live-edit-mode',on);
+   view.classList.toggle('ks-live-code',on);
+   code.classList.toggle('on',on);
+   frame.classList.remove('off');
+   button.textContent=on?'Ocultar código':'Código';
+   button.setAttribute('aria-pressed',String(on));
+   if(on){
+     this.renderFileList();
+     this.renderEditor();
+     if(needsPreview)this.renderPreview();
+   }
+ };
+ studio.__liveCodeInstalled=true;
+}
 if(!studio.__programacionInstalled){
  const originalShow=studio.showTab,originalRefresh=studio.refreshAll,originalKit=studio.createKit,originalLock=studio.lock,originalSubmit=studio.submit;
  studio.showTab=function(name){
