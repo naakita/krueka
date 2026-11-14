@@ -83,7 +83,7 @@ function playerRoot(){
   const source='('+isolatedWorker.toString()+')();';
   const blob=new Blob([source],{type:'text/javascript'}),url=URL.createObjectURL(blob);
   try{worker=new Worker(url);}catch(e){URL.revokeObjectURL(url);message('No se pudo iniciar Python: '+e.message);return;}
-  URL.revokeObjectURL(url);
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
   worker.onmessage=function(event){
    const m=event.data||{};
    if(m.type==='loading')message('Descargando Python… La primera carga puede tardar.');
@@ -142,7 +142,7 @@ StudioIA.buildPreview=function(path){
   .replace("connect-src 'none';","connect-src https://cdn.jsdelivr.net; worker-src blob:;");
 };
 const baseShow=StudioIA.showTab,baseRefresh=StudioIA.refreshAll,baseLock=StudioIA.lock,baseCreateKit=StudioIA.createKit;
-let shell=null,area=null,tab=null,currentTab='python',running=false,savePreview=null;
+let shell=null,area=null,tab=null,currentTab='python',running=false;
 function isPython(s){return s?.files?.[MARKER]==='python-pyodide-v1'&&typeof s.files[PYFILE]==='string';}
 function info(s){return shell?.querySelector('#kp-program-state');}
 function showPython(s){
@@ -175,7 +175,7 @@ function integrate(s){
    try{s.validFiles(next);}catch(e){const el=info(s);if(el)el.textContent='Archivo demasiado grande: '+e.message;return;}
    s.files=next;s.changed();
    const el=info(s);if(el)el.textContent='Código Python modificado · Guardado automático pendiente';
-   clearTimeout(savePreview);savePreview=setTimeout(()=>{if(running&&isPython(s))s.renderPreview();},1100);
+   const run=shell.querySelector('#kp-program-run');if(run)run.title='Ejecutar el código Python modificado';
   });
   nav.querySelector('[data-kp-file="preview"]').addEventListener('click',()=>{currentTab='preview';tab.setAttribute('aria-pressed','false');});
   p.querySelector('#kp-program-new').onclick=()=>{p.querySelector('.kp-program-menu').open=false;chooseLanguage(s);};
@@ -197,7 +197,7 @@ function integrate(s){
  }
 }
 StudioIA.showTab=function(name){
- if(name!=='programacion'){running=false;clearTimeout(savePreview);}
+ if(name!=='programacion'){running=false;}
  const r=baseShow.apply(this,arguments);
  if(name==='programacion'){running=true;currentTab=isPython(this)?'python':'index.html';integrate(this);}
  return r;
