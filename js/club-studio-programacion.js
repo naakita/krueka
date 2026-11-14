@@ -139,6 +139,14 @@ var studio=window.StudioIA;
 // La escritura ya activa el guardado de Studio y la vista previa con debounce.
 if(!studio.__liveCodeInstalled){
  const fallbackToggle=studio.toggleCode;
+ const fallbackPlay=studio.playCurrent;
+ studio.playCurrent=function(){
+   const host=document.getElementById('krueka-studio');
+   if(!host?.classList.contains('ks-live-edit-mode'))return fallbackPlay.apply(this,arguments);
+   host.classList.remove('ks-play-only');
+   this.renderPreview(true);
+   host.querySelector('#ks-frame')?.focus();
+ };
  studio.toggleCode=function(){
    const host=document.getElementById('krueka-studio');
    const view=host?.querySelector('.ks-preview');
