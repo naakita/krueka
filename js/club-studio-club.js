@@ -143,7 +143,7 @@ function renderCards(s){
   const image=document.createElement('div');image.className='ck-card-icon';image.textContent=cat.icon;
   const heading=document.createElement('h3');heading.textContent=String(item.title||'Creación sin título').slice(0,80);
   const meta=document.createElement('small');meta.textContent=cat.name+' · Aprobado';
-  const btn=document.createElement('button');btn.type='button';btn.className='ks-btn primary';btn.textContent=cat.id==='juegos'?'▶ Jugar':'👁 Ver creación';btn.onclick=()=>openViewer(s,item);
+  const btn=document.createElement('a');btn.className='ks-btn primary';btn.href='club-krueka-obra.html?obra='+encodeURIComponent(item.id);btn.target='_blank';btn.rel='noopener noreferrer';btn.textContent=cat.id==='juegos'?'▶ Jugar en otra pestaña':'👁 Abrir creación ↗';
   card.append(image,heading,meta,btn);target.appendChild(card);
  }
 }
