@@ -169,6 +169,27 @@ function hide(s){
  if(document.getElementById('ks-frame'))s.renderPreview();
 }
 var studio=window.StudioIA;
+// Mantener el comportamiento tipo Liveweave: CSS y JS se aplican aunque el
+// alumno todavía no haya escrito <link> o <script src> en su HTML.
+const baseBuildForCoding=studio.buildPreview;
+studio.buildPreview=function(path){
+ let doc=baseBuildForCoding.apply(this,arguments);
+ if(path!=='index.html'||!this.files||typeof this.files['index.html']!=='string')return doc;
+ const original=String(this.files['index.html']),assets=actualPaths(this);
+ const linkedCss=/<link\b[^>]*href=["'][^"']+\.css(?:[?#][^"']*)?["']/i.test(original);
+ const linkedJs=/<script\b[^>]*src=["'][^"']+\.js(?:[?#][^"']*)?["'][^>]*>/i.test(original);
+ if(!linkedCss&&assets['style.css']&&typeof this.files[assets['style.css']]==='string'){
+   const code=String(this.files[assets['style.css']]).replace(/<\/style/gi,'<\\/style');
+   const style='<style data-file="'+assets['style.css']+'">'+code+'</style>';
+   doc=/<\/head>/i.test(doc)?doc.replace(/<\/head>/i,style+'</head>'):style+doc;
+ }
+ if(!linkedJs&&assets['script.js']&&typeof this.files[assets['script.js']]==='string'){
+   const code=String(this.files[assets['script.js']]).replace(/<\/script/gi,'<\\/script');
+   const js='<script data-file="'+assets['script.js']+'">'+code+'</script>';
+   doc=/<\/body>/i.test(doc)?doc.replace(/<\/body>/i,js+'</body>'):doc+js;
+ }
+ return doc;
+};
 // En todas las creaciones (tambien 3D), mostrar codigo y juego a la vez.
 // La escritura ya activa el guardado de Studio y la vista previa con debounce.
 if(!studio.__liveCodeInstalled){
