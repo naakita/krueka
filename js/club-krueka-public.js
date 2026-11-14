@@ -46,17 +46,21 @@ function render(){
  }
 }
 function buildPreview(files){
- const html=String(files['index.html']||''),css=String(files['style.css']||''),js=String(files['script.js']||'');
+ const html=String(files['index.html']||''),css=String(files['style.css']||'');
  const safeCss=css.replace(/<\/style/gi,'<\\/style');
- const safeJs=js.replace(/<\/script/gi,'<\\/script');
- const style='<style>'+safeCss+'</style>';
- const script='<script>'+safeJs+'<\/script>';
- let doc=html.replace(/<link\b[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/gi,style)
-  .replace(/<script\b[^>]*src=["'](?:\.\/)?script\.js["'][^>]*><\/script>/gi,script);
+ let doc=html.replace(/<link\b[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/gi,
+   '<style>'+safeCss+'</style>');
+ // Only named project files returned by the approved-only RPC can run.
+ // Their order in index.html is preserved for game-config.js before game.js.
+ doc=doc.replace(/<script\b[^>]*src=["'](?:\.\/)?([a-z0-9_-]+\.js)["'][^>]*><\/script>/gi,
+   (tag,name)=>Object.prototype.hasOwnProperty.call(files,name)
+     ?'<script>'+String(files[name]||'').replace(/<\/script/gi,'<\\/script')+'</script>'
+     :tag);
  const csp='<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;unsafe-inline&#39;; style-src &#39;unsafe-inline&#39;; img-src data: blob:; font-src data:; media-src data: blob:; connect-src &#39;none&#39;; form-action &#39;none&#39;; base-uri &#39;none&#39;">';
  if(/<head\b[^>]*>/i.test(doc))return doc.replace(/<head\b[^>]*>/i,match=>match+csp);
  return csp+doc;
 }
+
 async function open(item,trigger){
  if(busy)return;busy=true;setStatus('Abriendo la creación aprobada…');
  try{
