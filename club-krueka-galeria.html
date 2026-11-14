@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es-PY">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="Explorá los videojuegos, cuentos, blogs, historietas, dibujos y otras creaciones aprobadas del Club Krueka. Entrada gratuita sin registro.">
+<title>Creaciones del Club Krueka · Galería pública</title>
+<link rel="icon" href="logo.svg">
+<link rel="stylesheet" href="club/club-krueka-public.css?v=20261114a">
+</head>
+<body>
+<header class="site-head">
+ <a class="brand" href="index.html"><img src="logo.svg" alt="" width="38" height="38"><span>KRUEKA <small>CLUB CREATIVO</small></span></a>
+ <nav aria-label="Navegación"><a href="index.html">Inicio</a><a href="club-krueka.html" class="nav-create">Soy alumno · Crear <span aria-hidden="true">↗</span></a></nav>
+</header>
+<main>
+ <section class="hero">
+  <p class="eyebrow">🌟 GALERÍA PÚBLICA DEL CLUB</p>
+  <h1>Ideas de los chicos.<br><span>Creaciones para todos.</span></h1>
+  <p>Explorá videojuegos, historietas, cuentos, blogs, dibujos, afiches y otras obras creadas por integrantes del Club Krueka. Podés entrar, ver, leer o jugar <strong>sin registrarte</strong>.</p>
+  <div class="hero-actions"><a href="#creaciones" class="primary">Explorar creaciones ↓</a><a href="club-krueka.html" class="secondary">Ingresar con código del Club</a></div>
+  <p class="privacy"><span>✓</span> Solo se muestran trabajos revisados y aprobados. Crear y editar es exclusivo de alumnos registrados.</p>
+ </section>
+ <section class="gallery" id="creaciones" aria-labelledby="gallery-heading">
+  <div class="gallery-heading"><div><p class="eyebrow">HECHO POR ESTUDIANTES</p><h2 id="gallery-heading">Galería de creaciones</h2></div><button type="button" class="reload" id="reload">↻ Actualizar</button></div>
+  <div class="filters" id="filters" role="group" aria-label="Filtrar tipo de creación"></div>
+  <div id="gallery-status" class="status" role="status" aria-live="polite">Cargando trabajos aprobados…</div>
+  <div id="gallery-cards" class="cards"></div>
+ </section>
+ <section class="help"><div>¿Sos parte del Club Krueka? <strong>Ingresá con tu código personal para crear, guardar y enviar tus proyectos.</strong></div><a href="club-krueka.html">Ir al taller de creación →</a></section>
+</main>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-labelledby="viewer-title">
+ <div class="viewer-content">
+  <div class="viewer-top"><div><span id="viewer-category">Creación del Club Krueka</span><h2 id="viewer-title">Obra</h2></div><div class="viewer-actions"><button type="button" id="viewer-share">Compartir enlace</button><button type="button" id="viewer-close" aria-label="Cerrar creación">✕ Cerrar</button></div></div>
+  <iframe id="viewer-frame" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Creación aprobada de un estudiante"></iframe>
+  <p class="viewer-hint">Explorá la creación. Para controlar los videojuegos, tocá o hacé clic dentro de la pantalla.</p>
+ </div>
+</div>
+<footer><span>Club Krueka · Aprender, crear y compartir</span><span>Las obras se publican después de su revisión educativa.</span></footer>
+<script src="js/club-krueka-public.js?v=20261114a" defer></script>
+</body>
+</html>
