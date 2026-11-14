@@ -19,6 +19,16 @@ function buildPreview(files){
    (tag,name)=>Object.prototype.hasOwnProperty.call(files,name)
      ?'<script>'+String(files[name]||'').replace(/<\/script/gi,'<\\/script')+'</script>'
      :tag);
+ const hasCssLink=/<link\b[^>]*href=["'][^"']+\.css(?:[?#][^"']*)?["']/i.test(html);
+ const hasJsLink=/<script\b[^>]*src=["'][^"']+\.js(?:[?#][^"']*)?["'][^>]*>/i.test(html);
+ if(!hasCssLink&&css){
+   const styles='<style>'+safeCss+'</style>';
+   doc=/<\/head>/i.test(doc)?doc.replace(/<\/head>/i,styles+'</head>'):styles+doc;
+ }
+ if(!hasJsLink&&typeof files['script.js']==='string'){
+   const script='<script>'+String(files['script.js']).replace(/<\/script/gi,'<\\/script')+'</script>';
+   doc=/<\/body>/i.test(doc)?doc.replace(/<\/body>/i,script+'</body>'):doc+script;
+ }
  let csp='<meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; script-src &#39;unsafe-inline&#39;; style-src &#39;unsafe-inline&#39;; img-src data: blob:; font-src data:; media-src data: blob:; connect-src &#39;none&#39;; form-action &#39;none&#39;; base-uri &#39;none&#39;">';
  if(/<meta\s+name=["']krueka-python-runtime["']\s+content=["']pyodide["']/i.test(html)){
   csp=csp.replace('script-src &#39;unsafe-inline&#39;;','script-src &#39;unsafe-inline&#39; &#39;wasm-unsafe-eval&#39; https://cdn.jsdelivr.net;')
