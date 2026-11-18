@@ -59,7 +59,11 @@ const blocks={
  texto:['Texto','<p>Escribí tu texto aquí.</p>'],
  imagen:['Imagen','<img alt="Describí la imagen" width="240" height="120" src="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27240%27 height=%27120%27%3E%3Crect width=%27240%27 height=%27120%27 fill=%27%23cee5f5%27/%3E%3C/svg%3E">'],
  boton:['Botón','<button type="button">Mi botón</button>'],
- formulario:['Formulario','<form><label>Respuesta <input name="respuesta"></label><button type="button">Listo</button></form>']
+ formulario:['Formulario','<form><label>Respuesta <input name="respuesta"></label><button type="button">Listo</button></form>'],
+ tarjeta:['Tarjeta','<article><h2>Título de la tarjeta</h2><p>Agregá una idea, una imagen o un enlace.</p></article>'],
+ lista:['Lista','<ul><li>Primera idea</li><li>Segunda idea</li></ul>'],
+ contador:['Contador','<section><h2>Contador</h2><p>Toques: <output>0</output></p><button type="button" onclick="const total=this.parentElement.querySelector(&quot;output&quot;);total.value=Number(total.value)+1">Sumar</button></section>'],
+ pregunta:['Pregunta','<details><summary>¿Cuál es tu pregunta?</summary><p>Escribí acá la respuesta que se revela.</p></details>']
 };
 function insertBlock(html,key){
  if(!Object.hasOwn(blocks,key))return html;

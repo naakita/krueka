@@ -40,6 +40,7 @@ function normalize(raw){
   action:clip(t.action||'¡Una idea cobra vida!',90),
   callToAction:clip(t.callToAction||'¡Descubrí más!',65),
   font:['Moderna','Cómic','Clásica'].includes(t.font)?t.font:'Moderna',
+  sceneSeconds:Math.max(2,Math.min(12,Math.round(Number(t.sceneSeconds)||5))),
   effect:['Flotar','Deslizar','Zoom suave'].includes(t.effect)?t.effect:'Flotar',
   bubble:['Redondo','Rectangular','Narración'].includes(t.bubble)?t.bubble:'Redondo',
   perScene:Array.from({length:Math.max(3,d.panels?.length||0)},(_,i)=>t.perScene?.[i]).map((p,i)=>({
@@ -56,6 +57,21 @@ function textHtml(text){
  let s=safe(text).replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>').replace(/\*([^*\n]+)\*/g,'<em>$1</em>');
  return s.split(/\n/).map(line=>line.trim()?'<p>'+line+'</p>':'').join('');
 }
+function paperPages(text){
+ const pages=[];
+ let remaining=String(text??'');
+ while(remaining.length>950){
+  const candidate=remaining.slice(0,950);
+  let end=candidate.lastIndexOf('\n');
+  if(end<500)end=candidate.search(/\s+\S*$/);
+  if(end<500)end=950;
+  if(/[\uD800-\uDBFF]/.test(remaining[end-1]||''))end--;
+  pages.push(remaining.slice(0,end));
+  remaining=remaining.slice(end).trimStart();
+ }
+ pages.push(remaining);
+ return pages;
+}
 function sketchMarkup(strokes,color){
  const paths=strokes.map(s=>{
   const pts=s.points,nums=pts.map(p=>p.join(' ')),style='stroke="'+hex(s.color)+'" stroke-width="'+s.width+'"';
@@ -67,24 +83,183 @@ function sketchMarkup(strokes,color){
    const a=pts[0],b=pts[pts.length-1],rx=Math.abs(a[0]-b[0])/2,ry=Math.abs(a[1]-b[1])/2;
    return '<ellipse cx="'+((a[0]+b[0])/2)+'" cy="'+((a[1]+b[1])/2)+'" rx="'+rx+'" ry="'+ry+'" fill="none" '+style+'/>';
   }
+  if(pts.length===1)return '<circle cx="'+pts[0][0]+'" cy="'+pts[0][1]+'" r="'+s.width/2+'" fill="'+hex(s.color)+'"/>';
   return '<polyline points="'+nums.join(' ')+'" fill="none" '+style+' stroke-linecap="round" stroke-linejoin="round"/>';
  }).join('');
  return '<svg class="ck-art" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dibujo original del estudiante"><rect width="600" height="320" fill="'+color+'"/>'+paths+'</svg>';
 }
+const readingStyle=`
+.ck-pagination{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:9px 6px;margin:12px auto;background:#fffcf1f5;color:#492d1b;border-radius:10px;box-shadow:0 2px 8px #35221122;font:14px/1.3 system-ui}
+.ck-pagination button{padding:7px 11px;font:inherit;border:1px solid #9f7952;border-radius:8px;background:#fff4d6;color:inherit;cursor:pointer}
+.ck-pagination button:disabled{opacity:.5;cursor:default}
+.ck-pagination button:focus-visible{outline:2px solid #715437;outline-offset:2px}
+.ck-pages.ck-viewer-pages{scroll-margin-top:114px;display:block;max-width:760px;margin:18px auto}
+.ck-panel[hidden]{display:none}
+.ck-cuentos{background:radial-gradient(ellipse at top,#d5b283,#806043 90%);color:#342014}
+.ck-cuentos main{max-width:850px}
+.ck-cuentos header{padding-bottom:12px}
+.ck-cuentos header p,.ck-cuentos header small{color:#3e2818}
+.ck-cuentos .ck-cover{border-radius:7px 14px 14px 7px;border:4px double #d1ab74;background:linear-gradient(90deg,#0009,transparent 8%,#0003),var(--accent);box-shadow:0 7px 20px #25170888}
+.ck-cuentos .ck-viewer-pages{touch-action:pan-y pinch-zoom;position:relative;padding:0 7px 8px 0;border-left:8px solid #523321;border-radius:5px 15px 15px 4px;background:repeating-linear-gradient(0deg,#a78053 0 1px,#ecd2a0 1px 3px);box-shadow:0 2px 0 4px #684129,0 16px 24px #36231770;perspective:1400px}
+.ck-cuentos .ck-book{min-height:333px;padding:clamp(17px,5vw,50px);border:0;border-radius:2px 12px 12px 2px;transform-origin:left center;background:linear-gradient(90deg,#b98b4b68,transparent 6%,transparent 94%,#aa753b38),repeating-linear-gradient(0deg,#fff2ce40 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,#fff6dd,#ebd1a0);box-shadow:inset 0 0 22px #92633745;line-height:1.7}
+.ck-cuentos .ck-book p,.ck-cuentos .ck-book small,.ck-cuentos footer{color:#4a2f20}
+.ck-cuentos .ck-book h2{font-size:clamp(22px,4.5vw,38px);line-height:1.25;margin:.4em 0 .7em}
+.ck-cuentos.ck-layout-1 .ck-book{background:linear-gradient(90deg,#ba9b6159,transparent 8%),#fffae8}
+.ck-cuentos.ck-layout-2 .ck-book{border:7px double #b88756}
+.ck-cuentos.ck-layout-2 .cm-panel-img{margin-inline:auto;max-height:420px}
+.ck-cuentos .ck-book.ck-turn-forward{animation:ck-page-forward .4s ease-out}
+.ck-cuentos .ck-book.ck-turn-back{animation:ck-page-back .4s ease-out}
+@keyframes ck-page-forward{from{transform:rotateY(-14deg);filter:brightness(.87)}to{transform:rotateY(0)}}
+@keyframes ck-page-back{from{transform:rotateY(10deg);filter:brightness(.9)}to{transform:rotateY(0)}}
+.ck-dramas .ck-stage{background:radial-gradient(ellipse at 50% 15%,var(--scene),#171226 62%);border-width:0 8px 9px;border-style:solid;border-color:#532e44;border-radius:10px;box-shadow:0 13px 24px #20142748}
+.ck-dramas .ck-stage-top{padding:17px;background:#181327d9;border-radius:7px;border-bottom-color:#e0ba80;color:#ffebc9}
+.ck-dramas .ck-stage small,.ck-dramas .ck-stage h2,.ck-dramas .ck-dialogue p{color:#fff6e4}
+.ck-dramas .ck-dialogue{margin:12px auto 0;padding:12px;background:#181327e8;border-radius:7px}
+.ck-dramas.ck-layout-1 .ck-stage{background:#fff9e9;color:#3a302a;border-color:#cdaf85;font-family:Georgia,serif;text-align:left}
+.ck-dramas.ck-layout-1 .ck-stage-top{justify-content:flex-start;background:transparent;color:#3a302a}
+.ck-dramas.ck-layout-1 .ck-dialogue{background:transparent}
+.ck-dramas.ck-layout-1 .ck-stage small,.ck-dramas.ck-layout-1 .ck-stage h2,.ck-dramas.ck-layout-1 .ck-dialogue p{color:#3a302a}
+.ck-dramas.ck-layout-2 .ck-stage{background:#27213a}
+.ck-animes .ck-viewer-pages .ck-anime{box-shadow:0 10px 27px #101d4459}
+.ck-animes .ck-anime-scene{aspect-ratio:16/9;min-height:165px;padding:clamp(8px,3vw,22px);background:radial-gradient(ellipse at 15% 30%,#fff9,transparent 45%),var(--scene)}
+.ck-animes.ck-layout-1 .ck-anime-scene{aspect-ratio:21/9}
+.ck-animes.ck-layout-2 .ck-anime{border:4px solid #374963}
+.ck-animes .ck-anime-bubble{overflow:auto;max-height:96%}
+.ck-historietas.ck-layout-1 .ck-pages{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
+.ck-historietas.ck-layout-2 .ck-pages{grid-template-columns:1fr;max-width:680px;margin-inline:auto}
+.ck-historietas .ck-panel-art{min-height:185px;height:auto}
+.ck-flyers.ck-layout-1 .ck-cover{border-radius:0;border-block:6px double #ffebaf}
+.ck-flyers.ck-layout-2 .ck-cover{min-height:245px;text-align:center}
+.ck-blogs.ck-layout-0 .ck-article:first-child{grid-column:1/-1;border-top:5px solid var(--accent)}
+.ck-blogs.ck-layout-2 .ck-article{border:0;border-bottom:1px solid #94a6bc;border-radius:0;box-shadow:none}
+.ck-dibujos.ck-layout-1 .ck-drawing{padding:clamp(8px,4vw,30px);background:#fff;border:1px solid #aeb8c7;box-shadow:0 6px 18px #0c20334a}
+.ck-dibujos.ck-layout-2 .ck-drawing{padding:8px;border:8px double var(--accent);background:#f4f6fb}
+@media(prefers-reduced-motion:reduce){.ck-cuentos .ck-book,.ck-animes .ck-anim-char,.cm-model{animation:none!important}}
+`;
+function readWork(){
+ const pages=[...document.querySelectorAll('.ck-viewer-pages > article')];
+ const prev=document.getElementById('ck-prev');
+ const next=document.getElementById('ck-next');
+ const status=document.getElementById('ck-page');
+ const sound=document.getElementById('ck-paper-sound');
+ const motion=document.getElementById('ck-anim-toggle');
+ const play=document.getElementById('ck-scene-play');
+ const delay=(Number(play?.dataset.seconds)||5)*1000;
+ const Audio=window.AudioContext||window.webkitAudioContext;
+ let page=0,audio=null,timer=null,playing=false;
+ const sheet=document.querySelector('.ck-viewer-pages');
+ let touch=null;
+
+ function paper(){
+  if(!sound||sound.getAttribute('aria-pressed')!=='true'||!Audio||(navigator.userActivation&&!navigator.userActivation.hasBeenActive))return;
+  try{
+   audio=audio||new Audio();
+   const length=.25,buffer=audio.createBuffer(1,Math.ceil(audio.sampleRate*length),audio.sampleRate);
+   const samples=buffer.getChannelData(0);
+   for(let i=0;i<samples.length;i++)samples[i]=(Math.random()*2-1)*Math.sin(Math.PI*i/samples.length)**2;
+   const source=audio.createBufferSource(),filter=audio.createBiquadFilter(),volume=audio.createGain();
+   source.buffer=buffer;
+   filter.type='bandpass';filter.frequency.setValueAtTime(1800,audio.currentTime);
+   filter.frequency.exponentialRampToValueAtTime(690,audio.currentTime+length);
+   filter.Q.value=.7;volume.gain.value=.32;
+   source.connect(filter).connect(volume).connect(audio.destination);
+   audio.resume().then(()=>source.start()).catch(()=>{});
+  }catch(_error){}
+ }
+
+ function showPage(direction=0){
+  pages.forEach((part,i)=>{
+   part.hidden=i!==page;
+   part.classList.remove('ck-turn-forward','ck-turn-back');
+  });
+  if(direction&&sound)pages[page].classList.add(direction>0?'ck-turn-forward':'ck-turn-back');
+  prev.disabled=page===0;next.disabled=page===pages.length-1;
+  status.textContent=(page+1)+' / '+pages.length;
+ }
+
+ function turn(direction){
+  const target=page+direction;
+  if(target<0||target>=pages.length)return;
+  const former=document.activeElement;
+  page=target;showPage(direction);paper();
+  if(former===prev&&prev.disabled)next.focus();
+  if(former===next&&next.disabled)prev.focus();
+  const reader=document.querySelector('.ck-pagination');
+  if(reader.getBoundingClientRect().top<=1)sheet.scrollIntoView({block:'start'});
+ }
+
+ function queue(){
+  window.clearTimeout(timer);
+  if(!playing)return;
+  if(next.disabled){setPlaying(false);return;}
+  timer=window.setTimeout(()=>{turn(1);queue()},delay);
+ }
+
+ function setPlaying(active){
+  playing=active;
+  play.setAttribute('aria-pressed',String(active));
+  play.textContent=active?'Pausar escenas':'Reproducir escenas';
+  queue();
+ }
+
+ prev.onclick=()=>{turn(-1);queue()};
+ next.onclick=()=>{turn(1);queue()};
+ document.addEventListener('keydown',event=>{
+  if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+  const direction={ArrowLeft:-1,ArrowRight:1}[event.key];
+  if(direction){event.preventDefault();turn(direction);queue();}
+ });
+
+ if(sound){
+  sheet.addEventListener('touchstart',event=>{
+   const first=event.touches[0];
+   touch=event.touches.length===1?[first.clientX,first.clientY]:null;
+  },{passive:true});
+  sheet.addEventListener('touchend',event=>{
+   if(!touch)return;
+   const [x,y]=touch;
+   touch=null;
+   const end=event.changedTouches[0];
+   const dx=end.clientX-x,dy=end.clientY-y;
+   if(Math.abs(dx)>60&&Math.abs(dx)>1.5*Math.abs(dy))turn(dx<0?1:-1);
+  },{passive:true});
+  sheet.addEventListener('touchcancel',()=>{touch=null;});
+  sound.hidden=!Audio;
+  sound.onclick=()=>{
+   const enabled=sound.getAttribute('aria-pressed')!=='true';
+   sound.setAttribute('aria-pressed',String(enabled));
+   sound.textContent=enabled?'Silenciar hojas':'Activar sonido';
+   if(enabled)paper();
+  };
+ }
+ if(play)play.onclick=()=>{
+  if(!playing&&next.disabled){page=0;showPage();}
+  setPlaying(!playing);
+ };
+ if(motion)motion.onclick=()=>{
+  const paused=document.body.classList.toggle('paused');
+  motion.textContent=paused?'Activar movimiento':'Pausar movimiento';
+ };
+ showPage();
+}
+
 function enhance(data, files){
  const d=normalize(data),kind=d.kind,t=d.tools,strokes=t.strokes;
  if(!modes[kind])return files;
  const artworks=sketchMarkup(strokes,t.backdrop);
- const longWork=kind==='cuentos'||kind==='dramas';
+ const paged=['cuentos','dramas','animes'].includes(kind);
  const pages=(d.panels||[]).map((p,i)=>{
   const scene=t.perScene[i],caption=safe(p.title),txt=textHtml(p.text);
-  if(kind==='historietas')return '<article class="ck-panel ck-comic"><div class="ck-panel-art" style="background:'+scene.backdrop+'"><span class="ck-face">'+safe(scene.character)+'</span><span class="ck-speech">'+txt+'</span></div><h2>'+caption+'</h2><small>VIÑETA '+(i+1)+'</small></article>';
-  if(kind==='dramas')return '<article class="ck-panel ck-stage"><small>ACTO '+(i+1)+' · '+safe(scene.stage)+'</small><div class="ck-stage-top"><span>'+safe(scene.character)+'</span><strong>'+safe(scene.speaker)+'</strong></div><h2>'+caption+'</h2><div class="ck-dialogue">'+txt+'</div></article>';
-  if(kind==='animes')return '<article class="ck-panel ck-anime"><small>ESCENA '+(i+1)+' · '+safe(scene.stage)+'</small><div class="ck-anime-scene" style="background:'+scene.backdrop+'"><span class="ck-anim-char">'+safe(scene.character)+'</span><div class="ck-anime-bubble">'+txt+'</div></div><h2>'+caption+'</h2></article>';
+  if(kind==='historietas')return '<article class="ck-panel ck-comic"><div class="ck-panel-art" style="background:'+scene.backdrop+'"><span class="ck-face">'+safe(scene.character)+'</span><div class="ck-speech">'+txt+'</div></div><h2>'+caption+'</h2><small>VIÑETA '+(i+1)+'</small></article>';
+  if(kind==='dramas')return '<article class="ck-panel ck-stage" style="--scene:'+scene.backdrop+'"><small>ACTO '+(i+1)+' · '+safe(scene.stage)+'</small><div class="ck-stage-top"><span>'+safe(scene.character)+'</span><strong>'+safe(scene.speaker)+'</strong></div><h2>'+caption+'</h2><div class="ck-dialogue">'+txt+'</div></article>';
+  if(kind==='animes')return '<article class="ck-panel ck-anime"><small>ESCENA '+(i+1)+' · '+safe(scene.stage)+'</small><div class="ck-anime-scene" style="--scene:'+scene.backdrop+'"><span class="ck-anim-char">'+safe(scene.character)+'</span><div class="ck-anime-bubble"><strong>'+safe(scene.speaker)+'</strong>'+txt+'</div></div><h2>'+caption+'</h2></article>';
   if(kind==='flyers')return '<article class="ck-panel ck-flyer-item"><h2>'+caption+'</h2>'+txt+'</article>';
   if(kind==='dibujos')return '<article class="ck-panel"><h2>'+caption+'</h2>'+txt+'</article>';
   if(kind==='blogs')return '<article class="ck-panel ck-article"><small>ARTÍCULO '+(i+1)+'</small><h2>'+caption+'</h2>'+txt+'</article>';
-  return '<article class="ck-panel ck-book"><small>CAPÍTULO '+(i+1)+'</small><h2>'+caption+'</h2>'+txt+'</article>';
+  return paperPages(p.text).map((part,leaf)=>
+   '<article class="ck-panel ck-book"'+(leaf?' data-continuacion':'')+'><small>CAPÍTULO '+(i+1)+(leaf?' · CONTINÚA':'')+'</small>'+
+   '<h2>'+caption+'</h2>'+textHtml(part)+'</article>'
+  ).join('');
  }).join('');
  const layoutClass='ck-layout-'+Math.max(0,modes[kind].layouts.indexOf(t.layout));
  const bubbleClass='ck-bubble-'+Math.max(0,['Redondo','Rectangular','Narración'].indexOf(t.bubble));
@@ -95,26 +270,15 @@ function enhance(data, files){
  const artwork=showDraw?'<figure class="ck-drawing">'+artworks+'<figcaption>Ilustración original</figcaption></figure>':'';
  const cta=kind==='flyers'?'<div class="ck-cta">'+safe(t.callToAction)+'</div>':'';
  const partner=kind==='dramas'||kind==='historietas'||kind==='animes'?'<span class="ck-partner">'+safe(t.character)+' '+safe(t.partner)+'</span>':'';
- const pagination=longWork?'<nav class="ck-pagination" aria-label="Lectura"><button type="button" id="ck-prev">Anterior</button><span id="ck-page" role="status"></span><button type="button" id="ck-next">Siguiente</button></nav>':'';
- const motion=kind==='animes'?'<button type="button" id="ck-anim-toggle" class="ck-anim-control">⏸ Pausar animación</button>':'';
+ const sound=kind==='cuentos'?'<button type="button" id="ck-paper-sound" aria-pressed="true">Silenciar hojas</button>':'';
+ const player=kind==='animes'?'<button type="button" id="ck-scene-play" data-seconds="'+t.sceneSeconds+'" aria-pressed="false">Reproducir escenas</button><button type="button" id="ck-anim-toggle">Pausar movimiento</button>':'';
+ const pagination=paged?'<nav class="ck-pagination" aria-label="Navegación de la obra"><button type="button" id="ck-prev">Anterior</button><span id="ck-page" role="status"></span><button type="button" id="ck-next">Siguiente</button>'+sound+player+'</nav>':'';
  const font=t.font==='Clásica'?'Georgia,serif':t.font==='Cómic'?'Trebuchet MS,cursive':'system-ui,Arial,sans-serif';
  const author=kind==='blogs'?'<p class="ck-author">Publicado por '+safe(t.author)+'</p>':'';
- const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safe(d.title)+'</title><link rel="stylesheet" href="style.css"></head><body class="ck-public ck-'+kind+' '+layoutClass+' '+bubbleClass+' '+effectClass+'"><main><header><small>CLUB KRUEKA · '+safe(modes[kind].label.toUpperCase())+'</small><h1>'+safe(d.title)+'</h1><p>'+safe(d.subtitle)+'</p>'+author+partner+'</header><div class="ck-cover"><div class="ck-cover-symbol">'+safe(d.art)+'</div><strong>'+safe(t.action)+'</strong></div>'+artwork+'<section class="ck-pages '+cls+'">'+pages+'</section>'+pagination+cta+motion+'<footer>Una creación original del Club Krueka</footer></main><script src="script.js"></script></body></html>';
+ const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safe(d.title)+'</title><link rel="stylesheet" href="style.css"></head><body class="ck-public ck-'+kind+' '+layoutClass+' '+bubbleClass+' '+effectClass+'"><main><header><small>CLUB KRUEKA · '+safe(modes[kind].label.toUpperCase())+'</small><h1>'+safe(d.title)+'</h1><p>'+safe(d.subtitle)+'</p>'+author+partner+'</header><div class="ck-cover"><div class="ck-cover-symbol">'+safe(d.art)+'</div><strong>'+safe(t.action)+'</strong></div>'+artwork+pagination+'<section class="ck-pages '+(paged?'ck-viewer-pages ':'')+cls+'">'+pages+'</section>'+cta+'<footer>Una creación original del Club Krueka</footer></main><script src="script.js"></script></body></html>';
  const css=':root{--accent:'+accent+';--back:'+t.backdrop+'}*{box-sizing:border-box}body{margin:0;color:#152c49;background:var(--back);font:16px/1.5 '+font+'}main{max-width:1080px;margin:auto;padding:22px}header{text-align:center;padding:25px 10px}header small{color:var(--accent);font:800 12px system-ui;letter-spacing:2px}h1{font-size:clamp(28px,4vw,48px);line-height:1.15;margin:10px 0 7px}header p{color:#4a6177;margin:0}.ck-cover{padding:24px;background:linear-gradient(125deg,var(--accent),#192648);border-radius:24px;display:flex;align-items:center;justify-content:center;gap:24px;color:white}.ck-cover-symbol{font-size:70px}.ck-cover strong{font-size:clamp(16px,3vw,27px);max-width:460px}.ck-pages{margin:23px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.ck-panel{padding:22px;background:white;border:1px solid #c9d9eb;border-radius:16px;overflow-wrap:anywhere;min-height:190px}.ck-panel small{font:800 11px system-ui;color:var(--accent);letter-spacing:1px}.ck-panel h2{font-size:21px;margin:10px 0}.ck-panel p{margin:7px 0;color:#304c69}.ck-art{width:100%;height:auto;max-height:450px;display:block;border-radius:13px;border:1px solid #aebdd0}.ck-drawing{margin:23px auto;max-width:840px}.ck-drawing figcaption{text-align:center;font-size:12px;color:#687f99}.ck-partner{display:block;font-size:24px;margin-top:10px}.ck-cta{margin:22px auto;padding:20px;background:var(--accent);border-radius:13px;text-align:center;color:white;font-size:25px;font-weight:900}.ck-public footer{text-align:center;font:12px system-ui;color:#6e839a;padding:25px 0}.ck-grid-comic{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}.ck-comic{border:3px solid #162b46;border-radius:5px;padding:9px}.ck-panel-art{height:185px;display:flex;align-items:center;justify-content:space-around;gap:10px;padding:12px}.ck-face{font-size:60px}.ck-speech{display:block;max-width:68%;background:#fff;border:2px solid #142942;border-radius:25px;padding:11px;font-size:14px}.ck-speech p{margin:0}.ck-comic h2{font-size:18px}.ck-stage{background:#1a2944;color:#fff;text-align:center}.ck-stage small{color:#aadeff}.ck-stage-top{display:flex;justify-content:center;align-items:center;gap:15px;border-bottom:3px solid var(--accent);padding:15px 0}.ck-stage-top span{font-size:48px}.ck-stage h2,.ck-stage .ck-dialogue p{color:#fff}.ck-dialogue{font-style:italic}.ck-anime{background:#111e35;color:white}.ck-anime h2{color:white}.ck-anime-scene{position:relative;min-height:180px;border-radius:12px;overflow:hidden;display:flex;align-items:center;padding:10px}.ck-anim-char{font-size:77px;animation:float 2s ease-in-out infinite alternate}.ck-anime-bubble{max-width:65%;margin-left:auto;background:#fff;border:2px solid #1c385d;color:#1a3351;border-radius:23px;padding:12px;font-size:13px}.ck-anime-bubble p{margin:0}.ck-grid-flyer{grid-template-columns:1fr}.ck-flyers main{max-width:690px}.ck-flyers .ck-cover{flex-direction:column;text-align:center}.ck-flyer-item{text-align:center;min-height:auto;padding:10px 20px}.ck-flyer-item h2{font-size:23px;color:var(--accent)}.ck-dibujos .ck-cover{padding:10px}.ck-dibujos .ck-cover-symbol{font-size:45px}.ck-blogs .ck-cover{justify-content:flex-start}.ck-cuentos .ck-book{font-family:Georgia,serif}.ck-layout-1 .ck-pages{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.ck-layout-2 .ck-pages{grid-template-columns:1fr}.ck-bubble-1 .ck-speech{border-radius:7px}.ck-bubble-2 .ck-speech{border-style:dashed;background:#fffbe5}.ck-effect-1 .ck-anim-char{animation-name:slide}.ck-effect-2 .ck-anim-char{animation-name:zoom}.ck-author{font-size:12px;color:#476b86;font-style:italic}.ck-public.paused .ck-anim-char{animation-play-state:paused}@keyframes slide{to{transform:translateX(65px)}}@keyframes zoom{to{transform:scale(1.15)}}@keyframes float{to{transform:translateX(25px) translateY(-18px) rotate(8deg)}}@media(max-width:600px){main{padding:11px}.ck-pages{grid-template-columns:1fr}.ck-cover-symbol{font-size:48px}.ck-cover{padding:16px}.ck-anime-scene{min-height:140px}}';
- const readingStyle='.ck-pagination{display:flex;align-items:center;justify-content:center;gap:12px}.ck-pagination button{padding:8px 10px;font:inherit;border:1px solid var(--accent);background:#fff;border-radius:8px}.ck-pagination button:disabled{opacity:.5}.ck-pages:has(+.ck-pagination){display:block;max-width:720px;margin-inline:auto}.ck-pages:has(+.ck-pagination) .ck-panel{text-align:left;padding:clamp(16px,4vw,32px)}.ck-panel[hidden]{display:none}';
- const readingScript=`const pages=[...document.querySelectorAll('.ck-pages > article')];
- const prev=document.getElementById('ck-prev'),next=document.getElementById('ck-next'),status=document.getElementById('ck-page');
- let page=0;
- function showPage(){
-  pages.forEach((part,i)=>{part.hidden=i!==page});
-  prev.disabled=page===0;next.disabled=page===pages.length-1;
-  status.textContent=(page+1)+' / '+pages.length;
- }
- prev.onclick=()=>{page--;showPage()};
- next.onclick=()=>{page++;showPage()};
- showPage();`;
- const script=longWork?readingScript:kind==='animes'?'const b=document.getElementById("ck-anim-toggle");if(b)b.onclick=()=>{const p=document.body.classList.toggle("paused");b.textContent=p?"▶ Reproducir animación":"⏸ Pausar animación"};':'/* Mi obra creada con Club Krueka. */';
- return {...files,'index.html':html,'style.css':css+(longWork?readingStyle:''),'script.js':script,'obra.json':JSON.stringify(d)};
+ const script=paged?'('+readWork.toString()+')();':'/* Mi obra creada con Club Krueka. */';
+ return {...files,'index.html':html,'style.css':css+readingStyle,'script.js':script,'obra.json':JSON.stringify(d)};
 }
 function field(label,value,handler,options){
  const el=document.createElement('label');el.className='ct-field';
@@ -127,6 +291,7 @@ function field(label,value,handler,options){
  }else{
   input=document.createElement('input');input.type=options?.type||'text';input.value=value;
   if(options?.maxlength)input.maxLength=options.maxlength;
+  if(options?.type==='number'){input.min=options.min;input.max=options.max;}
  }
  input.addEventListener(options?.type==='color'?'input':'change',()=>handler(input.value));
  el.appendChild(input);return el;
@@ -162,7 +327,14 @@ function render(work,s,data,onChange){
   card.append(field('Protagonista',t.character,v=>change('character',v),{maxlength:8}));
   card.append(field('Personaje secundario',t.partner,v=>change('partner',v),{maxlength:8}));
  }
- if(kind==='animes')card.append(field('Efecto de movimiento',t.effect,v=>change('effect',v),{values:['Flotar','Deslizar','Zoom suave']}));
+ if(kind==='animes'){
+  card.append(field('Efecto de movimiento',t.effect,v=>change('effect',v),{values:['Flotar','Deslizar','Zoom suave']}));
+  card.append(field('Segundos por escena',t.sceneSeconds,v=>{
+   const seconds=Math.max(2,Math.min(12,Math.round(Number(v)||5)));
+   change('sceneSeconds',seconds);
+   card.querySelector('input[type="number"]').value=seconds;
+  },{type:'number',min:2,max:12}));
+ }
  if(kind==='historietas')card.append(field('Globo de texto',t.bubble,v=>change('bubble',v),{values:['Redondo','Rectangular','Narración']}));
  card.append(field('Frase destacada',t.action,v=>change('action',v),{maxlength:90}));
  parent.append(card);
@@ -172,6 +344,7 @@ function render(work,s,data,onChange){
   const bar=document.createElement('div');bar.className='ct-format';
   for(const [label,start,end] of [['Negrita','**','**'],['Cursiva','*','*']]){
    const b=document.createElement('button');b.type='button';b.textContent=label;
+   b.onpointerdown=event=>event.preventDefault();
    b.onclick=()=>{
     const area=work.querySelector('#ck-scenes textarea:focus')||work.querySelector('#ck-scenes textarea');
     if(!area)return;const a=area.selectionStart,z=area.selectionEnd,word=area.value.slice(a,z)||'texto';
@@ -226,7 +399,13 @@ function render(work,s,data,onChange){
    canvas.setPointerCapture(e.pointerId);draft={type:tool,color:ink,width,points:[pos]};paintSketch(canvas,current().tools.strokes,draft,current().tools.backdrop);
   });
   canvas.addEventListener('pointermove',e=>{if(!draft)return;const pos=coord(e),points=draft.points;
-   if(draft.type==='pen'){const last=points[points.length-1];if(Math.hypot(pos[0]-last[0],pos[1]-last[1])>=3&&points.length<100)points.push(pos);}
+   if(draft.type==='pen'){
+    const last=points[points.length-1];
+    if(Math.hypot(pos[0]-last[0],pos[1]-last[1])>=3){
+     if(points.length>=100)draft.points=points.filter((_,i)=>i%2===0||i===points.length-1);
+     draft.points.push(pos);
+    }
+   }
    else draft.points=[points[0],pos];
    paintSketch(canvas,current().tools.strokes,draft,current().tools.backdrop);
   });
