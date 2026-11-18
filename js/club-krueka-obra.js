@@ -51,7 +51,7 @@ fetch(ENDPOINT,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/js
  if(!p||!p.files||!p.files['index.html']){report('Esta creación todavía no está publicada o dejó de estar disponible.');return;}
  heading.textContent=String(p.title||'Creación de Club Krueka').slice(0,80);
  document.title=heading.textContent+' · Club Krueka';
- stage.srcdoc=buildPreview(p.files);
+ stage.srcdoc=buildPreview(window.ClubTalleres?.readingFiles(p.files)||p.files);
  document.getElementById('ck-ob-stage').hidden=false;
  status.hidden=true;share.disabled=false;
 }).catch(()=>report('No pudimos cargar esta obra aprobada. Revisá la conexión e intentá nuevamente.'));

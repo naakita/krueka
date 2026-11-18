@@ -136,8 +136,62 @@ const readingStyle=`
 .ck-dibujos.ck-layout-2 .ck-drawing{padding:8px;border:8px double var(--accent);background:#f4f6fb}
 @media(prefers-reduced-motion:reduce){.ck-cuentos .ck-book,.ck-animes .ck-anim-char,.cm-model{animation:none!important}}
 `;
+const bookStyle=`
+.ck-public.ck-reader{background:radial-gradient(ellipse at top,#31434a,#14242c 85%);color:#f8ebce;min-height:100vh}
+.ck-reader main{max-width:1140px;padding:clamp(10px,2vw,24px);margin:auto}
+.ck-reader header{padding:0 0 8px;text-align:left}
+.ck-reader header h1{font:normal clamp(22px,3.5vw,38px)/1.15 Georgia,serif;margin:3px 0}
+.ck-reader header small,.ck-reader header p,.ck-reader footer{color:#e2d8bc}
+.ck-reader header .ck-partner{display:none}
+.ck-reader .ck-pagination{position:static;justify-content:space-between;margin:0 0 10px;padding:0;background:none;color:#f5e6c9;box-shadow:none}
+.ck-reader .ck-pagination button{background:transparent;color:inherit;border-color:#b1a792}
+.ck-reader .ck-pages.ck-spread{--paper:#faedcd;position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:0;isolation:isolate;max-width:none;margin:0 auto;overflow:visible;padding:0;border:4px solid var(--accent);border-bottom-width:7px;border-radius:6px;background:var(--paper);box-shadow:0 2px #ac9775,0 4px #e5d1a5,0 6px #847359,0 12px 28px #0005;touch-action:pan-y pinch-zoom}
+.ck-reader .ck-spread>.ck-leaf,.ck-reader .ck-spread::after{grid-row:1;grid-column:1;min-width:0;height:clamp(265px,calc(100dvh - 165px),700px);overflow-y:auto;overflow-wrap:anywhere;overscroll-behavior-y:contain;padding:clamp(18px,3.3vw,48px) clamp(21px,3.5vw,50px) 60px;border:none;border-radius:2px;text-align:left;background:linear-gradient(90deg,#a7824840,transparent 10%,transparent 91%,#af864829),radial-gradient(ellipse at 50% 40%,#fff7e2,var(--paper) 72%,#e4c996);color:#392d20;box-shadow:none;font:17px/1.55 Georgia,serif;scrollbar-width:thin;scrollbar-color:#aa9168 transparent}
+.ck-reader .ck-spread>.ck-leaf[hidden]{display:none}
+.ck-reader .ck-leaf h2{margin:.65em 0;font:normal clamp(23px,3vw,35px)/1.12 Georgia,serif;color:#422a1d}
+.ck-reader .ck-leaf p,.ck-reader .ck-leaf small,.ck-reader .ck-leaf .ck-dialogue p{color:#3f3126}
+.ck-reader .ck-leaf small{display:block;color:#70583c;font:700 11px/1.4 system-ui;letter-spacing:.11em}
+.ck-reader .ck-leaf .ck-dialogue,.ck-reader .ck-leaf .ck-stage-top{background:transparent;color:#503b29;text-align:left;padding:0;justify-content:flex-start}
+.ck-reader .ck-leaf .ck-stage-top{margin:12px 0;border-bottom:1px solid #b69f76}
+.ck-reader .ck-leaf .ck-stage-top span{font-size:27px}
+.ck-reader .ck-leaf .ck-cover{display:grid;align-content:center;justify-items:center;min-height:55%;margin-top:15px;border:none;background:none;box-shadow:none;color:#513923;text-align:center;padding:0}
+.ck-reader .ck-leaf .ck-cover strong{font:italic 19px/1.45 Georgia,serif}
+.ck-reader .ck-leaf .ck-cover img,.ck-reader .ck-leaf .ck-drawing{max-width:100%;height:auto}
+.ck-reader .ck-front h2{text-align:center;font-variant:small-caps}
+.ck-reader .ck-front .ck-partner{text-align:center}
+.ck-reader .ck-corner{position:absolute;z-index:2;bottom:0;width:54px;height:54px;display:flex;align-items:flex-end;justify-content:flex-end;padding:0 6px 4px;border:0;border-radius:0;background:linear-gradient(135deg,transparent 48%,#ad926d 50%,#fff4d5 58%,#c9ab7d 77%,#765b3b 100%);color:#44301a;font:700 20px Georgia,serif;cursor:pointer}
+.ck-reader .ck-corner:focus-visible{outline:3px solid #226393;outline-offset:-3px}
+.ck-reader .ck-corner:hover:enabled{filter:brightness(1.08)}
+.ck-reader .ck-corner:disabled{visibility:hidden}
+.ck-reader .ck-corner-prev{left:0;justify-content:flex-start;background:linear-gradient(225deg,transparent 48%,#ad926d 50%,#fff4d5 58%,#c9ab7d 77%,#765b3b 100%)}
+.ck-reader .ck-corner-next{right:0}
+.ck-reader .ck-leaf.ck-turn-forward{transform-origin:left;animation:ck-page-forward .38s ease-out}
+.ck-reader .ck-leaf.ck-turn-back{transform-origin:right;animation:ck-page-back .38s ease-out}
+@media(min-width:740px){
+ .ck-reader .ck-pages.ck-spread{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ck-reader .ck-spread>.ck-verso{grid-column:1;background:linear-gradient(90deg,transparent 86%,#674b2c42),radial-gradient(ellipse at 55% 40%,#fff7e2,var(--paper) 77%,#dbc399)}
+ .ck-reader .ck-spread>.ck-recto,.ck-reader .ck-spread::after{grid-column:2;background:linear-gradient(90deg,#75533254,transparent 11%,transparent 96%,#87613726),var(--paper)}
+ .ck-reader .ck-spread::after{content:"";z-index:-1}
+}
+@media(min-width:740px) and (prefers-reduced-motion:no-preference){
+ .ck-reader .ck-spread.ck-flip-next::before,.ck-reader .ck-spread.ck-flip-prev::before{content:"";position:absolute;z-index:1;inset:0 0 0 50%;pointer-events:none;transform-origin:left;background:linear-gradient(90deg,#bfa67b,#f3e2ba 14%,#fff5db 80%,#d2b78e);animation:ck-unfold-next .48s ease-in-out both}
+ .ck-reader .ck-spread.ck-flip-prev::before{inset:0 50% 0 0;transform-origin:right;animation-name:ck-unfold-prev}
+ @keyframes ck-unfold-next{0%{transform:perspective(1600px) rotateY(0)}88%{opacity:1}100%{transform:perspective(1600px) rotateY(-177deg);opacity:0}}
+ @keyframes ck-unfold-prev{0%{transform:perspective(1600px) rotateY(0)}88%{opacity:1}100%{transform:perspective(1600px) rotateY(177deg);opacity:0}}
+}
+@media(prefers-reduced-motion:reduce){.ck-reader .ck-leaf{animation:none!important}}
+`;
+function bookMarkup(heading,cover,pages){
+ const status='<nav class="ck-pagination" aria-label="Opciones de lectura"><span id="ck-page" role="status"></span><button type="button" id="ck-paper-sound" aria-pressed="true">Silenciar hojas</button></nav>';
+ const corner=(id,label,symbol)=>'<button type="button" class="ck-corner ck-corner-'+id+'" id="ck-'+id+'" aria-label="'+label+'" title="'+label+'">'+symbol+'</button>';
+ return status+'<section aria-label="Libro abierto" class="ck-pages ck-viewer-pages ck-spread"><div class="ck-front ck-leaf" aria-label="Portada"><small>PORTADA</small><h2>'+heading+'</h2>'+cover+'</div>'+pages+corner('prev','Página anterior','‹')+corner('next','Página siguiente','›')+'</section>';
+}
 function readWork(){
- const pages=[...document.querySelectorAll('.ck-viewer-pages > article')];
+ const sheet=document.querySelector('.ck-viewer-pages');
+ const book=sheet.classList.contains('ck-spread');
+ const pages=[...sheet.querySelectorAll(':scope > article, :scope > .ck-front')];
+ const wide=window.matchMedia('(min-width:740px)');
+ const step=()=>book&&wide.matches?2:1;
  const prev=document.getElementById('ck-prev');
  const next=document.getElementById('ck-next');
  const status=document.getElementById('ck-page');
@@ -147,8 +201,8 @@ function readWork(){
  const delay=(Number(play?.dataset.seconds)||5)*1000;
  const Audio=window.AudioContext||window.webkitAudioContext;
  let page=0,audio=null,timer=null,playing=false;
- const sheet=document.querySelector('.ck-viewer-pages');
  let touch=null;
+ if(book)pages.forEach((leaf,i)=>{leaf.classList.add('ck-leaf',i%2?'ck-recto':'ck-verso');leaf.tabIndex=0;});
 
  function paper(){
   if(!sound||sound.getAttribute('aria-pressed')!=='true'||!Audio||(navigator.userActivation&&!navigator.userActivation.hasBeenActive))return;
@@ -169,23 +223,32 @@ function readWork(){
 
  function showPage(direction=0){
   pages.forEach((part,i)=>{
-   part.hidden=i!==page;
+   part.hidden=i<page||i>=page+step();
+   if(!part.hidden&&direction)part.scrollTop=0;
    part.classList.remove('ck-turn-forward','ck-turn-back');
   });
-  if(direction&&sound)pages[page].classList.add(direction>0?'ck-turn-forward':'ck-turn-back');
-  prev.disabled=page===0;next.disabled=page===pages.length-1;
-  status.textContent=(page+1)+' / '+pages.length;
+  if(direction&&sound)(pages[direction>0?Math.min(page+step()-1,pages.length-1):page]).classList.add(direction>0?'ck-turn-forward':'ck-turn-back');
+  prev.disabled=page===0;next.disabled=page+step()>=pages.length;
+  if(!book){status.textContent=(page+1)+' / '+pages.length;return;}
+  const last=Math.min(page+step()-1,pages.length-1);
+  if(page===0)status.textContent=last?'Portada · Página 1 de '+(pages.length-1):'Portada';
+  else status.textContent=(page===last?'Página '+page:'Páginas '+page+'–'+last)+' de '+(pages.length-1);
  }
 
  function turn(direction){
-  const target=page+direction;
+  const target=page+direction*step();
   if(target<0||target>=pages.length)return;
   const former=document.activeElement;
   page=target;showPage(direction);paper();
-  if(former===prev&&prev.disabled)next.focus();
-  if(former===next&&next.disabled)prev.focus();
+  if(book){
+   sheet.classList.remove('ck-flip-next','ck-flip-prev');
+   void sheet.offsetWidth;
+   sheet.classList.add(direction>0?'ck-flip-next':'ck-flip-prev');
+  }
+  if(former===prev&&prev.disabled)next.focus({preventScroll:true});
+  if(former===next&&next.disabled)prev.focus({preventScroll:true});
   const reader=document.querySelector('.ck-pagination');
-  if(reader.getBoundingClientRect().top<=1)sheet.scrollIntoView({block:'start'});
+  if(!book&&reader.getBoundingClientRect().top<=1)sheet.scrollIntoView({block:'start'});
  }
 
  function queue(){
@@ -210,6 +273,7 @@ function readWork(){
   if(direction){event.preventDefault();turn(direction);queue();}
  });
 
+ if(book)wide.addEventListener('change',()=>{page-=page%step();showPage();});
  if(sound){
   sheet.addEventListener('touchstart',event=>{
    const first=event.touches[0];
@@ -247,19 +311,23 @@ function enhance(data, files){
  const d=normalize(data),kind=d.kind,t=d.tools,strokes=t.strokes;
  if(!modes[kind])return files;
  const artworks=sketchMarkup(strokes,t.backdrop);
- const paged=['cuentos','dramas','animes'].includes(kind);
+ const book=['cuentos','dramas','blogs'].includes(kind);
+ const paged=book||kind==='animes';
  const pages=(d.panels||[]).map((p,i)=>{
   const scene=t.perScene[i],caption=safe(p.title),txt=textHtml(p.text);
   if(kind==='historietas')return '<article class="ck-panel ck-comic"><div class="ck-panel-art" style="background:'+scene.backdrop+'"><span class="ck-face">'+safe(scene.character)+'</span><div class="ck-speech">'+txt+'</div></div><h2>'+caption+'</h2><small>VIÑETA '+(i+1)+'</small></article>';
-  if(kind==='dramas')return '<article class="ck-panel ck-stage" style="--scene:'+scene.backdrop+'"><small>ACTO '+(i+1)+' · '+safe(scene.stage)+'</small><div class="ck-stage-top"><span>'+safe(scene.character)+'</span><strong>'+safe(scene.speaker)+'</strong></div><h2>'+caption+'</h2><div class="ck-dialogue">'+txt+'</div></article>';
+
   if(kind==='animes')return '<article class="ck-panel ck-anime"><small>ESCENA '+(i+1)+' · '+safe(scene.stage)+'</small><div class="ck-anime-scene" style="--scene:'+scene.backdrop+'"><span class="ck-anim-char">'+safe(scene.character)+'</span><div class="ck-anime-bubble"><strong>'+safe(scene.speaker)+'</strong>'+txt+'</div></div><h2>'+caption+'</h2></article>';
   if(kind==='flyers')return '<article class="ck-panel ck-flyer-item"><h2>'+caption+'</h2>'+txt+'</article>';
   if(kind==='dibujos')return '<article class="ck-panel"><h2>'+caption+'</h2>'+txt+'</article>';
-  if(kind==='blogs')return '<article class="ck-panel ck-article"><small>ARTÍCULO '+(i+1)+'</small><h2>'+caption+'</h2>'+txt+'</article>';
-  return paperPages(p.text).map((part,leaf)=>
-   '<article class="ck-panel ck-book"'+(leaf?' data-continuacion':'')+'><small>CAPÍTULO '+(i+1)+(leaf?' · CONTINÚA':'')+'</small>'+
-   '<h2>'+caption+'</h2>'+textHtml(part)+'</article>'
-  ).join('');
+  const label={dramas:'ACTO',blogs:'ARTÍCULO',cuentos:'CAPÍTULO'}[kind];
+  const type={dramas:'ck-stage',blogs:'ck-article',cuentos:'ck-book'}[kind];
+  return paperPages(p.text).map((part,leaf)=>{
+   const details=kind==='dramas'?' · '+safe(scene.stage):'';
+   const cast=kind==='dramas'?'<div class="ck-stage-top"><span>'+safe(scene.character)+'</span><strong>'+safe(scene.speaker)+'</strong></div>':'';
+   const content=kind==='dramas'?'<div class="ck-dialogue">'+textHtml(part)+'</div>':textHtml(part);
+   return '<article class="ck-panel '+type+'"'+(leaf?' data-continuacion':'')+'><small>'+label+' '+(i+1)+details+(leaf?' · CONTINÚA':'')+'</small>'+cast+'<h2>'+caption+'</h2>'+content+'</article>';
+  }).join('');
  }).join('');
  const layoutClass='ck-layout-'+Math.max(0,modes[kind].layouts.indexOf(t.layout));
  const bubbleClass='ck-bubble-'+Math.max(0,['Redondo','Rectangular','Narración'].indexOf(t.bubble));
@@ -270,15 +338,39 @@ function enhance(data, files){
  const artwork=showDraw?'<figure class="ck-drawing">'+artworks+'<figcaption>Ilustración original</figcaption></figure>':'';
  const cta=kind==='flyers'?'<div class="ck-cta">'+safe(t.callToAction)+'</div>':'';
  const partner=kind==='dramas'||kind==='historietas'||kind==='animes'?'<span class="ck-partner">'+safe(t.character)+' '+safe(t.partner)+'</span>':'';
- const sound=kind==='cuentos'?'<button type="button" id="ck-paper-sound" aria-pressed="true">Silenciar hojas</button>':'';
+
  const player=kind==='animes'?'<button type="button" id="ck-scene-play" data-seconds="'+t.sceneSeconds+'" aria-pressed="false">Reproducir escenas</button><button type="button" id="ck-anim-toggle">Pausar movimiento</button>':'';
- const pagination=paged?'<nav class="ck-pagination" aria-label="Navegación de la obra"><button type="button" id="ck-prev">Anterior</button><span id="ck-page" role="status"></span><button type="button" id="ck-next">Siguiente</button>'+sound+player+'</nav>':'';
+ const pagination=paged?'<nav class="ck-pagination" aria-label="Navegación de la obra"><button type="button" id="ck-prev">Anterior</button><span id="ck-page" role="status"></span><button type="button" id="ck-next">Siguiente</button>'+player+'</nav>':'';
  const font=t.font==='Clásica'?'Georgia,serif':t.font==='Cómic'?'Trebuchet MS,cursive':'system-ui,Arial,sans-serif';
  const author=kind==='blogs'?'<p class="ck-author">Publicado por '+safe(t.author)+'</p>':'';
- const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safe(d.title)+'</title><link rel="stylesheet" href="style.css"></head><body class="ck-public ck-'+kind+' '+layoutClass+' '+bubbleClass+' '+effectClass+'"><main><header><small>CLUB KRUEKA · '+safe(modes[kind].label.toUpperCase())+'</small><h1>'+safe(d.title)+'</h1><p>'+safe(d.subtitle)+'</p>'+author+partner+'</header><div class="ck-cover"><div class="ck-cover-symbol">'+safe(d.art)+'</div><strong>'+safe(t.action)+'</strong></div>'+artwork+pagination+'<section class="ck-pages '+(paged?'ck-viewer-pages ':'')+cls+'">'+pages+'</section>'+cta+'<footer>Una creación original del Club Krueka</footer></main><script src="script.js"></script></body></html>';
+ const cover='<div class="ck-cover"><div class="ck-cover-symbol">'+safe(d.art)+'</div><strong>'+safe(t.action)+'</strong></div>'+artwork;
+ const reader=book?bookMarkup(safe(d.title),cover+partner,pages):cover+pagination+'<section class="ck-pages '+(paged?'ck-viewer-pages ':'')+cls+'">'+pages+'</section>';
+ const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safe(d.title)+'</title><link rel="stylesheet" href="style.css"></head><body class="ck-public ck-'+kind+(book?' ck-reader':'')+' '+layoutClass+' '+bubbleClass+' '+effectClass+'"><main><header><small>CLUB KRUEKA · '+safe(modes[kind].label.toUpperCase())+'</small><h1>'+safe(d.title)+'</h1><p>'+safe(d.subtitle)+'</p>'+author+partner+'</header>'+reader+cta+'<footer>Una creación original del Club Krueka</footer></main><script src="script.js"></script></body></html>';
  const css=':root{--accent:'+accent+';--back:'+t.backdrop+'}*{box-sizing:border-box}body{margin:0;color:#152c49;background:var(--back);font:16px/1.5 '+font+'}main{max-width:1080px;margin:auto;padding:22px}header{text-align:center;padding:25px 10px}header small{color:var(--accent);font:800 12px system-ui;letter-spacing:2px}h1{font-size:clamp(28px,4vw,48px);line-height:1.15;margin:10px 0 7px}header p{color:#4a6177;margin:0}.ck-cover{padding:24px;background:linear-gradient(125deg,var(--accent),#192648);border-radius:24px;display:flex;align-items:center;justify-content:center;gap:24px;color:white}.ck-cover-symbol{font-size:70px}.ck-cover strong{font-size:clamp(16px,3vw,27px);max-width:460px}.ck-pages{margin:23px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.ck-panel{padding:22px;background:white;border:1px solid #c9d9eb;border-radius:16px;overflow-wrap:anywhere;min-height:190px}.ck-panel small{font:800 11px system-ui;color:var(--accent);letter-spacing:1px}.ck-panel h2{font-size:21px;margin:10px 0}.ck-panel p{margin:7px 0;color:#304c69}.ck-art{width:100%;height:auto;max-height:450px;display:block;border-radius:13px;border:1px solid #aebdd0}.ck-drawing{margin:23px auto;max-width:840px}.ck-drawing figcaption{text-align:center;font-size:12px;color:#687f99}.ck-partner{display:block;font-size:24px;margin-top:10px}.ck-cta{margin:22px auto;padding:20px;background:var(--accent);border-radius:13px;text-align:center;color:white;font-size:25px;font-weight:900}.ck-public footer{text-align:center;font:12px system-ui;color:#6e839a;padding:25px 0}.ck-grid-comic{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}.ck-comic{border:3px solid #162b46;border-radius:5px;padding:9px}.ck-panel-art{height:185px;display:flex;align-items:center;justify-content:space-around;gap:10px;padding:12px}.ck-face{font-size:60px}.ck-speech{display:block;max-width:68%;background:#fff;border:2px solid #142942;border-radius:25px;padding:11px;font-size:14px}.ck-speech p{margin:0}.ck-comic h2{font-size:18px}.ck-stage{background:#1a2944;color:#fff;text-align:center}.ck-stage small{color:#aadeff}.ck-stage-top{display:flex;justify-content:center;align-items:center;gap:15px;border-bottom:3px solid var(--accent);padding:15px 0}.ck-stage-top span{font-size:48px}.ck-stage h2,.ck-stage .ck-dialogue p{color:#fff}.ck-dialogue{font-style:italic}.ck-anime{background:#111e35;color:white}.ck-anime h2{color:white}.ck-anime-scene{position:relative;min-height:180px;border-radius:12px;overflow:hidden;display:flex;align-items:center;padding:10px}.ck-anim-char{font-size:77px;animation:float 2s ease-in-out infinite alternate}.ck-anime-bubble{max-width:65%;margin-left:auto;background:#fff;border:2px solid #1c385d;color:#1a3351;border-radius:23px;padding:12px;font-size:13px}.ck-anime-bubble p{margin:0}.ck-grid-flyer{grid-template-columns:1fr}.ck-flyers main{max-width:690px}.ck-flyers .ck-cover{flex-direction:column;text-align:center}.ck-flyer-item{text-align:center;min-height:auto;padding:10px 20px}.ck-flyer-item h2{font-size:23px;color:var(--accent)}.ck-dibujos .ck-cover{padding:10px}.ck-dibujos .ck-cover-symbol{font-size:45px}.ck-blogs .ck-cover{justify-content:flex-start}.ck-cuentos .ck-book{font-family:Georgia,serif}.ck-layout-1 .ck-pages{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.ck-layout-2 .ck-pages{grid-template-columns:1fr}.ck-bubble-1 .ck-speech{border-radius:7px}.ck-bubble-2 .ck-speech{border-style:dashed;background:#fffbe5}.ck-effect-1 .ck-anim-char{animation-name:slide}.ck-effect-2 .ck-anim-char{animation-name:zoom}.ck-author{font-size:12px;color:#476b86;font-style:italic}.ck-public.paused .ck-anim-char{animation-play-state:paused}@keyframes slide{to{transform:translateX(65px)}}@keyframes zoom{to{transform:scale(1.15)}}@keyframes float{to{transform:translateX(25px) translateY(-18px) rotate(8deg)}}@media(max-width:600px){main{padding:11px}.ck-pages{grid-template-columns:1fr}.ck-cover-symbol{font-size:48px}.ck-cover{padding:16px}.ck-anime-scene{min-height:140px}}';
  const script=paged?'('+readWork.toString()+')();':'/* Mi obra creada con Club Krueka. */';
- return {...files,'index.html':html,'style.css':css+readingStyle,'script.js':script,'obra.json':JSON.stringify(d)};
+ return {...files,'index.html':html,'style.css':css+readingStyle+(book?bookStyle:''),'script.js':script,'obra.json':JSON.stringify(d)};
+}
+// Recognize the two previously shipped navigation scripts before replacing
+// them in a read-only preview. Authored HTML, media and stored files are kept.
+function readingFiles(files){
+ const html=files?.['index.html'];
+ if(typeof html!=='string'||!files['obra.json']||!/<body class="ck-public ck-(?:cuentos|dramas|blogs) ck-layout-/.test(html))return files;
+ const script=files['script.js'];
+ if(typeof script!=='string')return files;
+ if(script!=='/* Mi obra creada con Club Krueka. */'){
+  const shipped={488:2490888082,4137:1168281508};
+  if(!shipped[script.length])return files;
+  let checksum=0;
+  for(let i=0;i<script.length;i++)checksum=(Math.imul(checksum,31)+script.charCodeAt(i))>>>0;
+  if(checksum!==shipped[script.length])return files;
+ }
+ const oldNav=/<nav class="ck-pagination"[^>]*>[\s\S]*?<\/nav>/;
+ const shell=/(<\/header>)(<div class="ck-cover">[\s\S]*?)<section class="ck-pages [^"]*">([\s\S]*?)<\/section>/;
+ const clean=html.replace(oldNav,'');
+ if(!shell.test(clean))return files;
+ const title=clean.match(/<h1>([\s\S]*?)<\/h1>/)?.[1]||'';
+ const doc=clean.replace('<body class="ck-public ','<body class="ck-public ck-reader ').replace(shell,(_all,header,cover,pages)=>header+bookMarkup(title,cover,pages));
+ return {...files,'index.html':doc,'style.css':(files['style.css']||'')+readingStyle+bookStyle,'script.js':'('+readWork.toString()+')();'};
 }
 function field(label,value,handler,options){
  const el=document.createElement('label');el.className='ct-field';
@@ -415,5 +507,5 @@ function render(work,s,data,onChange){
   paintSketch(canvas,t.strokes,null,t.backdrop);
  }
 }
-window.ClubTalleres={modes,normalize,enhance,render,sketchMarkup};
+window.ClubTalleres={modes,normalize,enhance,render,sketchMarkup,readingFiles};
 })();

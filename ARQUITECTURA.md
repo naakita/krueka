@@ -502,3 +502,5 @@ El panel `js/aula-control.js` ahora distingue la autorización en Supabase, las 
 - Los proyectos de animación se pueden revisar como HTML; la exportación de video a un archivo local no equivale a un video subido ni garantiza que el clip final sea visible por compañeros. Esta versión no aloja MP4 ni publica fotografías de menores.
 
 - Cuentos y Dramas conservan todas las partes en `obra.json` y generan el mismo lector paginado para el borrador y la versión pública. Los límites existentes de tamaño siguen aplicándose al proyecto completo. Páginas y Aplicaciones reutilizan el editor web, con bloques HTML que se pueden insertar por arrastre o clic. La galería distingue ambas categorías utilizando `tipo-club.txt` y mantiene la aprobación docente como condición para publicar.
+
+El lector de cuentos, dramas y artículos se genera en `js/club-studio-talleres.js`. Studio, la revisión docente y el visor público `club-krueka-obra.html` comparten la presentación de las obras anteriores mediante `ClubTalleres.readingFiles`. La adaptación se hace al leer el proyecto y conserva los archivos guardados y la aprobación docente.

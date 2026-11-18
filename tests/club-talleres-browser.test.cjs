@@ -13,6 +13,33 @@ async function until(check){
  while(!check()){if(Date.now()>deadline)throw Error('Tiempo agotado');await new Promise(r=>setTimeout(r,20));}
 }
 function verify(ok,label){if(!ok)throw Error(label);}
+async function tryBook(doc,width){
+ const frame=document.createElement('iframe');
+ frame.style.cssText='position:fixed;top:0;left:0;border:0;height:670px;width:'+width+'px';
+ document.body.append(frame);
+ const loaded=new Promise(resolve=>frame.onload=resolve);
+ frame.srcdoc=doc;
+ await loaded;
+ try{
+  const reader=frame.contentDocument;
+  const sheet=reader.querySelector('.ck-spread'),prev=reader.querySelector('#ck-prev'),next=reader.querySelector('#ck-next');
+  const leaves=[...sheet.querySelectorAll('.ck-leaf')],visible=()=>leaves.filter(leaf=>!leaf.hidden);
+  const step=width>=740?2:1;
+  verify(prev.disabled&&!next.disabled&&visible().length===step,'apertura del libro '+width);
+  const folio=sheet.getBoundingClientRect(),corner=next.getBoundingClientRect();
+  verify(Math.abs(folio.right-corner.right)<10&&Math.abs(folio.bottom-corner.bottom)<10&&corner.width>=44,'esquina inferior derecha');
+  const sound=reader.querySelector('#ck-paper-sound');
+  sound.click();verify(sound.getAttribute('aria-pressed')==='false','silenciar libro');
+  next.click();
+  verify(visible()[0]===leaves[step]&&!prev.disabled,'avanzar hoja '+width);
+  const left=prev.getBoundingClientRect();
+  verify(Math.abs(folio.left-left.left)<10&&Math.abs(folio.bottom-left.bottom)<10,'esquina inferior izquierda');
+  prev.click();verify(visible()[0]===leaves[0],'volver a portada');
+  const seen=new Set(visible());
+  for(let i=0;i<leaves.length&&!next.disabled;i++){next.click();visible().forEach(leaf=>seen.add(leaf));}
+  verify(next.disabled&&seen.size===leaves.length,'leer todas las hojas en orden');
+ }finally{frame.remove();}
+}
 const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes','flyers','dibujos','animation','video-edit','pagina-web','aplicacion-web'];
 (async()=>{
  await until(()=>window.KruekaStudioAccess?.ready);
@@ -51,6 +78,10 @@ const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes',
    const frame=document.querySelector('#ks-frame');
    verify(!frame.classList.contains('off')&&frame.srcdoc.includes('Auditoría '+id),'Ver mi obra '+id);
    verify(document.querySelector('.ks-preview-label').textContent==='Tu obra','etiqueta de '+id);
+   if(['blogs','cuentos','dramas'].includes(id)){
+    await tryBook(frame.srcdoc,980);
+    await tryBook(frame.srcdoc,375);
+   }
    if(id==='cuentos'){
     verify(frame.srcdoc.includes('ck-paper-sound')&&frame.srcdoc.includes('ck-turn-forward'),'sonido y giro');
     verify(frame.srcdoc.includes('data-continuacion'),'capítulo largo distribuido en hojas');
