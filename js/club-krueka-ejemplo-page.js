@@ -6,8 +6,7 @@ const id=params.get('ejemplo')||'neon';
 const model=window.KruekaEjemplos?.get(id);
 const status=document.getElementById('status');
 if(!model){status.textContent='Este modelo no existe. Volvé a la galería para elegir otro.';return;}
-const book=id==='cuento'&&params.get('vista')==='libro'&&window.ClubTalleres;
-const files=book?book.enhance({
+const books={cuento:{
  kind:'cuentos',title:model.title,subtitle:'Un cuento del Club Krueka',art:'🦊🌲',color:'#653823',
  panels:[
   {title:'La puerta escondida',text:'Una mañana, Nara encontró un mapa dibujado en una hoja dorada. Había dos senderos para llegar al árbol de los secretos.'},
@@ -15,11 +14,25 @@ const files=book?book.enhance({
   {title:'El secreto del bosque',text:'La caja guardaba semillas y un mensaje: «El bosque crece con lo que compartimos». Nara llevó las semillas a su escuela. Cada compañero plantó una y escribió una historia para quien la encontrara.'},
  ],
  tools:{action:'El mapa de la hoja dorada',font:'Clásica'},
-},{}):window.KruekaEjemplos.make(model);
-if(id==='cuento'){
+},drama:{
+ kind:'dramas',subtitle:'Guion teatral en tres actos',panels:[
+  {title:'Un ruido en el laboratorio',text:'VERA. ¿Oyeron eso?\nLEO. Viene de debajo de la mesa.'},
+  {title:'La pista inesperada',text:'(Se apagan las luces. Una franja azul cruza el piso.)\nLUMO. Sigan la luz.\nVERA. ¡Encontré el interruptor!'},
+  {title:'Un final brillante',text:'LEO. ¡Es la máquina que hicimos entre todos!\n(La máquina proyecta un cielo de estrellas. Cae el telón.)'}
+ ],tools:{action:'En el laboratorio de la escuela',perScene:[{speaker:'Vera y Leo',stage:'El laboratorio'},{speaker:'Lumo y Vera',stage:'A oscuras'},{speaker:'Leo',stage:'Bajo las estrellas'}]}
+},blog:{
+ kind:'blogs',subtitle:'Revista del Club',panels:[
+  {title:'¿Cómo piensa un robot?',text:'Dibujamos círculos de muchos tamaños. Después probamos si el robot reconocía uno que nunca había visto.'},
+  {title:'Del boceto al videojuego',text:'El primer nivel cabía en una hoja cuadriculada. Para probarlo, una compañera movía una ficha y otra anotaba las reglas que faltaban.'},
+  {title:'Inventores que inspiran',text:'La pregunta de nuestra revista fue sencilla. ¿Qué inventarías para ayudar a alguien de tu comunidad?'}
+ ],tools:{action:'Cuaderno de inventos',author:'La redacción del Club'}
+}};
+const book=books[id]&&params.get('vista')==='libro'&&window.ClubTalleres;
+const files=book?book.enhance({title:model.title,art:model.icon,color:model.colors[0],...books[id]},{}):window.KruekaEjemplos.make(model);
+if(books[id]){
  const alternate=document.createElement('a');
- alternate.href='?ejemplo=cuento'+(book?'':'&vista=libro');
- alternate.textContent=book?'Elegir el camino de Nara →':'Hojear el libro →';
+ alternate.href='?ejemplo='+encodeURIComponent(id)+(book?'':'&vista=libro');
+ alternate.textContent=book?({cuento:'Elegir el camino de Nara →',drama:'Ir al escenario →',blog:'Abrir la revista →'}[id]):'Hojear el libro →';
  document.getElementById('info').append(alternate);
 }
 

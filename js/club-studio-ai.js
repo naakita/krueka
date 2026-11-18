@@ -286,15 +286,16 @@ const StudioIA={__loaded:true,
     const parts=(base+rel).split('/'),out=[];for(const p of parts){if(!p||p==='.')continue;if(p==='..')out.pop();else out.push(p)}return out.join('/');
   },
   buildPreview(path){
-    let html=this.files[path]||'<h1>Archivo no encontrado</h1>',base=this.dirname(path),self=this;
+    const files=path==='index.html'&&window.ClubTalleres?.readingFiles?ClubTalleres.readingFiles(this.files):this.files;
+    let html=files[path]||'<h1>Archivo no encontrado</h1>',base=this.dirname(path),self=this;
     html=html.replace(/<link\b([^>]*?)href=["']([^"']+)["']([^>]*)>/gi,(m,a,href,b)=>{
-      const p=self.resolve(base,href);return self.files[p]!=null?'<style data-file="'+esc(p)+'">'+String(self.files[p]).replace(/<\/style/gi,'<\\/style')+'</style>':m;
+      const p=self.resolve(base,href);return files[p]!=null?'<style data-file="'+esc(p)+'">'+String(files[p]).replace(/<\/style/gi,'<\\/style')+'</style>':m;
     });
     html=html.replace(/<script\b([^>]*?)src=["']([^"']+)["']([^>]*)><\/script>/gi,(m,a,src,b)=>{
-      const p=self.resolve(base,src);return self.files[p]!=null?'<script data-file="'+esc(p)+'">'+String(self.files[p]).replace(/<\/script/gi,'<\\/script')+'<\/script>':m;
+      const p=self.resolve(base,src);return files[p]!=null?'<script data-file="'+esc(p)+'">'+String(files[p]).replace(/<\/script/gi,'<\\/script')+'<\/script>':m;
     });
     html=html.replace(/<(img|source)\b([^>]*?)src=["']([^"']+)["']([^>]*)>/gi,(m,tag,a,src,b)=>{
-      const p=self.resolve(base,src),v=self.files[p];if(v!=null&&/\.svg$/i.test(p)){const data='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(v);return '<'+tag+a+'src="'+data+'"'+b+'>'}return m;
+      const p=self.resolve(base,src),v=files[p];if(v!=null&&/\.svg$/i.test(p)){const data='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(v);return '<'+tag+a+'src="'+data+'"'+b+'>'}return m;
     });
     const bridge='<script>(function(){addEventListener("message",function(e){if(e.source!==parent||!e.data||e.data.type!=="krueka-preview-play")return;var m=document.getElementById("mode"),c=document.getElementById("arena");if(m&&m.textContent.indexOf("Jugar")!==-1)m.click();if(c)c.focus();});addEventListener("error",function(e){parent.postMessage({type:"krueka-studio-error",text:e.message+" (línea "+e.lineno+")"},"*")});addEventListener("unhandledrejection",function(e){parent.postMessage({type:"krueka-studio-error",text:String(e.reason)},"*")});document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var h=a.getAttribute("href");if(!h||h[0]==="#")return;e.preventDefault();parent.postMessage({type:"krueka-studio-nav",href:h},"*")});})();<\/script>';
     const policy='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; media-src data: blob:; connect-src \'none\'; font-src data:; base-uri \'none\'; form-action \'none\'">';
