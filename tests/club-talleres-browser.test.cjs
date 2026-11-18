@@ -38,8 +38,24 @@ const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes',
     body.value='Texto de prueba. '.repeat(1000)+' FIN DE LA OBRA';
     body.dispatchEvent(new Event('input',{bubbles:true}));
     verify(StudioIA.files['index.html'].includes('FIN DE LA OBRA'),'vista previa completa');
+    const last=document.querySelector('#ck-scenes fieldset:last-child');
+    last.querySelector('.ck-editor-actions button').click();
+    verify(JSON.parse(StudioIA.files['obra.json']).panels[2].text.endsWith('FIN DE LA OBRA'),'reordenar '+id);
+    document.querySelector('#ks-undo').click();
+    verify(JSON.parse(StudioIA.files['obra.json']).panels[3].text.endsWith('FIN DE LA OBRA'),'deshacer orden '+id);
     verify(!document.getElementById('ks-frame').classList.contains('off'),'vista previa visible');
    }
+  }
+  if(creative){
+   document.querySelector('#ck-test').click();
+   const frame=document.querySelector('#ks-frame');
+   verify(!frame.classList.contains('off')&&frame.srcdoc.includes('Auditoría '+id),'Ver mi obra '+id);
+   verify(document.querySelector('.ks-preview-label').textContent==='Tu obra','etiqueta de '+id);
+   if(id==='cuentos'){
+    verify(frame.srcdoc.includes('ck-paper-sound')&&frame.srcdoc.includes('ck-turn-forward'),'sonido y giro');
+    verify(frame.srcdoc.includes('data-continuacion'),'capítulo largo distribuido en hojas');
+   }
+   if(id==='animes')verify(frame.srcdoc.includes('ck-scene-play'),'reproductor de escenas');
   }
   if(id==='pagina-web'||id==='aplicacion-web'){
    verify(StudioIA.tab==='programacion','editor web');
@@ -51,6 +67,8 @@ const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes',
    menu.dispatchEvent(new DragEvent('dragstart',{dataTransfer:transfer,bubbles:true}));
    panel.querySelector('#kp-block-drop').dispatchEvent(new DragEvent('drop',{dataTransfer:transfer,bubbles:true,cancelable:true}));
    verify(StudioIA.files['index.html'].includes('Nuevo encabezado')&&StudioIA.files['index.html'].includes('Ir a la sección'),'clic y arrastre');
+   [...panel.querySelectorAll('button')].find(button=>button.textContent==='Contador').click();
+   verify(StudioIA.files['index.html'].includes('<output>0</output>'),'bloque interactivo '+id);
   }
   if(id==='arcade-web')verify(StudioIA.tab==='programacion'&&StudioIA.files['index.html'].includes('<canvas'),'juego listo para probar');
   if(id==='animation'||id==='video-edit')verify(StudioKits.read(StudioIA.files)?.kind===id,'base de medios '+id);

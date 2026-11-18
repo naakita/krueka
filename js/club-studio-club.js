@@ -33,15 +33,17 @@ function defaultData(id){
 }
 function color(value){return /^#[0-9a-f]{6}$/i.test(value||'')?value:'#237fc3';}
 function isLongWork(kind){return kind==='cuentos'||kind==='dramas';}
+function canArrange(kind){return ['cuentos','dramas','animes','historietas','blogs'].includes(kind);}
+const partNames={cuentos:'Capítulo',dramas:'Acto',animes:'Escena',historietas:'Viñeta',blogs:'Artículo'};
 function normalized(raw){
  const d=raw&&typeof raw==='object'?raw:{};
  const category=categories.find(x=>x.id===d.kind&&Object.hasOwn(texts,x.id))?.id||'cuentos';
  const base=defaultData(category),longWork=isLongWork(category);
- const panels=longWork&&Array.isArray(d.panels)&&d.panels.length?d.panels:base.panels;
+ const panels=canArrange(category)&&Array.isArray(d.panels)&&d.panels.length?d.panels:base.panels;
  const baseData={kind:category,title:String(d.title||base.title).slice(0,80),subtitle:String(d.subtitle||base.subtitle).slice(0,140),
   color:color(d.color),art:String(d.art||base.art).slice(0,8),
   panels:panels.map((p,i)=>{
-   const input=longWork?p:d.panels?.[i];
+   const input=canArrange(category)?p:d.panels?.[i];
    const text=String(input?.text??p.text??'');
    return {title:String(input?.title??p.title??'').slice(0,95),text:longWork?text:text.slice(0,1200)};
   }),
@@ -91,19 +93,25 @@ function mount(s){
  work=document.createElement('section');work.className='ks-tool ck-editor';work.id='ks-club-work';work.hidden=true;
  work.innerHTML='<div class="ck-editor-head"><h2>✏ Editá tu creación</h2><p>Cambiá el título, los textos y el color. Mirá el resultado a la derecha.</p></div><form id="ck-form"><label>Título<input name="title" maxlength="80" required></label><label>Descripción<input name="subtitle" maxlength="140"></label><div class="ck-row"><label>Color de tu creación<input name="color" type="color"></label><label>Personaje o símbolo<input name="art" maxlength="8"></label></div><div id="ck-specific-tools"></div><div id="ck-scenes"></div><button type="button" class="ks-btn" id="ck-add-part" hidden></button><div class="ck-editor-actions"><button type="button" class="ks-btn primary" id="ck-test">▶ Ver mi obra</button><button type="button" class="ks-btn" id="ck-save">Guardar</button><button type="button" class="ks-btn" id="ck-submit">Enviar al profe</button></div><p id="ck-status" role="status"></p></form>';
  p.querySelector('.ks-work').appendChild(work);
- work.querySelector('#ck-test').onclick=()=>s.playCurrent();
  const collect=()=>{
   const form=work.querySelector('#ck-form'),old=read(s);
   return {...old,title:form.elements.title.value,subtitle:form.elements.subtitle.value,
    color:form.elements.color.value,art:form.elements.art.value,
    panels:old.panels.map((_,i)=>({title:form.elements['panel-title-'+i].value,text:form.elements['panel-text-'+i].value}))};
  };
+ work.querySelector('#ck-test').onclick=()=>{
+  if(!updateCreative(s,collect()))return;
+  clearTimeout(pending);
+  s.preview='index.html';
+  s.renderPreviewOptions();
+  s.playCurrent();
+ };
  work.querySelector('#ck-save').onclick=()=>{if(updateCreative(s,collect()))s.save();};
  work.querySelector('#ck-submit').onclick=()=>{if(updateCreative(s,collect()))s.submit();};
  work.querySelector('#ck-add-part').onclick=()=>{
   const d=collect();
   d.panels.push({title:'',text:''});
-  if(updateCreative(s,d)){
+  if(updateCreative(s,d,true)){
    renderEditor(s);
    work.querySelector('#ck-scenes fieldset:last-child input').focus();
   }
@@ -120,18 +128,30 @@ function mount(s){
  }));
 }
 function read(s){try{return normalized(JSON.parse(s.files['obra.json']||'{}'));}catch(_e){return normalized(defaultData('cuentos'));}}
-function updateCreative(s,d){
+function updateCreative(s,d,checkpoint=false){
  if(s.busy||!s.cloudReady||!isCreative(s))return false;
  try{
   const files={...s.files,...build(d)};
   s.validFiles(files);
   const title=String(d.title||'Mi creación').slice(0,80);
   if(title===s.title&&Object.keys(files).every(name=>files[name]===s.files[name]))return true;
+  if(checkpoint)s.checkpoint();
   s.files=files;s.title=title;
   s.changed();work.querySelector('#ck-status').textContent='Cambios pendientes de guardar…';
   clearTimeout(pending);pending=setTimeout(()=>{if(work&&!work.hidden){s.preview='index.html';s.renderPreviewOptions();s.renderPreview();}},600);
   return true;
  }catch(e){work.querySelector('#ck-status').textContent='No se guardó esta edición. '+e.message;return false;}
+}
+function arrangePart(s,d,order,focusIndex){
+ const priorImages=d.tools?.images||{};
+ const perScene=d.tools?.perScene||[];
+ const images=Object.fromEntries(order.map((index,i)=>[i,priorImages[index]||'']));
+ images.cover=priorImages.cover||'';
+ const updated={...d,panels:order.map(index=>d.panels[index]),tools:{...d.tools,images,perScene:order.map(index=>perScene[index])}};
+ if(updateCreative(s,updated,true)){
+  renderEditor(s);
+  work.querySelectorAll('.ck-scene')[focusIndex]?.querySelector('input')?.focus();
+ }
 }
 function renderEditor(s){
  if(!isCreative(s))return;
@@ -139,13 +159,35 @@ function renderEditor(s){
  if(lastId!==s.projectId){s.checkpoint();lastId=s.projectId;}
  form.elements.title.value=d.title;form.elements.subtitle.value=d.subtitle;
  form.elements.color.value=d.color;form.elements.art.value=d.art;
- const longWork=isLongWork(d.kind),part=d.kind==='dramas'?'Acto':'Capítulo';
- const add=work.querySelector('#ck-add-part');add.hidden=!longWork;add.textContent='＋ Agregar '+part.toLowerCase();
+ const longWork=isLongWork(d.kind),arrange=canArrange(d.kind),part=partNames[d.kind]||'Parte';
+ const add=work.querySelector('#ck-add-part');add.hidden=!arrange;add.textContent='＋ Agregar '+part.toLowerCase();
  const wrap=work.querySelector('#ck-scenes');wrap.replaceChildren(...d.panels.map((p,i)=>{
-  const section=document.createElement('fieldset');section.className='ck-scene';const lg=document.createElement('legend');lg.textContent=(longWork?part:'Parte')+' '+(i+1);
+  const section=document.createElement('fieldset');section.className='ck-scene';const lg=document.createElement('legend');lg.textContent=part+' '+(i+1);
   const l1=document.createElement('label');l1.textContent='Título';const input=document.createElement('input');input.name='panel-title-'+i;input.maxLength=95;input.value=p.title;l1.appendChild(input);
   const l2=document.createElement('label');l2.textContent='Texto o diálogo';const area=document.createElement('textarea');area.name='panel-text-'+i;if(!longWork)area.maxLength=1200;area.rows=longWork?7:3;area.value=p.text;l2.appendChild(area);
-  section.append(lg,l1,l2);return section;
+  section.append(lg,l1,l2);
+  if(arrange){
+   const actions=document.createElement('div');
+   actions.className='ck-editor-actions';
+   const options=[['↑ Subir',i===0,-1],['↓ Bajar',i===d.panels.length-1,1],['Quitar',d.panels.length===1,0]];
+   for(const [label,disabled,direction] of options){
+    const button=document.createElement('button');
+    button.type='button';button.className='ks-btn';button.textContent=label;button.disabled=disabled;
+    button.onclick=()=>{
+     const latest=read(s),order=latest.panels.map((_,index)=>index);
+     if(direction){
+      [order[i],order[i+direction]]=[order[i+direction],order[i]];
+     }else{
+      if(!confirm('¿Quitar esta parte? Podés recuperarla con Deshacer.'))return;
+      order.splice(i,1);
+     }
+     arrangePart(s,latest,order,Math.min(i+direction,order.length-1));
+    };
+    actions.append(button);
+   }
+   section.append(actions);
+  }
+  return section;
  }));
  if(window.ClubTalleres)ClubTalleres.render(work,s,d,updated=>updateCreative(s,updated));
  work.querySelector('#ck-status').textContent='Los cambios se guardan en tu proyecto personal.';
@@ -194,6 +236,13 @@ function ensureHome(s){
  const p=document.createElement('p');p.textContent='También podés continuar tus proyectos anteriores desde Mis proyectos.';
  bar.append(btn,p);home.prepend(bar);
 }
+const originalRestore=studio.restore;
+studio.restore=function(){
+ const before=this.files;
+ const result=originalRestore.apply(this,arguments);
+ if(this.files!==before&&this.tab==='club-work'&&isCreative(this))renderEditor(this);
+ return result;
+};
 const originalShow=studio.showTab,originalKit=studio.createKit,originalSwitch=studio.switchProject,originalClose=studio.close;
 studio.showTab=function(name){
  const result=originalShow.apply(this,arguments);mount(this);

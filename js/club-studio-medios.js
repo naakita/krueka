@@ -51,7 +51,7 @@ function enhance(raw,files){
  if(t.images.cover)html=html.replace('<div class="ck-cover">','<div class="ck-cover"><img class="cm-cover-img" alt="Imagen de portada" src="'+t.images.cover+'">');
  let index=0;
  html=html.replace(/(<article class="ck-panel\b[\s\S]*?)(<\/article>)/g,(match,start,end)=>{
-  if(index>=d.panels.length)return match;
+  if(start.slice(0,start.indexOf('>')).includes(' data-continuacion')||index>=d.panels.length)return match;
   const i=index++,scene=t.perScene[i],src=t.images[String(i)];
   let element='';
   if(scene.visual==='Imagen'&&src)element='<img class="cm-panel-img" alt="Ilustración de la escena '+(i+1)+'" src="'+src+'">';
@@ -105,8 +105,10 @@ function render(work,s,raw,onChange){
   const input=document.createElement('input');input.type='file';input.accept='image/png,image/jpeg,image/webp';input.setAttribute('aria-label',name);
   const message=document.createElement('small');message.textContent=t.images[key]?'✓ Guardada':'Sin imagen';
   input.onchange=async()=>{
-   if(!input.files?.[0])return;input.disabled=true;message.textContent='Comprimiendo…';
-   try{const data=await compact(input.files[0]);if(!s.cloudReady||s.busy)throw Error('El proyecto no está disponible.');
+   if(!input.files?.[0])return;
+   const projectId=s.projectId;
+   input.disabled=true;message.textContent='Comprimiendo…';
+   try{const data=await compact(input.files[0]);if(!s.cloudReady||s.busy||s.projectId!==projectId||!input.isConnected)throw Error('El proyecto cambió. Volvé a elegir la imagen.');
     if(!change(d=>{d.tools.images[key]=data;if(key!=='cover'&&kinds.includes(d.kind))d.tools.perScene[Number(key)].visual='Imagen'}))throw Error('La imagen no cabe en este proyecto.');
     message.textContent='✓ Imagen incorporada';
    }catch(e){message.textContent='⚠ '+e.message}finally{input.disabled=false;input.value=''}
