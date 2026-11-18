@@ -247,8 +247,6 @@ const originalShow=studio.showTab,originalKit=studio.createKit,originalSwitch=st
 studio.showTab=function(name){
  const result=originalShow.apply(this,arguments);mount(this);
  if(name==='home')ensureHome(this);
- const previewLabel=panel.querySelector('.ks-preview-label');
- if(previewLabel)previewLabel.textContent=isCreative(this)?'Tu obra':'Vista previa';
  work.hidden=name!=='club-work';gallery.hidden=name!=='club-gallery';
  panel.classList.toggle('ck-club-gallery-open',name==='club-gallery');
  if(name==='club-work'){

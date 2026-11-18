@@ -16,7 +16,7 @@ function homeMarkup(studio){
  '<div class="kc-paths">'+paths.map(p=>'<article class="kc-path kc-'+p.color+'"><div class="kc-path-top"><span class="kc-icon" aria-hidden="true">'+p.icon+'</span><small>'+p.tag+'</small></div><h3>'+p.title+'</h3><p>'+p.text+'</p><div class="kc-path-actions"><button class="ks-btn primary" data-creative-start="'+p.first+'">Empezar →</button>'+(p.kits.length>1?'<button class="ks-btn" data-creative-path="'+p.id+'">Ver opciones</button>':'')+'</div></article>').join('')+'</div>'+
  '<section class="kc-continue"><small>YA TENÉS UN PROYECTO</small><strong>'+esc(studio.title)+'</strong><p>Podés continuarlo o elegir otro taller para crear un proyecto nuevo.</p><button id="kc-resume" class="ks-btn">Continuar mi creación →</button></section>';
 }
-function renderHome(studio){if(!home?.isConnected)return;home.innerHTML=homeMarkup(studio);home.querySelectorAll('[data-creative-start]').forEach(b=>b.onclick=()=>studio.createKit(b.dataset.creativeStart));home.querySelectorAll('[data-creative-path]').forEach(b=>b.onclick=()=>showOptions(studio,b.dataset.creativePath));home.querySelector('#kc-resume').onclick=()=>studio.showTab('create');}
+function renderHome(studio){if(!home?.isConnected)return;home.innerHTML=homeMarkup(studio);home.querySelectorAll('[data-creative-start]').forEach(b=>b.onclick=()=>studio.createKit(b.dataset.creativeStart));home.querySelectorAll('[data-creative-path]').forEach(b=>b.onclick=()=>showOptions(studio,b.dataset.creativePath));home.querySelector('#kc-resume').onclick=()=>studio.showTab(window.ClubKrueka?.isCreative(studio)?'club-work':'create');}
 function showOptions(studio,path){
  const selected=paths.find(p=>p.id===path),ids=selected?selected.kits:StudioKits.catalog.map(k=>k.id),kits=ids.map(id=>StudioKits.catalog.find(k=>k.id===id)).filter(Boolean);
  const dialog=studio.dialog(selected?selected.title:'Elegí tu próxima creación','<p>Cada opción crea un proyecto propio. Tus trabajos anteriores siguen en Mis proyectos.</p><div class="ks-kit-grid">'+kits.map(k=>'<button class="ks-kit" data-creative-kit="'+k.id+'"><span>'+StudioKits.art(k.id)+'</span><b>'+esc(k.title)+'</b><small>'+esc(k.description)+'</small></button>').join('')+'</div>');
@@ -33,8 +33,11 @@ function decorateEditor(studio){
 }
 function sync(studio){
  if(!mounted?.isConnected)return;
- const media=isMedia(studio),label=mounted.querySelector('.ks-preview-label');if(label)label.textContent=media?'Tu creación':'Tu juego';
- const enlarge=mounted.querySelector('#ks-play-space');if(enlarge)enlarge.textContent=mounted.classList.contains('ks-play-only')?'Volver al taller':media?'Ampliar creación':'Ampliar juego';
+ const media=isMedia(studio),work=window.ClubKrueka?.isCreative(studio);
+ const label=mounted.querySelector('.ks-preview-label');
+ if(label)label.textContent=work?'Tu obra':media?'Tu creación':'Tu juego';
+ const enlarge=mounted.querySelector('#ks-play-space');
+ if(enlarge)enlarge.textContent=mounted.classList.contains('ks-play-only')?'Volver al taller':work?'Ampliar obra':media?'Ampliar creación':'Ampliar juego';
  if(media){
   const status=mounted.querySelector('#ks-ai-status'),select=mounted.querySelector('#ks-help-mode'),send=mounted.querySelector('#ks-send'),tip=mounted.querySelector('#ks-compose-tip');
   if(status)status.textContent='Guía de herramientas, sin IA generativa. Las fotos y los videos no se envían al chat de IA.';
