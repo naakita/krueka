@@ -146,7 +146,7 @@ const bookStyle=`
 .ck-reader .ck-pagination{position:static;justify-content:space-between;margin:0 0 10px;padding:0;background:none;color:#f5e6c9;box-shadow:none}
 .ck-reader .ck-pagination button{background:transparent;color:inherit;border-color:#b1a792}
 .ck-reader .ck-pages.ck-spread{--paper:#faedcd;position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:0;isolation:isolate;max-width:none;margin:0 auto;overflow:visible;padding:0;border:4px solid var(--accent);border-bottom-width:7px;border-radius:6px;background:var(--paper);box-shadow:0 2px #ac9775,0 4px #e5d1a5,0 6px #847359,0 12px 28px #0005;touch-action:pan-y pinch-zoom}
-.ck-reader .ck-spread>.ck-leaf,.ck-reader .ck-spread::after{grid-row:1;grid-column:1;min-width:0;height:clamp(265px,calc(100dvh - 165px),700px);overflow-y:auto;overflow-wrap:anywhere;overscroll-behavior-y:contain;padding:clamp(18px,3.3vw,48px) clamp(21px,3.5vw,50px) 60px;border:none;border-radius:2px;text-align:left;background:linear-gradient(90deg,#a7824840,transparent 10%,transparent 91%,#af864829),radial-gradient(ellipse at 50% 40%,#fff7e2,var(--paper) 72%,#e4c996);color:#392d20;box-shadow:none;font:17px/1.55 Georgia,serif;scrollbar-width:thin;scrollbar-color:#aa9168 transparent}
+.ck-reader .ck-spread>.ck-leaf,.ck-reader .ck-spread::after{grid-row:1;grid-column:1;min-width:0;box-sizing:border-box;height:clamp(190px,var(--ck-page-height,calc(100dvh - 195px)),700px);overflow-y:auto;overflow-wrap:anywhere;overscroll-behavior-y:contain;padding:clamp(18px,3.3vw,48px) clamp(21px,3.5vw,50px) 60px;border:none;border-radius:2px;text-align:left;background:linear-gradient(90deg,#a7824840,transparent 10%,transparent 91%,#af864829),radial-gradient(ellipse at 50% 40%,#fff7e2,var(--paper) 72%,#e4c996);color:#392d20;box-shadow:none;font:17px/1.55 Georgia,serif;scrollbar-width:thin;scrollbar-color:#aa9168 transparent}
 .ck-reader .ck-spread>.ck-leaf[hidden]{display:none}
 .ck-reader .ck-leaf h2{margin:.65em 0;font:normal clamp(23px,3vw,35px)/1.12 Georgia,serif;color:#422a1d}
 .ck-reader .ck-leaf p,.ck-reader .ck-leaf small,.ck-reader .ck-leaf .ck-dialogue p{color:#3f3126}
@@ -273,7 +273,20 @@ function readWork(){
   if(direction){event.preventDefault();turn(direction);queue();}
  });
 
- if(book)wide.addEventListener('change',()=>{page-=page%step();showPage();});
+ if(book){
+  const fit=()=>{
+   const top=sheet.getBoundingClientRect().top+window.scrollY;
+   sheet.style.setProperty('--ck-page-height',Math.floor(window.innerHeight-top-18)+'px');
+  };
+  fit();
+  window.addEventListener('resize',fit);
+  if(window.ResizeObserver){
+   const resize=new ResizeObserver(fit);
+   resize.observe(document.querySelector('header'));
+   resize.observe(document.querySelector('.ck-pagination'));
+  }
+  wide.addEventListener('change',()=>{page-=page%step();showPage();});
+ }
  if(sound){
   sheet.addEventListener('touchstart',event=>{
    const first=event.touches[0];

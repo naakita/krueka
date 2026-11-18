@@ -27,6 +27,7 @@ async function tryBook(doc,width){
   const step=width>=740?2:1;
   verify(prev.disabled&&!next.disabled&&visible().length===step,'apertura del libro '+width);
   const folio=sheet.getBoundingClientRect(),corner=next.getBoundingClientRect();
+  verify(corner.bottom<=frame.contentWindow.innerHeight,'esquina visible al abrir '+width);
   verify(Math.abs(folio.right-corner.right)<10&&Math.abs(folio.bottom-corner.bottom)<10&&corner.width>=44,'esquina inferior derecha');
   const sound=reader.querySelector('#ck-paper-sound');
   sound.click();verify(sound.getAttribute('aria-pressed')==='false','silenciar libro');
