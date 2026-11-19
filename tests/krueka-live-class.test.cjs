@@ -65,10 +65,10 @@ for(const m of html.matchAll(/(?:src|href)="([^"]+)"/g)){
 const pdfSql=read('supabase/migrations/20261020213000_class_pdf_guides.sql');
 assert.match(html,/id="new-pdf"/,'docente puede adjuntar el PDF');
 assert.match(html,/id="student-pdf-frame"/,'alumno ve el visor');
-assert.match(html,/id="download-guide"/,'descarga de la guía');
-assert.doesNotMatch(html,/<iframe[^>]+id="student-pdf-frame"[^>]*sandbox=/,'el visor PDF nativo no admite el sandbox anterior');
-assert.match(html,/id="open-guide"/,'enlace de lectura en pestaña aparte');
-assert.match(js,/\$\('open-guide'\)\.href=studentPdfUrl/,'el PDF se abre desde el blob privado autorizado');
+assert.doesNotMatch(html,/id="download-guide"/,'la guía se lee sin iniciar descargas');
+assert.match(html,/<div id="student-pdf-frame"/,'el PDF se representa dentro de la página');
+assert.match(html,/id="open-guide"/,'botón para ampliar la lectura');
+assert.match(js,/KruekaMaterialPreview\.open\(\$\('student-pdf-frame'\),pdf/,'el PDF se lee desde el blob privado autorizado');
 assert.match(html,/id="student-materials-list"/,'listado de materiales');
 assert.match(js,/staff\('create-class'/);
 assert.match(js,/async function uploadGuide/);
