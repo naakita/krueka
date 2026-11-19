@@ -9,14 +9,12 @@ const API=BASE+'/functions/v1/krueka-actividades-clase';
 const $=id=>document.getElementById(id);
 const teacherMode=new URLSearchParams(location.search).get('docente')==='1';
 $('student').hidden=teacherMode;$('teacher').hidden=!teacherMode;
-let sb=null,classes=[],selected=null,items=[],studentPdfUrl=null;
-let materialUrls=[];
+let sb=null,classes=[],selected=null,items=[],guidePreview=null,guideBlob=null,materialPreview=null;
+let materialUrls=[],materialRequestId=0;
 let classPage=0,classMeta={total:0,page:0,page_size:12},classRequestId=0,classSearchTimer=null;
 function resetPdf(){
- if(studentPdfUrl){URL.revokeObjectURL(studentPdfUrl);studentPdfUrl=null;}
- $('student-pdf-frame').removeAttribute('src');
- $('download-guide').removeAttribute('href');
- $('open-guide').removeAttribute('href');
+ guidePreview?.destroy();guidePreview=null;guideBlob=null;
+ $('student-pdf-frame').replaceChildren();
  $('student-pdf').hidden=true;message('pdf-message','');
 }
 function message(id,text,error=false){
@@ -58,14 +56,18 @@ async function loadStudentPdf(code,name){
  try{
   const pdf=await getPdf({action:'guide',code});
   if(normalizeCode($('student-code').value)!==code||$('activity-view').hidden)return;
-  studentPdfUrl=URL.createObjectURL(pdf);
-  $('student-pdf-frame').src=studentPdfUrl;
-  $('download-guide').href=studentPdfUrl;
-  $('open-guide').href=studentPdfUrl;
-  $('download-guide').download=name||'actividad.pdf';
+  guideBlob=pdf;
+  if(!materialPreview||!$('student-materials').querySelector('.preview-surface'))
+   guidePreview=window.KruekaMaterialPreview.open($('student-pdf-frame'),pdf,name||'actividad.pdf');
   message('pdf-message','');
  }catch(err){if(normalizeCode($('student-code').value)===code)message('pdf-message',err.message,true);}
 }
+$('open-guide').addEventListener('click',()=>{
+ if(!guideBlob)return;
+ if(!guidePreview||$('student-pdf-frame').hidden)
+  guidePreview=window.KruekaMaterialPreview.open($('student-pdf-frame'),guideBlob,$('student-pdf-name').textContent||'actividad.pdf');
+ guidePreview.expand();
+});
 
 const materialExt=/\.(pdf|docx|xlsx|pptx|doc|xls|ppt|odt|ods|odp|txt|csv|rtf|jpg|jpeg|png|webp|gif|zip)$/i;
 function validateMaterials(files){
@@ -87,6 +89,8 @@ async function uploadMaterials(activityId,files){
  return results.length;
 }
 function clearMaterials(){
+ materialRequestId++;
+ materialPreview?.destroy();materialPreview=null;
  for(const url of materialUrls)URL.revokeObjectURL(url);
  materialUrls=[];
  $('student-materials').hidden=true;
@@ -109,24 +113,31 @@ function renderStudentMaterials(code,materials){
  $('student-materials').hidden=false;
  for(const m of materials){
   const item=el('div','item'),name=el('strong','',m.file_name),bar=el('div','toolbar');
+  const previewHost=el('div');previewHost.hidden=true;
   item.append(name);
   if(m.size_bytes)item.append(el('p','note',Math.ceil(m.size_bytes/1024)+' KB'));
-  const pdf=m.mime_type==='application/pdf',img=/^image\//.test(m.mime_type);
-  async function open(download){
-   const target=download?null:window.open('about:blank','_blank');
+  async function view(){
+   if(!previewHost.hidden){materialPreview?.destroy();materialPreview=null;return;}
+   const request=++materialRequestId;
+   const viewButton=bar.querySelector('button');viewButton.disabled=true;viewButton.textContent='Cargando vista…';
    try{
     const blob=await fetchMaterial(code,m.id);
-    if(normalizeCode($('student-code').value)!==code){target?.close();return;}
-    const url=URL.createObjectURL(blob);materialUrls.push(url);
-    if(download){
-     const a=document.createElement('a');a.href=url;a.download=m.file_name;document.body.append(a);a.click();a.remove();
-    }else if(target){target.location.href=url;}
-    else{message('materials-message','El navegador bloqueó la pestaña. Usá Descargar.',true);}
-   }catch(err){target?.close();message('materials-message',err.message,true);}
+    if(request!==materialRequestId||normalizeCode($('student-code').value)!==code)return;
+    materialPreview=window.KruekaMaterialPreview.open(previewHost,blob,m.file_name);
+    previewHost.scrollIntoView({behavior:'smooth',block:'nearest'});
+   }catch(err){message('materials-message',err.message,true);}
+   finally{viewButton.disabled=false;viewButton.textContent='Ver vista previa';}
   }
-  if(pdf||img)bar.append(button('↗ Ver archivo','secondary',()=>open(false)));
-  bar.append(button('↓ Descargar','secondary',()=>open(true)));
-  item.append(bar);$('student-materials-list').append(item);
+  bar.append(button('Ver vista previa','secondary',view));
+  bar.append(button('Descargar para editar (opcional)','secondary',async()=>{
+   try{
+    const blob=await fetchMaterial(code,m.id);
+    if(normalizeCode($('student-code').value)!==code)return;
+    const url=URL.createObjectURL(blob);materialUrls.push(url);
+    const a=document.createElement('a');a.href=url;a.download=m.file_name;document.body.append(a);a.click();a.remove();
+   }catch(err){message('materials-message',err.message,true);}
+  }));
+  item.append(bar,previewHost);$('student-materials-list').append(item);
  }
 }
 function normalizeCode(s){return String(s||'').toUpperCase().replace(/[\s-]/g,'');}

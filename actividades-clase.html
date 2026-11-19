@@ -37,10 +37,29 @@ textarea{min-height:185px;resize:vertical;line-height:1.7}input::placeholder,tex
 .notice{background:#ecf6ff;border:1px solid #c5dff5;border-radius:12px;padding:13px 15px;color:#2a5578;font-size:12px;line-height:1.7;margin-top:14px;white-space:pre-wrap}
 .notice.error{background:#fff1ef;color:#a04444;border-color:#f1c6c2}
 .notice.success{background:#eafaf0;color:#276746;border-color:#bbdfc8}
-.pdf-frame{width:100%;height:min(72vh,720px);min-height:410px;border:1px solid #ccdaeb;border-radius:12px;background:#fff}
 .pdf-panel{margin-top:23px;border:1px solid #d5e4f3;padding:18px;border-radius:15px;background:#f8fbff}
 .pdf-panel h3{margin:0 0 9px}
 .pdf-panel .toolbar{margin:12px 0}
+.preview-surface{margin-top:13px;padding:10px;border:1px solid #cbdcf0;border-radius:13px;background:#edf5ff;max-width:100%}
+.preview-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+.preview-controls .preview-name{flex:1 1 180px;min-width:0;overflow-wrap:anywhere;font-size:14px;color:#19385f}
+.preview-controls .btn{min-height:36px;padding:7px 10px}
+.preview-body{background:#fff;border:1px solid #d2dfed;border-radius:10px;max-height:75vh;min-height:150px;padding:14px;overflow:auto;color:#263a50;font-size:15px;line-height:1.65}
+.preview-body h4{font-size:16px;margin:0 0 12px;color:#234269}
+.preview-hint{font-size:14px!important;color:#47617e!important;line-height:1.6!important}
+.preview-page-nav{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 12px}
+.preview-page-nav .btn{min-height:35px;padding:7px 11px}.preview-page-count{font-size:13px;color:#385776;font-weight:800}
+.preview-pdf-canvas{display:block;max-width:none;margin:0 auto;background:white;box-shadow:0 2px 15px #152c461b}
+.preview-image{display:block;max-width:100%;height:auto;max-height:70vh;object-fit:contain;margin:auto}
+.preview-plain{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.65 ui-monospace,Consolas,monospace;margin:0}
+.preview-paragraph{font-size:15px!important;color:#263a50!important;line-height:1.7!important;margin:0 0 11px!important;white-space:pre-wrap;overflow-wrap:anywhere}
+.preview-slide{padding:18px;margin:0 0 14px;border:1px solid #d3e2f2;border-radius:10px;background:#fafcff}
+.preview-sheet-scroll{overflow:auto;max-width:100%;margin-bottom:18px}.preview-table{border-collapse:collapse;min-width:280px;font-size:13px}
+.preview-table td{border:1px solid #ccd8e6;padding:5px 9px;min-width:60px;max-width:250px;overflow-wrap:anywhere}
+.preview-table tr:nth-child(even){background:#f5f9fe}.preview-zip-list{overflow-wrap:anywhere;font-size:14px}
+.preview-surface.is-expanded{position:fixed;inset:0;z-index:99999;border:0;border-radius:0;background:#eef5ff;padding:12px 18px;overflow:hidden;display:flex;flex-direction:column}
+.preview-surface.is-expanded .preview-body{max-height:none;flex:1;min-height:0}
+body.material-fullscreen{overflow:hidden}
 .student[hidden],.teacher[hidden],[hidden]{display:none!important}
 .steps{padding-left:23px;color:#567088;font-size:13px;line-height:1.9}
 .steps li{margin-bottom:12px}
@@ -99,13 +118,13 @@ a:focus-visible,button:focus-visible{outline:3px solid #ff9b7b;outline-offset:3p
      <span class="tag">● Clase habilitada</span><h2 style="margin-top:15px" id="activity-title"></h2>
      <div class="activity-info" id="activity-info"></div>
      <h3 style="margin-top:22px">Consigna del profesor</h3><div class="instructions" id="activity-instructions"></div>
-     <section id="student-materials" class="pdf-panel" hidden><h3>📚 Materiales de esta actividad</h3><p class="note">Abrí o descargá los archivos que compartió tu docente.</p><div id="student-materials-list" class="list"></div><div id="materials-message" role="status" aria-live="polite"></div></section>
+     <section id="student-materials" class="pdf-panel" hidden><h3>📚 Materiales de esta actividad</h3><p class="note">Elegí «Ver vista previa» para leer aquí sin descargar. También podés ampliar el documento a toda la pantalla.</p><div id="student-materials-list" class="list"></div><div id="materials-message" role="status" aria-live="polite"></div></section>
      <section id="student-pdf" class="pdf-panel" hidden aria-label="Guía PDF de la actividad">
       <h3>📄 PDF para realizar la actividad</h3><p id="student-pdf-name" class="note"></p>
-      <p class="note">Leé directamente el PDF aquí, sin necesidad de descargarlo.</p>
-      <iframe id="student-pdf-frame" class="pdf-frame" title="Guía PDF publicada por el docente" referrerpolicy="no-referrer"></iframe>
-      <div class="toolbar"><a id="open-guide" class="btn secondary" href="#" target="_blank" rel="noopener noreferrer">↗ Ver PDF en otra pestaña</a><a id="download-guide" class="btn secondary" download="actividad.pdf" href="#">↓ Descargar PDF (opcional)</a></div>
-      <p class="note">Seguí las indicaciones del PDF, prepará tu trabajo y entregalo debajo. Si tu navegador no muestra la vista previa, probá abrir el PDF en otra pestaña.</p>
+      <p class="note">Leé directamente el PDF aquí. No se inicia ninguna descarga al mostrarlo.</p>
+      <div id="student-pdf-frame" title="Guía PDF publicada por el docente"></div>
+      <div class="toolbar"><button id="open-guide" class="btn secondary" type="button">Ampliar la guía</button></div>
+      <p class="note">Podés cambiar de página y ampliar el texto. Después prepará tu trabajo y entregalo debajo.</p>
       <div id="pdf-message" role="status" aria-live="polite"></div>
      </section>
     </div>
@@ -182,5 +201,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #ff9b7b;outline-offset:3p
  </div>
 </section></main>
 <footer>Krueka · Paraguay · Plataforma educativa · <a href="informacion.html#privacidad">Privacidad</a> · <a href="accesos.html">Volver a los accesos</a></footer>
-<script src="js/krueka-clase-temporal.js?v=20261112b" defer></script>
+<script src="assets/vendor/jszip.min.js" defer></script>
+<script src="js/krueka-material-preview.js?v=20261119a" defer></script>
+<script src="js/krueka-clase-temporal.js?v=20261119a" defer></script>
 </body></html>
