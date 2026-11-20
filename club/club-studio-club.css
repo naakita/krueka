@@ -151,3 +151,6 @@ body.studio-access:has(.kc-entry){background:#f8f5ee;color:#162841}
  #krueka-studio .kc-start{padding:13px}
 }
 #krueka-studio .ck-editor-head{position:sticky;top:-1px;z-index:2;background:#faf7ef;padding:5px 0 10px;border-bottom:1px solid #d1d3c6}
+
+#krueka-studio details.km-properties>summary{cursor:pointer;font-weight:750;padding:5px 0}
+#krueka-studio .ck-editor .cm-upload input[type=file]{color:#3e5460}
