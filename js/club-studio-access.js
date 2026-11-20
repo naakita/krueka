@@ -32,10 +32,10 @@ var KruekaStudioAccess=(function(){
    xhr.send(JSON.stringify(body));
   });
  };
- function setBusy(value){api.busy=value;document.getElementById('studio-code').disabled=value;var b=document.getElementById('studio-login-button');b.disabled=value||!api.ready;b.textContent=value?'Abriendo tu taller…':'Entrar y empezar →';}
+ function setBusy(value){api.busy=value;document.getElementById('studio-code').disabled=value;var b=document.getElementById('studio-login-button');b.disabled=value||!api.ready;b.textContent=value?'Abriendo tu taller…':'Entrar →';}
  function loadModule(i){
   if(i===modules.length)return Promise.resolve();
-  return new Promise(function(resolve,reject){var s=document.createElement('script');s.src='js/'+modules[i]+'?v=20261118hojas2';s.onload=resolve;s.onerror=function(){reject(Error('No se pudo cargar una herramienta. Actualizá esta página y revisá internet.'));};document.head.appendChild(s);}).then(function(){return loadModule(i+1);});
+  return new Promise(function(resolve,reject){var s=document.createElement('script');s.src='js/'+modules[i]+'?v=20261120taller';s.onload=resolve;s.onerror=function(){reject(Error('No se pudo cargar una herramienta. Actualizá esta página y revisá internet.'));};document.head.appendChild(s);}).then(function(){return loadModule(i+1);});
  }
  function open(session){
   api.session=session;Club.alumno=session.student;persist(session);
@@ -78,7 +78,7 @@ var KruekaStudioAccess=(function(){
   loadModule(0).then(function(){
    if(!window.StudioIA||!window.StudioKits)throw Error('Una herramienta no terminó de cargar. Actualizá esta página.');
    var previous=StudioIA.close;StudioIA.close=function(){return previous.apply(this,arguments).then(function(){if(!document.getElementById('krueka-studio'))return api.logout();});};
-   api.ready=true;setBusy(false);message('Ingresá tu código para empezar.');input.focus();
+   api.ready=true;setBusy(false);message('');input.focus();
    var saved=null;try{saved=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');}catch(_e){}
    if(saved&&/^st-[a-f0-9]{64}$/.test(saved.token)&&saved.student&&Date.parse(saved.expiresAt)>Date.now())return open(saved);
    persist(null);

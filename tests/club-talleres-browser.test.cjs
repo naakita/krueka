@@ -46,6 +46,10 @@ const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes',
  await until(()=>window.KruekaStudioAccess?.ready);
  await KruekaStudioAccess.login('TEST01');
  verify(StudioIA.cloudReady,'ingreso');
+ const home=document.getElementById('ks-creative-home');
+ home.querySelector('[data-kc-filter="Escribir"]').click();
+ verify(home.querySelectorAll('.kc-path:not([hidden])').length===3,'filtro de escritura');
+ home.querySelector('[data-kc-filter="Todos"]').click();
  const projects=[];
  for(const id of selectors){
   const tile=document.querySelector('[data-creative-start="'+id+'"]');
@@ -57,6 +61,19 @@ const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes',
   if(creative){
    const input=document.querySelector('#ck-form [name=title]');
    verify(input&&document.getElementById('ks-club-work').hidden===false,'editor de '+id);
+   const work=document.getElementById('ks-club-work');
+   verify(!work.querySelector('[data-pane="content"]').hidden,'herramienta principal '+id);
+   if(id==='dibujos')verify(!!work.querySelector('#ck-draw-first canvas'),'lienzo a mano');
+   for(const section of ['design','assets','content']){
+    work.querySelector('[data-section="'+section+'"]').click();
+    verify(!work.querySelector('[data-pane="'+section+'"]').hidden,'abrir '+section);
+   }
+   if(id==='historietas'){
+    const scene=work.querySelector('.ck-scene:not([hidden])');
+    [...scene.querySelectorAll('button')].find(b=>b.textContent==='Duplicar').click();
+    verify(work.querySelector('#ck-part').selectedIndex===1&&work.querySelectorAll('.ck-scene').length===4,'duplicar viñeta');
+    document.getElementById('ks-undo').click();
+   }
    input.value='Auditoría '+id;
    input.dispatchEvent(new Event('input',{bubbles:true}));
    if(id==='cuentos'||id==='dramas'){

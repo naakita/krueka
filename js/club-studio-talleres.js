@@ -451,7 +451,7 @@ function render(work,s,data,onChange){
    const b=document.createElement('button');b.type='button';b.textContent=label;
    b.onpointerdown=event=>event.preventDefault();
    b.onclick=()=>{
-    const area=work.querySelector('#ck-scenes textarea:focus')||work.querySelector('#ck-scenes textarea');
+    const area=work.querySelector('#ck-scenes textarea:focus')||work.querySelector('#ck-scenes .ck-scene:not([hidden]) textarea');
     if(!area)return;const a=area.selectionStart,z=area.selectionEnd,word=area.value.slice(a,z)||'texto';
     area.setRangeText(start+word+end,a,z,'end');area.dispatchEvent(new Event('input',{bubbles:true}));area.focus();
    };bar.append(b);

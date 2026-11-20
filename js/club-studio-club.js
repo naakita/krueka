@@ -29,7 +29,7 @@ const texts={
 function safe(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function defaultData(id){
  const cat=categories.find(c=>c.id===id)||categories[0];
- return {kind:id,title:cat.name==='Dibujos'?'Mi ilustración': 'Mi '+cat.name.toLowerCase(),subtitle:'Una creación original del Club Krueka',art:id==='animes'?'⚡':id==='dibujos'?'🦊':id==='dramas'?'🎭':id==='cuentos'?'🏰':id==='flyers'?'🌟':id==='historietas'?'🐱':'💡',color:'#237fc3',panels:(texts[id]||[]).map((t,i)=>({title:t,text:['Presento mi idea y lo que quiero contar.','Aquí sucede algo interesante. ¿Qué pasará después?','Este es el resultado de mi creación.'][i]}))};
+ return {kind:id,title:({blogs:'Mi blog',historietas:'Mi historieta',cuentos:'Mi cuento',dramas:'Mi obra de teatro',animes:'Mi anime',flyers:'Mi afiche',dibujos:'Mi ilustración'})[id]||cat.name,subtitle:'Una creación original del Club Krueka',art:id==='animes'?'⚡':id==='dibujos'?'🦊':id==='dramas'?'🎭':id==='cuentos'?'🏰':id==='flyers'?'🌟':id==='historietas'?'🐱':'💡',color:'#237fc3',panels:(texts[id]||[]).map((t,i)=>({title:t,text:['Presento mi idea y lo que quiero contar.','Aquí sucede algo interesante. ¿Qué pasará después?','Este es el resultado de mi creación.'][i]}))};
 }
 function color(value){return /^#[0-9a-f]{6}$/i.test(value||'')?value:'#237fc3';}
 function isLongWork(kind){return kind==='cuentos'||kind==='dramas';}
@@ -88,10 +88,31 @@ function mount(s){
  const tabs=p.querySelector('.ks-tabs');
  const a=document.createElement('button');a.className='ks-btn';a.dataset.tab='club-work';a.textContent='✏ Mi obra';a.onclick=()=>s.showTab('club-work');tabs.appendChild(a);
  const b=document.createElement('button');b.className='ks-btn';b.dataset.tab='club-gallery';b.textContent='🌟 Galería del Club';b.onclick=()=>s.showTab('club-gallery');tabs.appendChild(b);
- const home=p.querySelector('#ks-creative-home');
- if(home){const bar=document.createElement('div');bar.className='ck-home-actions';bar.innerHTML='<button class="ks-btn primary" id="ck-open-gallery">🌟 Ver creaciones de mis compañeros</button><p>Elegí lo que te gusta, creá, guardá y enviá al profe. Solo se comparten obras aprobadas.</p>';home.prepend(bar);bar.querySelector('button').onclick=()=>s.showTab('club-gallery');}
+ const bar=p.querySelector('.ks-projectbar');
+ const fileMenu=document.createElement('details');fileMenu.className='ck-file-menu';
+ fileMenu.innerHTML='<summary>Archivos</summary><div></div>';
+ bar.append(fileMenu);
+ fileMenu.lastElementChild.append(p.querySelector('#ks-import'),p.querySelector('#ks-export'));
+ fileMenu.addEventListener('click',e=>{if(e.target.closest('button'))fileMenu.open=false;});
+ const resources=document.createElement('details');resources.className='ck-resources';
+ resources.innerHTML='<summary>Más</summary><div></div>';
+ tabs.append(resources);
+ const extras=['learn','academy','club-gallery'];
+ for(const tab of extras){
+  const item=tabs.querySelector('[data-tab="'+tab+'"]');
+  if(item)resources.lastElementChild.append(item);
+ }
+ resources.addEventListener('click',e=>{if(e.target.closest('button'))resources.open=false;});
+ const projects=p.querySelector('#ks-projects');p.querySelector('.ks-top').insertBefore(projects,p.querySelector('.ks-spacer'));
  work=document.createElement('section');work.className='ks-tool ck-editor';work.id='ks-club-work';work.hidden=true;
- work.innerHTML='<div class="ck-editor-head"><h2>✏ Editá tu creación</h2><p>Cambiá el título, los textos y el color. Mirá el resultado a la derecha.</p></div><form id="ck-form"><label>Título<input name="title" maxlength="80" required></label><label>Descripción<input name="subtitle" maxlength="140"></label><div class="ck-row"><label>Color de tu creación<input name="color" type="color"></label><label>Personaje o símbolo<input name="art" maxlength="8"></label></div><div id="ck-specific-tools"></div><div id="ck-scenes"></div><button type="button" class="ks-btn" id="ck-add-part" hidden></button><div class="ck-editor-actions"><button type="button" class="ks-btn primary" id="ck-test">▶ Ver mi obra</button><button type="button" class="ks-btn" id="ck-save">Guardar</button><button type="button" class="ks-btn" id="ck-submit">Enviar al profe</button></div><p id="ck-status" role="status"></p></form>';
+ work.innerHTML=`<header class="ck-editor-head"><h2></h2><button type="button" class="ks-btn primary" id="ck-test">Ver mi obra →</button></header>
+ <form id="ck-form"><label>Nombre de mi obra<input name="title" maxlength="80" required></label>
+ <nav class="ck-sections" aria-label="Herramientas de mi obra"><button type="button" data-section="content">Contenido</button><button type="button" data-section="design">Diseño</button><button type="button" data-section="assets">Imágenes</button></nav>
+ <div data-pane="content"><div id="ck-draw-first"></div><label id="ck-part-label">Parte que estoy editando<select id="ck-part"></select></label><div id="ck-format"></div><div id="ck-scenes"></div><button type="button" class="ks-btn" id="ck-add-part" hidden></button></div>
+ <div data-pane="design" hidden><label>Descripción<input name="subtitle" maxlength="140"></label><div class="ck-row"><label>Color de la obra<input name="color" type="color"></label><label>Símbolo de portada<input name="art" maxlength="8"></label></div><div id="ck-specific-tools"></div></div>
+ <div data-pane="assets" hidden></div><p id="ck-status" role="status"></p></form>`;
+ work.querySelectorAll('[data-section]').forEach(b=>b.onclick=()=>showSection(b.dataset.section));
+ work.querySelector('#ck-part').onchange=e=>selectPart(Number(e.target.value));
  p.querySelector('.ks-work').appendChild(work);
  const collect=()=>{
   const form=work.querySelector('#ck-form'),old=read(s);
@@ -106,17 +127,25 @@ function mount(s){
   s.renderPreviewOptions();
   s.playCurrent();
  };
- work.querySelector('#ck-save').onclick=()=>{if(updateCreative(s,collect()))s.save();};
- work.querySelector('#ck-submit').onclick=()=>{if(updateCreative(s,collect()))s.submit();};
+
  work.querySelector('#ck-add-part').onclick=()=>{
   const d=collect();
   d.panels.push({title:'',text:''});
   if(updateCreative(s,d,true)){
    renderEditor(s);
+   selectPart(d.panels.length-1);
    work.querySelector('#ck-scenes fieldset:last-child input').focus();
   }
  };
- work.querySelector('#ck-form').addEventListener('input',()=>{if(isCreative(s))updateCreative(s,collect());});
+ work.querySelector('#ck-form').addEventListener('input',event=>{
+  if(!isCreative(s)||!event.target.name)return;
+  const match=event.target.name.match(/^panel-title-(\d+)$/);
+  if(match){
+   const index=Number(match[1]),part=partNames[read(s).kind]||'Parte';
+   work.querySelector('#ck-part').options[index].text=part+' '+(index+1)+(event.target.value?' · '+event.target.value:'');
+  }
+  updateCreative(s,collect());
+ });
  gallery=document.createElement('section');gallery.id='ks-club-gallery';gallery.className='ks-tool ck-gallery';gallery.hidden=true;
  gallery.innerHTML='<div class="ck-gallery-heading"><div><h2>🌟 Galería del Club Krueka</h2><p>Descubrí proyectos aprobados. Jugá, leé y explorá obras originales.</p></div><button class="ks-btn" id="ck-reload">↻ Actualizar</button></div><div class="ck-filters" id="ck-filters"></div><div id="ck-gallery-status" class="ck-gallery-status" role="status">Abrí la galería para ver las publicaciones.</div><div id="ck-gallery-cards" class="ck-gallery-cards"></div><div id="ck-viewer" class="ck-viewer" hidden><div class="ck-viewer-head"><strong id="ck-viewer-title"></strong><button class="ks-btn" id="ck-close-viewer">Cerrar obra</button></div><iframe id="ck-viewer-frame" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Obra de un estudiante del Club"></iframe></div><p class="ck-safety">Las publicaciones se revisan antes de aparecer. No compartas información personal ni imágenes de otras personas.</p>';
  p.querySelector('.ks-work').appendChild(gallery);
@@ -150,13 +179,45 @@ function arrangePart(s,d,order,focusIndex){
  const updated={...d,panels:order.map(index=>d.panels[index]),tools:{...d.tools,images,perScene:order.map(index=>perScene[index])}};
  if(updateCreative(s,updated,true)){
   renderEditor(s);
+  selectPart(focusIndex);
   work.querySelectorAll('.ck-scene')[focusIndex]?.querySelector('input')?.focus();
+ }
+}
+function showSection(name){
+ work.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==name);
+ work.querySelectorAll('[data-section]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.section===name)));
+}
+function selectPart(index){
+ const select=work.querySelector('#ck-part');
+ select.selectedIndex=Math.max(0,Math.min(index,select.options.length-1));
+ work.querySelectorAll('.ck-scene').forEach((scene,i)=>scene.hidden=i!==select.selectedIndex);
+}
+function arrangeTools(kind){
+ const host=work.querySelector('#ck-specific-tools'),assets=work.querySelector('[data-pane="assets"]');
+ const drawing=host.querySelector('.ct-drawing-box'),format=host.querySelector('.ct-format');
+ const canvas=work.querySelector('#ck-draw-first'),textTools=work.querySelector('#ck-format');
+ canvas.replaceChildren();textTools.replaceChildren();assets.replaceChildren();
+ if(format)textTools.append(format);
+ if(drawing)(kind==='dibujos'?canvas:assets).append(drawing);
+ for(const child of Array.from(host.children)){
+  if(child.matches('.cm-assets,details'))assets.append(child);
+ }
+ for(const scene of work.querySelectorAll('.ck-scene')){
+  const extras=scene.querySelectorAll('.ct-scene-tools,.cm-upload');
+  if(!extras.length)continue;
+  const details=document.createElement('details');details.className='ck-scene-extra';
+  const summary=document.createElement('summary');summary.textContent='Imagen y detalles de esta parte';
+  details.append(summary,...extras);scene.append(details);
  }
 }
 function renderEditor(s){
  if(!isCreative(s))return;
  const d=read(s),form=work.querySelector('#ck-form');
- if(lastId!==s.projectId){s.checkpoint();lastId=s.projectId;}
+ const changedProject=lastId!==s.projectId;
+ const partIndex=changedProject?0:work.querySelector('#ck-part').selectedIndex;
+ if(changedProject){s.checkpoint();lastId=s.projectId;showSection('content');}
+ work.querySelector('.ck-editor-head h2').textContent=categories.find(c=>c.id===d.kind).name;
+ work.querySelector('[data-section="content"]').textContent=d.kind==='dibujos'?'Dibujar':d.kind==='flyers'?'Mensaje':'Contenido';
  form.elements.title.value=d.title;form.elements.subtitle.value=d.subtitle;
  form.elements.color.value=d.color;form.elements.art.value=d.art;
  const longWork=isLongWork(d.kind),arrange=canArrange(d.kind),part=partNames[d.kind]||'Parte';
@@ -185,11 +246,20 @@ function renderEditor(s){
     };
     actions.append(button);
    }
-   section.append(actions);
+   const duplicate=document.createElement('button');duplicate.type='button';duplicate.className='ks-btn';duplicate.textContent='Duplicar';
+   duplicate.onclick=()=>{
+    const latest=read(s),order=latest.panels.map((_,index)=>index);
+    order.splice(i+1,0,i);arrangePart(s,latest,order,i+1);
+   };
+   actions.append(duplicate);section.append(actions);
   }
   return section;
  }));
  if(window.ClubTalleres)ClubTalleres.render(work,s,d,updated=>updateCreative(s,updated));
+ arrangeTools(d.kind);
+ const selector=work.querySelector('#ck-part');
+ selector.replaceChildren(...d.panels.map((p,i)=>new Option(part+' '+(i+1)+(p.title?' · '+p.title:''),i)));
+ selectPart(partIndex);
  work.querySelector('#ck-status').textContent='Los cambios se guardan en tu proyecto personal.';
 }
 function closeViewer(){
@@ -226,16 +296,6 @@ async function openViewer(s,item){
   box.scrollIntoView({block:'nearest',behavior:'smooth'});
  }catch(e){info.textContent='No se pudo abrir esta creación: '+e.message;}
 }
-function ensureHome(s){
- const home=panel?.querySelector('#ks-creative-home');if(!home)return;
- const heading=home.querySelector('.kc-welcome h2');if(heading)heading.textContent='¿Qué querés crear hoy?';
- const desc=home.querySelector('.kc-welcome p');if(desc)desc.textContent='Elegí una idea, prepará tu obra y compartila con el Club cuando el profe la apruebe.';
- if(home.querySelector('.ck-home-actions'))return;
- const bar=document.createElement('div');bar.className='ck-home-actions';
- const btn=document.createElement('button');btn.type='button';btn.className='ks-btn primary';btn.textContent='🌟 Explorar creaciones del Club';btn.onclick=()=>s.showTab('club-gallery');
- const p=document.createElement('p');p.textContent='También podés continuar tus proyectos anteriores desde Mis proyectos.';
- bar.append(btn,p);home.prepend(bar);
-}
 const originalRestore=studio.restore;
 studio.restore=function(){
  const before=this.files;
@@ -246,7 +306,14 @@ studio.restore=function(){
 const originalShow=studio.showTab,originalKit=studio.createKit,originalSwitch=studio.switchProject,originalClose=studio.close;
 studio.showTab=function(name){
  const result=originalShow.apply(this,arguments);mount(this);
- if(name==='home')ensureHome(this);
+ panel.classList.toggle('ck-art-project',isCreative(this));
+ panel.classList.toggle('ck-studio-home',name==='home');
+ panel.classList.toggle('ck-work-open',name==='club-work');
+ if(name==='home')panel.classList.remove('ks-play-only');
+ const codingTab=panel.querySelector('.ks-tabs>[data-tab="programacion"]');
+ if(codingTab&&isCreative(this))panel.querySelector('.ck-resources>div').append(codingTab);
+ const extraCoding=panel.querySelector('.ck-resources [data-tab="programacion"]');
+ if(extraCoding&&!isCreative(this))panel.querySelector('.ks-tabs').prepend(extraCoding);
  work.hidden=name!=='club-work';gallery.hidden=name!=='club-gallery';
  panel.classList.toggle('ck-club-gallery-open',name==='club-gallery');
  if(name==='club-work'){

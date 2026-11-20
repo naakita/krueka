@@ -11,12 +11,43 @@ const paths=[
 let mounted=null,home=null;
 function kind(studio){return StudioKits.read(studio.files)?.kind;}
 function isMedia(studio){return ['animation','video-edit'].includes(kind(studio));}
+const families=[
+ {label:'Escribir',ids:['cuentos','dramas','blogs']},
+ {label:'Diseñar',ids:['dibujos','historietas','flyers']},
+ {label:'Programar',ids:['juegos','paginas','aplicaciones']},
+ {label:'Animar y filmar',ids:['animes','animaciones','videos']}
+];
+let activeFamily='Todos';
 function homeMarkup(studio){
- return '<div class="kc-welcome"><span class="ks-section-label">TU ESTUDIO CREATIVO</span><h2>Hoy podés crear algo increíble.</h2><p>Elegí tu taller. Creá, probá y guardá una versión propia.</p><span class="kc-free">✓ Creá desde tu navegador</span></div>'+
- '<div class="kc-paths">'+paths.map(p=>'<article class="kc-path kc-'+p.color+'"><div class="kc-path-top"><span class="kc-icon" aria-hidden="true">'+p.icon+'</span><small>'+p.tag+'</small></div><h3>'+p.title+'</h3><p>'+p.text+'</p><div class="kc-path-actions"><button class="ks-btn primary" data-creative-start="'+p.first+'">Empezar →</button>'+(p.kits.length>1?'<button class="ks-btn" data-creative-path="'+p.id+'">Ver opciones</button>':'')+'</div></article>').join('')+'</div>'+
- '<section class="kc-continue"><small>YA TENÉS UN PROYECTO</small><strong>'+esc(studio.title)+'</strong><p>Podés continuarlo o elegir otro taller para crear un proyecto nuevo.</p><button id="kc-resume" class="ks-btn">Continuar mi creación →</button></section>';
+ const cards=paths.map(p=>{
+  const family=families.find(f=>f.ids.includes(p.id))?.label||'Otros';
+  const more=p.kits.length>1?'<button class="kc-variants" data-creative-path="'+p.id+'">Otras plantillas</button>':'';
+  return '<article class="kc-path" data-family="'+family+'"><button class="kc-start" data-creative-start="'+p.first+'"><span class="kc-icon" aria-hidden="true">'+p.icon+'</span><span><strong>'+p.title+'</strong><small>'+p.text+'</small></span><b aria-hidden="true">↗</b></button>'+more+'</article>';
+ }).join('');
+ const filters=['Todos',...families.filter(f=>paths.some(p=>f.ids.includes(p.id))).map(f=>f.label)];
+ return '<header class="kc-desk-head"><div><h2>Mis talleres</h2><p>Elegí qué querés crear.</p></div><button class="kc-continue" id="kc-resume"><small>Seguir trabajando →</small><strong>'+esc(studio.title||'Mi proyecto')+'</strong></button></header>'+
+ '<nav class="kc-families" aria-label="Filtrar talleres">'+filters.map(f=>'<button type="button" data-kc-filter="'+f+'">'+f+'</button>').join('')+'</nav><div class="kc-paths">'+cards+'</div>'+
+ '<div class="kc-desk-links"><button type="button" data-kc-page="learn">Mi clase</button><button type="button" data-kc-page="academy">Cursos</button><button type="button" id="ck-open-gallery">Galería del Club</button><a id="ck-explore-models" href="club-krueka-galeria.html#ejemplos" target="_blank" rel="noopener">Explorar ejemplos ↗</a></div>';
 }
-function renderHome(studio){if(!home?.isConnected)return;home.innerHTML=homeMarkup(studio);home.querySelectorAll('[data-creative-start]').forEach(b=>b.onclick=()=>studio.createKit(b.dataset.creativeStart));home.querySelectorAll('[data-creative-path]').forEach(b=>b.onclick=()=>showOptions(studio,b.dataset.creativePath));home.querySelector('#kc-resume').onclick=()=>studio.showTab(window.ClubKrueka?.isCreative(studio)?'club-work':'create');}
+function filterHome(family){
+ activeFamily=family;
+ home.querySelectorAll('[data-kc-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.kcFilter===family)));
+ home.querySelectorAll('[data-family]').forEach(card=>card.hidden=family!=='Todos'&&card.dataset.family!==family);
+}
+function renderHome(studio){
+ if(!home?.isConnected)return;
+ home.innerHTML=homeMarkup(studio);
+ home.querySelectorAll('[data-kc-filter]').forEach(b=>b.onclick=()=>filterHome(b.dataset.kcFilter));
+ home.querySelectorAll('[data-creative-start]').forEach(b=>b.onclick=()=>studio.createKit(b.dataset.creativeStart));
+ home.querySelectorAll('[data-creative-path]').forEach(b=>b.onclick=()=>showOptions(studio,b.dataset.creativePath));
+ home.querySelectorAll('[data-kc-page]').forEach(b=>b.onclick=()=>studio.showTab(b.dataset.kcPage));
+ home.querySelector('#ck-open-gallery').onclick=()=>studio.showTab('club-gallery');
+ home.querySelector('#kc-resume').onclick=()=>{
+  const tab=window.ClubKrueka?.isCreative(studio)?'club-work':StudioKits.read(studio.files)?'create':'programacion';
+  studio.showTab(tab);
+ };
+ filterHome(activeFamily);
+}
 function showOptions(studio,path){
  const selected=paths.find(p=>p.id===path),ids=selected?selected.kits:StudioKits.catalog.map(k=>k.id),kits=ids.map(id=>StudioKits.catalog.find(k=>k.id===id)).filter(Boolean);
  const dialog=studio.dialog(selected?selected.title:'Elegí tu próxima creación','<p>Cada opción crea un proyecto propio. Tus trabajos anteriores siguen en Mis proyectos.</p><div class="ks-kit-grid">'+kits.map(k=>'<button class="ks-kit" data-creative-kit="'+k.id+'"><span>'+StudioKits.art(k.id)+'</span><b>'+esc(k.title)+'</b><small>'+esc(k.description)+'</small></button>').join('')+'</div>');
@@ -53,7 +84,7 @@ function sync(studio){
 function mount(studio){
  const panel=document.getElementById('krueka-studio');if(!panel)return;
  if(mounted!==panel){
-  mounted=panel;
+  activeFamily='Todos';mounted=panel;
   const tabs=panel.querySelector('.ks-tabs'),button=document.createElement('button');button.className='ks-btn';button.dataset.tab='home';button.textContent='◈ Talleres';button.setAttribute('aria-pressed','false');button.onclick=()=>studio.showTab('home');tabs.insertBefore(button,tabs.firstChild);
   const work=panel.querySelector('.ks-work');home=document.createElement('section');home.id='ks-creative-home';home.className='ks-tool kc-home';home.hidden=true;work.insertBefore(home,work.firstChild);
   const edit=tabs.querySelector('[data-tab="create"]');if(edit)edit.textContent='Mi creación';const learn=tabs.querySelector('[data-tab="learn"]');if(learn)learn.textContent='Mi clase';
