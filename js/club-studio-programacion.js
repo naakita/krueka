@@ -109,9 +109,9 @@ function mount(s){
  '<header class="kp-program-header">'+
   '<div class="kp-program-brand"><span class="kp-program-mark">⌘</span><div><b>Krueka Code</b><small id="kp-program-title">Mi videojuego</small></div></div>'+
   '<nav class="kp-program-tabs" aria-label="Elegí qué editar">'+
-   '<button type="button" data-kp-file="index.html">HTML</button>'+
-   '<button type="button" data-kp-file="style.css">CSS</button>'+
-   '<button type="button" data-kp-file="script.js">JavaScript</button>'+
+   '<button type="button" data-kp-file="index.html">HTML · Contenido</button>'+
+   '<button type="button" data-kp-file="style.css">CSS · Diseño</button>'+
+   '<button type="button" data-kp-file="script.js">JS · Acciones</button>'+
    '<button type="button" data-kp-file="preview">◉ Vista previa</button>'+
   '</nav>'+
   '<div class="kp-program-actions">'+
@@ -124,7 +124,7 @@ function mount(s){
     '<button type="button" id="kp-program-export">Descargar</button>'+
     '<a href="programacion-juegos.html" target="_blank" rel="noopener noreferrer">Galería de juegos ↗</a>'+
    '</div></details>'+
-   '<button type="button" id="kp-program-back" class="kp-program-back">Volver</button>'+
+   '<button type="button" id="kp-program-back" class="kp-program-back">Talleres</button>'+
   '</div>'+
  '</header>'+
  '<main class="kp-program-body">'+

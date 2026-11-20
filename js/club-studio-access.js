@@ -33,9 +33,10 @@ var KruekaStudioAccess=(function(){
   });
  };
  function setBusy(value){api.busy=value;document.getElementById('studio-code').disabled=value;var b=document.getElementById('studio-login-button');b.disabled=value||!api.ready;b.textContent=value?'Abriendo tu taller…':'Entrar →';}
+ function moduleUrl(name){return 'js/'+name+'?v=20261120mesa';}
  function loadModule(i){
   if(i===modules.length)return Promise.resolve();
-  return new Promise(function(resolve,reject){var s=document.createElement('script');s.src='js/'+modules[i]+'?v=20261120taller';s.onload=resolve;s.onerror=function(){reject(Error('No se pudo cargar una herramienta. Actualizá esta página y revisá internet.'));};document.head.appendChild(s);}).then(function(){return loadModule(i+1);});
+  return new Promise(function(resolve,reject){var s=document.createElement('script');s.src=moduleUrl(modules[i]);s.onload=resolve;s.onerror=function(){reject(Error('No se pudo cargar una herramienta. Actualizá esta página y revisá internet.'));};document.head.appendChild(s);}).then(function(){return loadModule(i+1);});
  }
  function open(session){
   api.session=session;Club.alumno=session.student;persist(session);
@@ -75,6 +76,10 @@ var KruekaStudioAccess=(function(){
   if(!api.compatible()){message('Este navegador es demasiado antiguo para el taller. Abrí este enlace en Chrome, Edge o Firefox actualizado. La PC puede ser de 32 bits.',true);document.getElementById('studio-login-button').textContent='Navegador pendiente';return;}
   if(!Array.prototype.flat)Array.prototype.flat=function(){return [].concat.apply([],this);};
   document.getElementById('studio-browser-state').textContent='Navegador listo · Juego liviano disponible sin placa 3D.';
+  // Preparar las descargas juntas y ejecutar cada módulo en su orden original.
+  modules.forEach(function(name){
+   var preload=document.createElement('link');preload.rel='preload';preload.as='script';preload.href=moduleUrl(name);document.head.appendChild(preload);
+  });
   loadModule(0).then(function(){
    if(!window.StudioIA||!window.StudioKits)throw Error('Una herramienta no terminó de cargar. Actualizá esta página.');
    var previous=StudioIA.close;StudioIA.close=function(){return previous.apply(this,arguments).then(function(){if(!document.getElementById('krueka-studio'))return api.logout();});};

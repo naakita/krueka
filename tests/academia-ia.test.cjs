@@ -15,11 +15,11 @@ test('Academia IA tiene JavaScript válido y accesos visibles', () => {
   assert.match(accesos, /href="academia-ia\.html"/);
 });
 
-test('Incluye las cuatro misiones y campos del prompt', () => {
-  for (let i = 0; i < 4; i++) assert.match(html, new RegExp('id="lesson-' + i + '"'));
-  for (const field of ['goal', 'context', 'instruction', 'limits', 'check'])
+test('Incluye las seis misiones y campos del prompt', () => {
+  for (let i = 0; i < 6; i++) assert.match(html, new RegExp('id="lesson-' + i + '"'));
+  for (const field of ['goal', 'context', 'instruction', 'format', 'limits', 'check'])
     assert.match(html, new RegExp('id="' + field + '"'));
-  assert.match(html, /No es un modelo de IA generativa/);
+  assert.match(html, /No es un chatbot generativo/i);
   assert.match(html, /club_ai_academy_state/);
 });
 
