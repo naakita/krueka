@@ -43,10 +43,10 @@ async function tryBook(doc,width){
 }
 const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historietas','cuentos','dramas','animes','flyers','dibujos','animation','video-edit','pagina-web','aplicacion-web'];
 (async()=>{
+ document.body.dataset.clubTest='Esperando el taller';
  await until(()=>window.KruekaStudioAccess?.ready);
  const backendFetch=window.fetch;
- const sample=document.createElement('canvas');sample.width=16;sample.height=8;
- const photo=await new Promise(done=>sample.toBlob(done,'image/webp'));
+ const photo=new Blob([Uint8Array.from(atob('UklGRh4AAABXRUJQVlA4TBEAAAAvD8ABAAdQsl6Up/+BiOh/AAA='),c=>c.charCodeAt(0))],{type:'image/webp'});
  let photoLoads=0;
  window.fetch=(url,...args)=>{
   if(String(url).endsWith('/assets/club/laguna-atardecer.webp')){photoLoads++;return Promise.resolve(new Response(photo));}
@@ -60,6 +60,7 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
  home.querySelector('[data-kc-filter="Todos"]').click();
  const projects=[];
  for(const id of selectors){
+  document.body.dataset.clubTest='Probando '+id;
   let tile=document.querySelector('[data-creative-start="'+id+'"]');
   if(!tile&&['animation','arcade-web'].includes(id)){
    home.querySelector('[data-creative-path="'+(id==='animation'?'animaciones':'juegos')+'"]').click();
