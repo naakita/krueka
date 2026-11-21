@@ -139,13 +139,14 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
    if(id==='pabellon-cine')editor.elements.plano0.value='planetario';
    editor.querySelector('button').click();
    verify(StudioKits.read(StudioIA.files).light==='noche','guardar luz 3D');
-   const preview=document.createElement('iframe');preview.style.cssText='width:1574px;height:718px';document.body.append(preview);
+   const preview=document.createElement('iframe');preview.style.cssText='position:fixed;top:0;left:0;border:0;width:1574px;height:718px';document.body.append(preview);
    const ready=new Promise(done=>preview.onload=done);
    preview.srcdoc=StudioIA.buildPreview.call({files:StudioIA.files,dirname:StudioIA.dirname,resolve:StudioIA.resolve},'index.html');
    await ready;
    const doc=preview.contentDocument;
    verify(doc.querySelector('#titulo').textContent==='Pabellón de prueba'&&doc.querySelector('#luz').value==='noche','lectura independiente del proyecto');
-   verify(doc.querySelector('#vista').width>=1574,'resolución de pantalla en el pabellón');
+   const vista=doc.querySelector('#vista');
+   verify(vista.clientWidth===1574&&vista.width>=vista.clientWidth,'resolución de pantalla en el pabellón '+vista.clientWidth+' / '+vista.width);
    await until(()=>photoLoads===1&&!ClubTalleres.readingFiles(StudioIA.files)['paisaje.js'].includes('KRUEKA_LAGUNA_HD'));
    verify(!StudioIA.files['paisaje.js'].includes('KRUEKA_LAGUNA_HD'),'proyecto editable sin cambios por la vista HD');
    doc.querySelector('#accion').click();
