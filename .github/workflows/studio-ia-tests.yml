@@ -42,6 +42,8 @@ jobs:
       - run: node --test tests/academia-ia-teacher-demo.test.cjs
       - run: node tests/studio-creative.test.cjs
       - run: node tests/studio-creative-browser.test.cjs
+      - run: node --check js/club-studio-bloques.js
+      - run: node --test tests/club-studio-bloques.test.cjs
       - run: node --check js/club-studio-showcase.js
       - run: node tests/studio-neon-rift.test.cjs
       - run: node tests/studio-neon-rift-browser.cjs
