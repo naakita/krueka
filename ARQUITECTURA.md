@@ -531,3 +531,9 @@ El pabellón usa la fotografía original sin pérdida de `assets/club/laguna-ata
 ## Guía de programación 3D con Duck.ai
 
 La guía pública `club-prompts-3d.html` y Mi creación comparten el generador de prompts de `js/club-prompts-3d.js`. En proyectos de juegos la ficha se guarda en `ficha-programacion-3d.json` con el guardado habitual. Las líneas de código opcionales sólo se muestran en el prompt que copia el estudiante. La página pública trabaja en memoria. Se mantienen las RPC de proyectos y la revisión docente existentes.
+
+## 2026-11-21. Espacio de creación amplio y herramientas superiores
+
+- `js/club-studio-layout.js` se carga al final de los módulos del acceso independiente `club-krueka.html` / `studio.html`. Al abrir un taller y recuperar la sesión mueve las pestañas de creación, «Mis proyectos», el nombre del proyecto y un menú «Herramientas» a la cabecera; reutiliza los botones existentes y sus manejadores de guardado, importación, exportación, deshacer y entrega.
+- `club/club-studio-layout.css` elimina la segunda barra de herramientas, deja una fila compacta de controles sobre la vista previa y dedica el alto restante a editor y previsualización; la vista previa usa aproximadamente dos tercios del ancho en escritorio. Respeta los modos especiales de inicio, chat enfocado, edición de código y pantalla de juego, y adapta el orden en pantallas pequeñas.
+- Los talleres especializados por bloques y programación conservan sus editores y vistas previas independientes con cabeceras más bajas. No se modifican datos de estudiantes, sesiones, almacenamiento, RPC, Supabase ni las reglas de revisión y publicación.

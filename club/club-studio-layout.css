@@ -1,0 +1,94 @@
+/* Barra superior compacta del Club. El editor y la vista previa ocupan toda la altura restante. */
+body.studio-access #krueka-studio.kc-layout-compact:not(.ck-studio-home):not(.ks-chat-focus){
+ display:grid;grid-template-rows:auto minmax(0,1fr);
+}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top{
+ height:auto;min-height:52px;padding:6px 11px;gap:7px;flex-wrap:nowrap;position:relative;z-index:2;
+}
+body.studio-access #krueka-studio.kc-layout-compact:not(.ck-studio-home) .ks-projectbar{display:none}
+body.studio-access #krueka-studio.kc-layout-compact:not(.ck-studio-home):not(.ks-chat-focus) .ks-main{
+ height:100%;min-height:0;grid-template-columns:minmax(295px,32%) minmax(0,1fr);
+}
+body.studio-access #krueka-studio.kc-layout-compact.ks-live-edit-mode:not(.ck-studio-home):not(.ks-chat-focus) .ks-main{
+ grid-template-columns:minmax(215px,19%) minmax(0,81%);
+}
+body.studio-access #krueka-studio.kc-layout-compact:not(.ks-chat-focus) .ks-left{grid-template-rows:minmax(0,1fr)}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top .ks-brand{flex:0 0 auto;font-size:16px;white-space:nowrap}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top .ks-badge{display:none}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top #ks-projects{font-size:11px;min-height:34px;padding:5px 9px;flex:0 0 auto}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top .ks-tabs{
+ min-width:0;max-width:510px;flex:1 1 auto;display:flex;align-items:center;gap:4px;
+ padding:0;margin:0;border:0;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;scrollbar-width:thin;
+}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top .ks-tabs>.ks-btn{
+ flex:0 0 auto;min-height:34px;padding:6px 10px;font-size:11px;white-space:nowrap;
+}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top .ck-resources{flex:0 0 auto;font-size:12px}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top .ck-resources summary{padding:7px 8px}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top .kc-top-title{
+ flex:0 1 142px;min-width:90px;width:142px;max-width:142px;height:34px;
+ padding:6px 9px;background:#101d30;color:#eaf4ff;border:1px solid #506681;border-radius:8px;font-size:11px;
+}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top :is(#ks-save-btn,#ks-close){
+ flex:0 0 auto;min-height:34px;padding:6px 10px;font-size:11px;
+}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top #ks-save{max-width:114px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+body.studio-access #krueka-studio.kc-layout-compact .ks-top .ks-spacer{flex:0 1 4px}
+body.studio-access #krueka-studio.kc-layout-compact .kc-workspace-actions{position:relative;flex:0 0 auto;font-size:11px}
+body.studio-access #krueka-studio.kc-layout-compact .kc-workspace-actions>summary{
+ list-style:none;cursor:pointer;display:flex;align-items:center;min-height:34px;
+ padding:6px 10px;border:1px solid #4d6983;border-radius:8px;background:#193751;color:#f0f8ff;font-weight:750;
+}
+body.studio-access #krueka-studio.kc-layout-compact .kc-workspace-actions>summary::-webkit-details-marker{display:none}
+body.studio-access #krueka-studio.kc-layout-compact .kc-workspace-actions>summary::after{content:'⌄';margin-left:7px;font-size:13px}
+body.studio-access #krueka-studio.kc-layout-compact .kc-workspace-actions-menu{
+ position:absolute;z-index:30;right:0;top:calc(100% + 7px);min-width:190px;display:grid;gap:5px;
+ padding:8px;border:1px solid #58718b;border-radius:11px;background:#182c42;box-shadow:0 14px 36px #050f20a6;
+}
+body.studio-access #krueka-studio.kc-layout-compact .kc-workspace-actions-menu button{
+ display:block;width:100%;min-height:38px;padding:8px 10px;text-align:left;white-space:nowrap;
+ color:#eff7ff;border:1px solid #324c66;background:#213c58;border-radius:7px;font-size:12px;
+}
+body.studio-access #krueka-studio.kc-layout-compact .kc-workspace-actions-menu button:hover{background:#2c5576}
+body.studio-access #krueka-studio.kc-layout-compact:not(.ck-studio-home):not(.ks-chat-focus) .ks-right{
+ min-height:0;grid-template-rows:42px minmax(0,1fr) auto;
+}
+body.studio-access #krueka-studio.kc-layout-compact .ks-previewbar{
+ min-height:42px;max-height:42px;display:flex;align-items:center;flex-wrap:nowrap;
+ gap:5px;padding:4px 8px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;white-space:nowrap;
+}
+body.studio-access #krueka-studio.kc-layout-compact .ks-previewbar>*{flex-shrink:0}
+body.studio-access #krueka-studio.kc-layout-compact .ks-previewbar .ks-btn{min-height:32px;padding:5px 8px;font-size:11px}
+body.studio-access #krueka-studio.kc-layout-compact .ks-previewbar select{min-width:72px;max-width:130px;padding:6px;font-size:11px}
+body.studio-access #krueka-studio.kc-layout-compact .ks-preview,
+body.studio-access #krueka-studio.kc-layout-compact .ks-preview iframe{min-height:0;height:100%}
+body.studio-access #krueka-studio.kc-layout-compact.ck-studio-home .ks-top{height:58px}
+body.studio-access #krueka-studio.kc-layout-compact.ck-studio-home :is(.kc-top-title,.kc-workspace-actions,.ck-resources){display:none}
+body.studio-access #krueka-studio.kc-layout-compact.ck-studio-home .ks-main{height:calc(100% - 58px)}
+body.studio-access #krueka-studio.kc-layout-compact.ks-chat-focus .ks-top{height:58px}
+body.studio-access #krueka-studio.kc-layout-compact.ks-chat-focus :is(.kc-top-title,.kc-workspace-actions,.ck-resources){display:none}
+body.studio-access #krueka-studio.kc-layout-compact.ks-play-only :is(.ks-tabs,.kc-top-title,.kc-workspace-actions,.ck-resources){display:none}
+/* Los editores especializados ya utilizan toda la página; compactamos sus cabeceras. */
+body.studio-access #krueka-studio .kp-program-header{min-height:48px;padding:6px 10px;gap:8px}
+body.studio-access #krueka-studio .kb-top{padding:9px 15px;gap:10px}
+body.studio-access #krueka-studio .kb-top h2{font-size:clamp(18px,1.8vw,23px)}
+body.studio-access #krueka-studio .kb-stage{padding-top:11px;padding-bottom:11px}
+body.studio-access #krueka-studio .kb-stage-head{margin-bottom:8px}
+@media(max-width:1200px){
+ body.studio-access #krueka-studio.kc-layout-compact .ks-top{flex-wrap:wrap}
+ body.studio-access #krueka-studio.kc-layout-compact .ks-top .ks-tabs{order:10;flex:1 0 100%;max-width:none}
+}
+@media(max-width:780px){
+ body.studio-access #krueka-studio.kc-layout-compact .ks-top .ks-brand{font-size:14px}
+ body.studio-access #krueka-studio.kc-layout-compact .ks-top :is(.kc-top-title,#ks-save){display:none}
+ body.studio-access #krueka-studio.kc-layout-compact:not(.ck-studio-home):not(.ks-chat-focus) .ks-main{display:flex;flex-direction:column;overflow:auto}
+ body.studio-access #krueka-studio.kc-layout-compact .ks-left{flex:0 0 auto;height:420px;min-height:420px}
+ body.studio-access #krueka-studio.kc-layout-compact .ks-right{flex:0 0 auto;height:clamp(480px,76vh,700px);min-height:480px}
+}
+@media(max-width:480px){
+ body.studio-access #krueka-studio.kc-layout-compact .ks-top{padding:5px 7px;gap:4px}
+ body.studio-access #krueka-studio.kc-layout-compact .ks-top #ks-projects{font-size:10px;padding:4px 6px}
+ body.studio-access #krueka-studio.kc-layout-compact .kc-workspace-actions>summary{font-size:10px;padding:5px 7px}
+ body.studio-access #krueka-studio.kc-layout-compact .ks-top :is(#ks-save-btn,#ks-close){font-size:10px;padding:5px 7px}
+ body.studio-access #krueka-studio.kc-layout-compact .ks-top .ks-tabs>.ks-btn{font-size:11px;padding:5px 8px}
+}
