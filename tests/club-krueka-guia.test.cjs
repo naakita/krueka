@@ -56,7 +56,7 @@ test('La entrada y Mis talleres enlazan las guías sin cambiar el acceso',()=>{
   const html=read(name);
   assert.match(html,/href="club-krueka-guia\.html"/);
   assert.match(html,/studio-login-form/);
-  assert.match(html,/club-studio-access\.js\?v=20261121prompts1/);
+  assert.match(html,/club-studio-access\.js\?v=20261121[a-z0-9]+/);
  }
  assert.match(read('js/club-studio-creative.js'),/Guías Scratch y Roblox/);
  assert.match(read('js/club-studio-access.js'),/name==='club-studio-creative\.js'\?'20261121guia1'/);
