@@ -527,3 +527,7 @@ El pabellón usa la fotografía original sin pérdida de `assets/club/laguna-ata
 - `club/club-krueka-guia.css` ofrece la interfaz adaptable. Se accede desde `club-krueka.html`, su equivalente `studio.html` antes del inicio de sesión y desde **Mis talleres** dentro de `js/club-studio-creative.js`; el script creativo actualiza su versión de caché también en `app.html` y en el cargador `js/club-studio-access.js`.
 - Scratch abre su editor externo en una pestaña de navegador. Roblox Studio **requiere instalación en Windows o macOS**, y la biblioteca advierte que no se puede usar directamente dentro de un navegador o el modo kiosco. La biblioteca no registra cuentas externas, no ejecuta scripts Luau en Krueka, no modifica el editor privado ni la publicación de trabajos.
 - No hay cambios en Supabase, tablas, migraciones, RPC, políticas RLS ni el flujo de ingreso con código de seis caracteres. Las lecturas y el guardado reales de proyectos conservan los permisos anteriores.
+
+## Guía de programación 3D con Duck.ai
+
+La guía pública `club-prompts-3d.html` y Mi creación comparten el generador de prompts de `js/club-prompts-3d.js`. En proyectos de juegos la ficha se guarda en `ficha-programacion-3d.json` con el guardado habitual. Las líneas de código opcionales sólo se muestran en el prompt que copia el estudiante. La página pública trabaja en memoria. Se mantienen las RPC de proyectos y la revisión docente existentes.
