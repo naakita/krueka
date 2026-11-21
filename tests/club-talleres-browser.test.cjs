@@ -43,7 +43,15 @@ async function tryBook(doc,width){
 }
 const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historietas','cuentos','dramas','animes','flyers','dibujos','animation','video-edit','pagina-web','aplicacion-web'];
 (async()=>{
+ document.body.dataset.clubTest='Esperando el taller';
  await until(()=>window.KruekaStudioAccess?.ready);
+ const backendFetch=window.fetch;
+ const photo=new Blob([Uint8Array.from(atob('UklGRh4AAABXRUJQVlA4TBEAAAAvD8ABAAdQsl6Up/+BiOh/AAA='),c=>c.charCodeAt(0))],{type:'image/webp'});
+ let photoLoads=0;
+ window.fetch=(url,...args)=>{
+  if(String(url).endsWith('/assets/club/laguna-atardecer.webp')){photoLoads++;return Promise.resolve(new Response(photo));}
+  return backendFetch(url,...args);
+ };
  await KruekaStudioAccess.login('TEST01');
  verify(StudioIA.cloudReady,'ingreso');
  const home=document.getElementById('ks-creative-home');
@@ -52,6 +60,7 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
  home.querySelector('[data-kc-filter="Todos"]').click();
  const projects=[];
  for(const id of selectors){
+  document.body.dataset.clubTest='Probando '+id;
   let tile=document.querySelector('[data-creative-start="'+id+'"]');
   if(!tile&&['animation','arcade-web'].includes(id)){
    home.querySelector('[data-creative-path="'+(id==='animation'?'animaciones':'juegos')+'"]').click();
@@ -130,12 +139,16 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
    if(id==='pabellon-cine')editor.elements.plano0.value='planetario';
    editor.querySelector('button').click();
    verify(StudioKits.read(StudioIA.files).light==='noche','guardar luz 3D');
-   const preview=document.createElement('iframe');preview.style.cssText='width:420px;height:360px';document.body.append(preview);
+   const preview=document.createElement('iframe');preview.style.cssText='position:fixed;top:0;left:0;border:0;width:1574px;height:718px';document.body.append(preview);
    const ready=new Promise(done=>preview.onload=done);
    preview.srcdoc=StudioIA.buildPreview.call({files:StudioIA.files,dirname:StudioIA.dirname,resolve:StudioIA.resolve},'index.html');
    await ready;
    const doc=preview.contentDocument;
    verify(doc.querySelector('#titulo').textContent==='Pabellón de prueba'&&doc.querySelector('#luz').value==='noche','lectura independiente del proyecto');
+   const vista=doc.querySelector('#vista');
+   verify(vista.clientWidth===1574&&vista.width>=vista.clientWidth,'resolución de pantalla en el pabellón '+vista.clientWidth+' / '+vista.width);
+   await until(()=>photoLoads===1&&!ClubTalleres.readingFiles(StudioIA.files)['paisaje.js'].includes('KRUEKA_LAGUNA_HD'));
+   verify(!StudioIA.files['paisaje.js'].includes('KRUEKA_LAGUNA_HD'),'proyecto editable sin cambios por la vista HD');
    doc.querySelector('#accion').click();
    if(id==='pabellon-cine'){
     verify(doc.querySelector('#accion').textContent==='Pausar'&&doc.querySelector('#estado').textContent==='Detalle del planetario','reproducir primer plano editado');
