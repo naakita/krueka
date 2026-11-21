@@ -92,7 +92,7 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
    if(id==='libros'){
     const manuscript=work.querySelector('[name="panel-text-0"]');
     verify(manuscript&&work.querySelectorAll('.ck-scene').length===1&&document.getElementById('ck-add-part').hidden,'manuscrito continuo');
-    manuscript.value='Primer párrafo. '.repeat(120)+'\n\nSegundo párrafo. '.repeat(100);
+    manuscript.value='Primer párrafo. '.repeat(120)+'\\n\\nSegundo párrafo. '.repeat(100);
     manuscript.dispatchEvent(new Event('input',{bubbles:true}));
     verify(StudioIA.files['index.html'].includes('Segundo párrafo.')&&StudioIA.files['index.html'].includes('ck-manuscript-leaf'),'libro completo paginado');
    }

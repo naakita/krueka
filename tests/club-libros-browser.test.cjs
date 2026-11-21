@@ -16,7 +16,7 @@ async function until(fn){const deadline=Date.now()+26000;while(!fn()){if(Date.no
  check(!!area&&panel.querySelectorAll('.ck-scene').length===1,'un solo manuscrito');
  check(document.getElementById('ck-part-label').hidden&&document.getElementById('ck-add-part').hidden,'sin capítulos obligatorios');
  check(panel.querySelector('#ck-book-insert')!=null,'insertar imágenes accesible');
- area.value='Comienzo de mi libro. '.repeat(130)+'\n\nEl misterio continúa. '.repeat(90);
+ area.value='Comienzo de mi libro. '.repeat(130)+'\\n\\nEl misterio continúa. '.repeat(90);
  area.dispatchEvent(new Event('input',{bubbles:true}));
  check(StudioIA.files['index.html'].includes('El misterio continúa'),'texto continuo en vista previa');
  check((StudioIA.files['index.html'].match(/class="ck-panel ck-book ck-manuscript-leaf"/g)||[]).length>=3,'texto repartido en hojas');
