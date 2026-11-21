@@ -133,6 +133,16 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
    verify(StudioIA.files['index.html'].includes('<output>0</output>'),'bloque interactivo '+id);
   }
   if(id.startsWith('pabellon-')){
+   if(id==='pabellon-juego'){
+    const panel=document.querySelector('#ks-create .kg-prompt-panel');
+    verify(panel,'ficha de prompts en el juego');
+    panel.querySelector('button').click();
+    const prompt=panel.querySelector('[readonly]').value;
+    verify(prompt.includes('function move(dt)')&&prompt.includes('velocidad al caminar'),'pedido de programación con el código real');
+    const log=panel.querySelector('[name=done]');log.value='Verifiqué el giro con ambas flechas.';log.dispatchEvent(new Event('input',{bubbles:true}));
+    const stage=panel.querySelector('[name=stage]');stage.value='retomar';stage.dispatchEvent(new Event('input',{bubbles:true}));
+    verify(panel.querySelector('[readonly]').value.includes(log.value),'retomar con prueba confirmada');
+   }
    const editor=document.querySelector('#ks-create form');
    verify(editor&&StudioIA.tab==='create','editor 3D '+id);
    editor.elements.title.value='Pabellón de prueba';editor.elements.light.value='noche';
@@ -169,6 +179,9 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
  for(let i=0;i<projects.length;i++){
   await StudioIA.switchProject(projects[i]);
   verify(StudioIA.projectId===projects[i]&&StudioIA.files['index.html'],'reabrir '+selectors[i]);
+  if(selectors[i]==='pabellon-juego'){
+   const note=JSON.parse(StudioIA.files['ficha-programacion-3d.json']);verify(note.stage==='retomar'&&note.done.includes('ambas flechas'),'recuperar ficha en su proyecto');
+  }else verify(!StudioIA.files['ficha-programacion-3d.json'],'fichas aisladas por proyecto');
   if(selectors[i].startsWith('pabellon-'))verify(StudioKits.read(StudioIA.files).light==='noche','reabrir escena editada');
   if(['cuentos','dramas'].includes(selectors[i]))verify(JSON.parse(StudioIA.files['obra.json']).panels[3].text.endsWith('FIN DE LA OBRA'),'texto recuperado');
  }
