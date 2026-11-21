@@ -27,7 +27,7 @@ function homeMarkup(studio){
  const filters=['Todos',...families.filter(f=>paths.some(p=>f.ids.includes(p.id))).map(f=>f.label)];
  return '<header class="kc-desk-head"><div><h2>Mis talleres</h2><p>Elegí qué querés crear.</p></div><button class="kc-continue" id="kc-resume"><small>Seguir trabajando →</small><strong>'+esc(studio.title||'Mi proyecto')+'</strong></button></header>'+
  '<nav class="kc-families" aria-label="Filtrar talleres">'+filters.map(f=>'<button type="button" data-kc-filter="'+f+'">'+f+'</button>').join('')+'</nav><div class="kc-paths">'+cards+'</div>'+
- '<div class="kc-desk-links"><button type="button" data-kc-page="learn">Mi clase</button><button type="button" data-kc-page="academy">Cursos</button><button type="button" id="ck-open-gallery">Galería del Club</button><a id="ck-explore-models" href="club-krueka-galeria.html#ejemplos" target="_blank" rel="noopener">Explorar ejemplos ↗</a></div>';
+ '<div class="kc-desk-links"><button type="button" data-kc-page="learn">Mi clase</button><button type="button" data-kc-page="academy">Cursos</button><a href="club-krueka-guia.html" target="_blank" rel="noopener noreferrer">📖 Guías Scratch y Roblox ↗</a><button type="button" id="ck-open-gallery">Galería del Club</button><a id="ck-explore-models" href="club-krueka-galeria.html#ejemplos" target="_blank" rel="noopener">Explorar ejemplos ↗</a></div>';
 }
 function filterHome(family){
  activeFamily=family;
