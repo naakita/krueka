@@ -41,7 +41,7 @@ async function tryBook(doc,width){
   verify(next.disabled&&seen.size===leaves.length,'leer todas las hojas en orden');
  }finally{frame.remove();}
 }
-const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historietas','cuentos','dramas','animes','flyers','dibujos','animation','video-edit','pagina-web','aplicacion-web'];
+const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historietas','cuentos','libros','dramas','animes','flyers','dibujos','animation','video-edit','pagina-web','aplicacion-web'];
 (async()=>{
  document.body.dataset.clubTest='Esperando el taller';
  await until(()=>window.KruekaStudioAccess?.ready);
@@ -56,7 +56,7 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
  verify(StudioIA.cloudReady,'ingreso');
  const home=document.getElementById('ks-creative-home');
  home.querySelector('[data-kc-filter="Escribir"]').click();
- verify(home.querySelectorAll('.kc-path:not([hidden])').length===3,'filtro de escritura');
+ verify(home.querySelectorAll('.kc-path:not([hidden])').length===4,'filtro de escritura');
  home.querySelector('[data-kc-filter="Todos"]').click();
  const projects=[];
  for(const id of selectors){
@@ -89,6 +89,13 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
    }
    input.value='Auditoría '+id;
    input.dispatchEvent(new Event('input',{bubbles:true}));
+   if(id==='libros'){
+    const manuscript=work.querySelector('[name="panel-text-0"]');
+    verify(manuscript&&work.querySelectorAll('.ck-scene').length===1&&document.getElementById('ck-add-part').hidden,'manuscrito continuo');
+    manuscript.value='Primer párrafo. '.repeat(120)+'\n\nSegundo párrafo. '.repeat(100);
+    manuscript.dispatchEvent(new Event('input',{bubbles:true}));
+    verify(StudioIA.files['index.html'].includes('Segundo párrafo.')&&StudioIA.files['index.html'].includes('ck-manuscript-leaf'),'libro completo paginado');
+   }
    if(id==='cuentos'||id==='dramas'){
     document.getElementById('ck-add-part').click();
     const body=document.querySelector('[name=panel-text-3]');
@@ -109,7 +116,7 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
    const frame=document.querySelector('#ks-frame');
    verify(!frame.classList.contains('off')&&frame.srcdoc.includes('Auditoría '+id),'Ver mi obra '+id);
    verify(document.querySelector('.ks-preview-label').textContent==='Tu obra','etiqueta de '+id);
-   if(['blogs','cuentos','dramas'].includes(id)){
+   if(['blogs','cuentos','libros','dramas'].includes(id)){
     await tryBook(frame.srcdoc,980);
     await tryBook(frame.srcdoc,375);
    }
@@ -208,5 +215,5 @@ try{
  assert.equal(run.status,0,(run.stderr||'').slice(-1000));
  const outcome=run.stdout.match(/data-club-test="([^"]+)"/)?.[1];
  assert.equal(outcome,'PASS',outcome||'El recorrido no terminó');
- console.log('PASS: ingreso simulado, 12 talleres, juego y cine 3D, edición, bloques, vista previa, guardado y recuperación.');
+ console.log('PASS: ingreso simulado, talleres con libro continuo, juego y cine 3D, edición, vista previa, guardado y recuperación.');
 }finally{fs.rmSync(directory,{recursive:true,force:true});}

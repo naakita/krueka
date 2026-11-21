@@ -10,6 +10,7 @@ const categories=[
  {id:'blogs',icon:'📰',name:'Blogs',desc:'Publicá ideas, novedades y artículos.'},
  {id:'historietas',icon:'💬',name:'Historietas',desc:'Diseñá viñetas y diálogos.'},
  {id:'cuentos',icon:'📖',name:'Cuentos',desc:'Inventá historias y aventuras.'},
+ {id:'libros',icon:'📚',name:'Libros',desc:'Escribí tu libro de corrido, agregá imágenes y pasá sus páginas.'},
  {id:'dramas',icon:'🎭',name:'Dramas',desc:'Escribí escenas y personajes.'},
  {id:'animes',icon:'✨',name:'Anime original',desc:'Creá escenas animadas propias.'},
  {id:'flyers',icon:'📣',name:'Flyers y afiches',desc:'Diseñá publicidad y carteles.'},
@@ -21,6 +22,7 @@ const texts={
  blogs:['Primera publicación','Mi idea favorita','Una noticia del club'],
  historietas:['¡Comienza la aventura!','Un desafío inesperado','La gran solución'],
  cuentos:['Había una vez...','Algo sorprendente ocurrió','Un final inolvidable'],
+ libros:[''],
  dramas:['Escena 1: El encuentro','Escena 2: El conflicto','Escena 3: La solución'],
  animes:['Episodio 1: El poder despierta','Episodio 2: El reto','Episodio 3: Nuestra victoria'],
  flyers:['¿Qué ofrecemos?','¿Por qué participar?','¡Te esperamos!'],
@@ -29,10 +31,10 @@ const texts={
 function safe(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function defaultData(id){
  const cat=categories.find(c=>c.id===id)||categories[0];
- return {kind:id,title:({blogs:'Mi blog',historietas:'Mi historieta',cuentos:'Mi cuento',dramas:'Mi obra de teatro',animes:'Mi anime',flyers:'Mi afiche',dibujos:'Mi ilustración'})[id]||cat.name,subtitle:'Una creación original del Club Krueka',art:id==='animes'?'⚡':id==='dibujos'?'🦊':id==='dramas'?'🎭':id==='cuentos'?'🏰':id==='flyers'?'🌟':id==='historietas'?'🐱':'💡',color:'#237fc3',panels:(texts[id]||[]).map((t,i)=>({title:t,text:['Presento mi idea y lo que quiero contar.','Aquí sucede algo interesante. ¿Qué pasará después?','Este es el resultado de mi creación.'][i]}))};
+ return {kind:id,title:({blogs:'Mi blog',historietas:'Mi historieta',cuentos:'Mi cuento',libros:'Mi primer libro',dramas:'Mi obra de teatro',animes:'Mi anime',flyers:'Mi afiche',dibujos:'Mi ilustración'})[id]||cat.name,subtitle:'Una creación original del Club Krueka',art:id==='libros'?'📚':id==='animes'?'⚡':id==='dibujos'?'🦊':id==='dramas'?'🎭':id==='cuentos'?'🏰':id==='flyers'?'🌟':id==='historietas'?'🐱':'💡',color:'#237fc3',panels:id==='libros'?[{title:'',text:''}]:(texts[id]||[]).map((t,i)=>({title:t,text:['Presento mi idea y lo que quiero contar.','Aquí sucede algo interesante. ¿Qué pasará después?','Este es el resultado de mi creación.'][i]}))};
 }
 function color(value){return /^#[0-9a-f]{6}$/i.test(value||'')?value:'#237fc3';}
-function isLongWork(kind){return kind==='cuentos'||kind==='dramas';}
+function isLongWork(kind){return kind==='cuentos'||kind==='dramas'||kind==='libros';}
 function canArrange(kind){return ['cuentos','dramas','animes','historietas','blogs'].includes(kind);}
 const partNames={cuentos:'Capítulo',dramas:'Acto',animes:'Escena',historietas:'Viñeta',blogs:'Artículo'};
 function normalized(raw){
@@ -210,6 +212,58 @@ function arrangeTools(kind){
   details.append(summary,...extras);scene.append(details);
  }
 }
+function bookEditor(s){
+ const area=work.querySelector('[name="panel-text-0"]'),format=work.querySelector('#ck-format');
+ if(!area||!format)return;
+ area.classList.add('ck-book-manuscript');
+ area.placeholder='Empezá a escribir tu libro aquí. Continuá en el mismo espacio, párrafo tras párrafo…';
+ const toolbar=document.createElement('section');toolbar.className='ck-book-toolbar';
+ toolbar.innerHTML='<h3>📚 Tu manuscrito</h3><p>Escribí todo seguido, sin dividirlo en capítulos. Dejá una línea en blanco para comenzar otro párrafo. La vista previa organiza el texto automáticamente en páginas.</p><div class="ck-book-upload"><button type="button" class="ks-btn" id="ck-book-insert">＋ Insertar imagen donde estoy escribiendo</button><input type="file" id="ck-book-file" accept="image/png,image/jpeg,image/webp" hidden><span id="ck-book-count" role="status"></span></div><p class="ck-book-hint">Ubicá el cursor en el texto y elegí una imagen. Verás una marca como [[imagen:...]] en el manuscrito; en el libro aparecerá la ilustración en ese lugar, ocupando una página propia.</p><div id="ck-book-images" class="ck-book-images" aria-label="Ilustraciones del libro"></div><p id="ck-book-message" role="status"></p>';
+ format.append(toolbar);
+ const counter=toolbar.querySelector('#ck-book-count'),message=toolbar.querySelector('#ck-book-message');
+ const input=toolbar.querySelector('#ck-book-file'),insert=toolbar.querySelector('#ck-book-insert');
+ const recount=()=>{const text=area.value.trim();counter.textContent=(text?text.split(/\s+/).length:0)+' palabras · '+area.value.length+' caracteres';};
+ function drawImages(){
+  const list=toolbar.querySelector('#ck-book-images');list.replaceChildren();
+  const data=read(s).tools.bookImages||{},entries=Object.entries(data);
+  insert.disabled=entries.length>=8;insert.title=insert.disabled?'Ya agregaste ocho ilustraciones.': 'Elegí una imagen para este lugar del texto';
+  for(const [id,src] of entries){
+   const card=document.createElement('div');card.className='ck-book-image-card';
+   const img=document.createElement('img');img.src=src;img.alt='Ilustración guardada';
+   const caption=document.createElement('span');caption.textContent='Ilustración del libro';
+   const remove=document.createElement('button');remove.type='button';remove.className='ks-btn';remove.textContent='Quitar';
+   remove.onclick=()=>{
+    if(!confirm('¿Quitar esta ilustración del libro? Podés recuperarla con Deshacer.'))return;
+    const next=read(s);delete next.tools.bookImages[id];
+    next.panels[0].text=next.panels[0].text.split('[[imagen:'+id+']]').join('');
+    if(updateCreative(s,next,true)){area.value=next.panels[0].text;recount();drawImages();message.textContent='Ilustración quitada del libro.';}
+   };
+   card.append(img,caption,remove);list.append(card);
+  }
+ }
+ area.addEventListener('input',recount);recount();drawImages();
+ insert.onclick=()=>input.click();
+ input.onchange=async()=>{
+  const file=input.files?.[0];if(!file)return;
+  const projectId=s.projectId,start=area.selectionStart,end=area.selectionEnd;
+  input.disabled=true;message.textContent='Preparando la ilustración…';
+  try{
+   if(!window.ClubMedios?.compact)throw Error('No está disponible el editor de imágenes. Actualizá la página.');
+   const data=await ClubMedios.compact(file);
+   if(!s.cloudReady||s.busy||s.projectId!==projectId||!area.isConnected)throw Error('El proyecto cambió. Volvé a elegir la imagen.');
+   const next=read(s),images=next.tools.bookImages||{};
+   if(Object.keys(images).length>=8)throw Error('Este libro ya tiene ocho ilustraciones.');
+   const id='img'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+   const token='\n\n[[imagen:'+id+']]\n\n',original=next.panels[0].text;
+   next.tools.bookImages={...images,[id]:data};
+   next.panels[0].text=original.slice(0,start)+token+original.slice(end);
+   if(!updateCreative(s,next,true))throw Error('No hay espacio para otra imagen. Guardá una copia o quitá ilustraciones.');
+   area.value=next.panels[0].text;area.focus();area.setSelectionRange(start+token.length,start+token.length);
+   recount();drawImages();message.textContent='✓ Ilustración insertada y lista para guardar.';
+  }catch(e){message.textContent='⚠ '+e.message;}
+  finally{input.disabled=false;input.value='';}
+ };
+}
 function renderEditor(s){
  if(!isCreative(s))return;
  const d=read(s),form=work.querySelector('#ck-form');
@@ -217,15 +271,18 @@ function renderEditor(s){
  const partIndex=changedProject?0:work.querySelector('#ck-part').selectedIndex;
  if(changedProject){s.checkpoint();lastId=s.projectId;showSection('content');}
  work.querySelector('.ck-editor-head h2').textContent=categories.find(c=>c.id===d.kind).name;
+ work.querySelector('#ck-test').textContent=d.kind==='libros'?'Abrir mi libro':'Ver mi obra';
  work.querySelector('[data-section="content"]').textContent=d.kind==='dibujos'?'Dibujar':d.kind==='flyers'?'Mensaje':'Contenido';
  form.elements.title.value=d.title;form.elements.subtitle.value=d.subtitle;
  form.elements.color.value=d.color;form.elements.art.value=d.art;
  const longWork=isLongWork(d.kind),arrange=canArrange(d.kind),part=partNames[d.kind]||'Parte';
+ work.querySelector('#ck-part-label').hidden=d.kind==='libros';
  const add=work.querySelector('#ck-add-part');add.hidden=!arrange;add.textContent='＋ Agregar '+part.toLowerCase();
  const wrap=work.querySelector('#ck-scenes');wrap.replaceChildren(...d.panels.map((p,i)=>{
   const section=document.createElement('fieldset');section.className='ck-scene';const lg=document.createElement('legend');lg.textContent=part+' '+(i+1);
   const l1=document.createElement('label');l1.textContent='Título';const input=document.createElement('input');input.name='panel-title-'+i;input.maxLength=95;input.value=p.title;l1.appendChild(input);
-  const l2=document.createElement('label');l2.textContent='Texto o diálogo';const area=document.createElement('textarea');area.name='panel-text-'+i;if(!longWork)area.maxLength=1200;area.rows=longWork?7:3;area.value=p.text;l2.appendChild(area);
+  l1.hidden=d.kind==='libros';
+  const l2=document.createElement('label');l2.textContent=d.kind==='libros'?'Escribí tu libro acá':'Texto o diálogo';const area=document.createElement('textarea');area.name='panel-text-'+i;if(!longWork)area.maxLength=1200;area.rows=d.kind==='libros'?20:longWork?7:3;area.value=p.text;l2.appendChild(area);
   section.append(lg,l1,l2);
   if(arrange){
    const actions=document.createElement('div');
@@ -257,6 +314,7 @@ function renderEditor(s){
  }));
  if(window.ClubTalleres)ClubTalleres.render(work,s,d,updated=>updateCreative(s,updated));
  arrangeTools(d.kind);
+ if(d.kind==='libros')bookEditor(s);
  const selector=work.querySelector('#ck-part');
  selector.replaceChildren(...d.panels.map((p,i)=>new Option(part+' '+(i+1)+(p.title?' · '+p.title:''),i)));
  selectPart(partIndex);
@@ -317,7 +375,7 @@ studio.showTab=function(name){
  work.hidden=name!=='club-work';gallery.hidden=name!=='club-gallery';
  panel.classList.toggle('ck-club-gallery-open',name==='club-gallery');
  if(name==='club-work'){
-  if(!isCreative(this)){work.querySelector('#ck-status').textContent='Seleccioná una plantilla de cuento, blog, historieta, drama, anime, flyer o dibujo en Talleres.';work.querySelector('#ck-form').hidden=true;}
+  if(!isCreative(this)){work.querySelector('#ck-status').textContent='Seleccioná una plantilla de libro, cuento, blog, historieta, drama, anime, flyer o dibujo en Talleres.';work.querySelector('#ck-form').hidden=true;}
   else{work.querySelector('#ck-form').hidden=false;renderEditor(this);}
  }
  if(name==='club-gallery'){closeViewer();filter='todos';load(this);}

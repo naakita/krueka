@@ -12,7 +12,7 @@ let mounted=null,home=null;
 function kind(studio){return StudioKits.read(studio.files)?.kind;}
 function isMedia(studio){return ['animation','video-edit'].includes(kind(studio));}
 const families=[
- {label:'Escribir',ids:['cuentos','dramas','blogs']},
+ {label:'Escribir',ids:['libros','cuentos','dramas','blogs']},
  {label:'Diseñar',ids:['dibujos','historietas','flyers']},
  {label:'Programar',ids:['juegos','bloques','paginas','aplicaciones']},
  {label:'Animar y filmar',ids:['animes','animaciones','videos']}
