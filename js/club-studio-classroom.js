@@ -55,6 +55,8 @@ function lesson(studio){
 function sync(studio){
  if(!mounted?.isConnected)return;
  const select=mounted.querySelector('#ks-help-mode');if(!select)return;
+ if(studio.aiReady&&!mounted.dataset.aiWasReady)help='ai';
+ if(studio.aiReady)mounted.dataset.aiWasReady='1';else delete mounted.dataset.aiWasReady;
  if(!studio.aiReady&&help==='ai')help='local';
  select.value=help;select.options[0].disabled=!studio.aiReady;select.disabled=studio.busy||!studio.cloudReady;
  const send=mounted.querySelector('#ks-send'),tip=mounted.querySelector('#ks-compose-tip'),prompt=mounted.querySelector('#ks-prompt');
