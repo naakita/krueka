@@ -209,6 +209,14 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
   }
   if(id==='arcade-web')verify(StudioIA.tab==='programacion'&&StudioIA.files['index.html'].includes('<canvas'),'juego listo para probar');
   if(id==='animation'||id==='video-edit')verify(StudioKits.read(StudioIA.files)?.kind===id,'base de medios '+id);
+  if(id==='libros'){
+   const field=document.querySelector('[name="panel-text-0"]');field.setSelectionRange(0,6);field.dispatchEvent(new Event('select',{bubbles:true}));
+   const picked=ClubProjectChat.inspect(StudioIA);verify(picked.selection&&JSON.parse(picked.files['obra.json']).panels[0].text===field.value.slice(0,6),'leer sólo el fragmento elegido');
+   const part=JSON.parse(picked.files['obra.json']);part.panels[0].text='Inicio';
+   const next=picked.apply({'obra.json':JSON.stringify(part)});
+   verify(JSON.parse(next['obra.json']).panels[0].text==='Inicio'+field.value.slice(6),'editar sólo el fragmento elegido');
+   ClubProjectChat.resetSelection();
+  }
   StudioIA.showTab('ai');StudioIA.updateAI({ready:true,configured:true,provider:'Cloudflare'});StudioIA.renderAIStatus();
   const review=document.querySelector('#ks-project-context button');verify(review,'chat del proyecto '+id);
   window.lastProjectRequest=null;await review.onclick();

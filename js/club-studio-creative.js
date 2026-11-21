@@ -125,7 +125,7 @@ function install(){
   if(!isMedia(this)||(this.aiReady&&mounted?.querySelector('#ks-help-mode')?.value==='ai'))return send.apply(this,arguments);
   if(this.busy||!this.cloudReady)return;const q=document.getElementById('ks-prompt'),value=q?.value.trim();if(!value)return;
   this.busy=true;this.lock(true);
-  try{this.say('user',value);this.say('sys','Guía de herramientas · sin IA generativa\n'+guidance(kind(this),value));this.draft='';q.value='';this.changed();await this.save();}
+  try{this.say('user',value);this.say('sys',window.ClubProjectChat?.asksReview(value)?window.ClubProjectChat.localReview(this):'Guía de herramientas · sin IA generativa\n'+guidance(kind(this),value));this.draft='';q.value='';this.changed();await this.save();}
   finally{this.busy=false;this.lock(false);}
  };
  studio.__creativeInstalled=true;

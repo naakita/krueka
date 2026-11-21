@@ -323,7 +323,7 @@ REGLAS:
 DEVOLVÉ SOLO JSON válido:
 {"summary":"1-3 frases","test":"qué debe probar","files":[],"patches":[{"path":"ruta.ext","find":"fragmento exacto y único","replace":"fragmento modificado"}]}
 Siempre incluí files y patches. En PLANEAR o al hacer una pregunta, ambos deben ser [].`;
-    const contextFiles=pilot&&mode==="plan"&&files["obra.json"]?{"obra.json":files["obra.json"].replace(/data:image\/[a-z+.-]+;base64,[A-Za-z0-9+/=]+/gi,"[ilustración]")}:pilot?Object.fromEntries(Object.entries(files).filter(([,source])=>!(source.length>12000&&/data:image\/[a-z+.-]+;base64,/i.test(source)))):files;
+    const contextFiles=pilot&&!body.studioContext&&mode==="plan"&&files["obra.json"]?{"obra.json":files["obra.json"].replace(/data:image\/[a-z+.-]+;base64,[A-Za-z0-9+/=]+/gi,"[ilustración]")}:pilot?Object.fromEntries(Object.entries(files).filter(([,source])=>!(source.length>12000&&/data:image\/[a-z+.-]+;base64,/i.test(source)))):files;
     const fullProject=Object.keys(contextFiles).sort().map(n=>`\n--- FILE: ${n} ---\n${String(contextFiles[n])}`).join("");
     const recent=history.filter((m:any)=>["user","ai"].includes(m.role)&&!m.pending).slice(-6).map((m:any)=>`${m?.role==="user"?"ALUMNO":"IA"}: ${String(m?.text||"").slice(0,1000)}`).join("\n");
     if(badPersonal(fullProject+"\n"+recent+"\n"+prompt))return reply({ok:false,error:"Quitá correos, teléfonos y otros datos personales del pedido, los archivos y la conversación antes de usar la IA."},400);

@@ -44,6 +44,10 @@ function inspect(s){
   evidence=first?'Texto de la obra: «'+first.text.trim().slice(0,160)+'».':'Esta parte todavía está vacía.';
   if(d.kind==='dibujos')evidence='Fondo '+d.tools?.backdrop+' y tinta '+d.tools?.ink+'.';
   const path='obra.json';files[path]=JSON.stringify(data,null,2);
+  if(d.kind==='dibujos'){
+   const strokes=(d.tools?.strokes||[]).map(line=>({tipo:line.type,color:line.color,capa:line.layer,puntos:(line.points||[]).filter((_,i,all)=>i===0||i===all.length-1||i%Math.max(1,Math.ceil(all.length/6))===0)}));
+   files['boceto.json']=JSON.stringify({ancho:600,alto:320,trazos:strokes});
+  }
   description=d.kind+' · '+title+(sel?' · fragmento seleccionado':part===null?' · obra completa':' · parte '+(part+1));
   info=d.panels.length+' partes · '+d.panels.reduce((n,p)=>n+(p.text.trim()?p.text.trim().split(/\s+/).length:0),0)+' palabras';
   if(d.kind==='dibujos')info+=' · '+(d.tools?.strokes?.length||0)+' trazos · '+(d.tools?.stamps?.length||0)+' objetos';
@@ -117,8 +121,8 @@ function mount(s){
   select.onchange=()=>{scope=select.value;};
   review.onclick=async()=>{
    if(s.busy||!s.cloudReady)return;
-   try{const ctx=inspect(s);
-    if(!s.aiReady){s.say('sys','Revisión local de '+ctx.description+'\n'+ctx.info+'\n'+ctx.evidence+'\nLa evaluación con IA estará disponible al conectar el proveedor.');s.changed();await s.save();return;}
+   try{
+    if(!s.aiReady){s.say('sys',localReview(s));s.changed();await s.save();return;}
     const help=document.getElementById('ks-help-mode');if(help&&help.value!=='ai'){help.value='ai';help.dispatchEvent(new Event('change'));}
     s.setMode('plan');const q=document.getElementById('ks-prompt');
     if(!q.value.trim())q.value='Revisá esta parte de mi proyecto. Citá algo concreto que ya funciona y proponé una mejora que pueda probar.';
@@ -143,5 +147,10 @@ function mount(s){
   intro.replaceChildren();const b=document.createElement('b');b.textContent=s.title;intro.append(b,document.createTextNode('Elegí una parte o seleccioná texto en el editor. Pedí una revisión o explicá qué querés cambiar.'));
  }
 }
-window.ClubProjectChat={inspect,mount,resetSelection(){selection=null;scope='';owner='';}};
+function localReview(s){
+ const ctx=inspect(s);
+ return 'Revisión local de '+ctx.description+'\n'+ctx.info+'\n'+ctx.evidence+'\nLa evaluación con IA estará disponible al conectar el proveedor.';
+}
+function asksReview(text){return /^(?:mir[áa]|revis[áa]|evalu[áa]|le[ée]|analiz[áa]|qu[ée] (?:hice|hay|tengo))\b/i.test(String(text).normalize('NFD').replace(/[\u0300-\u036f]/g,''));}
+window.ClubProjectChat={inspect,mount,localReview,asksReview,resetSelection(){selection=null;scope='';owner='';}};
 })();
