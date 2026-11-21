@@ -156,7 +156,7 @@ function scene() {
    }
    gl.linkProgram(prog);if(!gl.getProgramParameter(prog,gl.LINK_STATUS))throw Error('Programa de escena no disponible');return prog;
   }
-  const sunlight=`uniform float night; vec3 sunSpace(vec3 p){
+  const sunlight=`uniform mediump float night; vec3 sunSpace(vec3 p){
    vec3 ray=normalize(vec3(-.62,night>.98?1.4:.76,-.45));vec3 side=normalize(cross(vec3(0.,1.,0.),ray));
    return vec3(dot(p,side)/15.,dot(p,cross(ray,side))/15.,-dot(p,ray)/30.);}`;
   const depth=program('attribute vec3 pos;'+sunlight+'void main(){gl_Position=vec4(sunSpace(pos),1.);}',
@@ -166,7 +166,7 @@ function scene() {
    void main(){vec3 d=pos-eye;float z=dot(d,front);gl_Position=vec4(dot(d,side)*scale.x,dot(d,up)*scale.y-.02*z,z*1.003-.31,z);
     world=pos;col=tint;grain=shade;dist=z;shadow=sunSpace(pos)*.5+.5;}`,
    `precision mediump float;varying vec3 world,col,shadow;varying float dist,grain;
-    uniform vec3 fogColor;uniform float night;uniform sampler2D shadowMap;
+    uniform vec3 fogColor;uniform mediump float night;uniform sampler2D shadowMap;
     void main(){float visibility=1.;
      if(all(greaterThan(shadow,vec3(0.)))&&all(lessThan(shadow,vec3(1.)))){
       for(int i=-1;i<=1;i++){for(int j=-1;j<=1;j++){
