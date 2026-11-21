@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),{stripTypeScriptTypes}=require('node:module');
 const source=fs.readFileSync(require('node:path').join(__dirname,'index.ts'),'utf8').replace(/^import .*;\n/gm,'');
-const student='11111111-1111-4111-8111-111111111111',project='22222222-2222-4222-8222-222222222222',rows=new Map(),bucket=new Map(),env={SUPABASE_URL:'https://test.invalid',SUPABASE_ANON_KEY:'public',SUPABASE_SERVICE_ROLE_KEY:'server'};let handler,upstreamCalls=0,bucketCalls=0,replyMode='ok',quotaBlock=false,settled=[],reserved=[],providerPause=null;
+const student='11111111-1111-4111-8111-111111111111',project='22222222-2222-4222-8222-222222222222',rows=new Map(),bucket=new Map(),env={STUDIO_AI_PROVIDER:'openai',SUPABASE_URL:'https://test.invalid',SUPABASE_ANON_KEY:'public',SUPABASE_SERVICE_ROLE_KEY:'server'};let handler,upstreamCalls=0,bucketCalls=0,replyMode='ok',quotaBlock=false,settled=[],reserved=[],providerPause=null;
 const pub={rpc:async(name,a)=>{
  if(a.p_device!=='test-device')return {error:{message:'Dispositivo no autorizado'}};
  if(name==='club_crea_listar')return {data:Array.from(rows.values()).map(x=>({id:x.id,type:'web',title:x.title,status:x.status}))};
@@ -64,5 +64,33 @@ const call=async b=>{const r=await handler(new Request('https://test.invalid',{m
  providerPause=null;
  assert.equal((await call({action:'unknown'})).status,400);assert.equal((await call({action:'ai',prompt:'mi correo ejemplo@test.com',files})).status,400);
  const final=upstreamCalls;assert.equal((await call({action:'ai',prompt:'Cambiá color',files:{...files,'info.txt':'ejemplo@test.com'}})).status,400);assert.equal(upstreamCalls,final);
+ const legacyFetch=context.fetch;
+ delete env.STUDIO_AI_PROVIDER;
+ assert.equal((await call({action:'status'})).ai.provider,'Cloudflare');
+ assert.equal((await call({action:'status',pilot:true})).ai.ready,false);
+ const beforePilot=upstreamCalls;
+ assert.equal((await call({action:'ai',pilot:true,prompt:'Mi cuento',files})).status,503);
+ assert.equal(upstreamCalls,beforePilot,'el piloto no usa OpenAI como respaldo');
+ env.CLOUDFLARE_ACCOUNT_ID='a'.repeat(32);env.CLOUDFLARE_AI_TOKEN='token-de-prueba';
+ const rpc=admin.rpc;let pilotReservations=0;
+ admin.rpc=async(name,args)=>{if(name==='club_studio_ai_pilot_reserve'){pilotReservations++;return rpc('club_studio_ai_reserve',{...args,p_micros:1});}return rpc(name,args)};
+ let safe=true,quota=false,pilotCalls=0;
+ context.fetch=async(url,options)=>{
+  assert.ok(url.startsWith('https://api.cloudflare.com/client/v4/accounts/'+'a'.repeat(32)+'/ai/run/@cf/'));
+  assert.ok(!options.body.includes(student));pilotCalls++;
+  if(quota)return new Response('{}',{status:429});
+  let result;
+  if(url.endsWith('flux-1-schnell'))result={image:'/9j/AA=='};
+  else if(url.endsWith('llama-guard-3-8b'))result={response:safe?'safe':'unsafe'};
+  else result={response:JSON.stringify({summary:'Una pista nueva',test:'Leé la pista',files:[],patches:[]})};
+  return new Response(JSON.stringify({success:true,result}));
+ };
+ assert.equal((await call({action:'status',pilot:true})).ai.provider,'Cloudflare');
+ assert.equal((await call({action:'ai',pilot:true,mode:'plan',prompt:'Una idea para mi cuento',files})).summary,'Una pista nueva');
+ assert.equal((await call({action:'image',prompt:'Lapacho en flor'})).image,'data:image/jpeg;base64,/9j/AA==');
+ safe=false;const n=pilotCalls;assert.equal((await call({action:'image',prompt:'Otra imagen'})).ok,false);assert.equal(pilotCalls,n+1);
+ quota=true;assert.equal((await call({action:'ai',pilot:true,prompt:'Otra idea',files})).status,429);
+ const last=pilotReservations;assert.equal((await call({action:'image',deviceId:'otro',prompt:'Foto'})).ok,false);assert.equal(last,pilotReservations);
+ assert.equal(settled.at(-1).p_actual_micros,0);context.fetch=legacyFetch;
  console.log('PASS: fragmentos exactos/secuenciales; rechazo atómico de ambigüedad/ruta/fragmento inválido; plan sin cambios; contador en errores; historial, borradores y tarjetas; proyectos privados; API desactivada; modelo fijo; reserva previa; cuotas; consumo; respuestas incompletas/invalidas; fallo sin reintentos ni cambios parciales.');
 })().catch(e=>{console.error(e);process.exit(1)});

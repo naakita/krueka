@@ -117,6 +117,44 @@ function render(work,s,raw,onChange){
   line.append(l,input,remove,message);target.append(line);
  }
  uploader('Imagen de portada','cover');
+ if(s.aiStatus?.provider==='Cloudflare'){
+  const box=document.createElement('details'),header=document.createElement('summary');
+  header.textContent='Crear una ilustración con IA';box.append(header);
+  const label=document.createElement('label');label.textContent='Describí tu ilustración';
+  const prompt=document.createElement('textarea');prompt.maxLength=500;prompt.placeholder='Un lapacho rosado junto al río Paraguay, en acuarela';label.append(prompt);
+  const generate=document.createElement('button'),use=document.createElement('button'),img=document.createElement('img'),status=document.createElement('p');
+  generate.type=use.type='button';generate.textContent='Generar imagen';use.textContent='Usar en mi obra';
+  const destination=document.createElement('select');destination.setAttribute('aria-label','Lugar de la ilustración');
+  destination.add(new Option('Portada','cover'));
+  if(d.kind==='blogs'||kinds.includes(d.kind))d.panels.forEach((_,i)=>destination.add(new Option('Parte '+(i+1),String(i))));
+  img.alt='Ilustración generada para tu obra';img.style.maxWidth='100%';img.hidden=use.hidden=destination.hidden=true;
+  status.setAttribute('role','status');generate.disabled=!s.aiReady;
+  if(!s.aiReady)status.textContent=s.aiStatus.configured?'Consultá el cupo en Chat.':'La generación estará disponible cuando se conecte Cloudflare.';
+  let data='',pending=false;
+  generate.onclick=async()=>{
+   if(pending||s.busy||!s.cloudReady)return;
+   if(!prompt.value.trim()){status.textContent='Escribí cómo querés que sea la imagen.';prompt.focus();return;}
+   const project=s.projectId;pending=true;generate.disabled=true;use.disabled=true;status.textContent='Generando tu ilustración…';
+   try{
+    const result=await s.request({action:'image',projectId:project,prompt:prompt.value.trim()});
+    const [format,encoded]=result.image.split(',');
+    const mime=format.match(/^data:(image\/(?:png|jpeg|webp));base64$/)?.[1];
+    if(!mime)throw Error('La imagen recibida no se puede abrir.');
+    const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));const next=await compact(new Blob([bytes],{type:mime}));
+    if(!box.isConnected||s.projectId!==project)return;
+    data=next;img.src=data;img.hidden=use.hidden=destination.hidden=false;status.textContent='Elegí dónde usar tu ilustración.';
+    if(result.ai)s.updateAI(result.ai);
+   }catch(e){status.textContent=e.message||'No se pudo generar la imagen.';if(e.ai)s.updateAI(e.ai);}
+   finally{pending=false;generate.disabled=!s.aiReady;use.disabled=false;}
+  };
+  use.onclick=()=>{
+   if(!data||!s.cloudReady||s.busy||!box.isConnected)return;
+   const key=destination.value;
+   if(!change(v=>{v.tools.images[key]=data;if(key!=='cover'&&kinds.includes(v.kind))v.tools.perScene[Number(key)].visual='Imagen'}))status.textContent='La ilustración no cabe en esta obra.';
+   else status.textContent='Ilustración incorporada a tu obra.';
+  };
+  box.append(label,generate,status,img,destination,use);panel.append(box);
+ }
  if(d.kind==='blogs'||kinds.includes(d.kind)){
   for(let i=0;i<d.panels.length;i++){
    const section=work.querySelectorAll('.ck-scene')[i];

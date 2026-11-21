@@ -94,14 +94,14 @@ const StudioIA={__loaded:true,
   },
   async request(body){
     // Un corte de red nunca debe dejar el chat bloqueado indefinidamente.
-    const controller=new AbortController(),isAI=body.action==='ai';
+    const controller=new AbortController(),isAI=body.action==='ai'||body.action==='image';
     const timeout=setTimeout(()=>controller.abort(),isAI?88000:18000);
     try{
       const res=await fetch(SUPABASE_URL+'/functions/v1/krueka-studio-ai',{
         method:'POST',
         headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
         signal:controller.signal,
-        body:JSON.stringify(Object.assign({studentId:this.sid(),deviceId:this.did()},body))
+        body:JSON.stringify(Object.assign({studentId:this.sid(),deviceId:this.did(),pilot:true},body))
       });
       let data=null;try{data=await res.json()}catch(_e){}
       if(!res.ok||data?.ok===false){
@@ -243,7 +243,7 @@ const StudioIA={__loaded:true,
     if(this.busy||!this.cloudReady)return;
     const q=document.getElementById('ks-prompt'),text=q.value.trim();if(!text)return;
     if(!this.aiReady){this.busy=true;this.lock(true);try{this.say('user',text,{pending:true});this.say('sys','Idea guardada como pendiente: todavía no se modificó el juego. Podés usar este pedido cuando la IA esté disponible.');this.draft='';q.value='';this.changed();await this.save();}finally{this.busy=false;this.lock(false);}return;}
-    const mode=this.mode;this.say('user',text);this.draft='';q.value='';this.busy=true;this.waiting=true;this.lock(true);this.renderChat();
+    const mode=window.ClubKrueka?.isCreative(this)?'plan':this.mode;this.say('user',text);this.draft='';q.value='';this.busy=true;this.waiting=true;this.lock(true);this.renderChat();
     try{
       const d=await this.queuedAI({action:'ai',projectId:this.projectId,mode,prompt:text,files:this.files,history:this.history});
       if(d.files&&mode==='build'&&Object.keys(d.files).length){const merged=this.validFiles({...this.files,...d.files});if(!merged['index.html'])throw new Error('El cambio no conserva la entrada del juego.');this.checkpoint();this.files=merged;}
@@ -335,7 +335,7 @@ const StudioIA={__loaded:true,
     const reason=this.aiStatus.reason,paused=reason==='budget'?'Se alcanzó el presupuesto del taller.':reason==='daily_limit'?'Completaste tus pedidos de IA por hoy.':String(reason||'').startsWith('provider_')?'El proveedor de IA está pausado.':'Conexión de IA pendiente.';
     if(el)el.textContent=this.aiReady?'Conexión lista. Pedí un cambio y probá tu juego aquí.':paused+' Podés guardar ideas y trabajar con las bases y el código.';
     if(tip)tip.textContent=this.aiReady?'Un cambio por pedido · Ctrl + Enter para enviar.':'Guardar idea no consulta una IA ni modifica el juego.';
-    if(model)model.textContent=this.aiReady?'Asistente conectado':'';
+    if(model)model.textContent=this.aiStatus.provider==='Cloudflare'?(this.aiReady?'IA del Club · Qwen':'Piloto de IA · '+(this.aiStatus.configured?'consultá el cupo':'pendiente de conectar')):(this.aiReady?'Asistente conectado':'');
     const usage=document.getElementById('ks-usage');if(usage)usage.textContent=this.aiStatus.usedToday!=null?'Pedidos de hoy: '+this.aiStatus.usedToday+' / '+(this.aiStatus.dailyLimit||12):'Tus conversaciones se guardan con el proyecto.';
   },
   renderCreator(){

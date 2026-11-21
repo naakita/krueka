@@ -49,6 +49,10 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
  const photo=new Blob([Uint8Array.from(atob('UklGRh4AAABXRUJQVlA4TBEAAAAvD8ABAAdQsl6Up/+BiOh/AAA='),c=>c.charCodeAt(0))],{type:'image/webp'});
  let photoLoads=0;
  window.fetch=(url,...args)=>{
+  if(String(url).includes('/functions/v1/krueka-studio-ai')&&args[0]?.body){
+   const body=JSON.parse(args[0].body);
+   if(body.action==='image')return Promise.resolve(new Response(JSON.stringify({ok:true,image:'data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvD8ABAAdQsl6Up/+BiOh/AAA=',ai:{ready:true,provider:'Cloudflare',configured:true}})));
+  }
   if(String(url).endsWith('/assets/club/laguna-atardecer.webp')){photoLoads++;return Promise.resolve(new Response(photo));}
   return backendFetch(url,...args);
  };
@@ -90,6 +94,16 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
    input.value='Auditoría '+id;
    input.dispatchEvent(new Event('input',{bubbles:true}));
    if(id==='libros'){
+    StudioIA.updateAI({ready:true,provider:'Cloudflare',configured:true});
+    StudioIA.showTab('club-work');
+    const imageTools=[...work.querySelectorAll('details')].find(x=>x.querySelector('summary')?.textContent==='Crear una ilustración con IA');
+    verify(imageTools,'ilustrador integrado');
+    const field=imageTools.querySelector('textarea');field.value='Un lapacho en flor';
+    const [generate,use]=imageTools.querySelectorAll('button');const originalCover=JSON.parse(StudioIA.files['obra.json']).tools?.images?.cover;
+    await generate.onclick();
+    verify(!use.hidden&&imageTools.querySelector('img').src.startsWith('data:image/webp'),'previsualizar ilustración');
+    verify(JSON.parse(StudioIA.files['obra.json']).tools?.images?.cover===originalCover,'aceptar la ilustración antes de cambiar la obra');
+    use.click();verify(JSON.parse(StudioIA.files['obra.json']).tools.images.cover.startsWith('data:image/webp'),'aplicar portada');
     const manuscript=work.querySelector('[name="panel-text-0"]');
     verify(manuscript&&work.querySelectorAll('.ck-scene').length===1&&document.getElementById('ck-add-part').hidden,'manuscrito continuo');
     manuscript.value='Primer párrafo. '.repeat(120)+'\\n\\nSegundo párrafo. '.repeat(100);
@@ -191,6 +205,7 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
  for(let i=0;i<projects.length;i++){
   await StudioIA.switchProject(projects[i]);
   verify(StudioIA.projectId===projects[i]&&StudioIA.files['index.html'],'reabrir '+selectors[i]);
+  if(selectors[i]==='libros')verify(JSON.parse(StudioIA.files['obra.json']).tools.images.cover.startsWith('data:image/webp'),'recuperar portada generada');
   if(selectors[i]==='pabellon-juego'){
    const note=JSON.parse(StudioIA.files['ficha-programacion-3d.json']);verify(note.stage==='retomar'&&note.done.includes('ambas flechas')&&note.lesson==='vuelta'&&note.route.includes('meta en el puente'),'recuperar ficha en su proyecto');
   }else verify(!StudioIA.files['ficha-programacion-3d.json'],'fichas aisladas por proyecto');

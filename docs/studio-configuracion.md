@@ -2,9 +2,15 @@
 
 La infraestructura está preparada para usar el Chat y probar el juego en el mismo taller desde el navegador. No requiere instalar OpenCode ni alquilar una VPS adicional. Conserva los proyectos, hasta 40 mensajes y el borrador en la nube. Las bases, el editor y la revisión funcionan mientras la API está desconectada: Guardar idea conserva un pedido pendiente sin generar una respuesta de IA ni cambiar el código.
 
-## Conexión del servidor
+## Piloto gratuito del Club
 
-La función de servidor `krueka-studio-ai` usa OpenAI Responses con `gpt-6-luna`, fijo en el código. Los alumnos no pueden seleccionar modelos más caros ni necesitan una cuenta de OpenAI. La clave queda en los secretos del servidor, nunca en navegador, repositorio ni proyectos.
+Los clientes actuales solicitan Cloudflare Workers AI. El administrador mantiene la cuenta en **Workers Free** y crea en Supabase → Edge Functions → Secrets los valores `CLOUDFLARE_ACCOUNT_ID` y `CLOUDFLARE_AI_TOKEN` (crear el token con la plantilla Workers AI de la cuenta del Club). La facturación depende del plan de Cloudflare. El servidor no puede comprobar ese plan con un token de inferencia. No activar Workers Paid para esta prueba.
+
+En Chat, pulsar Revisar IA, elegir IA del taller y hacer una consulta. Qwen responde usando el proyecto. En Mi obra → Imágenes → Crear una ilustración con IA, indicar la descripción, generar y elegir dónde usarla. La descripción de imagen se verifica con Llama Guard antes de llamar a FLUX. La opción de video del taller conserva su editor de escenas. Para el ensayo de aula: usar diez sesiones de alumnos de prueba, comprobar el tiempo de espera y comparar el consumo en Workers AI antes y después. Nunca copiar tokens a un proyecto de alumno.
+
+## Conexión anterior de OpenAI
+
+Sólo para clientes anteriores y con `STUDIO_AI_PROVIDER=openai` explícito, la función de servidor `krueka-studio-ai` usa OpenAI Responses con `gpt-6-luna`, fijo en el código. Los alumnos no pueden seleccionar modelos más caros ni necesitan una cuenta de OpenAI. La clave queda en los secretos del servidor, nunca en navegador, repositorio ni proyectos.
 
 Para habilitar solicitudes deben existir `OPENAI_API_KEY` y `STUDIO_AI_ENABLED=true`. La ausencia de cualquiera mantiene generación desactivada. La conexión se habilitó y verificó con una solicitud real el 08/10/2026. Las tarifas estándar se comprobaron al activar; los límites de facturación de la cuenta se gestionan por separado.
 
