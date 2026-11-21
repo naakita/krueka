@@ -38,6 +38,10 @@
 #krueka-studio .ct-lab-choices{display:flex;gap:6px;flex-wrap:wrap}
 #krueka-studio .ct-lab-slider{display:grid;gap:5px;color:#d7ebf8;font-size:12px}
 #krueka-studio .ct-lab-slider input{width:100%;max-width:220px}
+#krueka-studio .ct-lab-slider select{max-width:260px;padding:8px;border:1px solid #6b9ab0;border-radius:8px;background:#102c42;color:#f1f9ff;font:inherit}
+#krueka-studio .ct-layer-rows{display:grid;gap:7px}
+#krueka-studio .ct-layer-row{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+#krueka-studio .ct-layer-row button:first-child{flex:1 1 155px;text-align:left}
 #krueka-studio .ct-lab-checkbox{display:flex;align-items:center;gap:8px;font-size:12px;color:#d1e5f2}
 #krueka-studio .ct-lab-checkbox input{width:16px;height:16px;accent-color:#21b4c7}
 #krueka-studio .ct-lab-templates{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:7px}

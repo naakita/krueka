@@ -71,9 +71,45 @@ test('las imágenes propias se integran como objetos seguros y editables',()=>{
  assert.doesNotMatch(html,/https:\/\/ejemplo\.test/);
 });
 
+test('las capas, el espejo, la transparencia y los pinceles nuevos se conservan en la obra publicada',()=>{
+ const base={kind:'dibujos',title:'Un mundo de colores',tools:{
+  brushStyle:'chalk',activeLayer:'details',mirror:true,smooth:60,opacity:.45,guide:'perspective',
+  layerVisibility:{base:true,details:true},
+  strokes:[
+   {type:'pen',style:'chalk',layer:'base',color:'#124578',width:8,opacity:.5,points:[[20,25],[45,40],[90,35]]},
+   {type:'pen',style:'airbrush',layer:'details',mirror:true,color:'#ff5500',width:12,opacity:.4,smooth:80,points:[[50,70],[70,80],[90,120]]},
+   {type:'pen',style:'pixel',layer:'details',color:'#3344bb',width:8,points:[[150,20],[170,25]]}
+  ]
+ }};
+ const saved=normalize(base).tools,html=enhance(base,{})['index.html'];
+ assert.equal(saved.activeLayer,'details');assert.equal(saved.guide,'perspective');
+ assert.equal(saved.opacity,.45);assert.equal(saved.smooth,60);assert.equal(saved.mirror,true);
+ assert.equal(saved.strokes[1].layer,'details');assert.equal(saved.strokes[1].smooth,80);
+ assert.match(html,/translate\(600 0\) scale\(-1 1\)/,'el trazo simétrico aparece en ambos lados');
+ assert.match(html,/stroke-dasharray="5 3"/,'la tiza está disponible');
+ assert.match(html,/filter:blur\(2px\)/,'el aerógrafo aparece en la publicación');
+ assert.match(html,/shape-rendering="crispEdges"/,'el pincel de píxeles se conserva');
+ assert.match(html,/Q70 80/,'el estabilizador suaviza el trazo');
+ assert.doesNotMatch(html,/Sin guías|Perspectiva/,'las guías no se imprimen');
+ const hidden=enhance({...base,tools:{...base.tools,layerVisibility:{base:true,details:false}}},{})['index.html'];
+ assert.match(hidden,/stroke="#124578"/);
+ assert.doesNotMatch(hidden,/stroke="#ff5500"|stroke="#3344bb"/,'la capa oculta no se publica');
+ const restored=enhance({...base,tools:{...base.tools,layerVisibility:{base:true,details:true}}},{})['index.html'];
+ assert.match(restored,/stroke="#ff5500"/,'los trazos reaparecen al mostrar la capa');
+});
+
+test('datos incorrectos de capas y transparencia se limitan sin afectar dibujos antiguos',()=>{
+ const old=normalize({kind:'dibujos',tools:{strokes:[{type:'pen',points:[[1,2],[3,4]]}]}}).tools;
+ assert.equal(old.strokes[0].opacity,1);assert.equal(old.strokes[0].layer,'base');
+ assert.equal(old.layerVisibility.base,true);assert.equal(old.layerVisibility.details,true);
+ const invalid=normalize({kind:'dibujos',tools:{opacity:-1,guide:'javascript',activeLayer:'invisible',strokes:[{type:'pen',style:'unsafe',opacity:99,layer:'unknown',points:[[4,5]]}]}}).tools;
+ assert.equal(invalid.opacity,.1);assert.equal(invalid.guide,'none');assert.equal(invalid.activeLayer,'base');
+ assert.equal(invalid.strokes[0].opacity,1);assert.equal(invalid.strokes[0].layer,'base');
+});
+
 test('el acceso carga el diseño actualizado tanto por código como por entrada directa',()=>{
- for(const page of ['club-krueka.html','studio.html','app.html'])assert.match(read(page),/club-studio-talleres\.css\?v=20261121publicar1/);
- for(const page of ['club-krueka.html','studio.html'])assert.match(read(page),/club-studio-access\.js\?v=20261121publicar1/);
- assert.match(read('js/club-studio-access.js'),/club-studio-talleres\.js'\)return 'js\/'.*20261121dibujos1/);
+ for(const page of ['club-krueka.html','studio.html','app.html'])assert.match(read(page),/club-studio-talleres\.css\?v=20261121magma1/);
+ for(const page of ['club-krueka.html','studio.html'])assert.match(read(page),/club-studio-access\.js\?v=20261121magma1/);
+ assert.match(read('js/club-studio-access.js'),/club-studio-talleres\.js'\)return 'js\/'.*20261121magma1/);
  assert.match(read('club/club-studio-talleres.css'),/ct-canvas-expanded/);
 });
