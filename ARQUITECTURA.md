@@ -509,3 +509,5 @@ El lector de cuentos, dramas y artículos se genera en `js/club-studio-talleres.
 
 
 El Club carga `js/club-studio-pabellon.js` después de Modelos. Las bases de Videojuegos y Animaciones generan una escena 3D de geometría original en WebGL con sombras y una alternativa de proyección en Canvas 2D, autocontenida para el visor privado, las entregas y la descarga. El juego usa cámara en primera persona y colisiones. El cortometraje guarda tres planos y su duración en `game-config.js`. La demostración pública en `ejemplos/pabellon.html` usa la misma escena sin datos de alumnos. Reutiliza los permisos y RPC de proyectos existentes.
+
+El pabellón usa la fotografía original sin pérdida de `assets/club/laguna-atardecer.webp`. El visor del alumno, el del docente y la galería entregan esa imagen fija al iframe al abrir la escena, manteniendo su política de red. La imagen compacta sigue dentro del proyecto para leerlo sin conexión. El adaptador de lectura reconoce las versiones originales del motor y conserva las modificaciones del alumnado.

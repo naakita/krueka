@@ -16,7 +16,7 @@ const htmlBody = `<main><canvas id="vista" tabindex="0" aria-label="Escenario tr
 <div class="bottom"><div class="strip"><button id="accion"></button><button id="reinicio" hidden>Reiniciar</button><output id="estado" aria-live="polite"></output></div>
 <div id="cine" hidden><label for="tiempo">Tiempo</label><input id="tiempo" type="range" min="0" step="0.05" value="0"><span id="reloj"></span></div>
 <div id="mover" hidden><button data-key="ArrowLeft" aria-label="Girar a la izquierda">↶</button><button data-key="ArrowUp" aria-label="Avanzar">▲</button><button data-key="ArrowDown" aria-label="Retroceder">▼</button><button data-key="ArrowRight" aria-label="Girar a la derecha">↷</button></div></div></main>`;
-const css = `*{box-sizing:border-box}html,body,main{margin:0;width:100%;height:100%;overflow:hidden}main{position:relative;background:#182c35;color:#fff9e8;font:16px/1.35 system-ui,sans-serif}canvas{display:block;width:100%;height:100%;touch-action:none}header{pointer-events:none;position:absolute;inset:0 0 auto;padding:clamp(14px,3vw,38px);padding-right:118px;background:linear-gradient(#14212bd9,transparent);text-shadow:0 2px 9px #13242b}small{font-weight:750;letter-spacing:.16em;font-size:.74rem;color:#ffe1a0}h1{font:500 clamp(23px,4.5vw,52px)/1.06 Georgia,serif;margin:7px 0}header p{margin:5px 0;font-size:.94rem;max-width:42ch}.tools{position:absolute;top:12px;right:12px}.tools label{display:grid;gap:2px;background:#17302de8;padding:6px 9px;border-radius:10px;font-size:.76rem}select,button{font:inherit;color:inherit;border-radius:8px;border:1px solid #ffffff55;background:#193b37;padding:8px;cursor:pointer}button{min-height:42px;font-weight:650}button:hover,button:focus-visible{background:#316658}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #ffe6a1}.bottom{position:absolute;bottom:0;left:0;width:100%;padding:clamp(10px,2vw,26px);background:linear-gradient(transparent,#101e23ed);pointer-events:none}.bottom>*{pointer-events:auto}.strip,#cine,#mover{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:fit-content}#accion{background:#ffda86;color:#24342e;border-color:#ffe8b2;padding:8px 17px}#estado,#reloj{font-size:.89rem;text-shadow:0 1px 4px #000;background:#122923c9;padding:4px 8px;border-radius:5px}#cine,#mover{margin-top:8px}#tiempo{width:min(44vw,360px);accent-color:#ffda86}#mover button{min-width:44px;touch-action:none}body [hidden]{display:none!important}@media(max-height:370px){header p{display:none}.bottom{padding:6px}header{padding:7px 110px 7px 10px}h1{font-size:21px}}`;
+const css = `*{box-sizing:border-box}html,body,main{margin:0;width:100%;height:100%;overflow:hidden}main{position:relative;background:#182c35;color:#fff9e8;font:16px/1.35 system-ui,sans-serif}canvas{display:block;width:100%;height:100%;touch-action:none}header{pointer-events:none;position:absolute;inset:0 0 auto;padding:clamp(14px,3vw,38px);padding-right:118px;background:linear-gradient(135deg,#10212a8c,transparent 55%);text-shadow:0 2px 9px #13242b}small{font-weight:750;letter-spacing:.16em;font-size:.74rem;color:#ffe1a0}h1{font:500 clamp(23px,4.5vw,52px)/1.06 Georgia,serif;margin:7px 0}header p{margin:5px 0;font-size:.94rem;max-width:42ch}.tools{position:absolute;top:12px;right:12px}.tools label{display:grid;gap:2px;background:#17302de8;padding:6px 9px;border-radius:10px;font-size:.76rem}select,button{font:inherit;color:inherit;border-radius:8px;border:1px solid #ffffff55;background:#193b37;padding:8px;cursor:pointer}button{min-height:42px;font-weight:650}button:hover,button:focus-visible{background:#316658}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #ffe6a1}.bottom{position:absolute;bottom:0;left:0;width:100%;padding:clamp(10px,2vw,26px);background:linear-gradient(transparent,#101e23ed);pointer-events:none}.bottom>*{pointer-events:auto}.strip,#cine,#mover{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:fit-content}#accion{background:#ffda86;color:#24342e;border-color:#ffe8b2;padding:8px 17px}#estado,#reloj{font-size:.89rem;text-shadow:0 1px 4px #000;background:#122923c9;padding:4px 8px;border-radius:5px}#cine,#mover{margin-top:8px}#tiempo{width:min(44vw,360px);accent-color:#ffda86}#mover button{min-width:44px;touch-action:none}body [hidden]{display:none!important}@media(max-height:370px){header p{display:none}.bottom{padding:6px}header{padding:7px 110px 7px 10px}h1{font-size:21px}}`;
 
 // Esta función también corre en el HTML descargado, sin red ni sesión.
 function scene() {
@@ -35,7 +35,8 @@ function scene() {
  let eye,forward,right,up,zoom,light,sky,haze,sorted,score=0;
  const seconds=clamp(Number(cfg.seconds)||15,6,45),required=clamp(Math.round(Number(cfg.seeds)||3),1,3);
  const seeds=[[-3.7,-2.7],[4,1.2],[-.6,5.1]].slice(0,required),taken=new Set(),keys=new Set(),obstacles=[];
- let player={x:0,z:-6.5,yaw:0,pitch:0},drag;
+ const entrance={x:0,z:-5,yaw:-Math.PI/2-.016,pitch:-.022};
+ let player={...entrance},drag;
  function face(pts,col,glow=false){
   const n=unit(cross(sub(pts[1],pts[0]),sub(pts[2],pts[0])));
   faces.push({pts,col:color(col),shade:.70+.26*Math.abs(n[1])+.11*n[0]-.08*n[2],glow});
@@ -57,12 +58,19 @@ function scene() {
  }
  function plant(x,z,scale){
   const s=scale;shade(x,z,.6*s,.48*s);
-  rod([x,0,z],[x,.62*s,z],.32*s,'ae7256',8,.46*s);
-  for(let i=0;i<7;i++){
-   const a=i*2.39,dx=Math.cos(a)*s,dz=Math.sin(a)*s,y=(1.25+i%3*.27)*s;
-   const base=[x,.55*s,z],tip=[x+dx*.72,y,z+dz*.72],mid=[x+.32*dx,y-.16*s,z+.32*dz];
-   const l=[mid[0]-dz*.19,mid[1]-.13*s,mid[2]+dx*.19],r=[mid[0]+dz*.19,mid[1]-.13*s,mid[2]-dx*.19];
-   face([base,l,tip,mid],leaf[i%3]);face([base,mid,tip,r],leaf[(i+1)%3]);
+  rod([x,0,z],[x,.62*s,z],.32*s,'a46e50',20,.46*s);
+  rod([x,.58*s,z],[x,.67*s,z],.48*s,'bc8969',20,.49*s);
+  rod([x,.67*s,z],[x,.674*s,z],.44*s,'4b382b',20);
+  for(let i=0;i<12;i++){
+   const a=i*2.399,dx=Math.cos(a)*s,dz=Math.sin(a)*s,len=.64+.27*Math.sin(i*6.3+z),rise=.63+(i%4)*.15;
+   function blade(t,edge){
+    const spread=(.014+.106*Math.sin(Math.PI*t))*edge;
+    return [x+dx*t*len-dz*spread, (.62+rise*t+.39*Math.sin(Math.PI*t)-.055*Math.abs(edge)*Math.sin(Math.PI*t))*s,z+dz*t*len+dx*spread];
+   }
+   for(let j=0;j<5;j++){
+    const t=j/5,u=(j+1)/5;
+    for(const edge of [-1,1])face([blade(t,0),blade(t,edge),blade(u,edge),blade(u,0)],leaf[(i+(edge===1?1:0))%3]);
+   }
   }
   obstacles.push([x,z,.48*s,.48*s]);
  }
@@ -86,8 +94,14 @@ function scene() {
   for(const x of [-6,6]){
    box(x,0,z,.29,3.1,.38,stone);box(x,0,z,.49,.24,.55,metal);
   }
-  const arch=i=>[6*Math.cos(Math.PI*i/12),3+3.3*Math.sin(Math.PI*i/12),z];
-  for(let i=0;i<12;i++)rod(arch(i),arch(i+1),.16, i%2?'c99564':'dca976',5);
+  const section=(angle,thickness,depth)=>[(6+thickness)*Math.cos(angle),3+(3.3+thickness)*Math.sin(angle),z+depth];
+  for(let i=0;i<40;i++){
+   const a=Math.PI*i/40,b=Math.PI*(i+1)/40;
+   for(const depth of [-.14,.14]){
+    face([section(a,-.12,depth),section(a,.12,depth),section(b,.12,depth),section(b,-.12,depth)],'bd8958');
+   }
+   for(const radius of [-.12,.12])face([section(a,radius,-.14),section(b,radius,-.14),section(b,radius,.14),section(a,radius,.14)],radius>0?'dbb180':'98613d');
+  }
  }
  for(const x of [-5.6,-3.8,0,3.8,5.6]){
   const y=3+3.3*Math.sqrt(1-(x/6)**2);
@@ -106,8 +120,12 @@ function scene() {
   const point=a=>[1.14*Math.cos(a),2.05+1.14*Math.sin(a)*Math.cos(angle),3+1.14*Math.sin(a)*Math.sin(angle)];
   for(let i=0;i<20;i++)rod(point(tau*i/20),point(tau*(i+1)/20),.045,brass,4);
  }
- rod([0,1.58,3],[0,2.07,3],.02,accent,9,.48);
- rod([0,2.07,3],[0,2.54,3],.48,accent,9,.02);obstacles.push([0,3,1.28,1.28]);
+ const globe=(lat,lon)=>[.48*Math.cos(lat)*Math.cos(lon),2.06+.48*Math.sin(lat),3+.48*Math.cos(lat)*Math.sin(lon)];
+ for(let band=0;band<12;band++)for(let j=0;j<24;j++){
+  const lo=(band/12-.5)*Math.PI,hi=((band+1)/12-.5)*Math.PI,a=j*tau/24,b=(j+1)*tau/24;
+  face([globe(lo,a),globe(hi,a),globe(hi,b),globe(lo,b)],accent);
+ }
+ obstacles.push([0,3,1.28,1.28]);
  // Una biblioteca baja, lámparas colgantes y macizos enmarcan el planetario.
  for(const x of [-3.7,3.7]){
   box(x,0,7.4,2.75,1.65,.18,ink);
@@ -119,8 +137,8 @@ function scene() {
  }
  for(const z of [-3.8,1.1,5.8])for(const x of [-3.8,3.8]){
   rod([x,5.45,z],[x,3.83,z],.025,metal,4);
-  rod([x,3.83,z],[x,3.45,z],.075,brass,8,.4);
-  const ring=Array.from({length:8},(_,i)=>[x+.385*Math.sin(i*tau/8),3.447,z+.385*Math.cos(i*tau/8)]);
+  rod([x,3.83,z],[x,3.45,z],.075,brass,24,.4);
+  const ring=Array.from({length:24},(_,i)=>[x+.385*Math.sin(i*tau/24),3.447,z+.385*Math.cos(i*tau/24)]);
   face(ring,'ffe3a5',true);
  }
  for(const x of [-6.8,6.8]){
@@ -132,9 +150,48 @@ function scene() {
   }
  }
  fixed=faces;faces=[];
- const panorama=new Image();let hasLandscape=false,lastSky='';
- panorama.onload=()=>{hasLandscape=true;dirty=true;};
- if(window.KRUEKA_PAISAJE)panorama.src=window.KRUEKA_PAISAJE;
+ const backdrop=document.createElement('canvas');
+ backdrop.setAttribute('aria-hidden','true');
+ backdrop.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none';
+ canvas.before(backdrop);canvas.style.position='relative';
+ const background=backdrop.getContext('2d',{alpha:false});
+ let panorama=null,backdropKey='',requestedImage=0;
+ function loadLandscape(src){
+  if(!src)return;
+  const request=++requestedImage,image=new Image();
+  image.onload=()=>{if(request===requestedImage){panorama=image;backdropKey='';dirty=true;}};
+  image.src=src;
+ }
+ loadLandscape(window.KRUEKA_PAISAJE);
+ if(window.KRUEKA_LAGUNA_HD&&window.parent!==window){
+  addEventListener('message',function receive(e){
+   if(e.source!==window.parent||e.data?.type!=='krueka-laguna-hd'||typeof e.data.image!=='string'||!e.data.image.startsWith('data:image/webp;base64,'))return;
+   removeEventListener('message',receive);loadLandscape(e.data.image);
+  });
+  window.parent.postMessage({type:'krueka-pedir-laguna'},'*');
+ }
+ function paintLandscape(hour){
+  const yaw=Math.atan2(forward[0],forward[2]),pitch=Math.asin(forward[1]);
+  const key=[w,h,hour,yaw,pitch,!!panorama].join('|');
+  if(key===backdropKey)return;
+  backdropKey=key;
+  if(backdrop.width!==w||backdrop.height!==h){backdrop.width=w;backdrop.height=h;}
+  if(!panorama){
+   const gradient=background.createLinearGradient(0,0,0,h);
+   gradient.addColorStop(0,rgb(sky));gradient.addColorStop(1,rgb(haze));background.fillStyle=gradient;background.fillRect(0,0,w,h);return;
+  }
+  const width=Math.max(w,h*panorama.width/panorama.height),height=width*panorama.height/panorama.width;
+  const top=clamp(h*.5-height*.5+Math.tan(pitch)*zoom,h-height,0);
+  const center=w*.5-width*.5-(yaw-entrance.yaw)/Math.PI*width;
+  const first=Math.floor(-center/width),last=Math.ceil((w-center)/width);
+  for(let tile=first;tile<last;tile++){
+   const mirror=tile%2!==0,start=Math.round(center+tile*width),end=Math.round(center+(tile+1)*width);
+   background.save();background.translate(mirror?end:start,top);if(mirror)background.scale(-1,1);
+   background.drawImage(panorama,0,0,end-start,height);background.restore();
+  }
+  if(hour==='noche'){background.fillStyle='rgba(9,23,57,.76)';background.fillRect(0,0,w,h);}
+  if(hour==='dia'){background.fillStyle='rgba(218,241,255,.07)';background.fillRect(0,0,w,h);}
+ }
  const shadowCache=new Map();
  function floorShadows(hour){
   if(shadowCache.has(hour))return shadowCache.get(hour);
@@ -160,7 +217,7 @@ function scene() {
    vec3 ray=normalize(vec3(-.62,night>.98?1.4:.76,-.45));vec3 side=normalize(cross(vec3(0.,1.,0.),ray));
    return vec3(dot(p,side)/15.,dot(p,cross(ray,side))/15.,-dot(p,ray)/30.);}`;
   const depth=program('attribute vec3 pos;'+sunlight+'void main(){gl_Position=vec4(sunSpace(pos),1.);}',
-   'precision mediump float;void main(){gl_FragColor=vec4(vec3(gl_FragCoord.z),1.);}');
+   'precision mediump float;void main(){float z=gl_FragCoord.z*255.;gl_FragColor=vec4(floor(z)/255.,fract(z),0.,1.);}');
   const material=program(`attribute vec3 pos;attribute vec3 tint;attribute float shade;
    uniform vec3 eye,side,up,front;uniform vec2 scale;varying vec3 world,col,shadow;varying float dist,grain;`+sunlight+`
    void main(){vec3 d=pos-eye;float z=dot(d,front);gl_Position=vec4(dot(d,side)*scale.x,dot(d,up)*scale.y-.02*z,z*1.003-.31,z);
@@ -170,12 +227,13 @@ function scene() {
     void main(){float visibility=1.;
      if(all(greaterThan(shadow,vec3(0.)))&&all(lessThan(shadow,vec3(1.)))){
       for(int i=-1;i<=1;i++){for(int j=-1;j<=1;j++){
-       float depth=texture2D(shadowMap,shadow.xy+vec2(float(i),float(j))*.0014).r;
+       vec2 packedZ=texture2D(shadowMap,shadow.xy+vec2(float(i),float(j))*.0014).rg;float depth=packedZ.x+packedZ.y/255.;
        visibility-=shadow.z-.0045>depth?.043:0.;}}}
      float pattern=1.;
      if(col.r>col.g*1.25&&col.g>col.b*1.15){
-      float bands=sin(world.x*29.+2.*sin(world.z*2.3))+sin(world.x*83.+sin(world.z*3.));
-      pattern+=.023*bands;}
+      float warp=.8*sin(world.z*1.1+sin(world.x*1.7))+.3*sin(world.z*3.2+world.x);
+      float bands=sin(world.x*34.+warp)+.4*sin(world.x*76.+2.*warp);
+      pattern+=.045*bands*clamp((18.-dist)/15.,0.,1.);}
      vec3 color=col*grain*pattern*(grain>1.02?1.:night*visibility);
      if(night<.6){vec2 lamp=vec2(abs(world.x)-3.8,mod(world.z+1.25,4.8)-2.4);
       color+=vec3(.22,.12,.035)*exp(-dot(lamp,lamp)*.65)*clamp((4.-world.y)/3.,0.,1.);}
@@ -232,8 +290,16 @@ function scene() {
   }
  }
  function gem(x,z,t){
-  const y=1+.15*Math.sin(t*2+x),ring=Array.from({length:5},(_,i)=>[x+.25*Math.sin(t+i*tau/5),y,z+.25*Math.cos(t+i*tau/5)]);
-  for(let i=0;i<5;i++){const j=(i+1)%5;face([ring[i],ring[j],[x,y+.46,z]],i%2?'ffee9e':'ffbf53',true);face([ring[j],ring[i],[x,y-.37,z]],'eba73f',true);}
+  const y=1+.1*Math.sin(t*2+x),spin=t*.63+x;
+  const point=(level,i)=>{
+   const angle=i*tau/12,along=level/8,profile=Math.pow(Math.max(0,Math.sin(Math.PI*along)),.76)*(1.17-.5*along);
+   const u=.22*Math.cos(angle)*profile+.105*along*along,v=.145*Math.sin(angle)*profile;
+   return [x+u*Math.cos(spin)-v*Math.sin(spin),y+.68*(along-.5),z+u*Math.sin(spin)+v*Math.cos(spin)];
+  };
+  for(let j=0;j<8;j++)for(let i=0;i<12;i++){
+   const hue=i===3?'ffe5a1':i<6?'f0ba58':'cd9042';
+   face([point(j,i),point(j+1,i),point(j+1,i+1),point(j,i+1)],hue);
+  }
  }
  function camera(pos,target){
   eye=pos;forward=unit(sub(target,pos));right=unit(cross([0,1,0],forward));up=cross(forward,right);
@@ -244,7 +310,10 @@ function scene() {
    camera([x-2.3*Math.cos(a)-1.2,3.75,z+2.3*Math.sin(a)-2.3],[x,3.28,z]);
   }
   else if(name==='planetario')camera([3.25*Math.sin(.55+1.4*t),2.28,3-3.25*Math.cos(.55+1.4*t)],[0,1.97,3]);
-  else camera([lerp(-9,-5,t),lerp(5.3,3.4,t),lerp(-12,-8,t)],[0,1.75,1.35]);
+  else {
+   const angle=entrance.yaw+t*.9,x=entrance.x+t*.8,z=entrance.z+t*.5;
+   camera([x,1.65,z],[x+Math.sin(angle),1.63,z+Math.cos(angle)]);
+  }
  }
  function screen(points){
   let pts=points.map(p=>{const d=sub(p,eye);return [dot(d,right),dot(d,up),dot(d,forward)];});
@@ -266,34 +335,19 @@ function scene() {
   sorted.push({xy,depth,fill});
  }
  function render(){
-  const scale=Math.min(window.devicePixelRatio||1,1.4,1150/Math.max(canvas.clientWidth,1));
+  const pixels=Math.max(1,canvas.clientWidth*canvas.clientHeight);
+  const scale=Math.min(window.devicePixelRatio||1,2.5,Math.sqrt(8300000/pixels));
   w=Math.max(1,Math.round(canvas.clientWidth*scale));h=Math.max(1,Math.round(canvas.clientHeight*scale));
   if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
   zoom=Math.min(h*.95,w*1.03);
   const colors=looks[by('luz').value]||looks.tarde;sky=color(colors[0]);haze=color(colors[1]);light=colors[2];
-  if(walk){const p=player;camera([p.x,1.65,p.z],[p.x+Math.sin(p.yaw),1.65+Math.tan(p.pitch),p.z+Math.cos(p.yaw)]);}
+  if(!movie){const p=walk?player:entrance;camera([p.x,1.65,p.z],[p.x+Math.sin(p.yaw),1.65+Math.tan(p.pitch),p.z+Math.cos(p.yaw)]);}
   else if(movie){const segment=Math.min(2,Math.floor(time/seconds*3));shot(cfg.shots[segment],clamp(time/seconds*3-segment,0,1));}
-  else shot('terraza',.23);
-  const horizon=h*.51+forward[1]*zoom;
+
   const t=movie?time:elapsed;faces=[];bird(t);
   if(!movie)seeds.forEach(([x,z],i)=>{if(!taken.has(i))gem(x,z,t);});
-  const skyBackground='linear-gradient('+rgb(sky)+', '+rgb(haze)+' '+Math.round(clamp(horizon/h,.05,.92)*100)+'%, '+rgb(mix(haze,[67,107,99],.72))+')';
   const hour=by('luz').value;
-  const skyKey=hour+hasLandscape;
-  if(skyKey!==lastSky){
-   const tint=hour==='noche'?'rgba(11,28,67,.76)':hour==='tarde'?'rgba(231,151,76,.12)':'rgba(255,250,230,.02)';
-   canvas.style.backgroundImage=hasLandscape?'linear-gradient('+tint+','+tint+'), url("'+window.KRUEKA_PAISAJE+'")':skyBackground;
-   lastSky=skyKey;
-  }
-  if(hasLandscape){
-   const imageWidth=Math.max(w*1.12,h*2.18),imageHeight=imageWidth*.5;
-   const yaw=Math.atan2(forward[0],forward[2]),offset=w*.5-imageWidth*(.5+yaw/tau*2);
-   // La geometría usa píxeles del lienzo, el fondo CSS usa píxeles de la ventana.
-   const ratio=canvas.clientWidth/w;
-   canvas.style.backgroundSize='100% 100%, '+imageWidth*ratio+'px '+imageHeight*ratio+'px';
-   canvas.style.backgroundPosition='center, '+offset*ratio+'px '+clamp(horizon-imageHeight*.48,h-imageHeight,0)*ratio+'px';
-   canvas.style.backgroundRepeat='no-repeat, repeat-x';
-  }
+  paintLandscape(hour);
   if(drawGPU){drawGPU();return;}
   ctx.clearRect(0,0,w,h);
   sorted=[];
@@ -338,7 +392,7 @@ function scene() {
   by('tiempo').value=String(time);by('reloj').textContent=time.toFixed(1)+' / '+seconds+' s';
  }
  function reset(){
-  time=0;running=false;score=0;taken.clear();keys.clear();player={x:0,z:-6.5,yaw:0,pitch:0};status();updateClock();dirty=true;
+  time=0;running=false;score=0;taken.clear();keys.clear();player={...entrance};status();updateClock();dirty=true;
  }
  function toggle(){
   if(movie){if(time>=seconds)time=0;running=!running;}
@@ -415,10 +469,45 @@ function editor(studio,el,cfg){
   studio.checkpoint();studio.files=files;studio.changed();studio.refreshAll();studio.playCurrent();
  };
 }
+// El anfitrión entrega sólo esta imagen pública al iframe aislado.
+const photoURL=new URL('../assets/club/laguna-atardecer.webp',document.currentScript?.src||location.href).href;
+let hdData='',loadingHD;
+function highResolutionPhoto(){
+ if(!loadingHD)loadingHD=fetch(photoURL,{credentials:'omit',referrerPolicy:'no-referrer'}).then(response=>{
+  if(!response.ok)throw Error('Paisaje no disponible');
+  return response.blob();
+ }).then(blob=>new Promise((resolve,reject)=>{
+  const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(blob);
+ })).then(data=>{hdData=data;return data;}).catch(()=>{loadingHD=null;return '';});
+ return loadingHD;
+}
+if(window.ClubTalleres){
+ const previous=ClubTalleres.readingFiles;
+ const current='('+scene.toString()+')();',stock='window.KRUEKA_PAISAJE='+JSON.stringify(landscape)+';';
+ const legacy={20574:2440009541,22102:3251529418};
+ ClubTalleres.readingFiles=function(files){
+  const engine=files?.['game.js'];
+  if(typeof engine!=='string'||!['juegos','animaciones'].includes(files['tipo-club.txt']))return previous(files);
+  if(engine!==current){
+   if(!legacy[engine.length])return previous(files);
+   let hash=0;for(let i=0;i<engine.length;i++)hash=(Math.imul(hash,31)+engine.charCodeAt(i))>>>0;
+   if(hash!==legacy[engine.length])return previous(files);
+  }
+  if(files['paisaje.js']&&files['paisaje.js']!==stock)return {...files,'game.js':current};
+  const photo=hdData?'window.KRUEKA_PAISAJE='+JSON.stringify(hdData)+';':stock+'window.KRUEKA_LAGUNA_HD=true;';
+  const html=files['index.html'];
+  if(!html.includes('src="paisaje.js"')&&!html.includes('src="game.js"'))return files;
+  return {...files,'index.html':html.includes('src="paisaje.js"')?html:html.replace('<script src="game.js">','<script src="paisaje.js"></script><script src="game.js">'),'game.js':current,'paisaje.js':photo};
+ };
+ addEventListener('message',async e=>{
+  if(e.data?.type!=='krueka-pedir-laguna'||!Array.from(document.querySelectorAll('iframe')).some(frame=>frame.contentWindow===e.source))return;
+  const image=await highResolutionPhoto();if(image)e.source.postMessage({type:'krueka-laguna-hd',image},'*');
+ });
+}
 if(document.body?.hasAttribute('data-pabellon')){
  const id=new URLSearchParams(location.search).get('modo')==='cine'?film:game;
  const style=document.createElement('style');style.textContent=css;document.head.append(style);
- document.body.insertAdjacentHTML('afterbegin',htmlBody);window.KRUEKA_GAME=defaults(id);window.KRUEKA_PAISAJE=landscape;scene();return;
+ document.body.insertAdjacentHTML('afterbegin',htmlBody);window.KRUEKA_GAME=defaults(id);window.KRUEKA_PAISAJE=photoURL;scene();return;
 }
 if(!window.StudioKits||!window.StudioCreative||!window.StudioIA)return;
 const create=StudioKits.create.bind(StudioKits),creator=StudioIA.renderCreator;
