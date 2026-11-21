@@ -12,6 +12,11 @@ test('el libro es un manuscrito continuo, con páginas reales sin capítulos for
  assert.match(html,/class="ck-pages ck-viewer-pages ck-spread"/);
  assert.match(html,/id="ck-prev"/);assert.match(html,/id="ck-next"/);
  assert.match(html,/id="ck-paper-sound"/);
+ assert.doesNotMatch(html,/<header>/,'el título y la descripción no se duplican arriba del libro');
+ assert.match(html,/<h2>El libro de la clase<\/h2>/,'el título permanece en la portada');
+ assert.match(html,/<p class="ck-cover-subtitle">Mi primera historia<\/p>/,'el subtítulo se mantiene en la portada');
+ assert.match(html,/class="ck-cover-byline"/,'la firma artística se mantiene en la portada');
+ assert.match(files['style.css'],/\.ck-libros\.ck-reader main\{max-width:1400px/,'el libro aprovecha el espacio de lectura');
  assert.ok((html.match(/class="ck-panel ck-book ck-manuscript-leaf"/g)||[]).length>2,'obra larga paginada');
  assert.match(html,/La historia sigue y termina/);
  assert.doesNotMatch(html,/CAPÍTULO 1|ACTO 1/);
@@ -33,10 +38,19 @@ test('la ilustración aparece entre el texto anterior y posterior, sin aceptar H
  assert.equal(JSON.parse(enhance(raw,{})['obra.json']).tools.bookImages[id],src);
 });
 
+test('el encabezado tradicional de cuentos y dramas sigue disponible',()=>{
+ for(const kind of ['cuentos','dramas']){
+  const html=enhance({kind,title:'Obra de prueba',subtitle:'Descripción original',panels:[{title:'Parte uno',text:'Texto'}]}, {})['index.html'];
+  assert.match(html,/<header><small>CLUB KRUEKA/);
+  assert.match(html,/<h1>Obra de prueba<\/h1>/);
+ }
+});
+
 test('Libros está en Escribir, con versión de caché y categoría de galería autorizada',()=>{
  assert.match(read('js/club-studio-club.js'),/id:'libros'.*name:'Libros'/);
  assert.match(read('js/club-studio-creative.js'),/label:'Escribir',ids:\['libros'/);
- for(const p of ['club-krueka.html','studio.html'])assert.match(read(p),/club-studio-access\.js\?v=20261121libros1/);
- assert.match(read('js/club-studio-access.js'),/name==='club-studio-talleres\.js'.*20261121libros1/);
+ for(const p of ['club-krueka.html','studio.html'])assert.match(read(p),/club-studio-access\.js\?v=20261121libros2/);
+ assert.match(read('js/club-studio-access.js'),/name==='club-studio-talleres\.js'.*20261121libros2/);
+ assert.match(read('app.html'),/club-studio-talleres\.js\?v=20261121libros2/);
  assert.match(read('supabase/migrations/20261121113000_club_krueka_libros_galeria.sql'),/'cuentos','libros','dramas'/);
 });
