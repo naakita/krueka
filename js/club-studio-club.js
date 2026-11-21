@@ -218,10 +218,20 @@ function bookEditor(s){
  area.classList.add('ck-book-manuscript');
  area.placeholder='Empezá a escribir tu libro aquí. Continuá en el mismo espacio, párrafo tras párrafo…';
  const toolbar=document.createElement('section');toolbar.className='ck-book-toolbar';
- toolbar.innerHTML='<h3>📚 Tu manuscrito</h3><p>Escribí todo seguido, sin dividirlo en capítulos. Dejá una línea en blanco para comenzar otro párrafo. La vista previa organiza el texto automáticamente en páginas.</p><div class="ck-book-upload"><button type="button" class="ks-btn" id="ck-book-insert">＋ Insertar imagen donde estoy escribiendo</button><input type="file" id="ck-book-file" accept="image/png,image/jpeg,image/webp" hidden><span id="ck-book-count" role="status"></span></div><p class="ck-book-hint">Ubicá el cursor en el texto y elegí una imagen. Verás una marca como [[imagen:...]] en el manuscrito; en el libro aparecerá la ilustración en ese lugar, ocupando una página propia.</p><div id="ck-book-images" class="ck-book-images" aria-label="Ilustraciones del libro"></div><p id="ck-book-message" role="status"></p>';
+ toolbar.innerHTML='<h3>📚 Tu manuscrito</h3><p>Escribí todo seguido, sin dividirlo en capítulos. Dejá una línea en blanco para comenzar otro párrafo. La vista previa organiza el texto automáticamente en páginas.</p><div class="ck-book-publish"><button type="button" class="ks-btn primary" id="ck-book-submit">📤 Terminé mi libro · Enviar para publicar</button><p>Tu docente lo revisará antes de que aparezca en la sección <b>📚 Libros</b> de la Galería del Club.</p><p id="ck-book-submit-message" role="status" aria-live="polite"></p></div><div class="ck-book-upload"><button type="button" class="ks-btn" id="ck-book-insert">＋ Insertar imagen donde estoy escribiendo</button><input type="file" id="ck-book-file" accept="image/png,image/jpeg,image/webp" hidden><span id="ck-book-count" role="status"></span></div><p class="ck-book-hint">Ubicá el cursor en el texto y elegí una imagen. Verás una marca como [[imagen:...]] en el manuscrito; en el libro aparecerá la ilustración en ese lugar, ocupando una página propia.</p><div id="ck-book-images" class="ck-book-images" aria-label="Ilustraciones del libro"></div><p id="ck-book-message" role="status"></p>';
  format.append(toolbar);
  const counter=toolbar.querySelector('#ck-book-count'),message=toolbar.querySelector('#ck-book-message');
  const input=toolbar.querySelector('#ck-book-file'),insert=toolbar.querySelector('#ck-book-insert');
+ const submit=toolbar.querySelector('#ck-book-submit'),submitMessage=toolbar.querySelector('#ck-book-submit-message');
+ submit.onclick=async()=>{
+  if(!area.value.trim()){submitMessage.textContent='Primero escribí el contenido de tu libro.';return;}
+  if(s.busy||!s.cloudReady){submitMessage.textContent='Esperá a que termine de guardar tu libro y probá otra vez.';return;}
+  submit.disabled=true;submitMessage.textContent='Guardando y enviando el libro al docente…';
+  try{
+   const sent=await s.submit({stayInWorkshop:true});
+   submitMessage.textContent=sent?'✓ Libro enviado. Tu docente debe aprobarlo para que se vea en la Galería del Club.':'No se pudo enviar. Revisá la conexión y volvé a intentarlo; tu libro sigue guardado.';
+  }finally{submit.disabled=false;}
+ };
  const recount=()=>{const text=area.value.trim();counter.textContent=(text?text.split(/\s+/).length:0)+' palabras · '+area.value.length+' caracteres';};
  function drawImages(){
   const list=toolbar.querySelector('#ck-book-images');list.replaceChildren();

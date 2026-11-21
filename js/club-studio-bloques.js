@@ -227,6 +227,6 @@ studio.createKit=async function(id){const before=this.projectId;await priorKit.a
 studio.switchProject=async function(id){await priorSwitch.apply(this,arguments);if(this.projectId===id&&isBlocks(this))this.showTab('bloques');};
 studio.refreshAll=function(){const result=priorRefresh.apply(this,arguments);if(active&&isBlocks(this)){data=current(this);renderSteps(this);sync(this);}return result;};
 studio.lock=function(){const result=priorLock.apply(this,arguments);if(active)sync(this);return result;};
-studio.submit=async function(){const wasActive=active;await priorSubmit.apply(this,arguments);if(wasActive&&this.cloudReady){this.showTab('bloques');status('Revisá la confirmación del envío en tu proyecto.');}};
+studio.submit=async function(){const wasActive=active,submitted=await priorSubmit.apply(this,arguments);if(wasActive&&this.cloudReady){this.showTab('bloques');status('Revisá la confirmación del envío en tu proyecto.');}return submitted;};
 window.StudioBloques={kit,clean,starter,filesFor,gameSource,isBlocks};
 })();

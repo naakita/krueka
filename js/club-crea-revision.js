@@ -13,7 +13,7 @@ Object.assign(Club, {
       (rows.length?rows.map(x=>{
         let mapa='';
         if(x.type==='web'){
-          mapa='<p class="note">Proyecto del Studio · '+Object.keys(x.content.studio.files).length+' archivos</p><button class="btn sm" type="button" data-studio-project="'+esc(x.id)+'">▶ Ver creación y bitácora</button>';
+          mapa='<p class="note">'+(x.content.studio.files['tipo-club.txt']==='libros'?'📚 Libro del Club':'Proyecto del Studio')+' · '+Object.keys(x.content.studio.files).length+' archivos</p><button class="btn sm" type="button" data-studio-project="'+esc(x.id)+'">▶ Ver creación y bitácora</button>';
         }else if(x.type==='design'){
           mapa='<canvas id="crea-vista-'+esc(x.id)+'" width="540" height="400" style="display:block;width:100%;max-width:540px;border-radius:9px" aria-label="Vista del diseño 3D"></canvas>';
         }else try{
@@ -25,7 +25,7 @@ Object.assign(Club, {
               (col===1&&y===1?'●':j.salida[0]===col&&j.salida[1]===y?'🏁':muros.has(k)?'■':tesoros.has(k)?'★':'')+'</span>';
           }
         }catch(_e){mapa='<span>El juego tiene datos inválidos.</span>';}
-        return '<article class="card" style="margin:12px 0"><h2>'+(x.type==='design'?'🧊 Diseño 3D · ':x.type==='web'?'✦ Studio · ':'🎮 Juego · ')+esc(x.title)+'</h2><p class="note">'+esc(x.alumno)+' · '+esc(estado[x.status]||x.status)+' · '+esc(x.updated_at||'')+'</p>'+
+        return '<article class="card" style="margin:12px 0"><h2>'+(x.type==='design'?'🧊 Diseño 3D · ':x.type==='web'?(x.content.studio.files['tipo-club.txt']==='libros'?'📚 Libro · ':'✦ Studio · '):'🎮 Juego · ')+esc(x.title)+'</h2><p class="note">'+esc(x.alumno)+' · '+esc(estado[x.status]||x.status)+' · '+esc(x.updated_at||'')+'</p>'+
           '<div style="'+(x.type==='game'?'display:grid;grid-template-columns:repeat(12,minmax(20px,1fr));max-width:540px':'max-width:540px')+'" aria-label="Vista del proyecto">'+mapa+'</div>'+
           (x.review_note?'<p>Observación: '+esc(x.review_note)+'</p>':'')+
           (x.status==='review'?'<div style="display:flex;gap:8px;margin-top:12px"><button class="btn ok sm" onclick="Club.revisarCreaJuego(\''+esc(x.id)+'\',true)">Aprobar</button><button class="btn sec sm" onclick="Club.revisarCreaJuego(\''+esc(x.id)+'\',false)">Pedir mejora</button></div>':'')+'</article>';

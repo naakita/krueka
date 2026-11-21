@@ -72,8 +72,8 @@ test('las imágenes propias se integran como objetos seguros y editables',()=>{
 });
 
 test('el acceso carga el diseño actualizado tanto por código como por entrada directa',()=>{
- for(const page of ['club-krueka.html','studio.html','app.html'])assert.match(read(page),/club-studio-talleres\.css\?v=20261121dibujos1/);
- for(const page of ['club-krueka.html','studio.html'])assert.match(read(page),/club-studio-access\.js\?v=20261121dibujos1/);
+ for(const page of ['club-krueka.html','studio.html','app.html'])assert.match(read(page),/club-studio-talleres\.css\?v=20261121publicar1/);
+ for(const page of ['club-krueka.html','studio.html'])assert.match(read(page),/club-studio-access\.js\?v=20261121publicar1/);
  assert.match(read('js/club-studio-access.js'),/club-studio-talleres\.js'\)return 'js\/'.*20261121dibujos1/);
  assert.match(read('club/club-studio-talleres.css'),/ct-canvas-expanded/);
 });

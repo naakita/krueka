@@ -323,7 +323,7 @@ if(!studio.__programacionInstalled){
  };
  studio.submit=async function(){
   const restore=active;
-  await originalSubmit.apply(this,arguments);
+  const submitted=await originalSubmit.apply(this,arguments);
   if(restore&&panel?.isConnected&&this.cloudReady){
    this.showTab('programacion');
    const message=String(this.history[this.history.length-1]?.text||'');
@@ -331,6 +331,7 @@ if(!studio.__programacionInstalled){
    else if(message.startsWith('No se pudo enviar'))state(message);
    else state('Revisá el estado del proyecto en Mis proyectos.');
   }
+  return submitted;
  };
  studio.__programacionInstalled=true;
 }
