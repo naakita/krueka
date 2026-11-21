@@ -34,7 +34,9 @@ async function runCloudflare(admin:any,studentId:string,deviceId:string,model:st
     const signal=AbortSignal.timeout(75000);
     if(model===CF_IMAGE){
       const check=await cloudflareRequest("@cf/meta/llama-guard-3-8b",{messages:[{role:"user",content:String(input.prompt)}],max_tokens:32},signal);
-      if(String(check.response||"").trim().toLowerCase()!=="safe")throw new Error("Elegí otra descripción para una ilustración escolar.");
+      const verdict=check.response;
+      const safe=typeof verdict==="string"?verdict.trim().toLowerCase()==="safe":verdict?.safe===true;
+      if(!safe)throw new Error("Elegí otra descripción para una ilustración escolar.");
     }
     return await cloudflareRequest(model,input,signal);
   }finally{
