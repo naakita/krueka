@@ -63,6 +63,18 @@ async function until(fn){const deadline=Date.now()+30000;while(!fn()){if(Date.no
  check(get().layerVisibility.details===true&&StudioIA.files['index.html'].includes('stroke="#a35cd6"'),'mostrar capa devuelve trazos');
  clickTab('pintar');box.querySelector('[data-draw-tool="picker"]').click();point('pointerdown',175,215);
  check(get().ink==='#e94356','cuentagotas toma un color pintado');
+ const gradient=box.querySelector('[aria-label="Fondo degradado"]');gradient.value='oceano';gradient.dispatchEvent(new Event('change',{bubbles:true}));
+ check(get().backgroundGradient==='oceano'&&StudioIA.files['index.html'].includes('linearGradient id="ck-art-gradient"'),'fondo degradado en el editor y la vista previa');
+ clickTab('capas');const radial=box.querySelector('[aria-label="Simetría radial para mandalas"]');radial.value='4';radial.dispatchEvent(new Event('change',{bubbles:true}));
+ clickTab('pintar');box.querySelector('[data-color="#18b8a0"]').click();
+ point('pointerdown',395,70);point('pointermove',420,100);point('pointermove',440,110);point('pointerup',440,110);
+ check(get().strokes.at(-1)?.radialSymmetry===4&&StudioIA.files['index.html'].includes('rotate(90 300 160)'),'mandala de cuatro brazos visible en la obra');
+ clickTab('capas');box.querySelector('[data-lock-layer="details"]').click();
+ const strokesBeforeLock=get().strokes.length;
+ clickTab('pintar');point('pointerdown',440,100);point('pointermove',480,120);point('pointerup',480,120);
+ check(get().layerLocked.details===true&&get().strokes.length===strokesBeforeLock,'capa bloqueada impide pintar accidentalmente');
+ clickTab('capas');box.querySelector('[data-lock-layer="details"]').click();
+ check(get().layerLocked.details===false,'capa desbloqueada sin pérdida de trazos');
  const photoCanvas=document.createElement('canvas');photoCanvas.width=64;photoCanvas.height=64;photoCanvas.getContext('2d').fillRect(0,0,64,64);
  const photoBlob=await new Promise(ok=>photoCanvas.toBlob(ok,'image/png'));
  const imageInput=box.querySelector('.ct-lab-text input[type="file"]'),transfer=new DataTransfer();
@@ -77,6 +89,7 @@ async function until(fn){const deadline=Date.now()+30000;while(!fn()){if(Date.no
  check(StudioIA.projectId===project&&restored.coloringPage==='casa'&&restored.templateColors.pared==='#e94356','lámina coloreada recuperada');
  check(restored.stamps.length===expected.stamps.length&&restored.strokes.length===expected.strokes.length&&Object.keys(restored.drawingImages).length===1,'objetos, imágenes y pinceladas recuperados');
  check(restored.layerVisibility.details&&restored.activeLayer==='details'&&restored.opacity===.6&&restored.guide==='grid','nuevas herramientas recuperadas al ingresar');
+ check(restored.backgroundGradient==='oceano'&&restored.radialSymmetry===4&&!restored.layerLocked.details&&restored.strokes.at(-1)?.radialSymmetry===4,'degradado, mandala y capas recuperados de la nube');
  await StudioIA.close();
  document.body.dataset.dibujosSmoke=problems.length?'FAIL '+problems.join(' | '):'PASS';
 })().catch(e=>{document.body.dataset.dibujosSmoke='FAIL '+e.stack});

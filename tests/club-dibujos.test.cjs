@@ -107,9 +107,39 @@ test('datos incorrectos de capas y transparencia se limitan sin afectar dibujos 
  assert.equal(invalid.strokes[0].opacity,1);assert.equal(invalid.strokes[0].layer,'base');
 });
 
+test('Krita: los mandalas y fondos degradados se ven también en la obra publicada',()=>{
+ const raw={kind:'dibujos',title:'Mi mandala',tools:{backgroundGradient:'atardecer',radialSymmetry:6,
+  strokes:[{type:'pen',color:'#167da2',radialSymmetry:4,layer:'details',width:5,points:[[390,170],[420,185],[440,200]]}]}};
+ const html=enhance(raw,{})['index.html'],data=normalize(raw).tools;
+ assert.equal(data.radialSymmetry,6);
+ assert.equal(data.strokes[0].radialSymmetry,4);
+ assert.equal(data.backgroundGradient,'atardecer');
+ assert.match(html,/linearGradient id="ck-art-gradient"/);
+ assert.match(html,/stop-color="#ffe9b0"/);
+ assert.match(html,/stop-color="#e879a8"/);
+ assert.match(html,/rotate\(90 300 160\)/);
+ assert.match(html,/rotate\(180 300 160\)/);
+ assert.match(html,/rotate\(270 300 160\)/);
+ assert.equal((html.match(/stroke="#167da2"/g)||[]).length,4,'cada trazo del mandala se repite cuatro veces');
+ const old=enhance({kind:'dibujos',tools:{strokes:[{type:'pen',color:'#112233',width:3,points:[[1,1],[5,6]]}]}},{})['index.html'];
+ assert.doesNotMatch(old,/linearGradient id="ck-art-gradient"|rotate\(90 300 160\)/,'un dibujo antiguo se muestra como antes');
+});
+
+test('Krita: los bloqueos de capas y los ajustes inválidos se normalizan con seguridad',()=>{
+ const t=normalize({kind:'dibujos',tools:{backgroundGradient:'__proto__',radialSymmetry:50,layerLocked:{base:'true',details:true},strokes:[
+  {type:'pen',radialSymmetry:99,color:'#445566',points:[[1,2]]}
+ ]}}).tools;
+ assert.equal(t.backgroundGradient,'none');assert.equal(t.radialSymmetry,1);
+ assert.equal(t.layerLocked.base,false);assert.equal(t.layerLocked.details,true);
+ assert.equal(t.strokes[0].radialSymmetry,1);
+ const old=normalize({kind:'dibujos',tools:{strokes:[{type:'pen',points:[[1,2]]}]}}).tools;
+ assert.equal(old.radialSymmetry,1);assert.equal(old.strokes[0].radialSymmetry,1);
+ assert.equal(old.layerLocked.base,false);assert.equal(old.backgroundGradient,'none');
+});
+
 test('el acceso carga el diseño actualizado tanto por código como por entrada directa',()=>{
  for(const page of ['club-krueka.html','studio.html','app.html'])assert.match(read(page),/club-studio-talleres\.css\?v=20261121magma1/);
- for(const page of ['club-krueka.html','studio.html'])assert.match(read(page),/club-studio-access\.js\?v=20261121magma1/);
- assert.match(read('js/club-studio-access.js'),/club-studio-talleres\.js'\)return 'js\/'.*20261121magma1/);
+ for(const page of ['club-krueka.html','studio.html'])assert.match(read(page),/club-studio-access\.js\?v=20261121krita1/);
+ assert.match(read('js/club-studio-access.js'),/club-studio-talleres\.js'\)return 'js\/'.*20261121krita1/);
  assert.match(read('club/club-studio-talleres.css'),/ct-canvas-expanded/);
 });
