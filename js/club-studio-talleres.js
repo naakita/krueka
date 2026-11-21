@@ -12,29 +12,79 @@ const modes={
  dramas:{label:'Drama',layouts:['Escenario','Guion','Actos'],tip:'Actores, diálogos, acotaciones y escenas.'},
  animes:{label:'Anime original',layouts:['Storyboard','Episodios','Paneles'],tip:'Personajes, escenas, expresiones y movimiento básico.'},
  flyers:{label:'Flyer',layouts:['Cartel','Promoción','Evento'],tip:'Título, mensaje, colores, icono y llamado a la acción.'},
- dibujos:{label:'Dibujo',layouts:['Lienzo','Galería','Póster'],tip:'Pincel, figuras, colores y borrador.'}
+ dibujos:{label:'Dibujo',layouts:['Lienzo','Galería','Póster'],tip:'Pintá, coloreá láminas, combiná figuras y construí escenas con objetos 3D.'}
 };
 const defaultBackdrops=['#ecf3fe','#f0e8ff','#fff1d6','#e7fff4','#191d37'];
 function safe(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function hex(s,fallback='#237fc3'){return /^#[0-9a-f]{6}$/i.test(s||'')?s:fallback;}
 function clip(v,n){return String(v??'').slice(0,n);}
+const drawBrushes=['pen','marker','watercolor','neon','dotted'];
+const drawShapes=['line','rectangle','circle','triangle','star','heart'];
+const drawObjects=['emoji','text','image','cube','sphere','cylinder','pyramid','cone'];
+const drawingImageCache=new Map();
+const rpath=(x,y,w,h)=>'M'+x+' '+y+'h'+w+'v'+h+'h'+(-w)+'Z';
+const cpath=(x,y,r)=>'M'+(x+r)+' '+y+'a'+r+' '+r+' 0 1 0 '+(-2*r)+' 0a'+r+' '+r+' 0 1 0 '+(2*r)+' 0Z';
+const epath=(x,y,rx,ry)=>'M'+(x+rx)+' '+y+'a'+rx+' '+ry+' 0 1 0 '+(-2*rx)+' 0a'+rx+' '+ry+' 0 1 0 '+(2*rx)+' 0Z';
+const ppath=points=>'M'+points.map(p=>p.join(' ')).join('L')+'Z';
+const region=(id,d,fill='#fffdf8')=>({id,d,fill});
+const coloringPages={
+ blanco:{label:'Lienzo libre',icon:'🖌️',parts:[]},
+ casa:{label:'Mi casa',icon:'🏡',parts:[region('suelo',rpath(0,270,600,50),'#e6f4df'),region('pared',rpath(155,125,292,160)),region('techo',ppath([[125,137],[302,32],[480,137]])),region('puerta',rpath(273,192,68,93)),region('ventana1',rpath(194,161,52,50)),region('ventana2',rpath(368,161,52,50)),region('sol',cpath(520,59,32)),region('arbol',rpath(52,177,27,100)),region('copa',cpath(65,166,56))]},
+ flor:{label:'Jardín de flores',icon:'🌻',parts:[region('suelo',rpath(0,271,600,49),'#e2f4d9'),region('tallo',rpath(292,144,17,142)),region('hoja1',epath(250,225,58,21)),region('hoja2',epath(357,247,58,21)),...Array.from({length:8},(_,i)=>{const a=i*Math.PI/4;return region('petalo'+i,epath(Math.round(300+66*Math.cos(a)),Math.round(130+66*Math.sin(a)),33,33))}),region('centro',cpath(300,130,38))]},
+ robot:{label:'Robot divertido',icon:'🤖',parts:[region('cuerpo',rpath(211,140,180,129)),region('cabeza',rpath(219,46,164,110)),region('ojo1',cpath(265,97,18)),region('ojo2',cpath(337,97,18)),region('boca',rpath(265,128,70,11)),region('antena',rpath(295,18,12,32)),region('punta',cpath(301,17,14)),region('brazo1',rpath(161,158,54,65)),region('brazo2',rpath(391,158,54,65)),region('pierna1',rpath(240,269,40,43)),region('pierna2',rpath(323,269,40,43)),region('boton',cpath(302,207,19))]},
+ auto:{label:'Auto de carrera',icon:'🚗',parts:[region('camino',rpath(0,271,600,49),'#d6e1eb'),region('carroceria',ppath([[85,172],[157,163],[208,106],[400,106],[448,164],[510,180],[510,245],[84,245]])),region('techo',ppath([[210,110],[398,110],[434,163],[163,163]])),region('vidrio1',ppath([[222,119],[297,119],[297,157],[181,157]])),region('vidrio2',ppath([[308,119],[388,119],[417,157],[308,157]])),region('rueda1',cpath(181,246,43)),region('rueda2',cpath(412,246,43)),region('faro',rpath(476,190,33,19))]},
+ cohete:{label:'Viaje espacial',icon:'🚀',parts:[region('cuerpo',ppath([[290,66],[350,139],[350,250],[250,250],[250,139]])),region('punta',ppath([[250,139],[300,28],[350,139]])),region('aleta1',ppath([[250,190],[195,266],[250,245]])),region('aleta2',ppath([[350,190],[405,266],[350,245]])),region('ventana',cpath(300,166,31)),region('fuego',ppath([[267,252],[299,314],[333,252]])),region('estrella1',cpath(102,79,24)),region('estrella2',cpath(485,113,18)),region('planeta',cpath(490,247,47))]},
+ mariposa:{label:'Mariposa',icon:'🦋',parts:[region('ala1',epath(234,119,75,90)),region('ala2',epath(366,119,75,90)),region('ala3',epath(239,224,69,59)),region('ala4',epath(361,224,69,59)),region('cuerpo',epath(300,174,17,98)),region('mancha1',cpath(224,120,24)),region('mancha2',cpath(376,120,24)),region('mancha3',cpath(245,233,19)),region('mancha4',cpath(355,233,19))]},
+ castillo:{label:'Castillo mágico',icon:'🏰',parts:[region('muro',rpath(185,146,235,141)),region('torre1',rpath(120,98,87,191)),region('torre2',rpath(394,98,87,191)),region('torre3',rpath(265,79,72,210)),region('techo1',ppath([[105,101],[163,30],[220,101]])),region('techo2',ppath([[382,101],[437,30],[496,101]])),region('techo3',ppath([[255,80],[302,17],[347,80]])),region('puerta',epath(301,272,43,69)),region('bandera',ppath([[302,16],[302,3],[364,15],[302,27]]))]},
+ oceano:{label:'Fondo del mar',icon:'🐠',parts:[region('arena',rpath(0,274,600,46),'#e9dfa6'),region('pez',epath(273,155,112,59)),region('cola',ppath([[358,155],[467,93],[467,219]])),region('aleta',ppath([[252,119],[302,53],[316,118]])),region('ojo',cpath(219,144,12)),region('burbuja1',cpath(100,72,26)),region('burbuja2',cpath(150,113,15)),region('burbuja3',cpath(502,55,33)),region('coral1',ppath([[62,274],[54,196],[77,211],[86,256],[102,181],[122,190],[113,273]])),region('coral2',ppath([[490,274],[470,220],[487,203],[511,245],[531,196],[550,211],[537,274]]))]},
+ dinosaurio:{label:'Dinosaurio',icon:'🦕',parts:[region('cuerpo',epath(303,187,114,71)),region('cuello',ppath([[348,171],[403,88],[440,96],[413,196]])),region('cabeza',epath(446,81,63,43)),region('cola',ppath([[209,183],[75,125],[193,236]])),region('pata1',rpath(264,236,35,63)),region('pata2',rpath(356,234,35,65)),region('lomo',ppath([[236,151],[254,120],[282,142],[312,108],[345,142],[372,128],[390,158]])),region('ojo',cpath(469,70,9)),region('pasto',rpath(0,294,600,26),'#e1f2d2')]}
+};
+const stickerGroups={
+ 'Animales':['🐱','🐶','🦊','🐻','🦁','🐼','🦋','🐢','🦕','🐬'],
+ 'Naturaleza':['🌳','🌲','🌷','🌼','🌞','🌈','☁️','⭐','🌙','🍄'],
+ 'Objetos':['🚗','🚕','🚲','🚀','🛸','🏠','🏰','⚽','🎈','🎁','🍎','📚']
+};
 function normalize(raw){
  const d=raw&&typeof raw==='object'?raw:{};
  const kind=modes[d.kind]?d.kind:'cuentos',opts=modes[kind];
  const t=d.tools&&typeof d.tools==='object'?d.tools:{};
- const strokes=Array.isArray(t.strokes)?t.strokes.slice(-45).map(s=>({
-  type:['pen','line','rectangle','circle'].includes(s.type)?s.type:'pen',
+ const strokes=Array.isArray(t.strokes)?t.strokes.slice(-55).map(s=>({
+  type:['pen',...drawShapes].includes(s.type)?s.type:'pen',
   color:hex(s.color,'#193959'),
-  width:Math.max(1,Math.min(18,Number(s.width)||4)),
+  width:Math.max(1,Math.min(28,Number(s.width)||4)),
+  style:drawBrushes.includes(s.style)?s.style:'pen',
+  fill:s.fill===true,
   points:Array.isArray(s.points)?s.points.slice(0,100).map(p=>[Math.max(0,Math.min(600,Math.round(Number(p?.[0])||0))),Math.max(0,Math.min(320,Math.round(Number(p?.[1])||0)))]):[]
  })).filter(s=>s.points.length>0):[];
+ const template=coloringPages[t.coloringPage]?t.coloringPage:'blanco';
+ const validRegions=new Set(coloringPages[template].parts.map(p=>p.id));
+ const templateColors=Object.fromEntries(Object.entries(t.templateColors&&typeof t.templateColors==='object'?t.templateColors:{}).filter(([id,value])=>validRegions.has(id)&&/^#[0-9a-f]{6}$/i.test(value)).slice(0,35));
+ const stamps=Array.isArray(t.stamps)?t.stamps.slice(-30).map((o,i)=>({
+  id:/^obj[a-z0-9]{4,20}$/.test(o?.id)?o.id:'objdefault'+i,
+  kind:drawObjects.includes(o?.kind)?o.kind:'emoji',
+  text:clip(o?.text||'⭐',28),
+  imageId:/^img[a-z0-9]{6,20}$/.test(o?.imageId)?o.imageId:'',
+  color:hex(o?.color,'#52a6ef'),
+  x:Math.max(0,Math.min(600,Math.round(Number(o?.x)||0))),
+  y:Math.max(0,Math.min(320,Math.round(Number(o?.y)||0))),
+  scale:Math.max(.35,Math.min(2.4,Math.round((Number(o?.scale)||1)*100)/100)),
+  angle:Math.max(-180,Math.min(180,Math.round(Number(o?.angle)||0)))
+ })):[];
+ const drawingImages=Object.fromEntries(Object.entries(t.drawingImages&&typeof t.drawingImages==='object'?t.drawingImages:{}).filter(([id,value])=>
+  /^img[a-z0-9]{6,20}$/.test(id)&&typeof value==='string'&&value.length<=12000&&/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(value)).slice(0,6));
  return {...d,tools:{
   ...t,
   layout:opts.layouts.includes(t.layout)?t.layout:opts.layouts[0],
-  backdrop:hex(t.backdrop,defaultBackdrops[0]),
+  backdrop:hex(t.backdrop,kind==='dibujos'?'#fffdf7':defaultBackdrops[0]),
   ink:hex(t.ink,'#193959'),
-  brush:Math.max(1,Math.min(18,Number(t.brush)||4)),
-  tool:['pen','line','rectangle','circle','erase'].includes(t.tool)?t.tool:'pen',
+  brush:Math.max(1,Math.min(28,Number(t.brush)||4)),
+  tool:['pen',...drawShapes,'erase','fill','move'].includes(t.tool)?t.tool:'pen',
+  brushStyle:drawBrushes.includes(t.brushStyle)?t.brushStyle:'pen',
+  shapeFill:t.shapeFill===true,
+  coloringPage:template,
+  templateColors,
+  stamps,
+  drawingImages,
   character:clip(t.character||'🦊',8),
   partner:clip(t.partner||'🐱',8),
   author:clip(t.author||'Un creador del Club',36),
@@ -95,21 +145,50 @@ function manuscriptPages(text,images){
  if(!pages.length)pages.push('<p class="ck-book-empty">Las primeras páginas de tu libro aparecerán aquí cuando empieces a escribir.</p>');
  return pages.map((content,i)=>'<article class="ck-panel ck-book ck-manuscript-leaf"><small>PÁGINA '+(i+1)+'</small>'+content+'</article>').join('');
 }
-function sketchMarkup(strokes,color){
- const paths=strokes.map(s=>{
-  const pts=s.points,nums=pts.map(p=>p.join(' ')),style='stroke="'+hex(s.color)+'" stroke-width="'+s.width+'"';
-  if(s.type==='rectangle'&&pts.length>=2){
-   const a=pts[0],b=pts[pts.length-1];
-   return '<rect x="'+Math.min(a[0],b[0])+'" y="'+Math.min(a[1],b[1])+'" width="'+Math.abs(a[0]-b[0])+'" height="'+Math.abs(a[1]-b[1])+'" fill="none" '+style+'/>';
-  }
-  if(s.type==='circle'&&pts.length>=2){
-   const a=pts[0],b=pts[pts.length-1],rx=Math.abs(a[0]-b[0])/2,ry=Math.abs(a[1]-b[1])/2;
-   return '<ellipse cx="'+((a[0]+b[0])/2)+'" cy="'+((a[1]+b[1])/2)+'" rx="'+rx+'" ry="'+ry+'" fill="none" '+style+'/>';
-  }
-  if(pts.length===1)return '<circle cx="'+pts[0][0]+'" cy="'+pts[0][1]+'" r="'+s.width/2+'" fill="'+hex(s.color)+'"/>';
-  return '<polyline points="'+nums.join(' ')+'" fill="none" '+style+' stroke-linecap="round" stroke-linejoin="round"/>';
- }).join('');
- return '<svg class="ck-art" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dibujo original del estudiante"><rect width="600" height="320" fill="'+color+'"/>'+paths+'</svg>';
+function strokePath(s){
+ const p=s.points,a=p[0],b=p[p.length-1]||a,x=Math.min(a[0],b[0]),y=Math.min(a[1],b[1]),w=Math.abs(a[0]-b[0]),h=Math.abs(a[1]-b[1]);
+ if(s.type==='rectangle')return rpath(x,y,w,h);
+ if(s.type==='circle')return epath(x+w/2,y+h/2,Math.max(.1,w/2),Math.max(.1,h/2));
+ if(s.type==='triangle')return ppath([[x+w/2,y],[x+w,y+h],[x,y+h]]);
+ if(s.type==='star')return ppath(Array.from({length:10},(_,i)=>{const angle=-Math.PI/2+i*Math.PI/5,r=i%2?.22:.5;return [Math.round((x+w/2+Math.cos(angle)*w*r)*10)/10,Math.round((y+h/2+Math.sin(angle)*h*r)*10)/10]}));
+ if(s.type==='heart')return 'M'+(x+w/2)+' '+(y+h)+'C'+(x-w*.1)+' '+(y+h*.53)+' '+x+' '+(y-h*.08)+' '+(x+w*.25)+' '+(y+h*.13)+'C'+(x+w*.5)+' '+(y-h*.08)+' '+(x+w*.78)+' '+(y-h*.08)+' '+(x+w*.82)+' '+(y+h*.13)+'C'+(x+w*1.15)+' '+(y+h*.46)+' '+(x+w*.85)+' '+(y+h*.72)+' '+(x+w/2)+' '+(y+h)+'Z';
+ return 'M'+a[0]+' '+a[1]+(p.length===1?'l.01 .01':p.slice(1).map(pt=>'L'+pt[0]+' '+pt[1]).join(''));
+}
+function strokeLook(s){
+ const style=s.style||'pen';
+ return {width:Math.min(44,s.width*(style==='watercolor'?2.1:style==='marker'?1.5:1)),opacity:style==='watercolor'?.3:style==='marker'?.68:.98,dash:style==='dotted'?'1 '+Math.max(5,s.width*2.2):'',glow:style==='neon'};
+}
+function strokeSvg(s){
+ const look=strokeLook(s),shape=s.type!=='pen'&&s.type!=='line';
+ return '<path d="'+strokePath(s)+'" fill="'+(shape&&s.fill?hex(s.color):'none')+'" stroke="'+hex(s.color)+'" stroke-width="'+look.width+'" stroke-opacity="'+look.opacity+'" fill-opacity="'+(shape&&s.fill?'.65':'0')+'" stroke-linecap="round" stroke-linejoin="round"'+(look.dash?' stroke-dasharray="'+look.dash+'"':'')+(look.glow?' style="filter:drop-shadow(0 0 4px '+hex(s.color)+')"':'')+'/>';
+}
+function shade(color,amount){
+ const base=hex(color),rgb=[1,3,5].map(i=>parseInt(base.slice(i,i+2),16));
+ return '#'+rgb.map(x=>Math.max(0,Math.min(255,Math.round(amount>0?x+(255-x)*amount:x*(1+amount)))).toString(16).padStart(2,'0')).join('');
+}
+function stampParts(kind,color){
+ const light=shade(color,.38),deep=shade(color,-.32),mid=shade(color,-.12);
+ const part=(d,fill)=>({d,fill});
+ if(kind==='cube')return [part(ppath([[-35,-23],[0,-43],[36,-22],[0,-1]]),light),part(ppath([[-35,-23],[0,-1],[0,41],[-35,19]]),deep),part(ppath([[0,-1],[36,-22],[36,19],[0,41]]),color)];
+ if(kind==='pyramid')return [part(ppath([[0,-51],[-46,36],[0,27]]),deep),part(ppath([[0,-51],[0,27],[46,36]]),color),part(ppath([[-46,36],[0,27],[46,36]]),mid)];
+ if(kind==='sphere')return [part(cpath(0,0,43),deep),part(cpath(-8,-8,35),color),part(epath(-18,-19,14,9),light)];
+ if(kind==='cylinder')return [part(rpath(-39,-28,78,63),color),part(epath(0,34,39,15),deep),part(epath(0,-28,39,16),light),part(rpath(-38,-28,10,60),shade(color,.19))];
+ if(kind==='cone')return [part(ppath([[0,-50],[-42,34],[42,34]]),color),part(ppath([[0,-50],[-42,34],[0,34]]),deep),part(epath(0,34,42,13),light)];
+ return [];
+}
+function stampSvg(stamp,images){
+ const transform='translate('+stamp.x+' '+stamp.y+') rotate('+stamp.angle+') scale('+stamp.scale+')';
+ if(stamp.kind==='image'&&images?.[stamp.imageId])return '<image transform="'+transform+'" x="-45" y="-45" width="90" height="90" preserveAspectRatio="xMidYMid meet" href="'+safe(images[stamp.imageId])+'"/>';
+ if(stamp.kind==='emoji'||stamp.kind==='text')return '<text transform="'+transform+'" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,sans-serif" font-size="'+(stamp.kind==='emoji'?61:27)+'" font-weight="'+(stamp.kind==='text'?'700':'400')+'" fill="'+stamp.color+'">'+safe(stamp.text)+'</text>';
+ return '<g transform="'+transform+'" stroke="#253348" stroke-width="2" stroke-linejoin="round">'+stampParts(stamp.kind,stamp.color).map(p=>'<path d="'+p.d+'" fill="'+p.fill+'"/>').join('')+'</g>';
+}
+function templateSvg(t){
+ if(!t||!coloringPages[t.coloringPage])return '';
+ return coloringPages[t.coloringPage].parts.map(p=>'<path d="'+p.d+'" fill="'+hex(t.templateColors[p.id],p.fill)+'" stroke="#344357" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>').join('');
+}
+function sketchMarkup(strokes,color,extras){
+ const shapes=templateSvg(extras),objects=extras?.stamps?.map(stamp=>stampSvg(stamp,extras.drawingImages)).join('')||'';
+ return '<svg class="ck-art" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dibujo original del estudiante"><rect width="600" height="320" fill="'+hex(color,'#fffdf7')+'"/>'+shapes+strokes.map(strokeSvg).join('')+objects+'</svg>';
 }
 const readingStyle=`
 .ck-pagination{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:9px 6px;margin:12px auto;background:#fffcf1f5;color:#492d1b;border-radius:10px;box-shadow:0 2px 8px #35221122;font:14px/1.3 system-ui}
@@ -157,6 +236,12 @@ const readingStyle=`
 .ck-blogs.ck-layout-2 .ck-article{border:0;border-bottom:1px solid #94a6bc;border-radius:0;box-shadow:none}
 .ck-dibujos.ck-layout-1 .ck-drawing{padding:clamp(8px,4vw,30px);background:#fff;border:1px solid #aeb8c7;box-shadow:0 6px 18px #0c20334a}
 .ck-dibujos.ck-layout-2 .ck-drawing{padding:8px;border:8px double var(--accent);background:#f4f6fb}
+.ck-dibujos main{max-width:1300px;padding:clamp(8px,1.6vw,20px)}
+.ck-dibujos header{padding:5px 8px 8px}
+.ck-dibujos header h1{font-size:clamp(20px,3vw,34px);margin:3px 0}
+.ck-dibujos .ck-drawing{max-width:none;margin:8px auto 14px;padding:clamp(5px,1vw,12px);border-radius:12px;background:#fff;box-shadow:0 5px 22px #102a4533}
+.ck-dibujos .ck-art{width:100%;height:auto;max-height:none;aspect-ratio:600/320;border:0;border-radius:7px}
+.ck-dibujos .ck-drawing figcaption{margin:5px 0 0}
 @media(prefers-reduced-motion:reduce){.ck-cuentos .ck-book,.ck-animes .ck-anim-char,.cm-model{animation:none!important}}
 `;
 const bookStyle=`
@@ -361,7 +446,7 @@ function readWork(){
 function enhance(data, files){
  const d=normalize(data),kind=d.kind,t=d.tools,strokes=t.strokes;
  if(!modes[kind])return files;
- const artworks=sketchMarkup(strokes,t.backdrop);
+ const artworks=sketchMarkup(strokes,t.backdrop,kind==='dibujos'?t:null);
  const book=['cuentos','libros','dramas','blogs'].includes(kind);
  const paged=book||kind==='animes';
  const pages=kind==='libros'?manuscriptPages(d.panels?.[0]?.text,t.bookImages):(d.panels||[]).map((p,i)=>{
@@ -395,7 +480,7 @@ function enhance(data, files){
  const font=t.font==='Clásica'?'Georgia,serif':t.font==='Cómic'?'Trebuchet MS,cursive':'system-ui,Arial,sans-serif';
  const author=kind==='blogs'||kind==='libros'?'<p class="ck-author">'+(kind==='libros'?'Escrito por ':'Publicado por ')+safe(t.author)+'</p>':'';
  const bookDetails=kind==='libros'?'<p class="ck-cover-subtitle">'+safe(d.subtitle)+'</p><p class="ck-cover-byline">Escrito por '+safe(t.author)+'</p>':'';
- const cover='<div class="ck-cover">'+bookDetails+'<div class="ck-cover-symbol">'+safe(d.art)+'</div><strong>'+safe(t.action)+'</strong></div>'+artwork;
+ const cover=(kind==='dibujos'?'':'<div class="ck-cover">'+bookDetails+'<div class="ck-cover-symbol">'+safe(d.art)+'</div><strong>'+safe(t.action)+'</strong></div>')+artwork;
  const reader=book?bookMarkup(safe(d.title),cover+partner,pages):cover+pagination+'<section class="ck-pages '+(paged?'ck-viewer-pages ':'')+cls+'">'+pages+'</section>';
  const header=kind==='libros'?'':'<header><small>CLUB KRUEKA · '+safe(modes[kind].label.toUpperCase())+'</small><h1>'+safe(d.title)+'</h1><p>'+safe(d.subtitle)+'</p>'+author+partner+'</header>';
  const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safe(d.title)+'</title><link rel="stylesheet" href="style.css"></head><body class="ck-public ck-'+kind+(book?' ck-reader':'')+' '+layoutClass+' '+bubbleClass+' '+effectClass+'"><main>'+header+reader+cta+'<footer>Una creación original del Club Krueka</footer></main><script src="script.js"></script></body></html>';
@@ -441,17 +526,209 @@ function field(label,value,handler,options){
  input.addEventListener(options?.type==='color'?'input':'change',()=>handler(input.value));
  el.appendChild(input);return el;
 }
-function paintSketch(canvas,strokes,draft,background){
+function paintSketch(canvas,strokes,draft,background,extras){
  const ctx=canvas.getContext('2d');if(!ctx)return;
  ctx.clearRect(0,0,600,320);ctx.fillStyle=background;ctx.fillRect(0,0,600,320);
+ if(extras&&coloringPages[extras.coloringPage]){
+  for(const part of coloringPages[extras.coloringPage].parts){
+   ctx.save();ctx.fillStyle=hex(extras.templateColors[part.id],part.fill);ctx.strokeStyle='#344357';ctx.lineWidth=3.6;ctx.lineJoin='round';
+   const path=new Path2D(part.d);ctx.fill(path);ctx.stroke(path);ctx.restore();
+  }
+ }
  for(const s of [...strokes,...(draft?[draft]:[])]){
   if(!s?.points?.length)continue;
-  ctx.strokeStyle=s.color;ctx.lineWidth=s.width;ctx.lineCap='round';ctx.lineJoin='round';
-  const p=s.points,first=p[0],last=p[p.length-1];
-  if(s.type==='rectangle'){ctx.strokeRect(first[0],first[1],last[0]-first[0],last[1]-first[1]);}
-  else if(s.type==='circle'){const rx=Math.abs(last[0]-first[0])/2,ry=Math.abs(last[1]-first[1])/2;ctx.beginPath();ctx.ellipse((first[0]+last[0])/2,(first[1]+last[1])/2,Math.max(.1,rx),Math.max(.1,ry),0,0,Math.PI*2);ctx.stroke();}
-  else{ctx.beginPath();ctx.moveTo(first[0],first[1]);for(const v of p.slice(1))ctx.lineTo(v[0],v[1]);if(p.length===1)ctx.lineTo(first[0]+.01,first[1]+.01);ctx.stroke();}
+  const look=strokeLook(s),path=new Path2D(strokePath(s));ctx.save();ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineWidth=look.width;ctx.lineCap='round';ctx.lineJoin='round';ctx.globalAlpha=look.opacity;
+  if(look.dash)ctx.setLineDash([1,Math.max(5,s.width*2.2)]);
+  if(look.glow){ctx.shadowColor=s.color;ctx.shadowBlur=10;}
+  if(s.type!=='pen'&&s.type!=='line'&&s.fill){ctx.globalAlpha=.65;ctx.fill(path);ctx.globalAlpha=look.opacity;}
+  ctx.stroke(path);ctx.restore();
  }
+ if(extras?.stamps)for(const o of extras.stamps){
+  ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.angle*Math.PI/180);ctx.scale(o.scale,o.scale);
+  if(o.kind==='image'&&extras.drawingImages[o.imageId]){
+   const src=extras.drawingImages[o.imageId];let img=drawingImageCache.get(src);
+   if(!img){img=new Image();drawingImageCache.set(src,img);img.onload=()=>paintSketch(canvas,strokes,draft,background,extras);img.onerror=()=>drawingImageCache.delete(src);img.src=src;}
+   if(img.complete&&img.naturalWidth)ctx.drawImage(img,-45,-45,90,90);
+  }else if(o.kind==='emoji'||o.kind==='text'){
+   ctx.fillStyle=o.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=(o.kind==='emoji'?'61px':'700 27px')+' system-ui,sans-serif';ctx.fillText(o.text,0,0,200);
+  }else for(const part of stampParts(o.kind,o.color)){
+   const path=new Path2D(part.d);ctx.fillStyle=part.fill;ctx.strokeStyle='#253348';ctx.lineWidth=2;ctx.lineJoin='round';ctx.fill(path);ctx.stroke(path);
+  }
+  ctx.restore();
+ }
+}
+function renderDrawingLab(parent,s,t,current,onChange){
+ const box=document.createElement('section');box.className='ct-drawing-box ct-art-lab';
+ box.innerHTML='<div class="ct-lab-head"><div><strong>🎨 Mi estudio de arte</strong><small>Creá sobre un lienzo, coloreá láminas y combiná objetos.</small></div><button type="button" class="ct-lab-expand">⛶ Ampliar lienzo</button></div><div class="ct-lab-tabs" role="group" aria-label="Secciones del estudio"></div><div class="ct-lab-panel" data-draw-panel="pintar"></div><div class="ct-lab-panel" data-draw-panel="figuras" hidden></div><div class="ct-lab-panel" data-draw-panel="colorear" hidden></div><div class="ct-lab-panel" data-draw-panel="objetos" hidden></div><div class="ct-lab-panel" data-draw-panel="3d" hidden></div><div class="ct-lab-palette" aria-label="Paleta de colores"></div><div class="ct-lab-actions"></div><canvas class="ct-canvas" width="600" height="320" aria-label="Lienzo: dibujá, coloreá o mové objetos" style="touch-action:none"></canvas><div class="ct-lab-selection" hidden></div><small class="ct-lab-hint" role="status"></small><small class="ct-lab-count" role="status"></small>';
+ const canvas=box.querySelector('canvas'),tabs=box.querySelector('.ct-lab-tabs'),panels=[...box.querySelectorAll('[data-draw-panel]')];
+ const hint=box.querySelector('.ct-lab-hint'),count=box.querySelector('.ct-lab-count'),selection=box.querySelector('.ct-lab-selection');
+ let tool=t.tool,ink=t.ink,width=t.brush,style=t.brushStyle,shapeFill=t.shapeFill,draft=null,drag=null,selected=null,previewStamps=null;
+ const undoStack=[],redoStack=[];
+ const snapshot=d=>JSON.stringify({strokes:d.tools.strokes,stamps:d.tools.stamps,coloringPage:d.tools.coloringPage,templateColors:d.tools.templateColors,drawingImages:d.tools.drawingImages});
+ const useSnapshot=json=>{const saved=JSON.parse(json),latest=current();return onChange({...latest,tools:{...latest.tools,...saved}});};
+ function save(patch,history=true){
+  if(!s.cloudReady||s.busy){hint.textContent='Esperá a que termine de cargar el proyecto.';return false;}
+  const before=current(),ok=onChange({...before,tools:{...before.tools,...patch}});
+  if(ok&&history){undoStack.push(snapshot(before));if(undoStack.length>20)undoStack.shift();redoStack.length=0;}
+  if(!ok)hint.textContent='No se pudo guardar el cambio. Probá quitar algunos elementos.';
+  return ok;
+ }
+ function repaint(){
+  const data=current().tools,extra=previewStamps?{...data,stamps:previewStamps}:data;
+  paintSketch(canvas,data.strokes,draft,data.backdrop,extra);
+  count.textContent=data.strokes.length+'/55 trazos · '+data.stamps.length+'/30 objetos · '+Object.keys(data.drawingImages).length+'/6 imágenes · '+coloringPages[data.coloringPage].label;
+  box.querySelectorAll('[data-color]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.color===ink)));
+  const object=data.stamps.find(x=>x.id===selected);
+  selection.hidden=!object;
+  if(object){
+   selection.querySelector('[data-object-name]').textContent=object.kind==='text'?'Texto: '+object.text:object.kind==='emoji'?'Objeto: '+object.text:object.kind==='image'?'Imagen propia':'Objeto 3D: '+object.kind;
+   selection.querySelector('[data-object-size]').value=object.scale;
+   selection.querySelector('[data-object-angle]').value=object.angle;
+  }
+ }
+ function chooseTool(next){
+  tool=next;save({tool},false);
+  box.querySelectorAll('[data-draw-tool]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.drawTool===tool)));
+  hint.textContent=tool==='fill'?'Tocá una parte del dibujo para darle el color elegido.':tool==='move'?'Tocá un objeto y arrastralo; abajo podés cambiar tamaño y giro.':tool==='erase'?'Tocá un trazo u objeto para borrarlo.':'Dibujá directamente sobre el lienzo con el mouse o el dedo.';
+ }
+ function chooseTab(name){
+  panels.forEach(p=>{p.hidden=p.dataset.drawPanel!==name});
+  tabs.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));
+ }
+ for(const [id,label] of [['pintar','🖌️ Pintar'],['figuras','◇ Figuras'],['colorear','🖍️ Colorear'],['objetos','🧸 Objetos'],['3d','🧊 3D']]){
+  const b=document.createElement('button');b.type='button';b.dataset.tab=id;b.textContent=label;b.onclick=()=>{chooseTab(id);if(id==='colorear')chooseTool('fill');if(id==='objetos'||id==='3d')chooseTool('move');if(id==='pintar')chooseTool('pen');if(id==='figuras')chooseTool('rectangle');};tabs.append(b);
+ }
+ function toolButton(label,value,host){
+  const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.drawTool=value;b.setAttribute('aria-pressed',String(tool===value));b.onclick=()=>chooseTool(value);host.append(b);return b;
+ }
+ const brushes=box.querySelector('[data-draw-panel="pintar"]');
+ const brushBar=document.createElement('div');brushBar.className='ct-lab-choices';
+ for(const [value,label] of [['pen','✏️ Lápiz'],['marker','🖊️ Marcador'],['watercolor','💧 Acuarela'],['neon','✨ Neón'],['dotted','• Punteado']]){
+  const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.brush=value;
+  b.onclick=()=>{style=value;save({brushStyle:style},false);chooseTool('pen');box.querySelectorAll('[data-brush]').forEach(v=>v.setAttribute('aria-pressed',String(v.dataset.brush===value)));};brushBar.append(b);
+ }
+ brushes.append(brushBar);
+ const thickness=document.createElement('label');thickness.className='ct-lab-slider';thickness.textContent='Grosor del pincel';
+ const slider=document.createElement('input');slider.type='range';slider.min='1';slider.max='28';slider.value=width;slider.setAttribute('aria-label','Grosor');slider.onchange=()=>{width=Number(slider.value);save({brush:width},false)};thickness.append(slider);brushes.append(thickness);
+ const shapes=box.querySelector('[data-draw-panel="figuras"]'),shapeBar=document.createElement('div');shapeBar.className='ct-lab-choices';
+ for(const [id,label] of [['line','╱ Línea'],['rectangle','▭ Rectángulo'],['circle','◯ Óvalo'],['triangle','△ Triángulo'],['star','☆ Estrella'],['heart','♡ Corazón']])toolButton(label,id,shapeBar);
+ shapes.append(shapeBar);
+ const fillLabel=document.createElement('label');fillLabel.className='ct-lab-checkbox';fillLabel.textContent='Rellenar las figuras';const fillCheck=document.createElement('input');fillCheck.type='checkbox';fillCheck.checked=shapeFill;fillCheck.onchange=()=>{shapeFill=fillCheck.checked;save({shapeFill},false)};fillLabel.prepend(fillCheck);shapes.append(fillLabel);
+ const coloring=box.querySelector('[data-draw-panel="colorear"]');
+ const intro=document.createElement('p');intro.textContent='Elegí un dibujo. Después seleccioná un color y tocá cada zona para pintarla.';coloring.append(intro);
+ const templates=document.createElement('div');templates.className='ct-lab-templates';
+ for(const [id,item] of Object.entries(coloringPages)){
+  const b=document.createElement('button');b.type='button';b.dataset.template=id;b.innerHTML='<span aria-hidden="true">'+item.icon+'</span><small>'+item.label+'</small>';
+  b.onclick=()=>{
+   const data=current().tools;
+   if(data.coloringPage===id)return;
+   if(Object.keys(data.templateColors).length&&!confirm('¿Cambiar la lámina para colorear? Tus trazos y objetos quedan guardados, pero se reinician los colores de la lámina anterior.'))return;
+   if(save({coloringPage:id,templateColors:{}})){templates.querySelectorAll('[data-template]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.template===id)));repaint();}
+   chooseTool('fill');
+  };
+  b.setAttribute('aria-pressed',String(t.coloringPage===id));templates.append(b);
+ }
+ coloring.append(templates);
+ toolButton('🪣 Pintar zonas','fill',coloring);
+ const objects=box.querySelector('[data-draw-panel="objetos"]'),things=box.querySelector('[data-draw-panel="3d"]');
+ function addObject(kind,text,options={}){
+  const data=current().tools;
+  if(data.stamps.length>=30){hint.textContent='Llegaste a 30 objetos. Quitá uno para agregar otro.';return;}
+  const id='obj'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const object={id,kind,text,imageId:options.imageId||'',color:ink,x:Math.min(560,295+(data.stamps.length%5)*15),y:Math.min(280,140+(data.stamps.length%4)*14),scale:1,angle:0};
+  if(save({stamps:[...data.stamps,object],...(options.drawingImages?{drawingImages:options.drawingImages}:{})})){selected=id;chooseTool('move');repaint();hint.textContent='Objeto agregado. Arrastralo para ubicarlo donde quieras.';}
+ }
+ for(const [label,emojis] of Object.entries(stickerGroups)){
+  const group=document.createElement('div');group.className='ct-lab-object-group';
+  const caption=document.createElement('strong');caption.textContent=label;group.append(caption);
+  const wrap=document.createElement('div');wrap.className='ct-lab-stickers';
+  for(const emoji of emojis){const b=document.createElement('button');b.type='button';b.textContent=emoji;b.title='Agregar '+emoji;b.setAttribute('aria-label','Agregar '+emoji);b.onclick=()=>addObject('emoji',emoji);wrap.append(b)}
+  group.append(wrap);objects.append(group);
+ }
+ const textRow=document.createElement('div');textRow.className='ct-lab-text';const textInput=document.createElement('input');textInput.placeholder='Escribí un nombre, frase o símbolo…';textInput.maxLength=28;textInput.setAttribute('aria-label','Texto para colocar en el dibujo');
+ const addText=document.createElement('button');addText.type='button';addText.textContent='＋ Agregar texto';addText.onclick=()=>{if(textInput.value.trim())addObject('text',textInput.value.trim());textInput.value='';};textRow.append(textInput,addText);objects.append(textRow);
+ const imageRow=document.createElement('div');imageRow.className='ct-lab-text';
+ const pick=document.createElement('button');pick.type='button';pick.textContent='🖼️ Agregar mi imagen';
+ const upload=document.createElement('input');upload.type='file';upload.accept='image/png,image/jpeg,image/webp';upload.hidden=true;
+ pick.onclick=()=>upload.click();
+ upload.onchange=async()=>{
+  const file=upload.files?.[0];if(!file)return;
+  const project=s.projectId;pick.disabled=true;hint.textContent='Preparando tu imagen…';
+  try{
+   if(!window.ClubMedios?.compact)throw Error('El editor de imágenes todavía no está disponible.');
+   const image=await ClubMedios.compact(file);
+   if(s.projectId!==project||!s.cloudReady||s.busy||!box.isConnected)throw Error('La obra cambió mientras se preparaba la imagen.');
+   const data=current().tools;
+   if(Object.keys(data.drawingImages).length>=6)throw Error('Ya tenés seis imágenes propias en el dibujo.');
+   const id='img'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+   addObject('image','Imagen propia',{imageId:id,drawingImages:{...data.drawingImages,[id]:image}});
+  }catch(e){hint.textContent='⚠ '+e.message;}
+  finally{pick.disabled=false;upload.value='';}
+ };
+ imageRow.append(pick,upload);objects.append(imageRow);
+ const threeHint=document.createElement('p');threeHint.textContent='Objetos con volumen y sombras, para armar escenas con apariencia 3D. Son figuras editables dentro del dibujo.';things.append(threeHint);
+ const models=document.createElement('div');models.className='ct-lab-models';
+ for(const [id,label] of [['cube','🧊 Cubo'],['sphere','⚪ Esfera'],['cylinder','🥫 Cilindro'],['pyramid','🔺 Pirámide'],['cone','🍦 Cono']]){
+  const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=()=>addObject(id,'');models.append(b);
+ }
+ things.append(models);
+ const palette=box.querySelector('.ct-lab-palette');
+ for(const color of ['#142f4f','#ffffff','#e94356','#f58035','#ffe166','#62b55a','#18b8a0','#38a8ef','#5055c8','#a35cd6','#f8a9d7','#7e503c','#b7becb','#f5dbb2','#3a7846','#141414','#efaa3f','#75d2fc','#beef80','#ee82ad']){
+  const b=document.createElement('button');b.type='button';b.dataset.color=color;b.style.background=color;b.title='Color '+color;b.setAttribute('aria-label','Elegir color '+color);b.onclick=()=>{ink=color;save({ink},false);repaint();};palette.append(b);
+ }
+ const custom=document.createElement('input');custom.type='color';custom.value=ink;custom.title='Elegir otro color';custom.setAttribute('aria-label','Elegir otro color');custom.onchange=()=>{ink=custom.value;save({ink},false);repaint();};palette.append(custom);
+ const actions=box.querySelector('.ct-lab-actions');
+ toolButton('↗ Mover objetos','move',actions);toolButton('🧽 Borrar','erase',actions);
+ const undo=document.createElement('button');undo.type='button';undo.textContent='↶ Deshacer';undo.onclick=()=>{if(!undoStack.length)return;const now=snapshot(current()),before=undoStack.pop();if(useSnapshot(before)){redoStack.push(now);selected=null;repaint();}else undoStack.push(before);};actions.append(undo);
+ const redo=document.createElement('button');redo.type='button';redo.textContent='↷ Rehacer';redo.onclick=()=>{if(!redoStack.length)return;const now=snapshot(current()),after=redoStack.pop();if(useSnapshot(after)){undoStack.push(now);repaint();}else redoStack.push(after);};actions.append(redo);
+ const clear=document.createElement('button');clear.type='button';clear.textContent='🧹 Limpiar todo';clear.onclick=()=>{if(!confirm('¿Borrar todos los trazos, objetos y colores de este dibujo?'))return;if(save({strokes:[],stamps:[],templateColors:{},drawingImages:{},coloringPage:'blanco'})){selected=null;templates.querySelectorAll('[data-template]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.template==='blanco')));repaint();}};actions.append(clear);
+ const selectedDiv=box.querySelector('.ct-lab-selection');
+ selectedDiv.innerHTML='<strong data-object-name></strong><label>Tamaño <input data-object-size type="range" min="0.35" max="2.4" step="0.05" aria-label="Tamaño del objeto"></label><label>Giro <input data-object-angle type="range" min="-180" max="180" step="15" aria-label="Giro del objeto"></label><button type="button" data-object-front>Traer adelante</button><button type="button" data-object-delete>Quitar objeto</button>';
+ const editSelected=field=>{const data=current().tools,stamps=data.stamps.map(o=>o.id===selected?{...o,[field]:Number(selectedDiv.querySelector('[data-object-'+(field==='scale'?'size':'angle')+']').value)}:o);if(save({stamps}))repaint();};
+ selectedDiv.querySelector('[data-object-size]').onchange=()=>editSelected('scale');selectedDiv.querySelector('[data-object-angle]').onchange=()=>editSelected('angle');
+ selectedDiv.querySelector('[data-object-front]').onclick=()=>{const data=current().tools,object=data.stamps.find(o=>o.id===selected);if(object&&save({stamps:[...data.stamps.filter(o=>o.id!==selected),object]}))repaint();};
+ selectedDiv.querySelector('[data-object-delete]').onclick=()=>{const data=current().tools,stamps=data.stamps.filter(o=>o.id!==selected),used=new Set(stamps.map(o=>o.imageId));const drawingImages=Object.fromEntries(Object.entries(data.drawingImages).filter(([id])=>used.has(id)));if(save({stamps,drawingImages})){selected=null;repaint();}};
+ const expand=box.querySelector('.ct-lab-expand');expand.onclick=()=>{const open=box.classList.toggle('ct-canvas-expanded');expand.textContent=open?'✕ Volver al taller':'⛶ Ampliar lienzo';};
+ const rectCoord=e=>{const rect=canvas.getBoundingClientRect();return [Math.max(0,Math.min(600,Math.round((e.clientX-rect.left)*600/rect.width))),Math.max(0,Math.min(320,Math.round((e.clientY-rect.top)*320/rect.height)))];};
+ const objectAt=(data,x,y)=>[...data.stamps].reverse().find(o=>Math.hypot(o.x-x,o.y-y)<(o.kind==='text'?75:48)*o.scale);
+ canvas.onpointerdown=e=>{
+  if(!s.cloudReady||s.busy)return;e.preventDefault();const [x,y]=rectCoord(e),data=current().tools;
+  if(tool==='fill'){
+   const ctx=canvas.getContext('2d'),part=[...coloringPages[data.coloringPage].parts].reverse().find(p=>ctx.isPointInPath(new Path2D(p.d),x,y));
+   if(part&&save({templateColors:{...data.templateColors,[part.id]:ink}}))repaint();
+   else if(!part)hint.textContent='Tocá dentro de una figura de la lámina para colorearla.';
+   return;
+  }
+  if(tool==='move'){
+   const o=objectAt(data,x,y);selected=o?.id||null;repaint();
+   if(o){canvas.setPointerCapture(e.pointerId);drag={id:o.id,dx:x-o.x,dy:y-o.y};}
+   return;
+  }
+  if(tool==='erase'){
+   const o=objectAt(data,x,y);
+   if(o){const stamps=data.stamps.filter(p=>p.id!==o.id),used=new Set(stamps.map(p=>p.imageId));const drawingImages=Object.fromEntries(Object.entries(data.drawingImages).filter(([id])=>used.has(id)));if(save({stamps,drawingImages})){selected=null;repaint();}return;}
+   const ctx=canvas.getContext('2d'),index=data.strokes.findLastIndex(stroke=>{ctx.lineWidth=Math.max(17,stroke.width+16);return ctx.isPointInStroke(new Path2D(strokePath(stroke)),x,y)});
+   if(index>=0&&save({strokes:data.strokes.filter((_,i)=>i!==index)}))repaint();return;
+  }
+  canvas.setPointerCapture(e.pointerId);draft={type:tool==='pen'?'pen':tool,color:ink,width,style:tool==='pen'?style:'pen',fill:shapeFill,points:[[x,y]]};repaint();
+ };
+ canvas.onpointermove=e=>{
+  if(drag){const [x,y]=rectCoord(e),o=current().tools.stamps.find(v=>v.id===drag.id);if(!o)return;previewStamps=current().tools.stamps.map(item=>item.id===drag.id?{...item,x:Math.round(Math.max(0,Math.min(600,x-drag.dx))),y:Math.round(Math.max(0,Math.min(320,y-drag.dy)))}:item);repaint();return;}
+  if(!draft)return;const point=rectCoord(e),points=draft.points;
+  if(draft.type==='pen'){
+   const last=points[points.length-1];if(Math.hypot(point[0]-last[0],point[1]-last[1])<3)return;
+   if(points.length>=100)draft.points=points.filter((_,i)=>i%2===0||i===points.length-1);
+   draft.points.push(point);
+  }else draft.points=[points[0],point];repaint();
+ };
+ const finish=()=>{
+  if(drag){const data=current().tools,changed=previewStamps;drag=null;previewStamps=null;if(changed&&save({stamps:changed}))repaint();else repaint();return;}
+  if(draft){const data=current().tools,stroke=draft;draft=null;if(save({strokes:[...data.strokes,stroke].slice(-55)}))repaint();else repaint();}
+ };
+ canvas.onpointerup=finish;canvas.onpointercancel=()=>{draft=null;drag=null;previewStamps=null;repaint()};
+ parent.append(box);chooseTab(['fill'].includes(tool)?'colorear':drawShapes.includes(tool)?'figuras':tool==='move'?'objetos':'pintar');
+ box.querySelectorAll('[data-brush]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.brush===style)));
+ chooseTool(tool);repaint();
 }
 function render(work,s,data,onChange){
  const d=normalize(data),t=d.tools,kind=d.kind,spec=modes[kind];if(!spec)return;
@@ -481,10 +758,16 @@ function render(work,s,data,onChange){
   },{type:'number',min:2,max:12}));
  }
  if(kind==='historietas')card.append(field('Globo de texto',t.bubble,v=>change('bubble',v),{values:['Redondo','Rectangular','Narración']}));
- card.append(field('Frase destacada',t.action,v=>change('action',v),{maxlength:90}));
+ if(kind!=='dibujos')card.append(field('Frase destacada',t.action,v=>change('action',v),{maxlength:90}));
  parent.append(card);
- const guide=document.createElement('div');guide.className='ct-guide';guide.textContent=kind==='libros'?'Escribí libremente en un solo espacio. Podés agregar hasta ocho ilustraciones donde quieras y hojear tu libro a la derecha.':kind==='dramas'?'Cada parte es un acto. Escribí los diálogos y una acotación escénica.':kind==='animes'?'Cada parte es una escena: personaje, fondo, diálogo y movimiento.':kind==='historietas'?'Cada parte es una viñeta: elegí el personaje y escribí su diálogo.':kind==='dibujos'?'Dibujá en el lienzo y tu ilustración aparecerá en la vista previa.':kind==='flyers'?'Combiná título, colores, imagen y mensaje.':kind==='blogs'?'Usá títulos claros y destacá ideas en negrita.': 'Contá tu historia por capítulos y decorá la portada.';
+ const guide=document.createElement('div');guide.className='ct-guide';guide.textContent=kind==='libros'?'Escribí libremente en un solo espacio. Podés agregar hasta ocho ilustraciones donde quieras y hojear tu libro a la derecha.':kind==='dramas'?'Cada parte es un acto. Escribí los diálogos y una acotación escénica.':kind==='animes'?'Cada parte es una escena: personaje, fondo, diálogo y movimiento.':kind==='historietas'?'Cada parte es una viñeta: elegí el personaje y escribí su diálogo.':kind==='dibujos'?'Creá desde cero o elegí una lámina para colorear. Combiná pinceles, formas, objetos, textos y figuras con volumen. Todo se guarda en tu obra.':kind==='flyers'?'Combiná título, colores, imagen y mensaje.':kind==='blogs'?'Usá títulos claros y destacá ideas en negrita.': 'Contá tu historia por capítulos y decorá la portada.';
  parent.append(guide);
+ if(kind==='dibujos'){
+  renderDrawingLab(parent,s,t,current,onChange);
+  const background=card.querySelector('input[type="color"]');
+  background?.addEventListener('input',()=>{const canvas=work.querySelector('.ct-art-lab canvas'),data=current().tools;if(canvas)paintSketch(canvas,data.strokes,null,data.backdrop,data);});
+  return;
+ }
  if(['blogs','cuentos','libros','historietas','dramas','animes','flyers'].includes(kind)){
   const bar=document.createElement('div');bar.className='ct-format';
   for(const [label,start,end] of [['Negrita','**','**'],['Cursiva','*','*']]){
