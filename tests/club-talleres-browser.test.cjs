@@ -41,7 +41,7 @@ async function tryBook(doc,width){
   verify(next.disabled&&seen.size===leaves.length,'leer todas las hojas en orden');
  }finally{frame.remove();}
 }
-const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes','flyers','dibujos','animation','video-edit','pagina-web','aplicacion-web'];
+const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historietas','cuentos','dramas','animes','flyers','dibujos','animation','video-edit','pagina-web','aplicacion-web'];
 (async()=>{
  await until(()=>window.KruekaStudioAccess?.ready);
  await KruekaStudioAccess.login('TEST01');
@@ -52,7 +52,11 @@ const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes',
  home.querySelector('[data-kc-filter="Todos"]').click();
  const projects=[];
  for(const id of selectors){
-  const tile=document.querySelector('[data-creative-start="'+id+'"]');
+  let tile=document.querySelector('[data-creative-start="'+id+'"]');
+  if(!tile&&['animation','arcade-web'].includes(id)){
+   home.querySelector('[data-creative-path="'+(id==='animation'?'animaciones':'juegos')+'"]').click();
+   tile=document.querySelector('[data-creative-kit="'+id+'"]');
+  }
   verify(tile,'acceso '+id);
   const old=StudioIA.projectId;
   tile.click();
@@ -119,6 +123,30 @@ const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes',
    [...panel.querySelectorAll('button')].find(button=>button.textContent==='Contador').click();
    verify(StudioIA.files['index.html'].includes('<output>0</output>'),'bloque interactivo '+id);
   }
+  if(id.startsWith('pabellon-')){
+   const editor=document.querySelector('#ks-create form');
+   verify(editor&&StudioIA.tab==='create','editor 3D '+id);
+   editor.elements.title.value='Pabellón de prueba';editor.elements.light.value='noche';
+   if(id==='pabellon-cine')editor.elements.plano0.value='planetario';
+   editor.querySelector('button').click();
+   verify(StudioKits.read(StudioIA.files).light==='noche','guardar luz 3D');
+   const preview=document.createElement('iframe');preview.style.cssText='width:420px;height:360px';document.body.append(preview);
+   const ready=new Promise(done=>preview.onload=done);
+   preview.srcdoc=StudioIA.buildPreview.call({files:StudioIA.files,dirname:StudioIA.dirname,resolve:StudioIA.resolve},'index.html');
+   await ready;
+   const doc=preview.contentDocument;
+   verify(doc.querySelector('#titulo').textContent==='Pabellón de prueba'&&doc.querySelector('#luz').value==='noche','lectura independiente del proyecto');
+   doc.querySelector('#accion').click();
+   if(id==='pabellon-cine'){
+    verify(doc.querySelector('#accion').textContent==='Pausar'&&doc.querySelector('#estado').textContent==='Detalle del planetario','reproducir primer plano editado');
+    const seek=doc.querySelector('#tiempo');seek.value='8';seek.dispatchEvent(new Event('input'));
+    verify(doc.querySelector('#estado').textContent==='Vuelo del ave'&&doc.querySelector('#reloj').textContent.includes('8.0'),'buscar segundo plano');
+   }else{
+    verify(!doc.querySelector('#mover').hidden&&doc.querySelector('#estado').textContent==='0 de 3 semillas','entrar al juego');
+    doc.querySelector('#accion').click();verify(doc.querySelector('#mover').hidden,'salir del recorrido');
+   }
+   preview.remove();
+  }
   if(id==='arcade-web')verify(StudioIA.tab==='programacion'&&StudioIA.files['index.html'].includes('<canvas'),'juego listo para probar');
   if(id==='animation'||id==='video-edit')verify(StudioKits.read(StudioIA.files)?.kind===id,'base de medios '+id);
   verify(await StudioIA.save(),'guardar '+id);
@@ -128,6 +156,7 @@ const selectors=['arcade-web','blogs','historietas','cuentos','dramas','animes',
  for(let i=0;i<projects.length;i++){
   await StudioIA.switchProject(projects[i]);
   verify(StudioIA.projectId===projects[i]&&StudioIA.files['index.html'],'reabrir '+selectors[i]);
+  if(selectors[i].startsWith('pabellon-'))verify(StudioKits.read(StudioIA.files).light==='noche','reabrir escena editada');
   if(['cuentos','dramas'].includes(selectors[i]))verify(JSON.parse(StudioIA.files['obra.json']).panels[3].text.endsWith('FIN DE LA OBRA'),'texto recuperado');
  }
  verify(__errors.length===0,__errors.join(' | '));
@@ -148,5 +177,5 @@ try{
  assert.equal(run.status,0,(run.stderr||'').slice(-1000));
  const outcome=run.stdout.match(/data-club-test="([^"]+)"/)?.[1];
  assert.equal(outcome,'PASS',outcome||'El recorrido no terminó');
- console.log('PASS: ingreso simulado, 12 talleres, edición, bloques, vista previa, guardado y recuperación.');
+ console.log('PASS: ingreso simulado, 12 talleres, juego y cine 3D, edición, bloques, vista previa, guardado y recuperación.');
 }finally{fs.rmSync(directory,{recursive:true,force:true});}
