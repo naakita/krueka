@@ -20,6 +20,8 @@ function hex(s,fallback='#237fc3'){return /^#[0-9a-f]{6}$/i.test(s||'')?s:fallba
 function clip(v,n){return String(v??'').slice(0,n);}
 const drawBrushes=['pen','marker','watercolor','neon','dotted','chalk','airbrush','pixel'];
 const paintLayers=['base','details'];
+const radialOptions=[1,2,4,6,8];
+const paintingGradients={cielo:['#e9faff','#7fbaf1'],atardecer:['#ffe9b0','#e879a8'],oceano:['#baf7eb','#357fc4'],bosque:['#edfad4','#7eba92'],noche:['#273457','#8a69be']};
 const unit=(value,fallback=1)=>Math.max(.1,Math.min(1,value!=null&&Number.isFinite(Number(value))?Number(value):fallback));
 const drawShapes=['line','rectangle','circle','triangle','star','heart'];
 const drawObjects=['emoji','text','image','cube','sphere','cylinder','pyramid','cone'];
@@ -59,6 +61,7 @@ function normalize(raw){
   smooth:Math.max(0,Math.min(100,Math.round(Number(s.smooth)||0))),
   layer:paintLayers.includes(s.layer)?s.layer:'base',
   mirror:s.mirror===true,
+  radialSymmetry:radialOptions.includes(s.radialSymmetry)?s.radialSymmetry:1,
   fill:s.fill===true,
   points:Array.isArray(s.points)?s.points.slice(0,100).map(p=>[Math.max(0,Math.min(600,Math.round(Number(p?.[0])||0))),Math.max(0,Math.min(320,Math.round(Number(p?.[1])||0)))]):[]
  })).filter(s=>s.points.length>0):[];
@@ -89,8 +92,11 @@ function normalize(raw){
   opacity:unit(t.opacity),
   smooth:Math.max(0,Math.min(100,Math.round(Number(t.smooth)||0))),
   mirror:t.mirror===true,
+  radialSymmetry:radialOptions.includes(t.radialSymmetry)?t.radialSymmetry:1,
   activeLayer:paintLayers.includes(t.activeLayer)?t.activeLayer:'base',
   layerVisibility:{base:t.layerVisibility?.base!==false,details:t.layerVisibility?.details!==false},
+  layerLocked:{base:t.layerLocked?.base===true,details:t.layerLocked?.details===true},
+  backgroundGradient:Object.prototype.hasOwnProperty.call(paintingGradients,t.backgroundGradient)?t.backgroundGradient:'none',
   guide:['none','grid','perspective'].includes(t.guide)?t.guide:'none',
   shapeFill:t.shapeFill===true,
   coloringPage:template,
@@ -178,7 +184,9 @@ function strokeLook(s){
 function strokeSvg(s){
  const look=strokeLook(s),shape=s.type!=='pen'&&s.type!=='line';
  const path='<path d="'+strokePath(s)+'" fill="'+(shape&&s.fill?hex(s.color):'none')+'" stroke="'+hex(s.color)+'" stroke-width="'+look.width+'" stroke-opacity="'+look.opacity+'" fill-opacity="'+(shape&&s.fill?.65*unit(s.opacity):0)+'" stroke-linecap="'+(look.pixel?'square':'round')+'" stroke-linejoin="round"'+(look.dash?' stroke-dasharray="'+look.dash+'"':'')+(look.glow?' style="filter:drop-shadow(0 0 4px '+hex(s.color)+')"':look.soft?' style="filter:blur(2px)"':'')+(look.pixel?' shape-rendering="crispEdges"':'')+'/>';
- return path+(s.mirror?'<g transform="translate(600 0) scale(-1 1)">'+path+'</g>':'');
+ const copy=path+(s.mirror?'<g transform="translate(600 0) scale(-1 1)">'+path+'</g>':'');
+ const count=radialOptions.includes(s.radialSymmetry)?s.radialSymmetry:1;
+ return Array.from({length:count},(_,i)=>i?'<g transform="rotate('+(i*360/count)+' 300 160)">'+copy+'</g>':copy).join('');
 }
 function visibleStrokes(strokes,extras){
  const shown=extras?.layerVisibility||{};
@@ -210,7 +218,8 @@ function templateSvg(t){
 }
 function sketchMarkup(strokes,color,extras){
  const shapes=templateSvg(extras),objects=extras?.stamps?.map(stamp=>stampSvg(stamp,extras.drawingImages)).join('')||'';
- return '<svg class="ck-art" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dibujo original del estudiante"><rect width="600" height="320" fill="'+hex(color,'#fffdf7')+'"/>'+shapes+visibleStrokes(strokes,extras).map(strokeSvg).join('')+objects+'</svg>';
+ const colors=paintingGradients[extras?.backgroundGradient],gradient=Array.isArray(colors)?'<defs><linearGradient id="ck-art-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="600" y2="320"><stop offset="0%" stop-color="'+colors[0]+'"/><stop offset="100%" stop-color="'+colors[1]+'"/></linearGradient></defs>':'';
+ return '<svg class="ck-art" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dibujo original del estudiante">'+gradient+'<rect width="600" height="320" fill="'+(gradient?'url(#ck-art-gradient)':hex(color,'#fffdf7'))+'"/>'+shapes+visibleStrokes(strokes,extras).map(strokeSvg).join('')+objects+'</svg>';
 }
 const readingStyle=`
 .ck-pagination{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;padding:9px 6px;margin:12px auto;background:#fffcf1f5;color:#492d1b;border-radius:10px;box-shadow:0 2px 8px #35221122;font:14px/1.3 system-ui}
@@ -550,7 +559,12 @@ function field(label,value,handler,options){
 }
 function paintSketch(canvas,strokes,draft,background,extras){
  const ctx=canvas.getContext('2d');if(!ctx)return;
- ctx.clearRect(0,0,600,320);ctx.fillStyle=background;ctx.fillRect(0,0,600,320);
+ const colors=paintingGradients[extras?.backgroundGradient];
+ ctx.clearRect(0,0,600,320);
+ if(Array.isArray(colors)){
+  const grad=ctx.createLinearGradient(0,0,600,320);grad.addColorStop(0,colors[0]);grad.addColorStop(1,colors[1]);ctx.fillStyle=grad;
+ }else ctx.fillStyle=background;
+ ctx.fillRect(0,0,600,320);
  if(extras&&coloringPages[extras.coloringPage]){
   for(const part of coloringPages[extras.coloringPage].parts){
    ctx.save();ctx.fillStyle=hex(extras.templateColors[part.id],part.fill);ctx.strokeStyle='#344357';ctx.lineWidth=3.6;ctx.lineJoin='round';
@@ -560,13 +574,18 @@ function paintSketch(canvas,strokes,draft,background,extras){
  for(const s of visibleStrokes([...strokes,...(draft?[draft]:[])],extras)){
   if(!s?.points?.length)continue;
   const look=strokeLook(s),path=new Path2D(strokePath(s));
-  for(const mirrored of (s.mirror?[false,true]:[false])){
-   ctx.save();if(mirrored){ctx.translate(600,0);ctx.scale(-1,1);}
-   ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineWidth=look.width;ctx.lineCap=look.pixel?'square':'round';ctx.lineJoin='round';ctx.globalAlpha=look.opacity;
-   if(look.dash)ctx.setLineDash(look.dash.split(' ').map(Number));
-   if(look.glow||look.soft){ctx.shadowColor=s.color;ctx.shadowBlur=look.soft?15:10;}
-   if(s.type!=='pen'&&s.type!=='line'&&s.fill){ctx.globalAlpha=.65*unit(s.opacity);ctx.fill(path);ctx.globalAlpha=look.opacity;}
-   ctx.stroke(path);ctx.restore();
+  const count=radialOptions.includes(s.radialSymmetry)?s.radialSymmetry:1;
+  for(let i=0;i<count;i++){
+   ctx.save();if(i){ctx.translate(300,160);ctx.rotate(i*2*Math.PI/count);ctx.translate(-300,-160);}
+   for(const mirrored of (s.mirror?[false,true]:[false])){
+    ctx.save();if(mirrored){ctx.translate(600,0);ctx.scale(-1,1);}
+    ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineWidth=look.width;ctx.lineCap=look.pixel?'square':'round';ctx.lineJoin='round';ctx.globalAlpha=look.opacity;
+    if(look.dash)ctx.setLineDash(look.dash.split(' ').map(Number));
+    if(look.glow||look.soft){ctx.shadowColor=s.color;ctx.shadowBlur=look.soft?15:10;}
+    if(s.type!=='pen'&&s.type!=='line'&&s.fill){ctx.globalAlpha=.65*unit(s.opacity);ctx.fill(path);ctx.globalAlpha=look.opacity;}
+    ctx.stroke(path);ctx.restore();
+   }
+   ctx.restore();
   }
  }
  if(extras?.stamps)for(const o of extras.stamps){
@@ -588,9 +607,9 @@ function renderDrawingLab(parent,s,t,current,onChange){
  box.innerHTML='<div class="ct-lab-head"><div><strong>🎨 Mi estudio de arte</strong><small>Creá sobre un lienzo, coloreá láminas y combiná objetos.</small></div><button type="button" class="ct-lab-expand">⛶ Ampliar lienzo</button></div><div class="ct-lab-tabs" role="group" aria-label="Secciones del estudio"></div><div class="ct-lab-panel" data-draw-panel="pintar"></div><div class="ct-lab-panel" data-draw-panel="figuras" hidden></div><div class="ct-lab-panel" data-draw-panel="colorear" hidden></div><div class="ct-lab-panel" data-draw-panel="objetos" hidden></div><div class="ct-lab-panel" data-draw-panel="3d" hidden></div><div class="ct-lab-panel" data-draw-panel="capas" hidden></div><div class="ct-lab-palette" aria-label="Paleta de colores"></div><div class="ct-lab-actions"></div><canvas class="ct-canvas" width="600" height="320" aria-label="Lienzo: dibujá, coloreá o mové objetos" style="touch-action:none"></canvas><div class="ct-lab-selection" hidden></div><small class="ct-lab-hint" role="status"></small><small class="ct-lab-count" role="status"></small>';
  const canvas=box.querySelector('canvas'),tabs=box.querySelector('.ct-lab-tabs'),panels=[...box.querySelectorAll('[data-draw-panel]')];
  const hint=box.querySelector('.ct-lab-hint'),count=box.querySelector('.ct-lab-count'),selection=box.querySelector('.ct-lab-selection');
- let tool=t.tool,ink=t.ink,width=t.brush,style=t.brushStyle,opacity=t.opacity,smooth=t.smooth,mirror=t.mirror,activeLayer=t.activeLayer,guide=t.guide,shapeFill=t.shapeFill,draft=null,drag=null,selected=null,previewStamps=null;
+ let tool=t.tool,ink=t.ink,width=t.brush,style=t.brushStyle,opacity=t.opacity,smooth=t.smooth,mirror=t.mirror,radialSymmetry=t.radialSymmetry,activeLayer=t.activeLayer,guide=t.guide,shapeFill=t.shapeFill,draft=null,drag=null,selected=null,previewStamps=null;
  const undoStack=[],redoStack=[];
- const snapshot=d=>JSON.stringify({strokes:d.tools.strokes,stamps:d.tools.stamps,coloringPage:d.tools.coloringPage,templateColors:d.tools.templateColors,drawingImages:d.tools.drawingImages,layerVisibility:d.tools.layerVisibility});
+ const snapshot=d=>JSON.stringify({strokes:d.tools.strokes,stamps:d.tools.stamps,coloringPage:d.tools.coloringPage,templateColors:d.tools.templateColors,drawingImages:d.tools.drawingImages,layerVisibility:d.tools.layerVisibility,layerLocked:d.tools.layerLocked,backgroundGradient:d.tools.backgroundGradient});
  const useSnapshot=json=>{const saved=JSON.parse(json),latest=current();return onChange({...latest,tools:{...latest.tools,...saved}});};
  function save(patch,history=true){
   if(!s.cloudReady||s.busy){hint.textContent='Esperá a que termine de cargar el proyecto.';return false;}
@@ -613,6 +632,7 @@ function renderDrawingLab(parent,s,t,current,onChange){
   box.querySelectorAll('[data-color]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.color===ink)));
   box.querySelectorAll('[data-layer]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.layer===activeLayer)));
   box.querySelectorAll('[data-visible-layer]').forEach(b=>{const shown=data.layerVisibility[b.dataset.visibleLayer]!==false;b.textContent=shown?'👁️ Visible':'🚫 Oculta';b.setAttribute('aria-pressed',String(shown));});
+  box.querySelectorAll('[data-lock-layer]').forEach(b=>{const locked=data.layerLocked[b.dataset.lockLayer]===true;b.textContent=locked?'🔒 Bloqueada':'🔓 Editable';b.setAttribute('aria-pressed',String(locked));});
   const object=data.stamps.find(x=>x.id===selected);
   selection.hidden=!object;
   if(object){
@@ -651,6 +671,10 @@ function renderDrawingLab(parent,s,t,current,onChange){
  const smoothLabel=document.createElement('label');smoothLabel.className='ct-lab-slider';smoothLabel.textContent='Estabilizador del trazo';
  const smoothInput=document.createElement('input');smoothInput.type='range';smoothInput.min='0';smoothInput.max='100';smoothInput.step='20';smoothInput.value=smooth;smoothInput.setAttribute('aria-label','Estabilizador del trazo');
  smoothInput.onchange=()=>{smooth=Number(smoothInput.value);save({smooth},false);};smoothLabel.append(smoothInput);brushes.append(smoothLabel);
+ const gradientLabel=document.createElement('label');gradientLabel.className='ct-lab-slider';gradientLabel.textContent='Fondo degradado (sin tapar tus dibujos)';
+ const gradientSelect=document.createElement('select');gradientSelect.setAttribute('aria-label','Fondo degradado');
+ for(const [id,label] of [['none','Color liso'],['cielo','☁️ Cielo'],['atardecer','🌅 Atardecer'],['oceano','🌊 Océano'],['bosque','🌿 Bosque'],['noche','🌙 Noche']])gradientSelect.add(new Option(label,id));
+ gradientSelect.value=t.backgroundGradient;gradientSelect.onchange=()=>{if(save({backgroundGradient:gradientSelect.value}))repaint();};gradientLabel.append(gradientSelect);brushes.append(gradientLabel);
  const shapes=box.querySelector('[data-draw-panel="figuras"]'),shapeBar=document.createElement('div');shapeBar.className='ct-lab-choices';
  for(const [id,label] of [['line','╱ Línea'],['rectangle','▭ Rectángulo'],['circle','◯ Óvalo'],['triangle','△ Triángulo'],['star','☆ Estrella'],['heart','♡ Corazón']])toolButton(label,id,shapeBar);
  shapes.append(shapeBar);
@@ -722,12 +746,18 @@ function renderDrawingLab(parent,s,t,current,onChange){
   select.onclick=()=>{activeLayer=id;const data=current().tools;save({activeLayer:id,layerVisibility:{...data.layerVisibility,[id]:true}},false);repaint();};
   const toggle=document.createElement('button');toggle.type='button';toggle.dataset.visibleLayer=id;toggle.setAttribute('aria-label','Mostrar u ocultar '+label);
   toggle.onclick=()=>{const data=current().tools;save({layerVisibility:{...data.layerVisibility,[id]:data.layerVisibility[id]===false}},true);repaint();};
-  row.append(select,toggle);layerRows.append(row);
+  const lock=document.createElement('button');lock.type='button';lock.dataset.lockLayer=id;lock.setAttribute('aria-label','Bloquear o desbloquear '+label);
+  lock.onclick=()=>{const data=current().tools;save({layerLocked:{...data.layerLocked,[id]:!data.layerLocked[id]}},true);repaint();};
+  row.append(select,toggle,lock);layerRows.append(row);
  }
  layerPanel.append(layerRows);
  const mirrorLabel=document.createElement('label');mirrorLabel.className='ct-lab-checkbox';mirrorLabel.textContent='🪞 Pintura simétrica (espejo horizontal)';
  const mirrorCheck=document.createElement('input');mirrorCheck.type='checkbox';mirrorCheck.checked=mirror;
  mirrorCheck.onchange=()=>{mirror=mirrorCheck.checked;save({mirror},false);};mirrorLabel.prepend(mirrorCheck);layerPanel.append(mirrorLabel);
+ const radialLabel=document.createElement('label');radialLabel.className='ct-lab-slider';radialLabel.textContent='Mandalas · pinceles repetidos alrededor del centro';
+ const radialSelect=document.createElement('select');radialSelect.setAttribute('aria-label','Simetría radial para mandalas');
+ for(const [id,label] of [[1,'Sin mandala'],[2,'2 brazos'],[4,'4 brazos'],[6,'6 brazos'],[8,'8 brazos']])radialSelect.add(new Option(label,id));
+ radialSelect.value=String(radialSymmetry);radialSelect.onchange=()=>{radialSymmetry=Number(radialSelect.value);save({radialSymmetry},false);};radialLabel.append(radialSelect);layerPanel.append(radialLabel);
  const guideLabel=document.createElement('label');guideLabel.className='ct-lab-slider';guideLabel.textContent='Guías para dibujar (no aparecen en la obra publicada)';
  const guideSelect=document.createElement('select');guideSelect.setAttribute('aria-label','Guías del lienzo');
  for(const [id,label] of [['none','Sin guías'],['grid','Cuadrícula'],['perspective','Perspectiva']])guideSelect.add(new Option(label,id));
@@ -751,6 +781,16 @@ function renderDrawingLab(parent,s,t,current,onChange){
  const expand=box.querySelector('.ct-lab-expand');expand.onclick=()=>{const open=box.classList.toggle('ct-canvas-expanded');expand.textContent=open?'✕ Volver al taller':'⛶ Ampliar lienzo';};
  const rectCoord=e=>{const rect=canvas.getBoundingClientRect();return [Math.max(0,Math.min(600,Math.round((e.clientX-rect.left)*600/rect.width))),Math.max(0,Math.min(320,Math.round((e.clientY-rect.top)*320/rect.height)))];};
  const objectAt=(data,x,y)=>[...data.stamps].reverse().find(o=>Math.hypot(o.x-x,o.y-y)<(o.kind==='text'?75:48)*o.scale);
+ const hitStroke=(ctx,stroke,x,y)=>{
+  const path=new Path2D(strokePath(stroke)),count=radialOptions.includes(stroke.radialSymmetry)?stroke.radialSymmetry:1;
+  ctx.lineWidth=Math.max(17,strokeLook(stroke).width+16);
+  for(let i=0;i<count;i++){
+   const angle=-i*2*Math.PI/count,dx=x-300,dy=y-160;
+   const testX=300+dx*Math.cos(angle)-dy*Math.sin(angle),testY=160+dx*Math.sin(angle)+dy*Math.cos(angle);
+   if(ctx.isPointInStroke(path,testX,testY)||(stroke.mirror&&ctx.isPointInStroke(path,600-testX,testY)))return true;
+  }
+  return false;
+ };
  canvas.onpointerdown=e=>{
   if(!s.cloudReady||s.busy)return;e.preventDefault();const [x,y]=rectCoord(e),data=current().tools;
   if(tool==='picker'){
@@ -775,11 +815,12 @@ function renderDrawingLab(parent,s,t,current,onChange){
   if(tool==='erase'){
    const o=objectAt(data,x,y);
    if(o){const stamps=data.stamps.filter(p=>p.id!==o.id),used=new Set(stamps.map(p=>p.imageId));const drawingImages=Object.fromEntries(Object.entries(data.drawingImages).filter(([id])=>used.has(id)));if(save({stamps,drawingImages})){selected=null;repaint();}return;}
-   const ctx=canvas.getContext('2d'),index=data.strokes.findLastIndex(stroke=>{ctx.lineWidth=Math.max(17,stroke.width+16);return ctx.isPointInStroke(new Path2D(strokePath(stroke)),x,y)});
+   const ctx=canvas.getContext('2d'),index=data.strokes.findLastIndex(stroke=>{const layer=stroke.layer==='details'?'details':'base';return data.layerVisibility[layer]!==false&&!data.layerLocked[layer]&&hitStroke(ctx,stroke,x,y)});
    if(index>=0&&save({strokes:data.strokes.filter((_,i)=>i!==index)}))repaint();return;
   }
   if(data.layerVisibility[activeLayer]===false){hint.textContent='Mostrá la capa seleccionada antes de dibujar.';return;}
-  canvas.setPointerCapture(e.pointerId);draft={type:tool==='pen'?'pen':tool,color:ink,width,opacity,smooth,mirror,layer:activeLayer,style:tool==='pen'?style:'pen',fill:shapeFill,points:[[x,y]]};repaint();
+  if(data.layerLocked[activeLayer]){hint.textContent='La capa está bloqueada. Desbloqueala en Capas para seguir pintando.';return;}
+  canvas.setPointerCapture(e.pointerId);draft={type:tool==='pen'?'pen':tool,color:ink,width,opacity,smooth,mirror,radialSymmetry,layer:activeLayer,style:tool==='pen'?style:'pen',fill:shapeFill,points:[[x,y]]};repaint();
  };
  canvas.onpointermove=e=>{
   if(drag){const [x,y]=rectCoord(e),o=current().tools.stamps.find(v=>v.id===drag.id);if(!o)return;previewStamps=current().tools.stamps.map(item=>item.id===drag.id?{...item,x:Math.round(Math.max(0,Math.min(600,x-drag.dx))),y:Math.round(Math.max(0,Math.min(320,y-drag.dy)))}:item);repaint();return;}
