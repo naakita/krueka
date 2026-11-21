@@ -8,6 +8,7 @@ const modes={
  blogs:{label:'Blog',layouts:['Revista','Tarjetas','Minimalista'],tip:'Título, portada, párrafos y artículos.'},
  historietas:{label:'Historieta',layouts:['Viñetas','Tiras','Páginas'],tip:'Personajes, globos de diálogo y escenarios.'},
  cuentos:{label:'Cuento',layouts:['Libro','Páginas','Ilustrado'],tip:'Narración, personajes, páginas y portada.'},
+ libros:{label:'Libro',layouts:['Clásico','Marfil','Ilustrado'],tip:'Manuscrito continuo, ilustraciones entre párrafos y páginas para hojear.'},
  dramas:{label:'Drama',layouts:['Escenario','Guion','Actos'],tip:'Actores, diálogos, acotaciones y escenas.'},
  animes:{label:'Anime original',layouts:['Storyboard','Episodios','Paneles'],tip:'Personajes, escenas, expresiones y movimiento básico.'},
  flyers:{label:'Flyer',layouts:['Cartel','Promoción','Evento'],tip:'Título, mensaje, colores, icono y llamado a la acción.'},
@@ -37,9 +38,9 @@ function normalize(raw){
   character:clip(t.character||'🦊',8),
   partner:clip(t.partner||'🐱',8),
   author:clip(t.author||'Un creador del Club',36),
-  action:clip(t.action||'¡Una idea cobra vida!',90),
+  action:clip(t.action||(kind==='libros'?'Una historia para descubrir':'¡Una idea cobra vida!'),90),
   callToAction:clip(t.callToAction||'¡Descubrí más!',65),
-  font:['Moderna','Cómic','Clásica'].includes(t.font)?t.font:'Moderna',
+  font:['Moderna','Cómic','Clásica'].includes(t.font)?t.font:kind==='libros'?'Clásica':'Moderna',
   sceneSeconds:Math.max(2,Math.min(12,Math.round(Number(t.sceneSeconds)||5))),
   effect:['Flotar','Deslizar','Zoom suave'].includes(t.effect)?t.effect:'Flotar',
   bubble:['Redondo','Rectangular','Narración'].includes(t.bubble)?t.bubble:'Redondo',
@@ -50,7 +51,9 @@ function normalize(raw){
     stage:clip(p?.stage||'En un lugar especial',105),
     backdrop:hex(p?.backdrop,defaultBackdrops[(i+1)%5]),
   })),
-  strokes
+  strokes,
+  bookImages:Object.fromEntries(Object.entries(t.bookImages&&typeof t.bookImages==='object'?t.bookImages:{}).filter(([id,data])=>
+   /^img[a-z0-9]{6,20}$/.test(id)&&typeof data==='string'&&data.length<=12000&&/^data:image\/webp;base64,[A-Za-z0-9+/=]+$/.test(data)).slice(0,8))
  }};
 }
 function textHtml(text){
@@ -71,6 +74,26 @@ function paperPages(text){
  }
  pages.push(remaining);
  return pages;
+}
+function manuscriptPages(text,images){
+ const parts=String(text||'').split(/(\[\[imagen:img[a-z0-9]{6,20}\]\])/g),pages=[];
+ let buffer='';
+ const flush=()=>{if(buffer.trim()){pages.push(textHtml(buffer));buffer='';}};
+ for(const part of parts){
+  const match=part.match(/^\[\[imagen:(img[a-z0-9]{6,20})\]\]$/);
+  if(match&&images[match[1]]){
+   flush();pages.push('<figure class="ck-inline-figure"><img alt="Ilustración del libro" src="'+safe(images[match[1]])+'"><figcaption>Ilustración de la historia</figcaption></figure>');
+   continue;
+  }
+  for(const chunk of paperPages(part)){
+   if(buffer.length+chunk.length>900)flush();
+   buffer+=chunk;
+   if(chunk.length>=900)flush();
+  }
+ }
+ flush();
+ if(!pages.length)pages.push('<p class="ck-book-empty">Las primeras páginas de tu libro aparecerán aquí cuando empieces a escribir.</p>');
+ return pages.map((content,i)=>'<article class="ck-panel ck-book ck-manuscript-leaf"><small>PÁGINA '+(i+1)+'</small>'+content+'</article>').join('');
 }
 function sketchMarkup(strokes,color){
  const paths=strokes.map(s=>{
@@ -167,6 +190,13 @@ const bookStyle=`
 .ck-reader .ck-corner-next{right:0}
 .ck-reader .ck-leaf.ck-turn-forward{transform-origin:left;animation:ck-page-forward .38s ease-out}
 .ck-reader .ck-leaf.ck-turn-back{transform-origin:right;animation:ck-page-back .38s ease-out}
+.ck-libros .ck-manuscript-leaf p{font:17px/1.8 Georgia,serif;text-indent:1.3em;text-align:justify;margin:.45em 0 1em;hyphens:auto;overflow-wrap:anywhere}
+.ck-libros .ck-manuscript-leaf .ck-book-empty{text-align:center;text-indent:0;font-style:italic;color:#806d55}
+.ck-libros .ck-inline-figure{margin:20px 0;min-height:56%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;text-align:center}
+.ck-libros .ck-inline-figure img{display:block;max-width:100%;max-height:min(43vh,370px);height:auto;object-fit:contain;border-radius:5px;box-shadow:0 4px 17px #50341a33}
+.ck-libros .ck-inline-figure figcaption{font:italic 13px Georgia,serif;color:#745b40}
+.ck-libros.ck-layout-1 .ck-spread{--paper:#fff8e7}
+.ck-libros.ck-layout-2 .ck-manuscript-leaf{border-top:5px double #b79567}
 @media(min-width:740px){
  .ck-reader .ck-pages.ck-spread{grid-template-columns:repeat(2,minmax(0,1fr))}
  .ck-reader .ck-spread>.ck-verso{grid-column:1;background:linear-gradient(90deg,transparent 86%,#674b2c42),radial-gradient(ellipse at 55% 40%,#fff7e2,var(--paper) 77%,#dbc399)}
@@ -324,9 +354,9 @@ function enhance(data, files){
  const d=normalize(data),kind=d.kind,t=d.tools,strokes=t.strokes;
  if(!modes[kind])return files;
  const artworks=sketchMarkup(strokes,t.backdrop);
- const book=['cuentos','dramas','blogs'].includes(kind);
+ const book=['cuentos','libros','dramas','blogs'].includes(kind);
  const paged=book||kind==='animes';
- const pages=(d.panels||[]).map((p,i)=>{
+ const pages=kind==='libros'?manuscriptPages(d.panels?.[0]?.text,t.bookImages):(d.panels||[]).map((p,i)=>{
   const scene=t.perScene[i],caption=safe(p.title),txt=textHtml(p.text);
   if(kind==='historietas')return '<article class="ck-panel ck-comic"><div class="ck-panel-art" style="background:'+scene.backdrop+'"><span class="ck-face">'+safe(scene.character)+'</span><div class="ck-speech">'+txt+'</div></div><h2>'+caption+'</h2><small>VIÑETA '+(i+1)+'</small></article>';
 
@@ -355,7 +385,7 @@ function enhance(data, files){
  const player=kind==='animes'?'<button type="button" id="ck-scene-play" data-seconds="'+t.sceneSeconds+'" aria-pressed="false">Reproducir escenas</button><button type="button" id="ck-anim-toggle">Pausar movimiento</button>':'';
  const pagination=paged?'<nav class="ck-pagination" aria-label="Navegación de la obra"><button type="button" id="ck-prev">Anterior</button><span id="ck-page" role="status"></span><button type="button" id="ck-next">Siguiente</button>'+player+'</nav>':'';
  const font=t.font==='Clásica'?'Georgia,serif':t.font==='Cómic'?'Trebuchet MS,cursive':'system-ui,Arial,sans-serif';
- const author=kind==='blogs'?'<p class="ck-author">Publicado por '+safe(t.author)+'</p>':'';
+ const author=kind==='blogs'||kind==='libros'?'<p class="ck-author">'+(kind==='libros'?'Escrito por ':'Publicado por ')+safe(t.author)+'</p>':'';
  const cover='<div class="ck-cover"><div class="ck-cover-symbol">'+safe(d.art)+'</div><strong>'+safe(t.action)+'</strong></div>'+artwork;
  const reader=book?bookMarkup(safe(d.title),cover+partner,pages):cover+pagination+'<section class="ck-pages '+(paged?'ck-viewer-pages ':'')+cls+'">'+pages+'</section>';
  const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safe(d.title)+'</title><link rel="stylesheet" href="style.css"></head><body class="ck-public ck-'+kind+(book?' ck-reader':'')+' '+layoutClass+' '+bubbleClass+' '+effectClass+'"><main><header><small>CLUB KRUEKA · '+safe(modes[kind].label.toUpperCase())+'</small><h1>'+safe(d.title)+'</h1><p>'+safe(d.subtitle)+'</p>'+author+partner+'</header>'+reader+cta+'<footer>Una creación original del Club Krueka</footer></main><script src="script.js"></script></body></html>';
@@ -427,7 +457,7 @@ function render(work,s,data,onChange){
  card.append(field('Fondo',t.backdrop,v=>change('backdrop',v),{type:'color'}));
  card.append(field('Tipografía',t.font,v=>change('font',v),{values:['Moderna','Cómic','Clásica']}));
  if(kind==='flyers')card.append(field('Llamado a la acción',t.callToAction,v=>change('callToAction',v),{maxlength:65}));
- if(kind==='blogs')card.append(field('Firma artística (no nombre real)',t.author,v=>change('author',v),{maxlength:36}));
+ if(kind==='blogs'||kind==='libros')card.append(field('Firma artística (no nombre real)',t.author,v=>change('author',v),{maxlength:36}));
  if(['dramas','animes','historietas','cuentos'].includes(kind)){
   card.append(field('Protagonista',t.character,v=>change('character',v),{maxlength:8}));
   card.append(field('Personaje secundario',t.partner,v=>change('partner',v),{maxlength:8}));
@@ -443,9 +473,9 @@ function render(work,s,data,onChange){
  if(kind==='historietas')card.append(field('Globo de texto',t.bubble,v=>change('bubble',v),{values:['Redondo','Rectangular','Narración']}));
  card.append(field('Frase destacada',t.action,v=>change('action',v),{maxlength:90}));
  parent.append(card);
- const guide=document.createElement('div');guide.className='ct-guide';guide.textContent=kind==='dramas'?'Cada parte es un acto. Escribí los diálogos y una acotación escénica.':kind==='animes'?'Cada parte es una escena: personaje, fondo, diálogo y movimiento.':kind==='historietas'?'Cada parte es una viñeta: elegí el personaje y escribí su diálogo.':kind==='dibujos'?'Dibujá en el lienzo y tu ilustración aparecerá en la vista previa.':kind==='flyers'?'Combiná título, colores, imagen y mensaje.':kind==='blogs'?'Usá títulos claros y destacá ideas en negrita.': 'Contá tu historia por capítulos y decorá la portada.';
+ const guide=document.createElement('div');guide.className='ct-guide';guide.textContent=kind==='libros'?'Escribí libremente en un solo espacio. Podés agregar hasta ocho ilustraciones donde quieras y hojear tu libro a la derecha.':kind==='dramas'?'Cada parte es un acto. Escribí los diálogos y una acotación escénica.':kind==='animes'?'Cada parte es una escena: personaje, fondo, diálogo y movimiento.':kind==='historietas'?'Cada parte es una viñeta: elegí el personaje y escribí su diálogo.':kind==='dibujos'?'Dibujá en el lienzo y tu ilustración aparecerá en la vista previa.':kind==='flyers'?'Combiná título, colores, imagen y mensaje.':kind==='blogs'?'Usá títulos claros y destacá ideas en negrita.': 'Contá tu historia por capítulos y decorá la portada.';
  parent.append(guide);
- if(['blogs','cuentos','historietas','dramas','animes','flyers'].includes(kind)){
+ if(['blogs','cuentos','libros','historietas','dramas','animes','flyers'].includes(kind)){
   const bar=document.createElement('div');bar.className='ct-format';
   for(const [label,start,end] of [['Negrita','**','**'],['Cursiva','*','*']]){
    const b=document.createElement('button');b.type='button';b.textContent=label;
