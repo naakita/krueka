@@ -396,10 +396,23 @@ const StudioIA={__loaded:true,
     try{const d=await this.request({action:'load',projectId:id});if(!d.project)throw new Error('Proyecto no encontrado.');this.adopt(d.project);if(d.ai)this.updateAI(d.ai);this.dirty=false;document.getElementById('ks-dialog')?.remove();this.refreshAll();document.getElementById('ks-save').textContent='✓ Proyecto recuperado';}
     catch(e){this.say('sys',e.message);this.showTab('ai');}finally{this.busy=false;this.lock(false);}
   },
-  async submit(){
-    if(this.busy||!this.cloudReady)return;this.busy=true;this.lock(true);if(!(await this.save())){this.busy=false;this.lock(false);return;}
-    try{const d=await this.request({action:'submit',projectId:this.projectId,title:this.title,files:this.files,history:this.history,draft:this.draft});if(d.id)this.projectId=d.id;if(!d.submitted)throw new Error(d.error||'No se pudo enviar a revisión.');this.say('sys','Proyecto enviado al profe. Podés seguir construyendo; una nueva edición vuelve a quedar como borrador.');this.showTab('ai');}
-    catch(e){this.say('sys','No se pudo enviar: '+e.message);this.showTab('ai');}finally{this.busy=false;this.lock(false);}
+  async submit(options={}){
+    if(this.busy||!this.cloudReady)return false;
+    this.busy=true;this.lock(true);
+    if(!(await this.save())){this.busy=false;this.lock(false);return false;}
+    try{
+      const d=await this.request({action:'submit',projectId:this.projectId,title:this.title,files:this.files,history:this.history,draft:this.draft});
+      if(d.id)this.projectId=d.id;
+      if(!d.submitted)throw new Error(d.error||'No se pudo enviar a revisión.');
+      this.say('sys','Proyecto enviado al profe. Aparecerá en la Galería del Club cuando lo aprueben. Si volvés a editarlo, necesitarás enviarlo otra vez.');
+      const status=document.getElementById('ks-save');if(status)status.textContent='✓ Enviado a revisión docente';
+      if(!options.stayInWorkshop)this.showTab('ai');
+      return true;
+    }catch(e){
+      this.say('sys','No se pudo enviar: '+e.message);
+      if(!options.stayInWorkshop)this.showTab('ai');
+      return false;
+    }finally{this.busy=false;this.lock(false);}
   },
   download(){const name=(this.title||'mi-juego').replace(/[^a-zA-Z0-9_-]/g,'-');const d=this.dialog('Descargar tu creación','<p>El proyecto JSON conserva archivos y conversación para volver a importarlo. El HTML permite jugar esta página fuera de Krueka.</p><button id="ks-download-project" class="ks-btn primary">Proyecto editable (.json)</button> <button id="ks-download-game" class="ks-btn">Juego de esta página (.html)</button>');d.querySelector('#ks-download-project').onclick=()=>this.downloadBlob(JSON.stringify({format:'krueka-studio',version:3,title:this.title,files:this.files,history:this.cleanHistory(this.history),draft:this.draft},null,2),name+'.json','application/json');d.querySelector('#ks-download-game').onclick=()=>this.downloadBlob(this.buildPreview(this.preview),name+'.html','text/html');},
   downloadBlob(content,name,type){const url=URL.createObjectURL(new Blob([content],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);},

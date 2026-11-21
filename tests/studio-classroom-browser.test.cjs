@@ -18,7 +18,8 @@ function reply(url,body){const b=__backend;
  if(body.action==='list')return {status:200,data:{ok:true,ai,projects:own.map(p=>({id:p.id,title:p.title,type:'web',updated_at:p.updated_at}))}};
  if(body.action==='load'){if(b.failLoad)return {status:503,data:{ok:false,error:'Fallo de red de prueba'}};return {status:200,data:{ok:true,ai,project:own.find(p=>p.id===body.projectId)||null}};}
  if(body.action==='save'){const project=body.projectId==='new'?'project-'+(++b.seq):body.projectId;
-  const data=JSON.parse(JSON.stringify({...body,id:project,owner:id,updated_at:new Date(Date.now()+b.seq*1000).toISOString()}));b.projects=b.projects.filter(p=>p.id!==project);b.projects.push(data);return {status:200,data:{ok:true,id:project}};}
+  const data=JSON.parse(JSON.stringify({...body,id:project,owner:id,status:'draft',updated_at:new Date(Date.now()+b.seq*1000).toISOString()}));b.projects=b.projects.filter(p=>p.id!==project);b.projects.push(data);return {status:200,data:{ok:true,id:project}};}
+ if(body.action==='submit'){const p=own.find(p=>p.id===body.projectId);if(!p)return {status:404,data:{ok:false,error:'No existe tu libro.'}};p.status='review';return {status:200,data:{ok:true,id:p.id,submitted:true}};}
  if(body.action==='ai'){b.aiCalls++;return {status:503,data:{ok:false,error:'Presupuesto agotado',code:'budget',ai}};}
  return {status:200,data:{ok:true,ai}};
 }

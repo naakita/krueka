@@ -47,6 +47,13 @@ async function until(fn){const deadline=Date.now()+26000;while(!fn()){if(Date.no
  await StudioIA.save();const id=StudioIA.projectId;
  await StudioIA.close();await KruekaStudioAccess.login('TEST01');
  check(StudioIA.projectId===id&&JSON.parse(StudioIA.files['obra.json']).tools.bookImages[key]===data.tools.bookImages[key],'recuperación de imagen en otro ingreso');
+ StudioIA.showTab('club-work');
+ const submit=document.querySelector('#ck-book-submit'),note=document.querySelector('#ck-book-submit-message');
+ check(!!submit&&!submit.hidden,'botón de publicación visible dentro del libro');
+ submit.click();
+ await until(()=>note.textContent.includes('Libro enviado')||note.textContent.includes('No se pudo enviar'));
+ check(note.textContent.includes('Libro enviado')&&StudioIA.tab==='club-work','alumna envía su libro y permanece en el editor');
+ check(__backend.projects.find(p=>p.id===id)?.status==='review','el libro queda pendiente de aprobación docente');
  await StudioIA.close();await KruekaStudioAccess.login('TEST02');
  check(StudioIA.projectId!==id&&StudioIA.files['tipo-club.txt']!=='libros','otro alumno sin acceso al libro');
  await StudioIA.close();

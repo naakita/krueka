@@ -72,6 +72,10 @@
 #krueka-studio .ck-book-toolbar h3{margin:0;font-size:16px;color:#f6e8ce}
 #krueka-studio .ck-book-toolbar p{font-size:13px;line-height:1.5;margin:0;color:#d6e5f0}
 #krueka-studio .ck-book-toolbar .ck-book-hint{color:#b7d4e8}
+#krueka-studio .ck-book-publish{display:grid;justify-items:start;gap:7px;padding:12px;background:#123b36;border:1px solid #5bc5a0;border-radius:10px}
+#krueka-studio .ck-book-publish #ck-book-submit{min-height:43px;white-space:normal;text-align:left;background:#15866e;border-color:#59d7b7;color:#fff;font-weight:750}
+#krueka-studio .ck-book-publish #ck-book-submit:disabled{opacity:.65}
+#krueka-studio .ck-book-publish #ck-book-submit-message{color:#baf5d8;font-weight:700;min-height:1.2em}
 #krueka-studio .ck-book-upload{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 #krueka-studio .ck-book-upload #ck-book-insert{background:#2d5574;border-color:#72a4bc}
 #krueka-studio #ck-book-count{font:12px system-ui;color:#c5d9e8}

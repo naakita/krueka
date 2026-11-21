@@ -7,7 +7,7 @@ const KEY='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
 const cats=[
  ['todos','🌟','Todas'],
  ['juegos','🎮','Videojuegos'],['paginas','🌐','Páginas web'],['aplicaciones','📱','Aplicaciones web'],['blogs','📰','Blogs'],
- ['historietas','💬','Historietas'],['cuentos','📖','Cuentos'],
+ ['historietas','💬','Historietas'],['cuentos','📖','Cuentos'],['libros','📚','Libros'],
  ['dramas','🎭','Dramas'],['animes','✨','Anime original'],
  ['flyers','📣','Afiches'],['dibujos','🎨','Dibujos'],
  ['animaciones','🎞️','Animaciones'],['videos','🎬','Videos']
@@ -21,6 +21,7 @@ const colors={
  blogs:['#0c6780','#17637d','#0f1c37'],
  historietas:['#9d326b','#6a287c','#1b123d'],
  cuentos:['#2b9271','#236e94','#122a43'],
+ libros:['#95622e','#6b417f','#222745'],
  dramas:['#ae5278','#54247d','#1b1439'],
  animes:['#8f44d2','#2966bb','#141441'],
  flyers:['#e86c32','#d34882','#642d71'],
