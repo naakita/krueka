@@ -8,7 +8,7 @@ function deviceId(){return KruekaStudioAccess.session?KruekaStudioAccess.session
 var KruekaStudioAccess=(function(){
  'use strict';
  var api={session:null,ready:false,busy:false},memoryId=null,SESSION_KEY='krueka-studio-session-v1';
- var modules=['club-studio-kits.js','club-studio-media.js','club-studio-3d.js','club-studio-missions.js','club-studio-heroes.js','club-studio-forge.js','club-studio-showcase.js','club-studio-ai.js','club-studio-odyssey.js','club-studio-game-builder.js','club-studio-render-pro.js','club-studio-alt-help.js','club-studio-focus-chat.js','club-studio-classroom.js','club-studio-media-editor.js','club-studio-creative.js','club-studio-academy.js','club-studio-3d-toolbox.js','club-studio-programacion.js','club-studio-python.js','club-studio-talleres.js','club-studio-medios.js','club-studio-club.js','club-krueka-ejemplos.js','club-studio-modelos.js','club-studio-pabellon.js','club-studio-bloques.js','club-prompts-3d.js'];
+ var modules=['club-studio-kits.js','club-studio-media.js','club-studio-3d.js','club-studio-missions.js','club-studio-heroes.js','club-studio-forge.js','club-studio-showcase.js','club-studio-ai.js','club-studio-odyssey.js','club-studio-game-builder.js','club-studio-render-pro.js','club-studio-alt-help.js','club-studio-focus-chat.js','club-studio-classroom.js','club-studio-media-editor.js','club-studio-creative.js','club-studio-academy.js','club-studio-3d-toolbox.js','club-studio-programacion.js','club-studio-python.js','club-studio-talleres.js','club-studio-medios.js','club-studio-club.js','club-krueka-ejemplos.js','club-studio-modelos.js','club-studio-pabellon.js','club-studio-bloques.js','club-prompts-3d.js','club-studio-layout.js'];
  function message(text,error){var el=document.getElementById('studio-login-message');el.textContent=text;el.className='studio-entry-message'+(error?' error':'');}
  function persist(session){try{if(session)sessionStorage.setItem(SESSION_KEY,JSON.stringify(session));else sessionStorage.removeItem(SESSION_KEY);}catch(_e){}}
  api.browserId=function(){
@@ -33,7 +33,7 @@ var KruekaStudioAccess=(function(){
   });
  };
  function setBusy(value){api.busy=value;document.getElementById('studio-code').disabled=value;var b=document.getElementById('studio-login-button');b.disabled=value||!api.ready;b.textContent=value?'Abriendo tu taller…':'Entrar →';}
- function moduleUrl(name){return 'js/'+name+'?v='+(name==='club-studio-creative.js'?'20261121guia1':'20261121bloques1');}
+ function moduleUrl(name){return 'js/'+name+'?v='+(name==='club-studio-layout.js'?'20261121layout1':name==='club-studio-creative.js'?'20261121guia1':'20261121bloques1');}
  function loadModule(i){
   if(i===modules.length)return Promise.resolve();
   return new Promise(function(resolve,reject){var s=document.createElement('script');s.src=moduleUrl(modules[i]);s.onload=resolve;s.onerror=function(){reject(Error('No se pudo cargar una herramienta. Actualizá esta página y revisá internet.'));};document.head.appendChild(s);}).then(function(){return loadModule(i+1);});
