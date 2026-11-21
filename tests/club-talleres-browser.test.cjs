@@ -139,6 +139,11 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
     panel.querySelector('button').click();
     const prompt=panel.querySelector('[readonly]').value;
     verify(prompt.includes('function move(dt)')&&prompt.includes('velocidad al caminar'),'pedido de programación con el código real');
+    const choose=(name,value)=>{const input=panel.querySelector('[name='+name+']');input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));};
+    choose('model','carrera');choose('lesson','vuelta');choose('route','Pista del aula: tres puertas y meta en el puente.');
+    verify(panel.querySelector('[readonly]').value.includes('posición anterior y nueva')&&panel.querySelector('[readonly]').value.includes('meta en el puente'),'pedido con trazado y cruce de puertas');
+    choose('model','misterio');verify(!panel.querySelector('[readonly]').value.includes('meta en el puente'),'trazado sólo en la carrera');
+    choose('model','carrera');
     const log=panel.querySelector('[name=done]');log.value='Verifiqué el giro con ambas flechas.';log.dispatchEvent(new Event('input',{bubbles:true}));
     const stage=panel.querySelector('[name=stage]');stage.value='retomar';stage.dispatchEvent(new Event('input',{bubbles:true}));
     verify(panel.querySelector('[readonly]').value.includes(log.value),'retomar con prueba confirmada');
@@ -180,7 +185,7 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
   await StudioIA.switchProject(projects[i]);
   verify(StudioIA.projectId===projects[i]&&StudioIA.files['index.html'],'reabrir '+selectors[i]);
   if(selectors[i]==='pabellon-juego'){
-   const note=JSON.parse(StudioIA.files['ficha-programacion-3d.json']);verify(note.stage==='retomar'&&note.done.includes('ambas flechas'),'recuperar ficha en su proyecto');
+   const note=JSON.parse(StudioIA.files['ficha-programacion-3d.json']);verify(note.stage==='retomar'&&note.done.includes('ambas flechas')&&note.lesson==='vuelta'&&note.route.includes('meta en el puente'),'recuperar ficha en su proyecto');
   }else verify(!StudioIA.files['ficha-programacion-3d.json'],'fichas aisladas por proyecto');
   if(selectors[i].startsWith('pabellon-'))verify(StudioKits.read(StudioIA.files).light==='noche','reabrir escena editada');
   if(['cuentos','dramas'].includes(selectors[i]))verify(JSON.parse(StudioIA.files['obra.json']).panels[3].text.endsWith('FIN DE LA OBRA'),'texto recuperado');
