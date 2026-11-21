@@ -557,3 +557,5 @@ La guía pública `club-prompts-3d.html` y Mi creación comparten el generador d
 ## Piloto de texto e imágenes con Workers AI
 
 Studio solicita el piloto desde el navegador. La función krueka-studio-ai valida la sesión del alumno, consulta el estado del proveedor y reserva un intento antes de generar texto o imagen. La reserva de Cloudflare comparte los límites del Club, registra el modelo real y liquida cero gasto de OpenAI. El proyecto conserva su historial. La ilustración se comprime en el navegador y sólo se guarda como portada o imagen de una parte cuando el alumno la acepta. La conexión anterior requiere seleccionar explícitamente STUDIO_AI_PROVIDER=openai en el servidor para clientes anteriores. El piloto nunca usa OpenAI como respaldo.
+
+El Chat del proyecto comparte el editor y la sesión del taller. club-chat-proyecto.js prepara las partes editables, conserva imágenes y trazos originales y regenera la vista previa desde los datos de la obra. En animación y video envía configuración de escenas, sin adjuntar clips. La selección y el archivo se vinculan al proyecto actual.
