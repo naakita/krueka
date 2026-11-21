@@ -59,6 +59,8 @@ test('el libro se entrega para revisión y aparece en la galería pública solo 
  const editor=read('js/club-studio-club.js'),publicJs=read('js/club-krueka-public.js');
  assert.match(editor,/id="ck-book-submit"/);
  assert.match(editor,/s\.submit\(\{stayInWorkshop:true\}\)/);
+ assert.match(read('js/club-studio-bloques.js'),/return submitted/);
+ assert.match(read('js/club-studio-programacion.js'),/return submitted/);
  assert.match(read('js/club-studio-ai.js'),/return true;\s*\}catch\(e\)/);
  assert.match(publicJs,/\['libros','📚','Libros'\]/);
  const query=read('supabase/migrations/20261121191500_club_krueka_public_libros.sql');
