@@ -14,7 +14,7 @@ function isMedia(studio){return ['animation','video-edit'].includes(kind(studio)
 const families=[
  {label:'Escribir',ids:['cuentos','dramas','blogs']},
  {label:'Diseñar',ids:['dibujos','historietas','flyers']},
- {label:'Programar',ids:['juegos','paginas','aplicaciones']},
+ {label:'Programar',ids:['juegos','bloques','paginas','aplicaciones']},
  {label:'Animar y filmar',ids:['animes','animaciones','videos']}
 ];
 let activeFamily='Todos';
@@ -43,7 +43,7 @@ function renderHome(studio){
  home.querySelectorAll('[data-kc-page]').forEach(b=>b.onclick=()=>studio.showTab(b.dataset.kcPage));
  home.querySelector('#ck-open-gallery').onclick=()=>studio.showTab('club-gallery');
  home.querySelector('#kc-resume').onclick=()=>{
-  const tab=window.ClubKrueka?.isCreative(studio)?'club-work':StudioKits.read(studio.files)?'create':'programacion';
+  const tab=window.ClubKrueka?.isCreative(studio)?'club-work':window.StudioBloques?.isBlocks(studio)?'bloques':StudioKits.read(studio.files)?'create':'programacion';
   studio.showTab(tab);
  };
  filterHome(activeFamily);
