@@ -33,7 +33,7 @@ var KruekaStudioAccess=(function(){
   });
  };
  function setBusy(value){api.busy=value;document.getElementById('studio-code').disabled=value;var b=document.getElementById('studio-login-button');b.disabled=value||!api.ready;b.textContent=value?'Abriendo tu taller…':'Entrar →';}
- function moduleUrl(name){if(name==='club-prompts-3d.js')return 'js/'+name+'?v=20261121ruta1';if(name==='club-studio-talleres.js')return 'js/'+name+'?v=20261121libros2';if(name==='club-studio-creative.js'||name==='club-studio-club.js')return 'js/'+name+'?v=20261121libros1';return 'js/'+name+'?v='+(name==='club-studio-layout.js'?'20261121layout1':'20261121bloques1');}
+ function moduleUrl(name){if(name==='club-prompts-3d.js')return 'js/'+name+'?v=20261121ruta1';if(name==='club-studio-talleres.js')return 'js/'+name+'?v=20261121dibujos1';if(name==='club-studio-creative.js'||name==='club-studio-club.js')return 'js/'+name+'?v=20261121libros1';return 'js/'+name+'?v='+(name==='club-studio-layout.js'?'20261121layout1':'20261121bloques1');}
  function loadModule(i){
   if(i===modules.length)return Promise.resolve();
   return new Promise(function(resolve,reject){var s=document.createElement('script');s.src=moduleUrl(modules[i]);s.onload=resolve;s.onerror=function(){reject(Error('No se pudo cargar una herramienta. Actualizá esta página y revisá internet.'));};document.head.appendChild(s);}).then(function(){return loadModule(i+1);});
