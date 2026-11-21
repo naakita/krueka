@@ -45,15 +45,14 @@ async function until(fn){const deadline=Date.now()+26000;while(!fn()){if(Date.no
  prev.click();check(prev.disabled,'regreso a portada');
  reader.remove();
  await StudioIA.save();const id=StudioIA.projectId;
- await StudioIA.close();await KruekaStudioAccess.login('TEST01');
- check(StudioIA.projectId===id&&JSON.parse(StudioIA.files['obra.json']).tools.bookImages[key]===data.tools.bookImages[key],'recuperación de imagen en otro ingreso');
- StudioIA.showTab('club-work');
- const submit=document.querySelector('#ck-book-submit'),note=document.querySelector('#ck-book-submit-message');
+ const submit=panel.querySelector('#ck-book-submit'),note=panel.querySelector('#ck-book-submit-message');
  check(!!submit&&!submit.hidden,'botón de publicación visible dentro del libro');
  submit.click();
  await until(()=>note.textContent.includes('Libro enviado')||note.textContent.includes('No se pudo enviar'));
  check(note.textContent.includes('Libro enviado')&&StudioIA.tab==='club-work','alumna envía su libro y permanece en el editor');
  check(__backend.projects.find(p=>p.id===id)?.status==='review','el libro queda pendiente de aprobación docente');
+ await StudioIA.close();await KruekaStudioAccess.login('TEST01');
+ check(StudioIA.projectId===id&&JSON.parse(StudioIA.files['obra.json']).tools.bookImages[key]===data.tools.bookImages[key],'recuperación de imagen en otro ingreso');
  await StudioIA.close();await KruekaStudioAccess.login('TEST02');
  check(StudioIA.projectId!==id&&StudioIA.files['tipo-club.txt']!=='libros','otro alumno sin acceso al libro');
  await StudioIA.close();
@@ -78,7 +77,9 @@ const html=fs.readFileSync(path.join(root,'club-krueka.html'),'utf8').replace('<
    if(!binary)for(const name of ['google-chrome','google-chrome-stable','chromium','chromium-browser'])if(cp.spawnSync(name,['--version'],{encoding:'utf8',timeout:3000}).status===0){binary=name;break;}
    assert.ok(binary,'Chromium no instalado');
    const run=cp.spawnSync(binary,['--headless=new','--no-sandbox','--no-zygote','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--window-size=1280,900','--virtual-time-budget=50000','--dump-dom','file://'+file],{encoding:'utf8',timeout:70000,maxBuffer:8e6});
-   assert.equal(run.status,0,(run.stderr||'').slice(-1200));assert.match(run.stdout,/data-libros-smoke="PASS"/,run.stdout.slice(-5000));
+   assert.equal(run.status,0,(run.stderr||'').slice(-1200));
+   const result=run.stdout.match(/data-libros-smoke="([^"]*)"/);
+   assert.ok(result&&result[1]==='PASS','Resultado de la prueba: '+(result?.[1]||'sin estado final')+' · '+run.stdout.slice(-1000));
   }
  }finally{fs.rmSync(directory,{recursive:true,force:true});}
  console.log('PASS navegador: libro continuo, ilustración, hojas, guardado, recuperación y separación de alumnos.');
