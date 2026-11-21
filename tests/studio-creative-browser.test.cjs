@@ -7,7 +7,7 @@ async function until(fn){const deadline=Date.now()+20000;while(!fn()){if(Date.no
 window.__creativePhase='loading';
 (async()=>{
  await until(()=>window.KruekaStudioAccess?.ready);await KruekaStudioAccess.login('TEST01');
- check(StudioIA.tab==='home','inicio por talleres');check(document.querySelectorAll('[data-creative-start]').length===12,'doce rutas creativas');
+ check(StudioIA.tab==='home','inicio por talleres');check(document.querySelectorAll('[data-creative-start]').length===13,'trece rutas creativas, incluidos bloques');
  const initial=StudioIA.projectId;document.querySelector('[data-creative-start="animation"]').click();await until(()=>StudioKits.read(StudioIA.files)?.kind==='animation'&&!StudioIA.busy);
  check(StudioIA.projectId!==initial&&StudioIA.tab==='create','animación nueva sin reemplazar juego');
  document.getElementById('km-actor-name').value='Explorador';document.getElementById('ks-media-actor-apply').click();
