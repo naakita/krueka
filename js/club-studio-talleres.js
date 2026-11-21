@@ -168,6 +168,10 @@ const bookStyle=`
 .ck-reader header .ck-partner{display:none}
 .ck-reader .ck-pagination{position:static;justify-content:space-between;margin:0 0 10px;padding:0;background:none;color:#f5e6c9;box-shadow:none}
 .ck-reader .ck-pagination button{background:transparent;color:inherit;border-color:#b1a792}
+.ck-libros.ck-reader main{max-width:1400px;padding:clamp(6px,1vw,12px) clamp(8px,1.6vw,22px) 10px}
+.ck-libros.ck-reader .ck-pagination{min-height:35px;gap:10px;margin:0 0 6px;padding:0 1px}
+.ck-libros.ck-reader .ck-pagination #ck-page{font-size:12px;font-weight:700;color:#f0dfbf}
+.ck-libros.ck-reader .ck-pagination button{padding:5px 10px;font-size:12px}
 .ck-reader .ck-pages.ck-spread{--paper:#faedcd;position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:0;isolation:isolate;max-width:none;margin:0 auto;overflow:visible;padding:0;border:4px solid var(--accent);border-bottom-width:7px;border-radius:6px;background:var(--paper);box-shadow:0 2px #ac9775,0 4px #e5d1a5,0 6px #847359,0 12px 28px #0005;touch-action:pan-y pinch-zoom}
 .ck-reader .ck-spread>.ck-leaf,.ck-reader .ck-spread::after{grid-row:1;grid-column:1;min-width:0;box-sizing:border-box;height:clamp(190px,var(--ck-page-height,calc(100dvh - 195px)),700px);overflow-y:auto;overflow-wrap:anywhere;overscroll-behavior-y:contain;padding:clamp(18px,3.3vw,48px) clamp(21px,3.5vw,50px) 60px;border:none;border-radius:2px;text-align:left;background:linear-gradient(90deg,#a7824840,transparent 10%,transparent 91%,#af864829),radial-gradient(ellipse at 50% 40%,#fff7e2,var(--paper) 72%,#e4c996);color:#392d20;box-shadow:none;font:17px/1.55 Georgia,serif;scrollbar-width:thin;scrollbar-color:#aa9168 transparent}
 .ck-reader .ck-spread>.ck-leaf[hidden]{display:none}
@@ -190,6 +194,9 @@ const bookStyle=`
 .ck-reader .ck-corner-next{right:0}
 .ck-reader .ck-leaf.ck-turn-forward{transform-origin:left;animation:ck-page-forward .38s ease-out}
 .ck-reader .ck-leaf.ck-turn-back{transform-origin:right;animation:ck-page-back .38s ease-out}
+.ck-libros.ck-reader .ck-leaf .ck-cover{gap:clamp(8px,2vh,16px)}
+.ck-libros.ck-reader .ck-cover-subtitle{margin:0;font:italic clamp(14px,1.8vw,17px)/1.35 Georgia,serif;color:#71583c;text-align:center}
+.ck-libros.ck-reader .ck-cover-byline{margin:0;font:13px/1.4 Georgia,serif;color:#71583c;text-align:center}
 .ck-libros .ck-manuscript-leaf p{font:17px/1.8 Georgia,serif;text-indent:1.3em;text-align:justify;margin:.45em 0 1em;hyphens:auto;overflow-wrap:anywhere}
 .ck-libros .ck-manuscript-leaf .ck-book-empty{text-align:center;text-indent:0;font-style:italic;color:#806d55}
 .ck-libros .ck-inline-figure{margin:20px 0;min-height:56%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;text-align:center}
@@ -306,13 +313,14 @@ function readWork(){
  if(book){
   const fit=()=>{
    const top=sheet.getBoundingClientRect().top+window.scrollY;
-   sheet.style.setProperty('--ck-page-height',Math.floor(window.innerHeight-top-18)+'px');
+   sheet.style.setProperty('--ck-page-height',Math.floor(window.innerHeight-top-12)+'px');
   };
   fit();
   window.addEventListener('resize',fit);
   if(window.ResizeObserver){
    const resize=new ResizeObserver(fit);
-   resize.observe(document.querySelector('header'));
+   const header=document.querySelector('header');
+   if(header)resize.observe(header);
    resize.observe(document.querySelector('.ck-pagination'));
   }
   wide.addEventListener('change',()=>{page-=page%step();showPage();});
@@ -386,9 +394,11 @@ function enhance(data, files){
  const pagination=paged?'<nav class="ck-pagination" aria-label="Navegación de la obra"><button type="button" id="ck-prev">Anterior</button><span id="ck-page" role="status"></span><button type="button" id="ck-next">Siguiente</button>'+player+'</nav>':'';
  const font=t.font==='Clásica'?'Georgia,serif':t.font==='Cómic'?'Trebuchet MS,cursive':'system-ui,Arial,sans-serif';
  const author=kind==='blogs'||kind==='libros'?'<p class="ck-author">'+(kind==='libros'?'Escrito por ':'Publicado por ')+safe(t.author)+'</p>':'';
- const cover='<div class="ck-cover"><div class="ck-cover-symbol">'+safe(d.art)+'</div><strong>'+safe(t.action)+'</strong></div>'+artwork;
+ const bookDetails=kind==='libros'?'<p class="ck-cover-subtitle">'+safe(d.subtitle)+'</p><p class="ck-cover-byline">Escrito por '+safe(t.author)+'</p>':'';
+ const cover='<div class="ck-cover">'+bookDetails+'<div class="ck-cover-symbol">'+safe(d.art)+'</div><strong>'+safe(t.action)+'</strong></div>'+artwork;
  const reader=book?bookMarkup(safe(d.title),cover+partner,pages):cover+pagination+'<section class="ck-pages '+(paged?'ck-viewer-pages ':'')+cls+'">'+pages+'</section>';
- const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safe(d.title)+'</title><link rel="stylesheet" href="style.css"></head><body class="ck-public ck-'+kind+(book?' ck-reader':'')+' '+layoutClass+' '+bubbleClass+' '+effectClass+'"><main><header><small>CLUB KRUEKA · '+safe(modes[kind].label.toUpperCase())+'</small><h1>'+safe(d.title)+'</h1><p>'+safe(d.subtitle)+'</p>'+author+partner+'</header>'+reader+cta+'<footer>Una creación original del Club Krueka</footer></main><script src="script.js"></script></body></html>';
+ const header=kind==='libros'?'':'<header><small>CLUB KRUEKA · '+safe(modes[kind].label.toUpperCase())+'</small><h1>'+safe(d.title)+'</h1><p>'+safe(d.subtitle)+'</p>'+author+partner+'</header>';
+ const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+safe(d.title)+'</title><link rel="stylesheet" href="style.css"></head><body class="ck-public ck-'+kind+(book?' ck-reader':'')+' '+layoutClass+' '+bubbleClass+' '+effectClass+'"><main>'+header+reader+cta+'<footer>Una creación original del Club Krueka</footer></main><script src="script.js"></script></body></html>';
  const css=':root{--accent:'+accent+';--back:'+t.backdrop+'}*{box-sizing:border-box}body{margin:0;color:#152c49;background:var(--back);font:16px/1.5 '+font+'}main{max-width:1080px;margin:auto;padding:22px}header{text-align:center;padding:25px 10px}header small{color:var(--accent);font:800 12px system-ui;letter-spacing:2px}h1{font-size:clamp(28px,4vw,48px);line-height:1.15;margin:10px 0 7px}header p{color:#4a6177;margin:0}.ck-cover{padding:24px;background:linear-gradient(125deg,var(--accent),#192648);border-radius:24px;display:flex;align-items:center;justify-content:center;gap:24px;color:white}.ck-cover-symbol{font-size:70px}.ck-cover strong{font-size:clamp(16px,3vw,27px);max-width:460px}.ck-pages{margin:23px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.ck-panel{padding:22px;background:white;border:1px solid #c9d9eb;border-radius:16px;overflow-wrap:anywhere;min-height:190px}.ck-panel small{font:800 11px system-ui;color:var(--accent);letter-spacing:1px}.ck-panel h2{font-size:21px;margin:10px 0}.ck-panel p{margin:7px 0;color:#304c69}.ck-art{width:100%;height:auto;max-height:450px;display:block;border-radius:13px;border:1px solid #aebdd0}.ck-drawing{margin:23px auto;max-width:840px}.ck-drawing figcaption{text-align:center;font-size:12px;color:#687f99}.ck-partner{display:block;font-size:24px;margin-top:10px}.ck-cta{margin:22px auto;padding:20px;background:var(--accent);border-radius:13px;text-align:center;color:white;font-size:25px;font-weight:900}.ck-public footer{text-align:center;font:12px system-ui;color:#6e839a;padding:25px 0}.ck-grid-comic{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:9px}.ck-comic{border:3px solid #162b46;border-radius:5px;padding:9px}.ck-panel-art{height:185px;display:flex;align-items:center;justify-content:space-around;gap:10px;padding:12px}.ck-face{font-size:60px}.ck-speech{display:block;max-width:68%;background:#fff;border:2px solid #142942;border-radius:25px;padding:11px;font-size:14px}.ck-speech p{margin:0}.ck-comic h2{font-size:18px}.ck-stage{background:#1a2944;color:#fff;text-align:center}.ck-stage small{color:#aadeff}.ck-stage-top{display:flex;justify-content:center;align-items:center;gap:15px;border-bottom:3px solid var(--accent);padding:15px 0}.ck-stage-top span{font-size:48px}.ck-stage h2,.ck-stage .ck-dialogue p{color:#fff}.ck-dialogue{font-style:italic}.ck-anime{background:#111e35;color:white}.ck-anime h2{color:white}.ck-anime-scene{position:relative;min-height:180px;border-radius:12px;overflow:hidden;display:flex;align-items:center;padding:10px}.ck-anim-char{font-size:77px;animation:float 2s ease-in-out infinite alternate}.ck-anime-bubble{max-width:65%;margin-left:auto;background:#fff;border:2px solid #1c385d;color:#1a3351;border-radius:23px;padding:12px;font-size:13px}.ck-anime-bubble p{margin:0}.ck-grid-flyer{grid-template-columns:1fr}.ck-flyers main{max-width:690px}.ck-flyers .ck-cover{flex-direction:column;text-align:center}.ck-flyer-item{text-align:center;min-height:auto;padding:10px 20px}.ck-flyer-item h2{font-size:23px;color:var(--accent)}.ck-dibujos .ck-cover{padding:10px}.ck-dibujos .ck-cover-symbol{font-size:45px}.ck-blogs .ck-cover{justify-content:flex-start}.ck-cuentos .ck-book{font-family:Georgia,serif}.ck-layout-1 .ck-pages{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}.ck-layout-2 .ck-pages{grid-template-columns:1fr}.ck-bubble-1 .ck-speech{border-radius:7px}.ck-bubble-2 .ck-speech{border-style:dashed;background:#fffbe5}.ck-effect-1 .ck-anim-char{animation-name:slide}.ck-effect-2 .ck-anim-char{animation-name:zoom}.ck-author{font-size:12px;color:#476b86;font-style:italic}.ck-public.paused .ck-anim-char{animation-play-state:paused}@keyframes slide{to{transform:translateX(65px)}}@keyframes zoom{to{transform:scale(1.15)}}@keyframes float{to{transform:translateX(25px) translateY(-18px) rotate(8deg)}}@media(max-width:600px){main{padding:11px}.ck-pages{grid-template-columns:1fr}.ck-cover-symbol{font-size:48px}.ck-cover{padding:16px}.ck-anime-scene{min-height:140px}}';
  const script=paged?'('+readWork.toString()+')();':'/* Mi obra creada con Club Krueka. */';
  return {...files,'index.html':html,'style.css':css+readingStyle+(book?bookStyle:''),'script.js':script,'obra.json':JSON.stringify(d)};

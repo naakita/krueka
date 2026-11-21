@@ -35,6 +35,10 @@ async function until(fn){const deadline=Date.now()+26000;while(!fn()){if(Date.no
  const loaded=new Promise(done=>reader.onload=done);reader.srcdoc=StudioIA.buildPreview.call(StudioIA,'index.html');await loaded;
  const doc=reader.contentDocument,pages=[...doc.querySelectorAll('.ck-spread > .ck-leaf')];
  check(pages.length>=5&&pages.some(p=>p.querySelector('.ck-inline-figure img')),'libro real con imagen y varias páginas');
+ const spread=doc.querySelector('.ck-spread'),bounds=spread.getBoundingClientRect();
+ check(!doc.querySelector('main > header'),'sin cabecera repetida encima del libro');
+ check(bounds.top<70&&bounds.height>540,'vista previa ampliada verticalmente para las páginas');
+ check(!!doc.querySelector('.ck-cover-byline'),'firma artística integrada a la portada');
  const next=doc.querySelector('#ck-next'),prev=doc.querySelector('#ck-prev');
  check(!!next&&!next.disabled&&prev.disabled,'portada abierta');next.click();
  check(!prev.disabled&&doc.querySelector('#ck-page').textContent.includes('Página'),'páginas navegables');
