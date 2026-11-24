@@ -28,7 +28,7 @@ const books={cuento:{
  ],tools:{action:'Cuaderno de inventos',author:'La redacción del Club'}
 }};
 const book=books[id]&&params.get('vista')==='libro'&&window.ClubTalleres;
-const files=book?book.enhance({title:model.title,art:model.icon,color:model.colors[0],...books[id]},{}):window.KruekaEjemplos.make(model);
+let files=book?book.enhance({title:model.title,art:model.icon,color:model.colors[0],...books[id]},{}):window.KruekaEjemplos.make(model);
 if(books[id]){
  const alternate=document.createElement('a');
  alternate.href='?ejemplo='+encodeURIComponent(id)+(book?'':'&vista=libro');
@@ -49,8 +49,42 @@ doc=doc.replace(/<head\b[^>]*>/i,m=>m+policy);
 document.getElementById('model-title').textContent=model.title;
 document.getElementById('model-category').textContent='💡 MODELO ORIGINAL · '+model.tag;
 document.title=model.title+' · Modelos del Club';
-const frame=document.getElementById('preview');frame.srcdoc=doc;frame.hidden=false;status.hidden=true;
+const frame=document.getElementById('preview'),stage=document.getElementById('preview-stage');
+let drawing;
+if(id==='dibujo'){
+ const tools=window.ClubTalleres;
+ drawing=JSON.parse(files['obra.json']);
+ stage.classList.add('art-stage');
+ const host=document.createElement('section');host.id='krueka-studio';stage.append(host);
+ tools.renderDrawingLab(host,{cloudReady:true,busy:false,projectId:'artelab'},drawing.tools,()=>drawing,next=>{
+  const clean=tools.normalize(next),generated=tools.enhance(clean,{});
+  if(Object.values(generated).some(v=>v.length>120000)||Object.values(generated).reduce((n,v)=>n+v.length,0)>215000)return false;
+  drawing=clean;files=generated;if(document.body.classList.contains('code-open'))source();return true;
+ });
+ document.getElementById('show-code').textContent='⌘ Ver código del dibujo';
+}else{frame.srcdoc=doc;frame.hidden=false;}
+status.hidden=true;
 document.getElementById('start-model').href='club-krueka.html?plantilla='+encodeURIComponent(model.id);
+let adjustments;
+const color=v=>/^#[a-f0-9]{6}$/i.test(v);
+window.addEventListener('message',e=>{
+ if(e.source!==frame.contentWindow||e.data?.type!=='krueka-model-draft')return;
+ const d=e.data;
+ if(id==='flyer'&&typeof d.title==='string'&&color(d.color))adjustments={title:d.title.slice(0,70),color:d.color};
+ if(id==='animacion'&&Number.isInteger(d.speed)&&d.speed>=1&&d.speed<=10&&color(d.color))adjustments={speed:d.speed,color:d.color};
+ if(id==='video'&&Array.isArray(d.clips)&&d.clips.length===4&&d.clips.every(v=>typeof v==='string'&&v.length<=100))adjustments={clips:d.clips};
+});
+if(drawing||['flyer','animacion','video'].includes(id)){
+ const start=document.getElementById('start-model');
+ start.addEventListener('click',e=>{
+  if(!drawing&&!adjustments)return;
+  try{
+   const key=crypto.randomUUID();
+   sessionStorage.setItem('krueka-modelo:'+key,JSON.stringify({id,content:drawing?drawing.tools:adjustments}));
+   start.href='club-krueka.html?plantilla='+id+'&boceto='+key;
+  }catch(err){e.preventDefault();status.hidden=false;status.textContent='El navegador no pudo guardar el borrador para llevarlo al taller. Volvé a intentarlo antes de salir.';status.scrollIntoView();}
+ });
+}
 document.getElementById('fullscreen').onclick=()=>{const stage=document.getElementById('preview-stage');if(stage.requestFullscreen)stage.requestFullscreen().catch(()=>{});};
 const btn=document.getElementById('show-code');
 let current='index.html';

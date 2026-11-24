@@ -769,6 +769,23 @@ function renderDrawingLab(parent,s,t,current,onChange){
  const custom=document.createElement('input');custom.type='color';custom.value=ink;custom.title='Elegir otro color';custom.setAttribute('aria-label','Elegir otro color');custom.onchange=()=>{ink=custom.value;save({ink},false);repaint();};palette.append(custom);
  const actions=box.querySelector('.ct-lab-actions');
  toolButton('↗ Mover objetos','move',actions);toolButton('🎯 Cuentagotas','picker',actions);toolButton('🧽 Borrar','erase',actions);
+ const png=document.createElement('button');png.type='button';png.textContent='Descargar PNG';
+ png.onclick=async()=>{
+  const t=current().tools;
+  const svg=sketchMarkup(t.strokes,t.backdrop,t).replace('<svg ','<svg width="1800" height="960" ');
+  const source=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+  png.disabled=true;
+  try{
+   const image=new Image();image.src=source;await image.decode();
+   const output=document.createElement('canvas');output.width=1800;output.height=960;
+   output.getContext('2d').drawImage(image,0,0,output.width,output.height);
+   const file=await new Promise(resolve=>output.toBlob(resolve,'image/png'));if(!file)throw Error();
+   const url=URL.createObjectURL(file),link=document.createElement('a');link.href=url;link.download='mi-arte-krueka.png';
+   document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+   hint.textContent='Tu dibujo está listo para descargar.';
+  }catch(e){hint.textContent='No se pudo exportar el PNG. Podés volver a intentarlo.';}
+  finally{URL.revokeObjectURL(source);png.disabled=false;}
+ };actions.append(png);
  const undo=document.createElement('button');undo.type='button';undo.textContent='↶ Deshacer';undo.onclick=()=>{if(!undoStack.length)return;const now=snapshot(current()),before=undoStack.pop();if(useSnapshot(before)){redoStack.push(now);selected=null;repaint();}else undoStack.push(before);};actions.append(undo);
  const redo=document.createElement('button');redo.type='button';redo.textContent='↷ Rehacer';redo.onclick=()=>{if(!redoStack.length)return;const now=snapshot(current()),after=redoStack.pop();if(useSnapshot(after)){undoStack.push(now);repaint();}else redoStack.push(after);};actions.append(redo);
  const clear=document.createElement('button');clear.type='button';clear.textContent='🧹 Limpiar todo';clear.onclick=()=>{if(!confirm('¿Borrar todos los trazos, objetos y colores de este dibujo?'))return;if(save({strokes:[],stamps:[],templateColors:{},drawingImages:{},coloringPage:'blanco'})){selected=null;templates.querySelectorAll('[data-template]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.template==='blanco')));repaint();}};actions.append(clear);
@@ -820,6 +837,7 @@ function renderDrawingLab(parent,s,t,current,onChange){
   }
   if(data.layerVisibility[activeLayer]===false){hint.textContent='Mostrá la capa seleccionada antes de dibujar.';return;}
   if(data.layerLocked[activeLayer]){hint.textContent='La capa está bloqueada. Desbloqueala en Capas para seguir pintando.';return;}
+  if(data.strokes.length>=55){hint.textContent='Llegaste a 55 trazos. Podés borrar uno, usar objetos o descargar tu dibujo.';return;}
   canvas.setPointerCapture(e.pointerId);draft={type:tool==='pen'?'pen':tool,color:ink,width,opacity,smooth,mirror,radialSymmetry,layer:activeLayer,style:tool==='pen'?style:'pen',fill:shapeFill,points:[[x,y]]};repaint();
  };
  canvas.onpointermove=e=>{
@@ -953,5 +971,5 @@ function render(work,s,data,onChange){
   paintSketch(canvas,t.strokes,null,t.backdrop);
  }
 }
-window.ClubTalleres={modes,normalize,enhance,render,sketchMarkup,readingFiles};
+window.ClubTalleres={modes,normalize,enhance,render,renderDrawingLab,sketchMarkup,readingFiles};
 })();

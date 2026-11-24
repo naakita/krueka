@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const T=window.ClubTalleres,S=window.StudioIA;
-if(window.ClubMedios||!T||!S)return;
+if(window.ClubMedios||!T)return;
 const baseN=T.normalize,baseE=T.enhance,baseR=T.render;
 const kinds=['historietas','animes','cuentos','dramas'],views=['Personaje','Imagen','Figura 3D'],shapes=['Cubo','Esfera','Pirámide'];
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -203,6 +203,7 @@ function render(work,s,raw,onChange){
   host.append(box);
  }
 }
+if(!S){window.ClubMedios={compact};return;}
 const prior=S.buildPreview;
 S.buildPreview=function(path){
  const html=prior.apply(this,arguments);
