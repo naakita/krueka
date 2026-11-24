@@ -66,6 +66,33 @@ async function checkModel(page,id,base){
  assert.equal(await page.evaluate(()=>StudioIA.files['index.html']),summary.files['index.html']);
  assert.deepEqual(errors,[],id);page.off('pageerror',onError);console.log('PASS '+id+' · modelo y copia privada');
 }
+async function checkProgramming(page,base){
+ await page.goto(base+'/club-krueka.html');
+ await page.locator('#studio-code').fill('TEST01');await page.locator('#studio-login-button').click();
+ await page.waitForFunction(()=>window.StudioIA?.cloudReady);
+ const kits=await page.evaluate(()=>StudioKits.catalog.map(kit=>{
+  const files=StudioKits.create(kit.id);
+  StudioIA.validFiles(files);
+  if(!files['index.html'])throw Error('Falta la vista previa de '+kit.id);
+  return kit.id;
+ }));
+ console.log('Plantillas que abren como proyecto: '+kits.join(', '));
+ await page.evaluate(()=>StudioIA.createKit('arcade-python'));
+ const area=page.locator('#kp-python-editor');
+ const original=await area.inputValue();
+ const code=original.replace('velocidad = 8','velocidad = 12')+'\nprint("Misión lista")';
+ await area.fill(code);
+ await page.locator('#kp-program-run').click();
+ const frame=page.frameLocator('#ks-frame');
+ try{
+  await frame.locator('#py-output').getByText('Misión lista').waitFor({timeout:75000});
+ }catch(err){throw Error('La vista previa de Python no ejecutó el código: '+await frame.locator('#py-status').innerText());}
+ await frame.locator('#py-arena').press('ArrowRight');
+ assert.ok(await page.evaluate(()=>StudioIA.save()));
+ await page.evaluate(()=>StudioIA.switchProject(StudioIA.projectId));
+ assert.equal(await page.evaluate(()=>StudioIA.files['codigo-python.txt']),code);
+ console.log('PASS Python · editar, ejecutar y reabrir');
+}
 (async()=>{
  await new Promise(ok=>server.listen(0,'127.0.0.1',ok));let browser;
  try{
@@ -76,5 +103,8 @@ async function checkModel(page,id,base){
    await context.addInitScript('if(location.pathname.endsWith("/club-krueka.html")){'+setup+'}');
    try{await checkModel(await context.newPage(),id,base);}finally{await context.close();}
   }
+  const classroom=await browser.newContext();
+  await classroom.addInitScript('if(location.pathname.endsWith("/club-krueka.html")){'+setup+'}');
+  try{await checkProgramming(await classroom.newPage(),base);}finally{await classroom.close();}
  }finally{if(browser)await browser.close();await new Promise(ok=>server.close(ok));}
 })().catch(e=>{console.error(e);process.exitCode=1});
