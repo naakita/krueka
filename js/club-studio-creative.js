@@ -69,16 +69,17 @@ function sync(studio){
  if(label)label.textContent=work?'Tu obra':media?'Tu creación':'Tu juego';
  const enlarge=mounted.querySelector('#ks-play-space');
  if(enlarge)enlarge.textContent=mounted.classList.contains('ks-play-only')?'Volver al taller':work?'Ampliar obra':media?'Ampliar creación':'Ampliar juego';
- if(media){
+ const localMedia=media&&(!studio.aiReady||mounted.querySelector('#ks-help-mode')?.value==='local');
+ if(localMedia){
   const status=mounted.querySelector('#ks-ai-status'),select=mounted.querySelector('#ks-help-mode'),send=mounted.querySelector('#ks-send'),tip=mounted.querySelector('#ks-compose-tip');
   if(status)status.textContent='Guía de herramientas, sin IA generativa. Las fotos y los videos no se envían al chat de IA.';
-  if(select){select.value='local';select.disabled=true;}
+  if(select){select.value='local';select.disabled=!studio.aiReady||studio.busy;}
   if(send&&!studio.busy)send.textContent='Consultar guía →';
   if(tip)tip.textContent='Preguntá por poses, recortes, transiciones o exportación.';
   const prompt=mounted.querySelector('#ks-prompt');if(prompt)prompt.placeholder=kind(studio)==='animation'?'¿Cómo agrego una pose o cambio el movimiento?':'¿Cómo recorto un video o agrego una transición?';
   const today=mounted.querySelector('#ks-class-today');if(today)today.onclick=()=>studio.showTab('learn');
  }
- const modes=mounted.querySelector('.ks-modes');if(modes)modes.classList.toggle('kc-media-hidden',media);
+ const modes=mounted.querySelector('.ks-modes');if(modes)modes.classList.toggle('kc-media-hidden',localMedia);
  const reflection=mounted.querySelector('#kc-reflection');if(reflection)reflection.readOnly=studio.busy||!studio.cloudReady;
 }
 function mount(studio){
@@ -121,10 +122,10 @@ function install(){
  studio.adopt=function(){const result=adopt.apply(this,arguments);renderHome(this);return result;};
  studio.createKit=async function(id){const previous=this.projectId;await start.apply(this,arguments);if(this.projectId!==previous&&StudioKits.read(this.files)?.kind===id){this.showTab('create');document.getElementById('ks-create')?.scrollTo(0,0);}};
  studio.send=async function(){
-  if(!isMedia(this))return send.apply(this,arguments);
+  if(!isMedia(this)||(this.aiReady&&mounted?.querySelector('#ks-help-mode')?.value==='ai'))return send.apply(this,arguments);
   if(this.busy||!this.cloudReady)return;const q=document.getElementById('ks-prompt'),value=q?.value.trim();if(!value)return;
   this.busy=true;this.lock(true);
-  try{this.say('user',value);this.say('sys','Guía de herramientas · sin IA generativa\n'+guidance(kind(this),value));this.draft='';q.value='';this.changed();await this.save();}
+  try{this.say('user',value);this.say('sys',window.ClubProjectChat?.asksReview(value)?window.ClubProjectChat.localReview(this):'Guía de herramientas · sin IA generativa\n'+guidance(kind(this),value));this.draft='';q.value='';this.changed();await this.save();}
   finally{this.busy=false;this.lock(false);}
  };
  studio.__creativeInstalled=true;

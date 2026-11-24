@@ -55,6 +55,8 @@ function lesson(studio){
 function sync(studio){
  if(!mounted?.isConnected)return;
  const select=mounted.querySelector('#ks-help-mode');if(!select)return;
+ if(studio.aiReady&&!mounted.dataset.aiWasReady)help='ai';
+ if(studio.aiReady)mounted.dataset.aiWasReady='1';else delete mounted.dataset.aiWasReady;
  if(!studio.aiReady&&help==='ai')help='local';
  select.value=help;select.options[0].disabled=!studio.aiReady;select.disabled=studio.busy||!studio.cloudReady;
  const send=mounted.querySelector('#ks-send'),tip=mounted.querySelector('#ks-compose-tip'),prompt=mounted.querySelector('#ks-prompt');
@@ -116,7 +118,8 @@ function install(){
   this.busy=true;this.lock(true);
   try{
    this.say('user',text);const result=localChange(this.files,text);
-   if(this.mode==='plan')this.say('sys','Ayuda local · plan de prueba: elegí una regla en Bases y reglas, anotá su valor, cambialo y compará el resultado con Probar. '+examples);
+   if(window.ClubProjectChat?.asksReview(text)){this.say('sys',window.ClubProjectChat.localReview(this));this.draft='';q.value='';}
+   else if(this.mode==='plan')this.say('sys','Ayuda local · plan de prueba: elegí una regla en Bases y reglas, anotá su valor, cambialo y compará el resultado con Probar. '+examples);
    else if(result.files){
     const files=this.validFiles(result.files);this.checkpoint();this.files=files;
     this.say('sys','Ayuda local · sin IA generativa.\n'+result.changes.join('\n')+'\nProbá el juego y compará el resultado.',{artifact:{title:this.title,files:['game-config.js']}});

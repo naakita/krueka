@@ -142,7 +142,7 @@ const StudioIA={__loaded:true,
       <nav class="ks-projectbar" aria-label="Herramientas del proyecto"><button id="ks-projects" class="ks-btn">Mis proyectos</button><button id="ks-new" class="ks-btn primary">＋ Crear</button><input id="ks-title" aria-label="Nombre del proyecto" maxlength="80" value="Mi portal de juegos"><button id="ks-undo" class="ks-btn">↶ Deshacer</button><button id="ks-export" class="ks-btn">Descargar</button><button id="ks-import" class="ks-btn">Importar</button><button id="ks-submit" class="ks-btn">Enviar al profe</button><input id="ks-import-file" type="file" accept=".json,application/json,.html,text/html" hidden></nav>
       <main class="ks-main">
         <section class="ks-left">
-          <nav class="ks-tabs" aria-label="Herramientas de creación"><button class="ks-btn" data-tab="ai" aria-pressed="true">✦ Chat</button><button class="ks-btn" data-tab="create" aria-pressed="false">🎨 Bases y reglas</button><button class="ks-btn" data-tab="learn" aria-pressed="false">📖 Mi clase</button></nav>
+          <nav class="ks-tabs" aria-label="Herramientas de creación"><button class="ks-btn" data-tab="ai" aria-pressed="true">✦ Chat del proyecto</button><button class="ks-btn" data-tab="create" aria-pressed="false">🎨 Bases y reglas</button><button class="ks-btn" data-tab="learn" aria-pressed="false">📖 Mi clase</button></nav>
           <div class="ks-work"><section id="ks-create" class="ks-tool" hidden></section><section id="ks-learn" class="ks-tool" hidden></section><section id="ks-ai"><div id="ks-ai-status" class="ks-notice" role="status"></div><div id="ks-usage" class="ks-usage"></div><div class="ks-modes"><button class="ks-btn ks-mode" data-mode="plan" aria-pressed="false">Planear</button><button class="ks-btn ks-mode" data-mode="build" aria-pressed="true">Construir</button><button id="ks-repair" class="ks-btn">Reparar</button><span id="ks-model" class="ks-model"></span></div><div id="ks-chat" class="ks-chat" role="log" aria-label="Conversación de este proyecto" aria-live="polite"></div><form id="ks-form" class="ks-compose"><label for="ks-prompt">Tu idea o el próximo cambio</label><textarea id="ks-prompt" maxlength="1200" placeholder="Agregá enemigos que se muevan. Conservá los controles y las reglas actuales." required></textarea><div class="ks-actions"><span id="ks-compose-tip" class="ks-tip">Un pedido, un cambio, una prueba.</span><button id="ks-send" class="ks-btn primary" type="submit">Enviar →</button></div></form></section></div>
         </section>
         <section class="ks-right">
@@ -236,17 +236,21 @@ const StudioIA={__loaded:true,
     el.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>this.playCurrent());
     if(this.waiting){const pending=document.createElement('p');pending.className='ks-msg ai ks-waiting';pending.textContent='Preparando el cambio… Tu juego se conserva mientras esperamos.';el.appendChild(pending);}
     el.querySelectorAll('button').forEach(b=>b.disabled=this.busy||!this.cloudReady);
-    el.scrollTop=el.scrollHeight;
+    window.ClubProjectChat?.mount(this);el.scrollTop=el.scrollHeight;
   },
   playCurrent(){const panel=document.getElementById('krueka-studio');panel.classList.remove('ks-play-only');if(document.getElementById('ks-code').classList.contains('on'))this.toggleCode();this.renderPreview(true);panel.querySelector('.ks-right').scrollIntoView({block:'nearest',behavior:'smooth'});document.getElementById('ks-frame').focus();},
   async send(){
     if(this.busy||!this.cloudReady)return;
     const q=document.getElementById('ks-prompt'),text=q.value.trim();if(!text)return;
     if(!this.aiReady){this.busy=true;this.lock(true);try{this.say('user',text,{pending:true});this.say('sys','Idea guardada como pendiente: todavía no se modificó el juego. Podés usar este pedido cuando la IA esté disponible.');this.draft='';q.value='';this.changed();await this.save();}finally{this.busy=false;this.lock(false);}return;}
-    const mode=window.ClubKrueka?.isCreative(this)?'plan':this.mode;this.say('user',text);this.draft='';q.value='';this.busy=true;this.waiting=true;this.lock(true);this.renderChat();
+    const mode=this.mode;this.say('user',text);this.draft='';q.value='';this.busy=true;this.waiting=true;this.lock(true);this.renderChat();
     try{
-      const d=await this.queuedAI({action:'ai',projectId:this.projectId,mode,prompt:text,files:this.files,history:this.history});
-      if(d.files&&mode==='build'&&Object.keys(d.files).length){const merged=this.validFiles({...this.files,...d.files});if(!merged['index.html'])throw new Error('El cambio no conserva la entrada del juego.');this.checkpoint();this.files=merged;}
+      const original=JSON.stringify(this.files),project=this.projectId;
+      const ctx=window.ClubProjectChat?.inspect(this);
+      const d=await this.queuedAI({action:'ai',projectId:project,mode,prompt:text,files:ctx?.files||this.files,history:this.history,
+        ...(ctx?{studioContext:{description:ctx.description,info:ctx.info,key:ctx.key,selection:ctx.selection,creative:ctx.creative}}:{})});
+      if(project!==this.projectId||original!==JSON.stringify(this.files))throw Error('Tu proyecto cambió durante la consulta. Revisá la versión actual y volvé a pedir el cambio.');
+      if(d.files&&mode==='build'&&Object.keys(d.files).length){const merged=this.validFiles(ctx?ctx.apply(d.files):{...this.files,...d.files});if(!merged['index.html'])throw new Error('El cambio no conserva la entrada del juego.');this.checkpoint();this.files=merged;if(ctx?.creative)this.title=JSON.parse(merged['obra.json']).title;}
       this.say('ai',(d.summary||'Listo.')+'\n\nProbá: '+(d.test||'Revisá la vista previa.'),mode==='build'&&Object.keys(d.files||{}).length?{artifact:{title:this.title,files:Object.keys(d.files)}}:{});
       if(d.ai)this.updateAI(d.ai);this.changed();this.refreshAll();await this.save();
     }catch(e){
@@ -316,7 +320,7 @@ const StudioIA={__loaded:true,
     if(e.data.type!=='krueka-studio-nav')return;
     const next=this.resolve(this.dirname(this.preview),String(e.data.href||'').split('#')[0]);if(this.files[next]!=null&&/\.html$/i.test(next)){this.preview=next;this.renderPreviewOptions();this.renderPreview()}
   },
-  adopt(p){this.files=this.validFiles(p.files);this.history=this.cleanHistory(p.history);this.draft=String(p.draft||'').slice(0,1200);this.title=String(p.title||'Mi portal de juegos').slice(0,80);this.projectId=p.id||'legacy';try{localStorage.setItem('krueka-studio-last:'+this.sid(),this.projectId)}catch(_e){}if(p.reviewNote&&!this.history.some(m=>m.text==='Observación del profe: '+String(p.reviewNote)))this.history.push({role:'sys',text:'Observación del profe: '+String(p.reviewNote)});this.undo=[];this.current='index.html';this.preview='index.html';},
+  adopt(p){window.ClubProjectChat?.resetSelection();this.files=this.validFiles(p.files);this.history=this.cleanHistory(p.history);this.draft=String(p.draft||'').slice(0,1200);this.title=String(p.title||'Mi portal de juegos').slice(0,80);this.projectId=p.id||'legacy';try{localStorage.setItem('krueka-studio-last:'+this.sid(),this.projectId)}catch(_e){}if(p.reviewNote&&!this.history.some(m=>m.text==='Observación del profe: '+String(p.reviewNote)))this.history.push({role:'sys',text:'Observación del profe: '+String(p.reviewNote)});this.undo=[];this.current='index.html';this.preview='index.html';},
   validFiles(raw){
     if(!raw||typeof raw!=='object'||Array.isArray(raw))throw new Error('El archivo no contiene un proyecto válido.');
     const out={};let total=0;
@@ -328,8 +332,8 @@ const StudioIA={__loaded:true,
   },
   changed(){this.dirty=true;this.scheduleSave();const el=document.getElementById('ks-save');if(el)el.textContent='Cambios pendientes';},
   checkpoint(){this.undo.push({...this.files});this.undo=this.undo.slice(-5);const b=document.getElementById('ks-undo');if(b)b.disabled=false;},
-  restore(){if(this.busy||!this.undo.length)return;this.files=this.undo.pop();this.say('sys','Se recuperó la versión anterior del juego. Probala antes de continuar.');this.changed();this.refreshAll();this.lock(false);},
-  showTab(tab){this.tab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));for(const id of ['create','ai','learn']){const el=document.getElementById('ks-'+id);if(el)el.hidden=id!==tab;}},
+  restore(){if(this.busy||!this.undo.length)return;this.files=this.undo.pop();if(window.ClubKrueka?.isCreative(this))this.title=window.ClubKrueka.normalized(JSON.parse(this.files['obra.json'])).title;this.say('sys','Se recuperó la versión anterior del juego. Probala antes de continuar.');this.changed();this.refreshAll();this.lock(false);},
+  showTab(tab){this.tab=tab;document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===tab)));for(const id of ['create','ai','learn']){const el=document.getElementById('ks-'+id);if(el)el.hidden=id!==tab;}if(tab==='ai')window.ClubProjectChat?.mount(this);},
   renderAIStatus(){
     const el=document.getElementById('ks-ai-status'),tip=document.getElementById('ks-compose-tip'),model=document.getElementById('ks-model');
     const reason=this.aiStatus.reason,paused=reason==='budget'?'Se alcanzó el presupuesto del taller.':reason==='daily_limit'?'Completaste tus pedidos de IA por hoy.':String(reason||'').startsWith('provider_')?'El proveedor de IA está pausado.':'Conexión de IA pendiente.';

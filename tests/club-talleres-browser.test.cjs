@@ -51,6 +51,17 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
  window.fetch=(url,...args)=>{
   if(String(url).includes('/functions/v1/krueka-studio-ai')&&args[0]?.body){
    const body=JSON.parse(args[0].body);
+   if(body.action==='ai'&&body.studioContext){
+    window.lastProjectRequest=body;
+    const files={};
+    if(body.mode==='build'&&body.files['obra.json']){
+     const work=JSON.parse(body.files['obra.json']);work.panels[0].text='Revisión del alumno';files['obra.json']=JSON.stringify(work);
+    }
+    if(body.mode==='build'&&body.files['escenas.json']){
+     const media=JSON.parse(body.files['escenas.json']);(media.actors||media.clips)[0][media.actors?'name':'title']='Estrella nueva';files['escenas.json']=JSON.stringify(media);
+    }
+    return Promise.resolve(new Response(JSON.stringify({ok:true,summary:'Evaluación de prueba',test:'Abrí la vista previa',files,ai:{ready:true,provider:'Cloudflare',configured:true}})));
+   }
    if(body.action==='image')return Promise.resolve(new Response(JSON.stringify({ok:true,image:'data:image/webp;base64,UklGRh4AAABXRUJQVlA4TBEAAAAvD8ABAAdQsl6Up/+BiOh/AAA=',ai:{ready:true,provider:'Cloudflare',configured:true}})));
   }
   if(String(url).endsWith('/assets/club/laguna-atardecer.webp')){photoLoads++;return Promise.resolve(new Response(photo));}
@@ -198,6 +209,25 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
   }
   if(id==='arcade-web')verify(StudioIA.tab==='programacion'&&StudioIA.files['index.html'].includes('<canvas'),'juego listo para probar');
   if(id==='animation'||id==='video-edit')verify(StudioKits.read(StudioIA.files)?.kind===id,'base de medios '+id);
+  if(id==='libros'){
+   const field=document.querySelector('[name="panel-text-0"]');field.setSelectionRange(0,6);field.dispatchEvent(new Event('select',{bubbles:true}));
+   const picked=ClubProjectChat.inspect(StudioIA);verify(picked.selection&&JSON.parse(picked.files['obra.json']).panels[0].text===field.value.slice(0,6),'leer sólo el fragmento elegido');
+   const part=JSON.parse(picked.files['obra.json']);part.panels[0].text='Inicio';
+   const next=picked.apply({'obra.json':JSON.stringify(part)});
+   verify(JSON.parse(next['obra.json']).panels[0].text==='Inicio'+field.value.slice(6),'editar sólo el fragmento elegido');
+   ClubProjectChat.resetSelection();
+  }
+  StudioIA.showTab('ai');StudioIA.updateAI({ready:true,configured:true,provider:'Cloudflare'});StudioIA.renderAIStatus();
+  const review=document.querySelector('#ks-project-context button');verify(review,'chat del proyecto '+id);
+  window.lastProjectRequest=null;await review.onclick();
+  verify(window.lastProjectRequest?.projectId===StudioIA.projectId&&lastProjectRequest.mode==='plan','revisión con el proyecto abierto '+id);
+  verify(!JSON.stringify(lastProjectRequest.files).includes('base64,'),'sin adjuntos privados '+id);
+  if(id==='libros'||id==='animation'||id==='video-edit'){
+   const previous=JSON.stringify(StudioIA.files);StudioIA.setMode('build');document.getElementById('ks-prompt').value='Cambiá esta parte';await StudioIA.send();
+   if(id==='libros')verify(StudioIA.files['index.html'].includes('Revisión del alumno')&&JSON.parse(StudioIA.files['obra.json']).tools.images.cover,'obra y portada conservadas');
+   else verify(JSON.stringify(StudioKits.read(StudioIA.files)).includes('Estrella nueva'),'edición de la escena '+id);
+   StudioIA.restore();verify(JSON.stringify(StudioIA.files)===previous,'deshacer '+id);
+  }
   verify(await StudioIA.save(),'guardar '+id);
   projects.push(StudioIA.projectId);
   StudioIA.showTab('home');
