@@ -564,3 +564,7 @@ El visor de modelos del Club monta ArteLab con el mismo editor de dibujo que el 
 
 
 ArteLab también se abre como herramienta de portada en Blogs, Historietas, Cuentos, Libros, Dramas, Anime y Flyers, sin desplazar el texto ni cambiar el flujo de revisión. El selector de objetos permite elegir elementos superpuestos y moverlos sin arrastrar, duplicarlos, cambiar orden, editar texto y recolorear figuras. El relleno de formas cerradas conserva el contorno original mediante el atributo opcional `fillColor` en los trazos existentes de `obra.json`. Se conserva la lectura de obras antiguas y no hay módulos nuevos, cambios de permisos ni migraciones.
+
+## 2026-11-25. Portada y galería del Club
+
+La portada `club-krueka.html` y la galería `club-krueka-galeria.html` comparten la hoja `club/club-krueka-public.css` y las ilustraciones locales `assets/club/taller-*.svg`. La galería separa obras aprobadas y modelos del Club, con filtros y búsqueda que no modifican la consulta pública existente. El acceso por código y la moderación siguen por los recorridos originales.

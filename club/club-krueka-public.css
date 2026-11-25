@@ -28,7 +28,10 @@ body.kr-gallery-page,body.studio-access:has(.kr-home){
 }
 .kr-public .kr-wordmark{display:inline-flex;align-items:center;gap:10px;width:fit-content;font-size:19px;font-weight:850;letter-spacing:-.055em;white-space:nowrap}
 .kr-wordmark b{position:relative;display:grid;place-items:center;width:34px;height:34px;background:var(--ink);color:var(--white);font-size:23px;line-height:1}
-.kr-wordmark b span{position:absolute;right:-6px;top:-5px;color:var(--rust);font-size:13px;text-shadow:1px 1px var(--paper),-1px -1px var(--paper)}
+.kr-wordmark b::after{content:"";position:absolute;right:-6px;top:-5px;width:14px;height:14px;background:var(--orange);clip-path:polygon(50% 0,60% 37%,93% 15%,72% 46%,100% 50%,70% 60%,88% 90%,59% 72%,50% 100%,41% 70%,10% 87%,29% 58%,0 50%,29% 43%,12% 13%,40% 32%)}
+.kr-arrow{display:inline-block;position:relative;width:12px;height:12px;flex:none;vertical-align:-1px}
+.kr-arrow::before{content:"";position:absolute;width:13px;height:2px;left:-.5px;top:5px;background:currentColor;transform:rotate(-45deg)}
+.kr-arrow::after{content:"";position:absolute;right:1px;top:0;width:6px;height:6px;border-right:2px solid currentColor;border-top:2px solid currentColor}
 .kr-masthead nav{display:flex;gap:clamp(18px,3vw,40px);font-weight:700;font-size:14px}
 .kr-masthead .kr-network{justify-self:end;font-size:13px;font-weight:700;color:var(--muted)}
 .kr-masthead [aria-current="page"],.kr-public nav a:hover,.kr-network:hover{text-decoration:underline;text-underline-offset:4px}
@@ -44,7 +47,7 @@ body.kr-gallery-page,body.studio-access:has(.kr-home){
 .kr-public .kr-button-orange{background:var(--orange);color:var(--ink)}
 .kr-button span{font-size:17px}
 .kr-button:hover{box-shadow:3px 3px 0 var(--rust);text-decoration:none}
-.kr-hero{display:grid;grid-template-columns:.94fr 1fr;gap:clamp(28px,6vw,90px);padding:clamp(35px,5vw,72px) 0 clamp(48px,6vw,86px);align-items:center}
+.kr-hero{display:grid;grid-template-columns:minmax(0,.94fr) minmax(0,1fr);gap:clamp(28px,6vw,90px);padding:clamp(35px,5vw,72px) 0 clamp(48px,6vw,86px);align-items:center}
 .kr-hero-copy h1{font-size:clamp(65px,7.3vw,113px);font-weight:920;line-height:.93;letter-spacing:-.09em;margin:17px 0 19px;max-width:7.1ch}
 .kr-hero-copy .kr-intro{font-size:clamp(17px,1.65vw,22px);max-width:33ch;color:var(--muted);line-height:1.44}
 .kr-login{margin-top:27px;max-width:423px}
@@ -125,6 +128,8 @@ body.kr-gallery-page,body.studio-access:has(.kr-home){
 .kr-public #search-form button{display:grid;place-items:center;border:0;border-left:1px solid var(--ink);background:var(--gold);color:var(--ink);padding:6px;width:38px;min-height:39px;flex:none}
 .kr-filter-label{margin:19px 0 5px;color:var(--muted)}
 .kr-scopes,.kr-categories{display:grid;gap:1px}
+#category-picker summary{padding:4px 0;cursor:pointer}
+#selected-category{display:none}
 .kr-public .kr-filters nav button{
   border:1px solid transparent;text-align:left;color:var(--ink);background:none;font-size:14px;font-weight:650;
   padding:8px;min-height:35px;line-height:1.2;
@@ -179,19 +184,20 @@ body.kr-gallery-page,body.studio-access:has(.kr-home){
 @media(max-width:700px){
   .kr-masthead{grid-template-columns:1fr auto;min-height:59px;gap:13px}
   .kr-masthead .kr-network{display:none}
-  .kr-home .kr-hero{grid-template-columns:1fr;padding:30px 0 40px}
+  .kr-home .kr-hero{grid-template-columns:minmax(0,1fr);padding:30px 0 40px}
   .kr-hero-copy h1{max-width:none;font-size:clamp(58px,13vw,84px)}
   .kr-hero-copy .kr-intro{max-width:42ch}
   .kr-hero-art img{max-height:310px;object-fit:cover;object-position:50% 53%}
   .kr-workshop-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:17px 11px}
   .kr-section-lead{align-items:start;flex-direction:column}
   .kr-showcase{grid-template-columns:1fr;gap:18px}
-  .kr-showcase-content{grid-row:1}
   .kr-catalog{grid-template-columns:1fr}
   .kr-filters{border-right:0;border-bottom:1px solid var(--line);padding:0 0 12px}
   .kr-scopes,.kr-categories{display:flex;flex-wrap:wrap;gap:4px}
   .kr-public .kr-filters nav button{border-color:var(--line);padding:6px;font-size:12px;min-height:32px}
   .kr-filter-label{margin-top:12px}
+  #category-picker summary{min-height:34px;border:1px solid var(--line);padding:8px}
+  #selected-category{display:block;float:right;letter-spacing:0;text-transform:none}
   .kr-public .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px}
   .kr-card-info{padding:8px}
   .kr-workshop-callout{flex-wrap:wrap}

@@ -67,5 +67,5 @@ test('el libro se entrega para revisión y aparece en la galería pública solo 
  assert.match(query,/'cuentos','libros','dramas'/);
  assert.match(query,/p\.status='published'/);
  assert.match(query,/p\.institution_id=/);
- assert.match(read('club-krueka-galeria.html'),/club-krueka-public\.js\?v=20261125tinta1/);
+ assert.match(read('club-krueka-galeria.html'),/club-krueka-public\.js\?v=20261125tinta2/);
 });

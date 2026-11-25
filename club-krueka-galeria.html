@@ -7,18 +7,18 @@
 <meta name="description" content="Explorá las obras aprobadas de los alumnos de Club Krueka y probá los modelos de cada taller.">
 <title>Galería de creaciones · Club Krueka</title>
 <link rel="icon" href="logo.svg">
-<link rel="stylesheet" href="club/club-krueka-public.css?v=20261125tinta1">
+<link rel="stylesheet" href="club/club-krueka-public.css?v=20261125tinta2">
 </head>
 <body class="kr-gallery-page">
 <div class="kr-public kr-gallery">
   <a class="kr-skip" href="#catalogo">Ir al catálogo</a>
   <header class="kr-masthead">
-    <a class="kr-wordmark" href="club-krueka.html"><b aria-hidden="true">K<span>✳</span></b><span>Club Krueka</span></a>
+    <a class="kr-wordmark" href="club-krueka.html"><b aria-hidden="true">K</b><span>Club Krueka</span></a>
     <nav aria-label="Club Krueka">
       <a href="club-krueka.html#talleres">Talleres</a>
       <a href="club-krueka-galeria.html" aria-current="page">Galería</a>
     </nav>
-    <a class="kr-network" href="index.html">Ir a Krueka <span aria-hidden="true">↗</span></a>
+    <a class="kr-network" href="index.html">Ir a Krueka <span class="kr-arrow" aria-hidden="true"></span></a>
   </header>
 
   <main>
@@ -28,7 +28,7 @@
         <h1 id="gallery-title">Galería de <em>creaciones.</em></h1>
         <p>Videojuegos, historias y dibujos de los chicos del Club. Entrá a mirar, leer y jugar.</p>
       </div>
-      <a class="kr-button kr-button-ink" href="club-krueka.html#studio-code">Entrar a mi taller <span aria-hidden="true">↗</span></a>
+      <a class="kr-button kr-button-ink" href="club-krueka.html#studio-code">Entrar a mi taller <span class="kr-arrow" aria-hidden="true"></span></a>
     </section>
 
     <div class="kr-catalog" id="catalogo" tabindex="-1">
@@ -43,8 +43,10 @@
           <button type="button" data-scope="alumnos" aria-pressed="false">Obras de alumnos</button>
           <button type="button" data-scope="ejemplos" aria-pressed="false">Modelos del Club</button>
         </nav>
-        <p class="kr-filter-label">Tipo de obra</p>
-        <nav id="categories" class="kr-categories" aria-label="Categorías"></nav>
+        <details id="category-picker">
+          <summary class="kr-filter-label">Tipo de obra <span id="selected-category">Todas</span></summary>
+          <nav id="categories" class="kr-categories" aria-label="Categorías"></nav>
+        </details>
       </aside>
 
       <div class="kr-catalog-content">
@@ -65,18 +67,18 @@
       </div>
     </div>
 
-    <section class="kr-workshop-callout" id="destacado" aria-labelledby="callout-title">
+    <section class="kr-workshop-callout" aria-labelledby="callout-title">
       <svg viewBox="0 0 100 72" aria-hidden="true"><use href="assets/club/taller-pictogramas.svg#dibujos"/></svg>
       <div><p class="kr-kicker">Del taller a la galería</p><h2 id="callout-title">¿Querés compartir tu obra?</h2><p>Guardá tu proyecto y envialo al profe. Cuando lo apruebe, otras personas podrán verlo acá.</p></div>
-      <a class="kr-button kr-button-ink" href="club-krueka.html#studio-code">Entrar a mi taller <span aria-hidden="true">↗</span></a>
+      <a class="kr-button kr-button-ink" href="club-krueka.html#studio-code">Entrar a mi taller <span class="kr-arrow" aria-hidden="true"></span></a>
     </section>
   </main>
   <footer class="kr-footer">
-    <a class="kr-wordmark" href="club-krueka.html"><b aria-hidden="true">K<span>✳</span></b><span>Club Krueka</span></a>
+    <a class="kr-wordmark" href="club-krueka.html"><b aria-hidden="true">K</b><span>Club Krueka</span></a>
     <nav aria-label="Recursos y ayuda del Club"><a href="club-krueka.html#talleres">Talleres</a><a href="informacion.html">Uso y privacidad</a><a href="informacion.html#ayuda">Ayuda</a></nav>
   </footer>
 </div>
 <script src="js/club-krueka-ejemplos.js?v=20261124arte" defer></script>
-<script src="js/club-krueka-public.js?v=20261125tinta1" defer></script>
+<script src="js/club-krueka-public.js?v=20261125tinta2" defer></script>
 </body>
 </html>

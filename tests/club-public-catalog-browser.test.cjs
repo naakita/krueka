@@ -18,9 +18,9 @@ const response=[
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
  let browser;
  try{
-  browser=await chromium.launch({executablePath:process.env.STUDIO_CHROMIUM||'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
   const base='http://127.0.0.1:'+server.address().port;
   for(const viewport of [{width:1440,height:950},{width:390,height:844},{width:320,height:730}]){
+   browser=await chromium.launch({executablePath:process.env.STUDIO_CHROMIUM||'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
    const context=await browser.newContext({viewport});
    const screenshots=process.env.KRUEKA_CATALOG_SCREENSHOTS;
    let galleryError=false,loginCode='';
@@ -47,12 +47,16 @@ const response=[
    assert.ok(await page.evaluate(assertLayout),'La galería no desborda');
    assert.equal(await page.locator('#gallery-cards .kr-card').count(),2);
    assert.equal(await page.locator('#example-cards .kr-card').count(),10);
-   assert.equal(await page.locator('#gallery-cards .kr-card-cover span').first().innerText(),'Obra aprobada');
-   assert.equal(await page.locator('#example-cards .kr-card-cover span').first().innerText(),'Modelo del Club');
+   assert.equal(await page.locator('#gallery-cards .kr-card-cover span').first().textContent(),'Obra aprobada');
+   assert.equal(await page.locator('#example-cards .kr-card-cover span').first().textContent(),'Modelo del Club');
    assert.ok(await page.locator('#gallery-cards svg use').first().evaluate(use=>use.getBBox().width>0),'Cargó el pictograma de la obra');
    assert.equal(await page.getByRole('link',{name:/Leer: Un día de papel/}).getAttribute('href'),'club-krueka-obra.html?obra=libro-prueba');
    assert.equal(await page.getByRole('link',{name:/Leer: Un día de papel/}).getAttribute('target'),'_blank');
    if(screenshots)await page.screenshot({path:path.join(screenshots,'galeria-'+viewport.width+'.png'),fullPage:true});
+   if(viewport.width<=700){
+    assert.ok(!(await page.getByRole('button',{name:'Libros',exact:true}).isVisible()));
+    await page.locator('#category-picker summary').click();
+   }
    await page.getByRole('button',{name:'Libros',exact:true}).click();
    assert.equal(await page.locator('#gallery-cards .kr-card').count(),1);
    assert.equal(await page.locator('#example-cards .kr-card').count(),0);
@@ -75,7 +79,7 @@ const response=[
    await page.getByRole('heading',{name:'Un día de papel'}).waitFor();
    assert.deepEqual(errors,[]);
    console.log('PASS Club + galería '+viewport.width+'px · acceso, pictogramas, filtros, búsqueda, reintento');
-   await context.close();
+   await browser.close();browser=null;
   }
  }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error);process.exitCode=1});

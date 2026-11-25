@@ -31,6 +31,7 @@ function makeButton(text,parent,pressed,clicked){
  b.setAttribute('aria-pressed',String(pressed));b.onclick=clicked;parent.append(b);
 }
 function initFilters(){
+ document.getElementById('category-picker').open=matchMedia('(min-width:701px)').matches;
  const nav=document.getElementById('categories');
  nav.replaceChildren();
  for(const [id,label] of cats)makeButton(label,nav,filter===id,()=>chooseCategory(id));
@@ -38,7 +39,10 @@ function initFilters(){
   b.onclick=()=>{scope=b.dataset.scope;document.querySelectorAll('[data-scope]').forEach(v=>v.setAttribute('aria-pressed',String(v.dataset.scope===scope)));render();};
  });
 }
-function chooseCategory(id){filter=id;document.querySelectorAll('#categories button').forEach((v,i)=>v.setAttribute('aria-pressed',String(cats[i][0]===id)));render();}
+function chooseCategory(id){
+ filter=id;document.getElementById('selected-category').textContent=category.get(id).name;
+ document.querySelectorAll('#categories button').forEach((v,i)=>v.setAttribute('aria-pressed',String(cats[i][0]===id)));render();
+}
 function matches(item){
  if(filter!=='todos'&&item.category!==filter)return false;
  return !term||fold(item.title+' '+(item.short||'')+' '+(category.get(item.category)?.name||'')).includes(term);
@@ -68,7 +72,7 @@ function cardFor(item,example){
  info.append(meta,title);
  if(example){const desc=document.createElement('p');desc.textContent=String(item.short||'').slice(0,130);info.append(desc);}
  const cta=document.createElement('span');cta.className='kr-card-action';cta.textContent=action;
- const arrow=document.createElement('b');arrow.setAttribute('aria-hidden','true');arrow.textContent='↗';cta.append(arrow);
+ const arrow=document.createElement('b');arrow.className='kr-arrow';arrow.setAttribute('aria-hidden','true');cta.append(arrow);
  info.append(cta);link.append(cover,info);a.append(link);
  return a;
 }
