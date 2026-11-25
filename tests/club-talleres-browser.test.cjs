@@ -150,6 +150,7 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
   if(creative){
    document.querySelector('#ck-test').click();
    const frame=document.querySelector('#ks-frame');
+   await until(()=>frame.srcdoc.includes('Auditoría '+id));
    verify(!frame.classList.contains('off')&&frame.srcdoc.includes('Auditoría '+id),'Ver mi obra '+id);
    verify(document.querySelector('.ks-preview-label').textContent==='Tu obra','etiqueta de '+id);
    if(['blogs','cuentos','libros','dramas'].includes(id)){

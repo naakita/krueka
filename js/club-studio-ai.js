@@ -3,6 +3,25 @@
 (function(){
 'use strict';
 if(window.StudioIA&&window.StudioIA.__loaded)return;
+// Una navegación por vez. Un load puede pertenecer a about:blank o al documento
+// anterior; solo el bridge de la revisión activa confirma que terminó de abrirse.
+let previewTransition=null,previewRevision=0;
+const samePreview=(a,b)=>!!a&&!!b&&a.html===b.html&&a.project===b.project&&a.page===b.page;
+function beginPreview(studio,state,request){
+  const revision='preview-'+(++previewRevision).toString(36);
+  state.active={...request,revision};state.pending=null;
+  studio.errors=[];studio.renderErrors();
+  try{state.frame.srcdoc=request.html.replace('<script data-krueka-preview-bridge>','<script data-krueka-preview-bridge data-krueka-preview-revision="'+revision+'">');}
+  catch(error){state.active=null;throw error;}
+}
+function previewReady(studio,event){
+  const state=previewTransition,frame=document.getElementById('ks-frame');
+  if(!state||state.frame!==frame||frame.isConnected===false||event.source!==state.window||event.source!==frame.contentWindow||!state.active||event.data.revision!==state.active.revision)return;
+  const finished=state.active,next=state.pending;
+  state.active=null;state.pending=null;
+  if(next){beginPreview(studio,state,next);return;}
+  if(finished.play&&!frame.classList.contains('off')){frame.focus();frame.contentWindow.postMessage({type:'krueka-preview-play'},'*');}
+}
 const StudioIA={__loaded:true,
   files:{},history:[],current:'index.html',preview:'index.html',mode:'build',busy:false,dirty:false,saveTimer:null,cloudReady:false,saveQueue:Promise.resolve(),projectId:'legacy',title:'Mi portal de juegos',aiReady:false,aiStatus:{},draft:'',tab:'ai',undo:[],errors:[],
   sid(){return Club.alumno&&(Club.alumno.student_id||Club.alumno.id)},
@@ -125,6 +144,7 @@ const StudioIA={__loaded:true,
     if(document.getElementById('krueka-studio'))return;
     await this.saveQueue;
     clearTimeout(this.saveTimer);this.cloudReady=false;this.dirty=false;this.busy=false;
+    previewTransition=null;
     this.files=StudioKits.create('stars');this.history=[];this.current='index.html';this.preview='index.html';this.projectId='legacy';this.title='Misión estelar';this.undo=[];this.errors=[];this.aiReady=false;this.aiStatus={};this.draft='';this.mode='build';
     const old=document.getElementById('krueka-studio');if(old)old.remove();
     const panel=document.createElement('div');panel.id='krueka-studio';
@@ -206,7 +226,7 @@ const StudioIA={__loaded:true,
     this.refreshAll();this.showTab('ai');this.lock(false);
     panel.querySelector('#ks-save').textContent=this.cloudReady?(this.dirty?'⚠ Cambios pendientes de guardar':'✓ Proyecto guardado en Krueka'):'⚠ No se recuperó la nube';
   },
-  async close(){if(this.busy)return;this.busy=true;this.lock(true);clearTimeout(this.saveTimer);clearTimeout(this.previewTimer);if(this.dirty&&this.cloudReady){const ok=await this.save();if(!ok&&!confirm('No se pudo guardar. Descargá una copia antes de salir. ¿Salir de todos modos?')){this.busy=false;this.lock(false);return;}}window.removeEventListener('message',this.messageHandler);document.getElementById('krueka-studio')?.remove();this.busy=false;},
+  async close(){if(this.busy)return;this.busy=true;this.lock(true);clearTimeout(this.saveTimer);clearTimeout(this.previewTimer);if(this.dirty&&this.cloudReady){const ok=await this.save();if(!ok&&!confirm('No se pudo guardar. Descargá una copia antes de salir. ¿Salir de todos modos?')){this.busy=false;this.lock(false);return;}}previewTransition=null;window.removeEventListener('message',this.messageHandler);document.getElementById('krueka-studio')?.remove();this.busy=false;},
   setMode(m){this.mode=m==='plan'?'plan':'build';document.querySelectorAll('#krueka-studio .ks-mode').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===this.mode)));},
   async queuedAI(body){
     for(let attempt=0;;attempt++){
@@ -301,15 +321,30 @@ const StudioIA={__loaded:true,
     html=html.replace(/<(img|source)\b([^>]*?)src=["']([^"']+)["']([^>]*)>/gi,(m,tag,a,src,b)=>{
       const p=self.resolve(base,src),v=files[p];if(v!=null&&/\.svg$/i.test(p)){const data='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(v);return '<'+tag+a+'src="'+data+'"'+b+'>'}return m;
     });
-    const bridge='<script>(function(){addEventListener("message",function(e){if(e.source!==parent||!e.data||e.data.type!=="krueka-preview-play")return;var m=document.getElementById("mode"),c=document.getElementById("arena");if(m&&m.textContent.indexOf("Jugar")!==-1)m.click();if(c)c.focus();});addEventListener("error",function(e){parent.postMessage({type:"krueka-studio-error",text:e.message+" (línea "+e.lineno+")"},"*")});addEventListener("unhandledrejection",function(e){parent.postMessage({type:"krueka-studio-error",text:String(e.reason)},"*")});document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var h=a.getAttribute("href");if(!h||h[0]==="#")return;e.preventDefault();parent.postMessage({type:"krueka-studio-nav",href:h},"*")});})();<\/script>';
+    const bridge='<script data-krueka-preview-bridge>(function(){var revision=document.currentScript.getAttribute("data-krueka-preview-revision");if(revision)document.addEventListener("DOMContentLoaded",function(){parent.postMessage({type:"krueka-preview-ready",revision:revision},"*")},{once:true});addEventListener("message",function(e){if(e.source!==parent||!e.data||e.data.type!=="krueka-preview-play")return;var m=document.getElementById("mode"),c=document.getElementById("arena");if(m&&m.textContent.indexOf("Jugar")!==-1)m.click();if(c)c.focus();});addEventListener("error",function(e){parent.postMessage({type:"krueka-studio-error",text:e.message+" (línea "+e.lineno+")"},"*")});addEventListener("unhandledrejection",function(e){parent.postMessage({type:"krueka-studio-error",text:String(e.reason)},"*")});document.addEventListener("click",function(e){var a=e.target.closest&&e.target.closest("a[href]");if(!a)return;var h=a.getAttribute("href");if(!h||h[0]==="#")return;e.preventDefault();parent.postMessage({type:"krueka-studio-nav",href:h},"*")});})();<\/script>';
     const policy='<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'; img-src data: blob:; media-src data: blob:; connect-src \'none\'; font-src data:; base-uri \'none\'; form-action \'none\'">';
     if(/<head\b[^>]*>/i.test(html))return html.replace(/<head\b[^>]*>/i,m=>m+policy+bridge);
     return policy+bridge+html;
   },
-  renderPreview(play=false){const f=document.getElementById('ks-frame');if(f&&!f.classList.contains('off')){this.errors=[];this.renderErrors();f.onload=play?()=>{f.focus();f.contentWindow.postMessage({type:'krueka-preview-play'},'*')}:null;f.srcdoc=this.buildPreview(this.preview)}},
+  renderPreview(play=false){
+    const frame=document.getElementById('ks-frame');
+    if(previewTransition&&(previewTransition.frame!==frame||previewTransition.window!==frame?.contentWindow))previewTransition=null;
+    if(!frame||frame.isConnected===false||frame.classList.contains('off'))return;
+    const request={html:this.buildPreview(this.preview),play:play===true,project:this.projectId,page:this.preview};
+    const state=previewTransition||(previewTransition={frame,window:frame.contentWindow,active:null,pending:null});
+    if(state.active){
+      if(samePreview(request,state.active)){state.active.play=request.play;state.pending=null;}
+      else state.pending=request;
+      return;
+    }
+    // Fuera de una carga conservamos el reinicio original: los botones Probar
+    // de programación y bloques también llaman a renderPreview() sin play.
+    beginPreview(this,state,request);
+  },
   renderErrors(){const p=document.getElementById('ks-errors'),t=document.getElementById('ks-console-title');if(p)p.textContent=this.errors.join('\n')||'Probá tu juego. Los errores aparecerán acá.';if(t)t.textContent='Consola · '+(this.errors.length?this.errors.length+' error(es)':'sin errores');},
   onMessage(e){
     if(e.source!==document.getElementById('ks-frame')?.contentWindow||!e.data)return;
+    if(e.data.type==='krueka-preview-ready'){previewReady(this,e);return;}
     if(e.data.type==='krueka-scene-select'){
       const cfg=StudioKits.read(this.files);const scene=cfg?.kind==='space3d'?window.StudioMissions:cfg?.kind==='explore3d'?window.Studio3D:null;
       if(this.busy||!this.cloudReady||!scene)return;
