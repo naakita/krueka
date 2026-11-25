@@ -1,55 +1,82 @@
 <!doctype html>
-<html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="description" content="Creaciones originales de estudiantes del Club Krueka y ejemplos interactivos para inspirar nuevos proyectos. Videojuegos, blogs, cómics, anime y más.">
-<title>Explorá y jugá · Club Krueka</title><link rel="icon" href="logo.svg">
-<link rel="stylesheet" href="club/club-krueka-public.css?v=20261114arcade1"></head>
-<body>
-<header class="topbar">
- <a class="logo" href="index.html"><img src="logo.svg" alt="" width="40" height="40"><span><b>Club Krueka</b><small>EXPLORÁ · JUGÁ · CREÁ</small></span></a>
- <form id="search-form" role="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Buscar videojuegos, historias, arte..." autocomplete="off" aria-label="Buscar creaciones"><button type="submit">Buscar</button></form>
- <a class="join" href="club-krueka.html">✦ Entrar al taller</a>
-</header>
-<div class="shell">
- <aside class="sidebar" aria-label="Explorar categorías">
-  <div class="side-title">EXPLORAR</div>
-  <nav id="side-tabs" class="side-tabs" aria-label="Tipo de publicación">
-   <button type="button" data-scope="todas" aria-pressed="true">🌟 Todo el club</button>
-   <button type="button" data-scope="alumnos" aria-pressed="false">🏆 Hecho por alumnos</button>
-   <button type="button" data-scope="ejemplos" aria-pressed="false">💡 Modelos de ejemplo</button>
-  </nav>
-  <div class="side-title">CATEGORÍAS</div>
-  <nav id="categories" class="side-categories" aria-label="Categorías"></nav>
-  <p class="side-note">Las publicaciones de estudiantes requieren aprobación docente. Los modelos están creados por Club Krueka.</p>
- </aside>
- <main>
-  <section class="spotlight" id="destacado">
-   <div class="spotlight-copy">
-    <span class="spot-kicker">🚀 ENTRÁ, DESCUBRÍ Y CREÁ</span>
-    <h1>Tu próxima gran idea <span>está por empezar.</span></h1>
-    <p>Videojuegos, cómics, blogs y mundos inventados. Explorá creaciones reales de estudiantes y probá modelos interactivos para inspirarte.</p>
-    <div class="spot-actions"><a class="main-action" href="club-krueka-ejemplo.html?ejemplo=neon" target="_blank" rel="noopener noreferrer">▶ Probar juego destacado</a><a class="other-action" href="club-krueka.html">Quiero crear →</a></div>
-   </div>
-   <div class="spot-art" aria-hidden="true"><span class="spot-orbit"></span><span class="planet">🪐</span><span class="ship">🚀</span><span class="glow-star">✦</span></div>
-  </section>
-  <div class="bar">
-   <div><span class="bar-kicker">UNA GALERÍA ABIERTA PARA TODOS</span><h2>Descubrí lo que podemos crear</h2></div>
-   <span id="total" class="total" aria-live="polite">Cargando...</span>
-  </div>
-  <section class="collection" id="alumnos" aria-labelledby="heading-alumnos">
-   <div class="collection-heading"><div><span class="section-kicker">⭐ OBRAS PUBLICADAS</span><h2 id="heading-alumnos">Hecho por nuestros alumnos</h2></div><span id="student-count" class="count">Cargando...</span></div>
-   <p class="collection-description">Estos trabajos fueron realizados por estudiantes del Club y aprobados antes de publicarse.</p>
-   <p id="gallery-status" role="status" class="status">Cargando creaciones aprobadas…</p>
-   <div id="gallery-cards" class="cards"></div>
-   <button id="reload" class="reload" type="button">↻ Actualizar obras</button>
-  </section>
-  <section class="collection" id="ejemplos" aria-labelledby="heading-ejemplos">
-   <div class="collection-heading"><div><span class="section-kicker">💡 IDEAS PARA APRENDER CREANDO</span><h2 id="heading-ejemplos">Modelos para inspirarse</h2></div><span id="demo-count" class="count">10 modelos originales</span></div>
-   <p class="collection-description">Diseñados por Club Krueka para probar cómo podrían quedar tus trabajos. <strong>Son ejemplos, no publicaciones de alumnos.</strong></p>
-   <div id="example-cards" class="cards"></div>
-  </section>
-  <section class="workshop-callout"><div><span class="section-kicker">TU PRÓXIMO PROYECTO</span><h2>¿Y si tu creación aparece aquí?</h2><p>Entrá con tu código, elegí un taller, adaptá una base y enviala al profe. Cuando sea aprobada, cualquiera podrá visitarla.</p></div><a href="club-krueka.html">Crear en mi taller →</a></section>
-  <footer>Club Krueka · Aprender creando · Proyectos de alumnos y ejemplos del Club claramente diferenciados</footer>
- </main>
+<html lang="es-PY">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="description" content="Explorá las obras aprobadas de los alumnos de Club Krueka y probá los modelos de cada taller.">
+<title>Galería de creaciones · Club Krueka</title>
+<link rel="icon" href="logo.svg">
+<link rel="stylesheet" href="club/club-krueka-public.css?v=20261125tinta1">
+</head>
+<body class="kr-gallery-page">
+<div class="kr-public kr-gallery">
+  <a class="kr-skip" href="#catalogo">Ir al catálogo</a>
+  <header class="kr-masthead">
+    <a class="kr-wordmark" href="club-krueka.html"><b aria-hidden="true">K<span>✳</span></b><span>Club Krueka</span></a>
+    <nav aria-label="Club Krueka">
+      <a href="club-krueka.html#talleres">Talleres</a>
+      <a href="club-krueka-galeria.html" aria-current="page">Galería</a>
+    </nav>
+    <a class="kr-network" href="index.html">Ir a Krueka <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main>
+    <section class="kr-gallery-lead" aria-labelledby="gallery-title">
+      <div>
+        <p class="kr-kicker"><span class="kr-dot" aria-hidden="true"></span> Exposición del Club</p>
+        <h1 id="gallery-title">Galería de <em>creaciones.</em></h1>
+        <p>Videojuegos, historias y dibujos de los chicos del Club. Entrá a mirar, leer y jugar.</p>
+      </div>
+      <a class="kr-button kr-button-ink" href="club-krueka.html#studio-code">Entrar a mi taller <span aria-hidden="true">↗</span></a>
+    </section>
+
+    <div class="kr-catalog" id="catalogo" tabindex="-1">
+      <aside class="kr-filters" aria-label="Filtros de la galería">
+        <form id="search-form" role="search">
+          <label for="search">Buscar una creación</label>
+          <div><input id="search" type="search" placeholder="Ej.: historieta" autocomplete="off"><button type="submit" aria-label="Buscar"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10" cy="10" r="5"/><path d="m14 14 6 6"/></svg></button></div>
+        </form>
+        <p class="kr-filter-label">Origen</p>
+        <nav id="side-tabs" class="kr-scopes" aria-label="Tipo de publicación">
+          <button type="button" data-scope="todas" aria-pressed="true">Todas las creaciones</button>
+          <button type="button" data-scope="alumnos" aria-pressed="false">Obras de alumnos</button>
+          <button type="button" data-scope="ejemplos" aria-pressed="false">Modelos del Club</button>
+        </nav>
+        <p class="kr-filter-label">Tipo de obra</p>
+        <nav id="categories" class="kr-categories" aria-label="Categorías"></nav>
+      </aside>
+
+      <div class="kr-catalog-content">
+        <div class="kr-catalog-meta"><span>Catálogo</span><span id="total" class="kr-count" aria-live="polite">Cargando…</span></div>
+        <section class="kr-collection" id="alumnos" aria-labelledby="heading-alumnos">
+          <div class="kr-collection-heading"><div><p class="kr-kicker"><span class="kr-dot" aria-hidden="true"></span> Hecho en el Club</p><h2 id="heading-alumnos">Obras de alumnos</h2></div><span id="student-count" class="kr-count">Cargando…</span></div>
+          <p class="kr-collection-description">Trabajos originales que los alumnos enviaron y el profe aprobó para compartir.</p>
+          <p id="gallery-status" role="status" class="status kr-sr-only">Cargando creaciones aprobadas…</p>
+          <div id="gallery-cards" class="cards"></div>
+          <button id="reload" class="kr-reload" type="button"><span aria-hidden="true">↻</span> Actualizar obras</button>
+        </section>
+
+        <section class="kr-collection kr-models" id="ejemplos" aria-labelledby="heading-ejemplos">
+          <div class="kr-collection-heading"><div><p class="kr-kicker">Material de práctica</p><h2 id="heading-ejemplos">Modelos del Club</h2></div><span id="demo-count" class="kr-count">Cargando…</span></div>
+          <p class="kr-collection-description">Ejemplos hechos por Club Krueka para probar y adaptar. No son obras de alumnos.</p>
+          <div id="example-cards" class="cards"></div>
+        </section>
+      </div>
+    </div>
+
+    <section class="kr-workshop-callout" id="destacado" aria-labelledby="callout-title">
+      <svg viewBox="0 0 100 72" aria-hidden="true"><use href="assets/club/taller-pictogramas.svg#dibujos"/></svg>
+      <div><p class="kr-kicker">Del taller a la galería</p><h2 id="callout-title">¿Querés compartir tu obra?</h2><p>Guardá tu proyecto y envialo al profe. Cuando lo apruebe, otras personas podrán verlo acá.</p></div>
+      <a class="kr-button kr-button-ink" href="club-krueka.html#studio-code">Entrar a mi taller <span aria-hidden="true">↗</span></a>
+    </section>
+  </main>
+  <footer class="kr-footer">
+    <a class="kr-wordmark" href="club-krueka.html"><b aria-hidden="true">K<span>✳</span></b><span>Club Krueka</span></a>
+    <nav aria-label="Recursos y ayuda del Club"><a href="club-krueka.html#talleres">Talleres</a><a href="informacion.html">Uso y privacidad</a><a href="informacion.html#ayuda">Ayuda</a></nav>
+  </footer>
 </div>
 <script src="js/club-krueka-ejemplos.js?v=20261124arte" defer></script>
-<script src="js/club-krueka-public.js?v=20261121libros2" defer></script>
-</body></html>
+<script src="js/club-krueka-public.js?v=20261125tinta1" defer></script>
+</body>
+</html>

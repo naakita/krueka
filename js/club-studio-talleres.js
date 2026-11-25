@@ -63,6 +63,7 @@ function normalize(raw){
   mirror:s.mirror===true,
   radialSymmetry:radialOptions.includes(s.radialSymmetry)?s.radialSymmetry:1,
   fill:s.fill===true,
+  ...(s.fillColor?{fillColor:hex(s.fillColor,hex(s.color,'#193959'))}:{}),
   points:Array.isArray(s.points)?s.points.slice(0,100).map(p=>[Math.max(0,Math.min(600,Math.round(Number(p?.[0])||0))),Math.max(0,Math.min(320,Math.round(Number(p?.[1])||0)))]):[]
  })).filter(s=>s.points.length>0):[];
  const template=coloringPages[t.coloringPage]?t.coloringPage:'blanco';
@@ -183,7 +184,7 @@ function strokeLook(s){
 }
 function strokeSvg(s){
  const look=strokeLook(s),shape=s.type!=='pen'&&s.type!=='line';
- const path='<path d="'+strokePath(s)+'" fill="'+(shape&&s.fill?hex(s.color):'none')+'" stroke="'+hex(s.color)+'" stroke-width="'+look.width+'" stroke-opacity="'+look.opacity+'" fill-opacity="'+(shape&&s.fill?.65*unit(s.opacity):0)+'" stroke-linecap="'+(look.pixel?'square':'round')+'" stroke-linejoin="round"'+(look.dash?' stroke-dasharray="'+look.dash+'"':'')+(look.glow?' style="filter:drop-shadow(0 0 4px '+hex(s.color)+')"':look.soft?' style="filter:blur(2px)"':'')+(look.pixel?' shape-rendering="crispEdges"':'')+'/>';
+ const path='<path d="'+strokePath(s)+'" fill="'+(shape&&s.fill?hex(s.fillColor,hex(s.color)):'none')+'" stroke="'+hex(s.color)+'" stroke-width="'+look.width+'" stroke-opacity="'+look.opacity+'" fill-opacity="'+(shape&&s.fill?.65*unit(s.opacity):0)+'" stroke-linecap="'+(look.pixel?'square':'round')+'" stroke-linejoin="round"'+(look.dash?' stroke-dasharray="'+look.dash+'"':'')+(look.glow?' style="filter:drop-shadow(0 0 4px '+hex(s.color)+')"':look.soft?' style="filter:blur(2px)"':'')+(look.pixel?' shape-rendering="crispEdges"':'')+'/>';
  const copy=path+(s.mirror?'<g transform="translate(600 0) scale(-1 1)">'+path+'</g>':'');
  const count=radialOptions.includes(s.radialSymmetry)?s.radialSymmetry:1;
  return Array.from({length:count},(_,i)=>i?'<g transform="rotate('+(i*360/count)+' 300 160)">'+copy+'</g>':copy).join('');
@@ -477,7 +478,7 @@ function readWork(){
 function enhance(data, files){
  const d=normalize(data),kind=d.kind,t=d.tools,strokes=t.strokes;
  if(!modes[kind])return files;
- const artworks=sketchMarkup(strokes,t.backdrop,kind==='dibujos'?t:null);
+ const artworks=sketchMarkup(strokes,t.backdrop,t);
  const book=['cuentos','libros','dramas','blogs'].includes(kind);
  const paged=book||kind==='animes';
  const pages=kind==='libros'?manuscriptPages(d.panels?.[0]?.text,t.bookImages):(d.panels||[]).map((p,i)=>{
@@ -501,7 +502,7 @@ function enhance(data, files){
  const effectClass='ck-effect-'+Math.max(0,['Flotar','Deslizar','Zoom suave'].indexOf(t.effect));
  const cls=(kind==='historietas'?'ck-grid-comic':kind==='dramas'?'ck-grid-stage':kind==='animes'?'ck-grid-anime':kind==='flyers'?'ck-grid-flyer':'ck-grid');
  const accent=/^#[0-9a-f]{6}$/i.test(d.color)?d.color:'#237fc3';
- const showDraw=kind==='dibujos'||strokes.length>0;
+ const showDraw=kind==='dibujos'||strokes.length>0||t.stamps.length>0||t.coloringPage!=='blanco';
  const artwork=showDraw?'<figure class="ck-drawing">'+artworks+'<figcaption>Ilustración original</figcaption></figure>':'';
  const cta=kind==='flyers'?'<div class="ck-cta">'+safe(t.callToAction)+'</div>':'';
  const partner=kind==='dramas'||kind==='historietas'||kind==='animes'?'<span class="ck-partner">'+safe(t.character)+' '+safe(t.partner)+'</span>':'';
@@ -557,7 +558,7 @@ function field(label,value,handler,options){
  input.addEventListener(options?.type==='color'?'input':'change',()=>handler(input.value));
  el.appendChild(input);return el;
 }
-function paintSketch(canvas,strokes,draft,background,extras){
+function paintSketch(canvas,strokes,draft,background,extras,onImageReady){
  const ctx=canvas.getContext('2d');if(!ctx)return;
  const colors=paintingGradients[extras?.backgroundGradient];
  ctx.clearRect(0,0,600,320);
@@ -582,7 +583,7 @@ function paintSketch(canvas,strokes,draft,background,extras){
     ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineWidth=look.width;ctx.lineCap=look.pixel?'square':'round';ctx.lineJoin='round';ctx.globalAlpha=look.opacity;
     if(look.dash)ctx.setLineDash(look.dash.split(' ').map(Number));
     if(look.glow||look.soft){ctx.shadowColor=s.color;ctx.shadowBlur=look.soft?15:10;}
-    if(s.type!=='pen'&&s.type!=='line'&&s.fill){ctx.globalAlpha=.65*unit(s.opacity);ctx.fill(path);ctx.globalAlpha=look.opacity;}
+    if(s.type!=='pen'&&s.type!=='line'&&s.fill){ctx.fillStyle=hex(s.fillColor,s.color);ctx.globalAlpha=.65*unit(s.opacity);ctx.fill(path);ctx.globalAlpha=look.opacity;}
     ctx.stroke(path);ctx.restore();
    }
    ctx.restore();
@@ -591,9 +592,16 @@ function paintSketch(canvas,strokes,draft,background,extras){
  if(extras?.stamps)for(const o of extras.stamps){
   ctx.save();ctx.translate(o.x,o.y);ctx.rotate(o.angle*Math.PI/180);ctx.scale(o.scale,o.scale);
   if(o.kind==='image'&&extras.drawingImages[o.imageId]){
-   const src=extras.drawingImages[o.imageId];let img=drawingImageCache.get(src);
-   if(!img){img=new Image();drawingImageCache.set(src,img);img.onload=()=>paintSketch(canvas,strokes,draft,background,extras);img.onerror=()=>drawingImageCache.delete(src);img.src=src;}
-   if(img.complete&&img.naturalWidth)ctx.drawImage(img,-45,-45,90,90);
+   const src=extras.drawingImages[o.imageId];let entry=drawingImageCache.get(src);
+   if(!entry){
+    const callbacks=new Map(),image=new Image();entry={image,callbacks};drawingImageCache.set(src,entry);
+    image.onload=()=>{for(const [target,callback] of callbacks)if(target.isConnected)callback();callbacks.clear();};
+    image.onerror=()=>{callbacks.clear();drawingImageCache.delete(src);};image.src=src;
+    if(drawingImageCache.size>48)drawingImageCache.delete(drawingImageCache.keys().next().value);
+   }
+   const img=entry.image;
+   if(!img.complete&&onImageReady)entry.callbacks.set(canvas,onImageReady);
+   if(img.complete&&img.naturalWidth){const ratio=90/Math.max(img.naturalWidth,img.naturalHeight),w=img.naturalWidth*ratio,h=img.naturalHeight*ratio;ctx.drawImage(img,-w/2,-h/2,w,h);}
   }else if(o.kind==='emoji'||o.kind==='text'){
    ctx.fillStyle=o.color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=(o.kind==='emoji'?'61px':'700 27px')+' system-ui,sans-serif';ctx.fillText(o.text,0,0,200);
   }else for(const part of stampParts(o.kind,o.color)){
@@ -607,8 +615,11 @@ function renderDrawingLab(parent,s,t,current,onChange){
  box.innerHTML='<div class="ct-lab-head"><div><strong>🎨 Mi estudio de arte</strong><small>Creá sobre un lienzo, coloreá láminas y combiná objetos.</small></div><button type="button" class="ct-lab-expand">⛶ Ampliar lienzo</button></div><div class="ct-lab-tabs" role="group" aria-label="Secciones del estudio"></div><div class="ct-lab-panel" data-draw-panel="pintar"></div><div class="ct-lab-panel" data-draw-panel="figuras" hidden></div><div class="ct-lab-panel" data-draw-panel="colorear" hidden></div><div class="ct-lab-panel" data-draw-panel="objetos" hidden></div><div class="ct-lab-panel" data-draw-panel="3d" hidden></div><div class="ct-lab-panel" data-draw-panel="capas" hidden></div><div class="ct-lab-palette" aria-label="Paleta de colores"></div><div class="ct-lab-actions"></div><canvas class="ct-canvas" width="600" height="320" aria-label="Lienzo: dibujá, coloreá o mové objetos" style="touch-action:none"></canvas><div class="ct-lab-selection" hidden></div><small class="ct-lab-hint" role="status"></small><small class="ct-lab-count" role="status"></small>';
  const canvas=box.querySelector('canvas'),tabs=box.querySelector('.ct-lab-tabs'),panels=[...box.querySelectorAll('[data-draw-panel]')];
  const hint=box.querySelector('.ct-lab-hint'),count=box.querySelector('.ct-lab-count'),selection=box.querySelector('.ct-lab-selection');
- let tool=t.tool,ink=t.ink,width=t.brush,style=t.brushStyle,opacity=t.opacity,smooth=t.smooth,mirror=t.mirror,radialSymmetry=t.radialSymmetry,activeLayer=t.activeLayer,guide=t.guide,shapeFill=t.shapeFill,draft=null,drag=null,selected=null,previewStamps=null;
+ let tool=t.tool,ink=t.ink,width=t.brush,style=t.brushStyle,opacity=t.opacity,smooth=t.smooth,mirror=t.mirror,radialSymmetry=t.radialSymmetry,activeLayer=t.activeLayer,guide=t.guide,shapeFill=t.shapeFill,draft=null,drag=null,selected=null,previewStamps=null,pointer=null;
  const undoStack=[],redoStack=[];
+ const objectLabel=o=>o.kind==='text'?'Texto: '+o.text:o.kind==='emoji'?'Objeto: '+o.text:o.kind==='image'?'Imagen propia':({cube:'Cubo',sphere:'Esfera',cylinder:'Cilindro',pyramid:'Pirámide',cone:'Cono'})[o.kind];
+ const makeObjectId=()=>'obj'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+ const boundX=x=>Math.max(0,Math.min(600,Math.round(x))),boundY=y=>Math.max(0,Math.min(320,Math.round(y)));
  const snapshot=d=>JSON.stringify({strokes:d.tools.strokes,stamps:d.tools.stamps,coloringPage:d.tools.coloringPage,templateColors:d.tools.templateColors,drawingImages:d.tools.drawingImages,layerVisibility:d.tools.layerVisibility,layerLocked:d.tools.layerLocked,backgroundGradient:d.tools.backgroundGradient});
  const useSnapshot=json=>{const saved=JSON.parse(json),latest=current();return onChange({...latest,tools:{...latest.tools,...saved}});};
  function save(patch,history=true){
@@ -620,7 +631,7 @@ function renderDrawingLab(parent,s,t,current,onChange){
  }
  function repaint(){
   const data=current().tools,extra=previewStamps?{...data,stamps:previewStamps}:data;
-  paintSketch(canvas,data.strokes,draft,data.backdrop,extra);
+  paintSketch(canvas,data.strokes,draft,data.backdrop,extra,repaint);
   if(guide!=='none'){
    const ctx=canvas.getContext('2d');ctx.save();ctx.strokeStyle='#315478';ctx.lineWidth=1;ctx.globalAlpha=.27;ctx.beginPath();
    for(let x=60;x<600;x+=60){ctx.moveTo(x,0);ctx.lineTo(x,320);}
@@ -628,6 +639,19 @@ function renderDrawingLab(parent,s,t,current,onChange){
    if(guide==='perspective')for(const x of [0,150,300,450,600]){ctx.moveTo(x,320);ctx.lineTo(300,85);}
    ctx.stroke();ctx.restore();
   }
+  const pickObject=box.querySelector('[data-object-picker]');
+  const objectValues=data.stamps.map(o=>({id:o.id,label:objectLabel(o)}));
+  const objectKey=JSON.stringify(objectValues);
+  if(pickObject.dataset.options!==objectKey){
+   pickObject.replaceChildren(new Option('Elegí un objeto', ''),...objectValues.map((o,i)=>new Option((i+1)+'. '+o.label,o.id)));
+   pickObject.dataset.options=objectKey;
+  }
+  pickObject.value=selected||'';
+  pickObject.disabled=!objectValues.length;
+  box.querySelectorAll('[data-template]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.template===data.coloringPage)));
+  box.querySelector('[data-undo-art]').disabled=!undoStack.length;
+  box.querySelector('[data-redo-art]').disabled=!redoStack.length;
+  box.querySelector('[data-art-gradient]').value=data.backgroundGradient;
   count.textContent=data.strokes.length+'/55 trazos · '+data.stamps.length+'/30 objetos · '+Object.keys(data.drawingImages).length+'/6 imágenes · '+coloringPages[data.coloringPage].label;
   box.querySelectorAll('[data-color]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.color===ink)));
   box.querySelectorAll('[data-layer]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.layer===activeLayer)));
@@ -636,25 +660,37 @@ function renderDrawingLab(parent,s,t,current,onChange){
   const object=data.stamps.find(x=>x.id===selected);
   selection.hidden=!object;
   if(object){
-   selection.querySelector('[data-object-name]').textContent=object.kind==='text'?'Texto: '+object.text:object.kind==='emoji'?'Objeto: '+object.text:object.kind==='image'?'Imagen propia':'Objeto 3D: '+object.kind;
+   selection.querySelector('[data-object-name]').textContent=objectLabel(object);
    selection.querySelector('[data-object-size]').value=object.scale;
    selection.querySelector('[data-object-angle]').value=object.angle;
+   selection.querySelector('[data-object-color]').value=object.color;
+   selection.querySelector('[data-object-text]').value=object.text;
+   selection.querySelector('[data-object-text]').parentElement.hidden=object.kind!=='text';
+   selection.querySelector('[data-object-color]').parentElement.hidden=['emoji','image'].includes(object.kind);
+   selection.querySelector('[data-object-front]').disabled=object===data.stamps.at(-1);
+   selection.querySelector('[data-object-back]').disabled=object===data.stamps[0];
+   selection.querySelector('[data-object-copy]').disabled=data.stamps.length>=30;
+   const focus=extra.stamps.find(o=>o.id===selected);
+   if(tool==='move'&&focus){
+    const ctx=canvas.getContext('2d');ctx.save();ctx.strokeStyle='#18314d';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+    const size=51*focus.scale;ctx.strokeRect(focus.x-size,focus.y-size,size*2,size*2);ctx.restore();
+   }
   }
  }
  function chooseTool(next){
-  tool=next;save({tool},false);
+  tool=next;if(current().tools.tool!==tool)save({tool},false);
   box.querySelectorAll('[data-draw-tool]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.drawTool===tool)));
-  hint.textContent=tool==='fill'?'Tocá una parte del dibujo para darle el color elegido.':tool==='move'?'Tocá un objeto y arrastralo; abajo podés cambiar tamaño y giro.':tool==='erase'?'Tocá un trazo u objeto para borrarlo.':tool==='picker'?'Tocá un color del dibujo para usarlo con tu pincel.':'Dibujá directamente sobre el lienzo con el mouse o el dedo.';
+  hint.textContent=tool==='fill'?'Tocá el interior de una figura cerrada o una zona de una lámina para pintarla.':tool==='move'?'Tocá un objeto y arrastralo, o elegilo en la lista para modificarlo sin mouse.':tool==='erase'?'Tocá un trazo u objeto para borrarlo.':tool==='picker'?'Tocá un color del dibujo para usarlo con tu pincel.':'Dibujá directamente sobre el lienzo con el mouse o el dedo.';
  }
  function chooseTab(name){
   panels.forEach(p=>{p.hidden=p.dataset.drawPanel!==name});
   tabs.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));
  }
  for(const [id,label] of [['pintar','🖌️ Pintar'],['figuras','◇ Figuras'],['colorear','🖍️ Colorear'],['objetos','🧸 Objetos'],['3d','🧊 3D'],['capas','🗂️ Capas']]){
-  const b=document.createElement('button');b.type='button';b.dataset.tab=id;b.textContent=label;b.onclick=()=>{chooseTab(id);if(id==='colorear')chooseTool('fill');if(id==='objetos'||id==='3d')chooseTool('move');if(id==='pintar')chooseTool('pen');if(id==='figuras')chooseTool('rectangle');};tabs.append(b);
+  const b=document.createElement('button');b.type='button';b.dataset.tab=id;b.textContent=label;b.onclick=()=>{chooseTab(id);if(id==='colorear')chooseTool('fill');if(id==='objetos'||id==='3d')chooseTool('move');if(id==='pintar')chooseTool('pen');if(id==='figuras')chooseTool('rectangle');repaint();};tabs.append(b);
  }
  function toolButton(label,value,host){
-  const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.drawTool=value;b.setAttribute('aria-pressed',String(tool===value));b.onclick=()=>chooseTool(value);host.append(b);return b;
+  const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.drawTool=value;b.setAttribute('aria-pressed',String(tool===value));b.onclick=()=>{chooseTool(value);repaint();};host.append(b);return b;
  }
  const brushes=box.querySelector('[data-draw-panel="pintar"]');
  const brushBar=document.createElement('div');brushBar.className='ct-lab-choices';
@@ -674,13 +710,13 @@ function renderDrawingLab(parent,s,t,current,onChange){
  const gradientLabel=document.createElement('label');gradientLabel.className='ct-lab-slider';gradientLabel.textContent='Fondo degradado (sin tapar tus dibujos)';
  const gradientSelect=document.createElement('select');gradientSelect.setAttribute('aria-label','Fondo degradado');
  for(const [id,label] of [['none','Color liso'],['cielo','☁️ Cielo'],['atardecer','🌅 Atardecer'],['oceano','🌊 Océano'],['bosque','🌿 Bosque'],['noche','🌙 Noche']])gradientSelect.add(new Option(label,id));
- gradientSelect.value=t.backgroundGradient;gradientSelect.onchange=()=>{if(save({backgroundGradient:gradientSelect.value}))repaint();};gradientLabel.append(gradientSelect);brushes.append(gradientLabel);
+ gradientSelect.dataset.artGradient='';gradientSelect.value=t.backgroundGradient;gradientSelect.onchange=()=>{if(save({backgroundGradient:gradientSelect.value}))repaint();};gradientLabel.append(gradientSelect);brushes.append(gradientLabel);
  const shapes=box.querySelector('[data-draw-panel="figuras"]'),shapeBar=document.createElement('div');shapeBar.className='ct-lab-choices';
  for(const [id,label] of [['line','╱ Línea'],['rectangle','▭ Rectángulo'],['circle','◯ Óvalo'],['triangle','△ Triángulo'],['star','☆ Estrella'],['heart','♡ Corazón']])toolButton(label,id,shapeBar);
  shapes.append(shapeBar);
  const fillLabel=document.createElement('label');fillLabel.className='ct-lab-checkbox';fillLabel.textContent='Rellenar las figuras';const fillCheck=document.createElement('input');fillCheck.type='checkbox';fillCheck.checked=shapeFill;fillCheck.onchange=()=>{shapeFill=fillCheck.checked;save({shapeFill},false)};fillLabel.prepend(fillCheck);shapes.append(fillLabel);
  const coloring=box.querySelector('[data-draw-panel="colorear"]');
- const intro=document.createElement('p');intro.textContent='Elegí un dibujo. Después seleccioná un color y tocá cada zona para pintarla.';coloring.append(intro);
+ const intro=document.createElement('p');intro.textContent='Elegí una lámina y pintá sus zonas, o usá el color para rellenar tus propias figuras cerradas.';coloring.append(intro);
  const templates=document.createElement('div');templates.className='ct-lab-templates';
  for(const [id,item] of Object.entries(coloringPages)){
   const b=document.createElement('button');b.type='button';b.dataset.template=id;b.innerHTML='<span aria-hidden="true">'+item.icon+'</span><small>'+item.label+'</small>';
@@ -699,7 +735,7 @@ function renderDrawingLab(parent,s,t,current,onChange){
  function addObject(kind,text,options={}){
   const data=current().tools;
   if(data.stamps.length>=30){hint.textContent='Llegaste a 30 objetos. Quitá uno para agregar otro.';return;}
-  const id='obj'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const id=makeObjectId();
   const object={id,kind,text,imageId:options.imageId||'',color:ink,x:Math.min(560,295+(data.stamps.length%5)*15),y:Math.min(280,140+(data.stamps.length%4)*14),scale:1,angle:0};
   if(save({stamps:[...data.stamps,object],...(options.drawingImages?{drawingImages:options.drawingImages}:{})})){selected=id;chooseTool('move');repaint();hint.textContent='Objeto agregado. Arrastralo para ubicarlo donde quieras.';}
  }
@@ -786,61 +822,108 @@ function renderDrawingLab(parent,s,t,current,onChange){
   }catch(e){hint.textContent='No se pudo exportar el PNG. Podés volver a intentarlo.';}
   finally{URL.revokeObjectURL(source);png.disabled=false;}
  };actions.append(png);
- const undo=document.createElement('button');undo.type='button';undo.textContent='↶ Deshacer';undo.onclick=()=>{if(!undoStack.length)return;const now=snapshot(current()),before=undoStack.pop();if(useSnapshot(before)){redoStack.push(now);selected=null;repaint();}else undoStack.push(before);};actions.append(undo);
- const redo=document.createElement('button');redo.type='button';redo.textContent='↷ Rehacer';redo.onclick=()=>{if(!redoStack.length)return;const now=snapshot(current()),after=redoStack.pop();if(useSnapshot(after)){undoStack.push(now);repaint();}else redoStack.push(after);};actions.append(redo);
+ const undo=document.createElement('button');undo.type='button';undo.dataset.undoArt='';undo.textContent='↶ Deshacer';undo.onclick=()=>{if(!undoStack.length)return;const now=snapshot(current()),before=undoStack.pop();if(useSnapshot(before)){redoStack.push(now);selected=null;repaint();}else undoStack.push(before);};actions.append(undo);
+ const redo=document.createElement('button');redo.type='button';redo.dataset.redoArt='';redo.textContent='↷ Rehacer';redo.onclick=()=>{if(!redoStack.length)return;const now=snapshot(current()),after=redoStack.pop();if(useSnapshot(after)){undoStack.push(now);repaint();}else redoStack.push(after);};actions.append(redo);
  const clear=document.createElement('button');clear.type='button';clear.textContent='🧹 Limpiar todo';clear.onclick=()=>{if(!confirm('¿Borrar todos los trazos, objetos y colores de este dibujo?'))return;if(save({strokes:[],stamps:[],templateColors:{},drawingImages:{},coloringPage:'blanco'})){selected=null;templates.querySelectorAll('[data-template]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.template==='blanco')));repaint();}};actions.append(clear);
- const selectedDiv=box.querySelector('.ct-lab-selection');
- selectedDiv.innerHTML='<strong data-object-name></strong><label>Tamaño <input data-object-size type="range" min="0.35" max="2.4" step="0.05" aria-label="Tamaño del objeto"></label><label>Giro <input data-object-angle type="range" min="-180" max="180" step="15" aria-label="Giro del objeto"></label><button type="button" data-object-front>Traer adelante</button><button type="button" data-object-delete>Quitar objeto</button>';
- const editSelected=field=>{const data=current().tools,stamps=data.stamps.map(o=>o.id===selected?{...o,[field]:Number(selectedDiv.querySelector('[data-object-'+(field==='scale'?'size':'angle')+']').value)}:o);if(save({stamps}))repaint();};
- selectedDiv.querySelector('[data-object-size]').onchange=()=>editSelected('scale');selectedDiv.querySelector('[data-object-angle]').onchange=()=>editSelected('angle');
- selectedDiv.querySelector('[data-object-front]').onclick=()=>{const data=current().tools,object=data.stamps.find(o=>o.id===selected);if(object&&save({stamps:[...data.stamps.filter(o=>o.id!==selected),object]}))repaint();};
- selectedDiv.querySelector('[data-object-delete]').onclick=()=>{const data=current().tools,stamps=data.stamps.filter(o=>o.id!==selected),used=new Set(stamps.map(o=>o.imageId));const drawingImages=Object.fromEntries(Object.entries(data.drawingImages).filter(([id])=>used.has(id)));if(save({stamps,drawingImages})){selected=null;repaint();}};
+ const selector=document.createElement('label');selector.className='ct-lab-object-picker';
+ selector.innerHTML='Objetos del dibujo <select data-object-picker aria-label="Objetos del dibujo"></select>';
+ selection.before(selector);
+ const selectObject=selector.querySelector('select');selectObject.onchange=()=>{selected=selectObject.value||null;if(selected)chooseTool('move');repaint();};
+ const selectedDiv=selection;
+ selectedDiv.innerHTML='<strong data-object-name aria-live="polite"></strong><label>Tamaño <input data-object-size type="range" min="0.35" max="2.4" step="0.05" aria-label="Tamaño del objeto"></label><label>Giro <input data-object-angle type="range" min="-180" max="180" step="15" aria-label="Giro del objeto"></label><label>Color del objeto <input data-object-color type="color"></label><label>Editar texto <input data-object-text type="text" maxlength="28"></label><button type="button" data-object-front>Traer adelante</button><button type="button" data-object-back>Enviar atrás</button><button type="button" data-object-copy>Duplicar objeto</button><button type="button" data-object-delete>Quitar objeto</button><div class="ct-lab-nudge" role="group" aria-label="Mover el objeto"><button type="button" data-nudge="0,-10" aria-label="Mover arriba">↑</button><button type="button" data-nudge="-10,0" aria-label="Mover a la izquierda">←</button><button type="button" data-nudge="10,0" aria-label="Mover a la derecha">→</button><button type="button" data-nudge="0,10" aria-label="Mover abajo">↓</button></div>';
+ const updateObject=fn=>{
+  const data=current().tools,o=data.stamps.find(item=>item.id===selected);if(!o)return;
+  const next=fn(o);if(JSON.stringify(next)===JSON.stringify(o))return;
+  if(save({stamps:data.stamps.map(item=>item.id===selected?next:item)}))repaint();
+ };
+ for(const [id,key,parse] of [['size','scale',Number],['angle','angle',Number],['color','color',String],['text','text',v=>v.trim()]]){
+  const input=selectedDiv.querySelector('[data-object-'+id+']');
+  input.onchange=()=>{const value=parse(input.value);if(id==='text'&&!value){repaint();return;}updateObject(o=>({...o,[key]:value}));};
+ }
+ const reorder=front=>{
+  const data=current().tools,object=data.stamps.find(o=>o.id===selected);if(!object)return;
+  const others=data.stamps.filter(o=>o.id!==selected);
+  if(save({stamps:front?[...others,object]:[object,...others]}))repaint();
+ };
+ selectedDiv.querySelector('[data-object-front]').onclick=()=>reorder(true);
+ selectedDiv.querySelector('[data-object-back]').onclick=()=>reorder(false);
+ selectedDiv.querySelector('[data-object-copy]').onclick=()=>{
+  const data=current().tools,o=data.stamps.find(item=>item.id===selected);if(!o||data.stamps.length>=30)return;
+  const object={...o,id:makeObjectId(),x:boundX(o.x+(o.x>565?-18:18)),y:boundY(o.y+(o.y>285?-18:18))};
+  if(save({stamps:[...data.stamps,object]})){selected=object.id;repaint();}
+ };
+ const removeObject=id=>{
+  const data=current().tools;if(!data.stamps.some(o=>o.id===id))return;
+  const stamps=data.stamps.filter(o=>o.id!==id),used=new Set(stamps.map(o=>o.imageId));
+  const drawingImages=Object.fromEntries(Object.entries(data.drawingImages).filter(([key])=>used.has(key)));
+  if(save({stamps,drawingImages})){if(selected===id)selected=null;repaint();}
+ };
+ selectedDiv.querySelector('[data-object-delete]').onclick=()=>{removeObject(selected);if(selectedDiv.hidden)selectObject.focus();};
+ const moveObject=(dx,dy)=>updateObject(o=>({...o,x:boundX(o.x+dx),y:boundY(o.y+dy)}));
+ selectedDiv.querySelectorAll('[data-nudge]').forEach(b=>{b.onclick=()=>moveObject(...b.dataset.nudge.split(',').map(Number));});
+ canvas.tabIndex=0;canvas.setAttribute('aria-label','Lienzo: dibujá, coloreá o mové objetos. Las flechas mueven el objeto seleccionado.');
+ canvas.onkeydown=e=>{
+  if(!selected||tool!=='move'||e.ctrlKey||e.altKey||e.metaKey)return;
+  const distance=e.shiftKey?10:1,moves={ArrowUp:[0,-distance],ArrowDown:[0,distance],ArrowLeft:[-distance,0],ArrowRight:[distance,0]};
+  if(moves[e.key]){e.preventDefault();moveObject(...moves[e.key]);}
+ };
  const expand=box.querySelector('.ct-lab-expand');expand.onclick=()=>{const open=box.classList.toggle('ct-canvas-expanded');expand.textContent=open?'✕ Volver al taller':'⛶ Ampliar lienzo';};
- const rectCoord=e=>{const rect=canvas.getBoundingClientRect();return [Math.max(0,Math.min(600,Math.round((e.clientX-rect.left)*600/rect.width))),Math.max(0,Math.min(320,Math.round((e.clientY-rect.top)*320/rect.height)))];};
+ const rectCoord=e=>{const rect=canvas.getBoundingClientRect();return [boundX((e.clientX-rect.left)*600/rect.width),boundY((e.clientY-rect.top)*320/rect.height)];};
  const objectAt=(data,x,y)=>[...data.stamps].reverse().find(o=>Math.hypot(o.x-x,o.y-y)<(o.kind==='text'?75:48)*o.scale);
- const hitStroke=(ctx,stroke,x,y)=>{
+ const hitStroke=(ctx,stroke,x,y,regionOnly=false)=>{
   const path=new Path2D(strokePath(stroke)),count=radialOptions.includes(stroke.radialSymmetry)?stroke.radialSymmetry:1;
+  const contains=regionOnly?(x,y)=>ctx.isPointInPath(path,x,y):(x,y)=>ctx.isPointInStroke(path,x,y);
+  ctx.save();
   ctx.lineWidth=Math.max(17,strokeLook(stroke).width+16);
   for(let i=0;i<count;i++){
    const angle=-i*2*Math.PI/count,dx=x-300,dy=y-160;
    const testX=300+dx*Math.cos(angle)-dy*Math.sin(angle),testY=160+dx*Math.sin(angle)+dy*Math.cos(angle);
-   if(ctx.isPointInStroke(path,testX,testY)||(stroke.mirror&&ctx.isPointInStroke(path,600-testX,testY)))return true;
+   if(contains(testX,testY)||(stroke.mirror&&contains(600-testX,testY))){ctx.restore();return true;}
   }
-  return false;
+  ctx.restore();return false;
  };
  canvas.onpointerdown=e=>{
-  if(!s.cloudReady||s.busy)return;e.preventDefault();const [x,y]=rectCoord(e),data=current().tools;
+  if(!s.cloudReady||s.busy||pointer!==null||(e.pointerType&&!e.isPrimary))return;e.preventDefault();const [x,y]=rectCoord(e),data=current().tools;
   if(tool==='picker'){
    try{
-    const rgb=canvas.getContext('2d').getImageData(x,y,1,1).data;
+    paintSketch(canvas,data.strokes,null,data.backdrop,data,repaint);
+    const rgb=canvas.getContext('2d').getImageData(Math.min(599,x),Math.min(319,y),1,1).data;
     ink='#'+[rgb[0],rgb[1],rgb[2]].map(v=>v.toString(16).padStart(2,'0')).join('');custom.value=ink;
     if(save({ink},false)){chooseTool('pen');repaint();hint.textContent='✓ Color seleccionado. Ya podés pintar con él.';}
-   }catch(_e){hint.textContent='No se pudo tomar ese color. Elegí uno de la paleta.';}
+   }catch(_e){repaint();hint.textContent='No se pudo tomar ese color. Elegí uno de la paleta.';}
    return;
   }
   if(tool==='fill'){
-   const ctx=canvas.getContext('2d'),part=[...coloringPages[data.coloringPage].parts].reverse().find(p=>ctx.isPointInPath(new Path2D(p.d),x,y));
+   const ctx=canvas.getContext('2d'),hit=[...visibleStrokes(data.strokes,data)].reverse().find(stroke=>drawShapes.includes(stroke.type)&&stroke.type!=='line'&&hitStroke(ctx,stroke,x,y,true));
+   if(hit){
+    if(data.layerLocked[hit.layer]){hint.textContent='Esa figura está en una capa bloqueada.';return;}
+    if(save({strokes:data.strokes.map(stroke=>stroke===hit?{...stroke,fill:true,fillColor:ink}:stroke)}))repaint();
+    return;
+   }
+   const part=[...coloringPages[data.coloringPage].parts].reverse().find(p=>ctx.isPointInPath(new Path2D(p.d),x,y));
    if(part&&save({templateColors:{...data.templateColors,[part.id]:ink}}))repaint();
-   else if(!part)hint.textContent='Tocá dentro de una figura de la lámina para colorearla.';
+   else if(!part)hint.textContent='Tocá dentro de una figura cerrada o elegí una lámina para colorear.';
    return;
   }
   if(tool==='move'){
-   const o=objectAt(data,x,y);selected=o?.id||null;repaint();
-   if(o){canvas.setPointerCapture(e.pointerId);drag={id:o.id,dx:x-o.x,dy:y-o.y};}
+   const o=objectAt(data,x,y);selected=o?.id||null;canvas.focus({preventScroll:true});repaint();
+   if(o){canvas.setPointerCapture(e.pointerId);pointer=e.pointerId;drag={id:o.id,dx:x-o.x,dy:y-o.y};}
    return;
   }
   if(tool==='erase'){
    const o=objectAt(data,x,y);
-   if(o){const stamps=data.stamps.filter(p=>p.id!==o.id),used=new Set(stamps.map(p=>p.imageId));const drawingImages=Object.fromEntries(Object.entries(data.drawingImages).filter(([id])=>used.has(id)));if(save({stamps,drawingImages})){selected=null;repaint();}return;}
-   const ctx=canvas.getContext('2d'),index=data.strokes.findLastIndex(stroke=>{const layer=stroke.layer==='details'?'details':'base';return data.layerVisibility[layer]!==false&&!data.layerLocked[layer]&&hitStroke(ctx,stroke,x,y)});
-   if(index>=0&&save({strokes:data.strokes.filter((_,i)=>i!==index)}))repaint();return;
+   if(o){removeObject(o.id);return;}
+   const ctx=canvas.getContext('2d'),hit=[...visibleStrokes(data.strokes,data)].reverse().find(stroke=>hitStroke(ctx,stroke,x,y)||(stroke.fill&&hitStroke(ctx,stroke,x,y,true)));
+   if(hit&&data.layerLocked[hit.layer]){hint.textContent='Ese trazo está en una capa bloqueada.';return;}
+   if(hit&&save({strokes:data.strokes.filter(stroke=>stroke!==hit)}))repaint();return;
   }
   if(data.layerVisibility[activeLayer]===false){hint.textContent='Mostrá la capa seleccionada antes de dibujar.';return;}
   if(data.layerLocked[activeLayer]){hint.textContent='La capa está bloqueada. Desbloqueala en Capas para seguir pintando.';return;}
   if(data.strokes.length>=55){hint.textContent='Llegaste a 55 trazos. Podés borrar uno, usar objetos o descargar tu dibujo.';return;}
-  canvas.setPointerCapture(e.pointerId);draft={type:tool==='pen'?'pen':tool,color:ink,width,opacity,smooth,mirror,radialSymmetry,layer:activeLayer,style:tool==='pen'?style:'pen',fill:shapeFill,points:[[x,y]]};repaint();
+  canvas.setPointerCapture(e.pointerId);pointer=e.pointerId;draft={type:tool==='pen'?'pen':tool,color:ink,width,opacity,smooth,mirror,radialSymmetry,layer:activeLayer,style:tool==='pen'?style:'pen',fill:shapeFill,points:[[x,y]]};repaint();
  };
  canvas.onpointermove=e=>{
+  if(e.pointerId!==pointer)return;
   if(drag){const [x,y]=rectCoord(e),o=current().tools.stamps.find(v=>v.id===drag.id);if(!o)return;previewStamps=current().tools.stamps.map(item=>item.id===drag.id?{...item,x:Math.round(Math.max(0,Math.min(600,x-drag.dx))),y:Math.round(Math.max(0,Math.min(320,y-drag.dy)))}:item);repaint();return;}
   if(!draft)return;const point=rectCoord(e),points=draft.points;
   if(draft.type==='pen'){
@@ -849,11 +932,16 @@ function renderDrawingLab(parent,s,t,current,onChange){
    draft.points.push(point);
   }else draft.points=[points[0],point];repaint();
  };
- const finish=()=>{
-  if(drag){const data=current().tools,changed=previewStamps;drag=null;previewStamps=null;if(changed&&save({stamps:changed}))repaint();else repaint();return;}
-  if(draft){const data=current().tools,stroke=draft;draft=null;if(save({strokes:[...data.strokes,stroke].slice(-55)}))repaint();else repaint();}
+ const finish=e=>{
+  if(e.pointerId!==pointer)return;
+  pointer=null;
+  if(drag){const changed=previewStamps;drag=null;previewStamps=null;if(changed)save({stamps:changed});repaint();return;}
+  if(draft){const data=current().tools,stroke=draft;draft=null;save({strokes:[...data.strokes,stroke]});repaint();}
  };
- canvas.onpointerup=finish;canvas.onpointercancel=()=>{draft=null;drag=null;previewStamps=null;repaint()};
+ canvas.onpointerup=finish;canvas.onpointercancel=canvas.onlostpointercapture=e=>{
+  if(e.pointerId!==pointer)return;
+  pointer=null;draft=null;drag=null;previewStamps=null;repaint();
+ };
  parent.append(box);chooseTab(['fill'].includes(tool)?'colorear':drawShapes.includes(tool)?'figuras':tool==='move'?'objetos':'pintar');
  box.querySelectorAll('[data-brush]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.brush===style)));
  chooseTool(tool);repaint();
@@ -923,52 +1011,12 @@ function render(work,s,data,onChange){
    section.append(details);
   });
  }
- // A canvas is available in every art-friendly workshop, but drawing is the main tool for Dibujos.
- if(['dibujos','historietas','animes','cuentos','flyers','blogs','dramas'].includes(kind)){
-  const box=document.createElement('div');box.className='ct-drawing-box';
-  const head=document.createElement('strong');head.textContent=kind==='dibujos'?'🎨 Lienzo de dibujo':'🎨 Ilustración de portada / escena';
-  const bar=document.createElement('div');bar.className='ct-paintbar';
-  let tool=t.tool,ink=t.ink,width=t.brush,draft=null;
-  const strokeControls=[['Pincel','pen'],['Línea','line'],['Rectángulo','rectangle'],['Círculo','circle'],['Goma','erase']];
-  for(const [label,value] of strokeControls){
-   const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.paint=value;
-   b.setAttribute('aria-pressed',String(tool===value));b.onclick=()=>{
-    tool=value;bar.querySelectorAll('[data-paint]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.paint===tool)));
-    change('tool',tool);
-   };bar.append(b);
-  }
-  const c=document.createElement('input');c.type='color';c.value=ink;c.title='Color del pincel';c.setAttribute('aria-label','Color del pincel');c.onchange=()=>{ink=c.value;change('ink',ink)};bar.append(c);
-  const size=document.createElement('input');size.type='range';size.min='1';size.max='18';size.value=String(width);size.title='Grosor';size.setAttribute('aria-label','Grosor del pincel');size.onchange=()=>{width=Number(size.value);change('brush',width)};bar.append(size);
-  const undo=document.createElement('button');undo.type='button';undo.textContent='↶ Deshacer trazo';undo.onclick=()=>{const data=current();if(!data.tools.strokes.length)return;change('strokes',data.tools.strokes.slice(0,-1));paintSketch(canvas,current().tools.strokes,null,current().tools.backdrop)};bar.append(undo);
-  const clear=document.createElement('button');clear.type='button';clear.textContent='Limpiar';clear.onclick=()=>{if(!confirm('¿Limpiar la ilustración de esta obra?'))return;change('strokes',[]);paintSketch(canvas,[],null,current().tools.backdrop)};bar.append(clear);
-  const canvas=document.createElement('canvas');canvas.width=600;canvas.height=320;canvas.className='ct-canvas';canvas.setAttribute('aria-label','Lienzo para dibujar la ilustración');canvas.style.touchAction='none';
-  function coord(e){const rect=canvas.getBoundingClientRect();return [Math.max(0,Math.min(600,Math.round((e.clientX-rect.left)*600/rect.width))),Math.max(0,Math.min(320,Math.round((e.clientY-rect.top)*320/rect.height)))];}
-  canvas.addEventListener('pointerdown',e=>{if(!s.cloudReady||s.busy)return;e.preventDefault();
-   const pos=coord(e);
-   if(tool==='erase'){
-    const latest=current(),strokes=latest.tools.strokes;
-    let best=-1,min=Infinity;
-    strokes.forEach((s,i)=>s.points.forEach(p=>{const dist=Math.hypot(p[0]-pos[0],p[1]-pos[1]);if(dist<min){min=dist;best=i;}}));
-    if(best>=0&&min<42){const next=strokes.filter((_,i)=>i!==best);change('strokes',next);paintSketch(canvas,next,null,latest.tools.backdrop);}
-    return;
-   }
-   canvas.setPointerCapture(e.pointerId);draft={type:tool,color:ink,width,points:[pos]};paintSketch(canvas,current().tools.strokes,draft,current().tools.backdrop);
-  });
-  canvas.addEventListener('pointermove',e=>{if(!draft)return;const pos=coord(e),points=draft.points;
-   if(draft.type==='pen'){
-    const last=points[points.length-1];
-    if(Math.hypot(pos[0]-last[0],pos[1]-last[1])>=3){
-     if(points.length>=100)draft.points=points.filter((_,i)=>i%2===0||i===points.length-1);
-     draft.points.push(pos);
-    }
-   }
-   else draft.points=[points[0],pos];
-   paintSketch(canvas,current().tools.strokes,draft,current().tools.backdrop);
-  });
-  const finish=()=>{if(!draft)return;const next=current();const updated=[...next.tools.strokes,draft].slice(-45);draft=null;change('strokes',updated);paintSketch(canvas,updated,null,current().tools.backdrop);};
-  canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
-  box.append(head,bar,canvas);const hint=document.createElement('small');hint.textContent='Dibujá con el mouse o con el dedo. Los trazos se guardan junto a la obra.';box.append(hint);parent.append(box);
-  paintSketch(canvas,t.strokes,null,t.backdrop);
+ // Reuse the complete visual tools for cover art without crowding the writing area.
+ if(['historietas','animes','cuentos','flyers','blogs','dramas','libros'].includes(kind)){
+  const details=document.createElement('details');details.className='ct-cover-art';
+  const summary=document.createElement('summary');summary.textContent='🎨 Abrir ArteLab para ilustrar la portada';
+  details.append(summary);parent.append(details);
+  renderDrawingLab(details,s,t,current,onChange);
  }
 }
 window.ClubTalleres={modes,normalize,enhance,render,renderDrawingLab,sketchMarkup,readingFiles};

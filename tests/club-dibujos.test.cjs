@@ -138,8 +138,24 @@ test('Krita: los bloqueos de capas y los ajustes inválidos se normalizan con se
 });
 
 test('el acceso carga el diseño actualizado tanto por código como por entrada directa',()=>{
- for(const page of ['club-krueka.html','studio.html','app.html'])assert.match(read(page),/club-studio-talleres\.css\?v=20261121magma1/);
- for(const page of ['club-krueka.html','studio.html'])assert.match(read(page),/club-studio-access\.js\?v=20261121krita1/);
- assert.match(read('js/club-studio-access.js'),/club-studio-talleres\.js'\)return 'js\/'.*20261121krita1/);
+ for(const page of ['club-krueka.html','studio.html','app.html'])assert.match(read(page),/club-studio-talleres\.css\?v=20261125/);
+ for(const page of ['club-krueka.html','studio.html'])assert.match(read(page),/club-studio-access\.js\?v=20261125/);
+ assert.match(read('js/club-studio-access.js'),/club-studio-talleres\.js'.*return 'js\/'.*20261125/);
  assert.match(read('club/club-studio-talleres.css'),/ct-canvas-expanded/);
+});
+
+
+test('los rellenos conservan el contorno y la portada de otros talleres muestra ArteLab',()=>{
+ const raw={kind:'libros',title:'Libro de prueba',panels:[{title:'Inicio',text:'Este es mi libro.'}],tools:{
+  coloringPage:'casa',templateColors:{pared:'#7469aa'},
+  strokes:[{type:'rectangle',color:'#227799',fill:true,fillColor:'#aa5533',points:[[5,5],[100,80]]}],
+  stamps:[{id:'objabcdef',kind:'text',text:'Mi título',x:125,y:125,color:'#4444aa'}]
+ }};
+ const files=enhance(raw,{});
+ assert.match(files['index.html'],/fill="#aa5533" stroke="#227799"/);
+ assert.match(files['index.html'],/fill="#7469aa" stroke="#344357"/);
+ assert.match(files['index.html'],/>Mi título<\/text>/);
+ assert.equal(JSON.parse(files['obra.json']).tools.strokes[0].fillColor,'#aa5533');
+ raw.tools.strokes[0].fillColor='url(javascript:alert(1))';
+ assert.match(enhance(raw,{})['index.html'],/fill="#227799" stroke="#227799"/);
 });

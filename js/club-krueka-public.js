@@ -1,38 +1,20 @@
-/* Galería pública Club Krueka: catálogo visual.
-   Obras de alumnos: sólo RPC de aprobados. Ejemplos: archivos estáticos propios, etiquetados. */
+/* Galería pública Club Krueka.
+   Obras de alumnos: sólo RPC de aprobados. Los modelos se etiquetan aparte. */
 (function(){
 'use strict';
 const API='https://janebfpnknapvntfqolf.supabase.co/rest/v1/rpc/club_krueka_public_galeria';
 const KEY='sb_publishable_mSuSFqWycvm9dQQzjpeaRA_kAyZOJl0';
 const cats=[
- ['todos','🌟','Todas'],
- ['juegos','🎮','Videojuegos'],['paginas','🌐','Páginas web'],['aplicaciones','📱','Aplicaciones web'],['blogs','📰','Blogs'],
- ['historietas','💬','Historietas'],['cuentos','📖','Cuentos'],['libros','📚','Libros'],
- ['dramas','🎭','Dramas'],['animes','✨','Anime original'],
- ['flyers','📣','Afiches'],['dibujos','🎨','Dibujos'],
- ['animaciones','🎞️','Animaciones'],['videos','🎬','Videos']
+ ['todos','Todas','#f6f2e8'],
+ ['juegos','Videojuegos','#f5bb85'],['paginas','Páginas web','#b7c9e3'],['aplicaciones','Aplicaciones web','#c5c6e9'],['blogs','Blogs','#d1d9b8'],
+ ['historietas','Historietas','#e8a7b2'],['cuentos','Cuentos','#bed8c6'],['libros','Libros','#e9d2a2'],
+ ['dramas','Dramas','#e1aeb4'],['animes','Anime original','#c9bde1'],
+ ['flyers','Afiches','#f4cb72'],['dibujos','Dibujos','#e8b7a7'],
+ ['animaciones','Animaciones','#afd1d9'],['videos','Videos','#b3cceb']
 ];
 const demo=Array.isArray(window.KruekaEjemplos?.catalog)?window.KruekaEjemplos.catalog:[];
-const category=Object.fromEntries(cats.map(([id,emoji,name])=>[id,{id,emoji,name}]));
-const colors={
- paginas:['#236e94','#265c75','#142647'],
- aplicaciones:['#485db3','#3d756e','#162144'],
- juegos:['#173a91','#7032b7','#0d0d35'],
- blogs:['#0c6780','#17637d','#0f1c37'],
- historietas:['#9d326b','#6a287c','#1b123d'],
- cuentos:['#2b9271','#236e94','#122a43'],
- libros:['#95622e','#6b417f','#222745'],
- dramas:['#ae5278','#54247d','#1b1439'],
- animes:['#8f44d2','#2966bb','#141441'],
- flyers:['#e86c32','#d34882','#642d71'],
- dibujos:['#b64bba','#5265c5','#1a1a56'],
- animaciones:['#138fab','#5555c7','#101c45'],
- videos:['#b94d6c','#5856c4','#1a1c44']
-};
-const sections={
- alumnos:document.getElementById('alumnos'),
- ejemplos:document.getElementById('ejemplos')
-};
+const category=new Map(cats.map(([id,name,wash])=>[id,{id,name,wash}]));
+const sections={alumnos:document.getElementById('alumnos'),ejemplos:document.getElementById('ejemplos')};
 const elems={
  studentCount:document.getElementById('student-count'),
  demoCount:document.getElementById('demo-count'),
@@ -40,9 +22,10 @@ const elems={
  demoCards:document.getElementById('example-cards'),
  status:document.getElementById('gallery-status'),
  total:document.getElementById('total'),
- spotlight:document.getElementById('destacado')
+ reload:document.getElementById('reload')
 };
-let approved=[],scope='todas',filter='todos',term='',loaded=false;
+let approved=[],scope='todas',filter='todos',term='',state='loading';
+const fold=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('es');
 function makeButton(text,parent,pressed,clicked){
  const b=document.createElement('button');b.type='button';b.textContent=text;
  b.setAttribute('aria-pressed',String(pressed));b.onclick=clicked;parent.append(b);
@@ -50,9 +33,7 @@ function makeButton(text,parent,pressed,clicked){
 function initFilters(){
  const nav=document.getElementById('categories');
  nav.replaceChildren();
- for(const [id,emoji,label] of cats){
-  makeButton(emoji+' '+label,nav,filter===id,()=>chooseCategory(id));
- }
+ for(const [id,label] of cats)makeButton(label,nav,filter===id,()=>chooseCategory(id));
  document.querySelectorAll('[data-scope]').forEach(b=>{
   b.onclick=()=>{scope=b.dataset.scope;document.querySelectorAll('[data-scope]').forEach(v=>v.setAttribute('aria-pressed',String(v.dataset.scope===scope)));render();};
  });
@@ -60,28 +41,35 @@ function initFilters(){
 function chooseCategory(id){filter=id;document.querySelectorAll('#categories button').forEach((v,i)=>v.setAttribute('aria-pressed',String(cats[i][0]===id)));render();}
 function matches(item){
  if(filter!=='todos'&&item.category!==filter)return false;
- if(term&&!String(item.title+' '+(item.short||'')+' '+(category[item.category]?.name||'')).toLowerCase().includes(term))return false;
- return true;
+ return !term||fold(item.title+' '+(item.short||'')+' '+(category.get(item.category)?.name||'')).includes(term);
+}
+function artwork(cat){
+ const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),use=document.createElementNS(ns,'use');
+ svg.setAttribute('viewBox','0 0 100 72');svg.setAttribute('aria-hidden','true');svg.setAttribute('focusable','false');
+ use.setAttribute('href','assets/club/taller-pictogramas.svg#'+(cat.id==='todos'?'dibujos':cat.id));
+ svg.append(use);return svg;
 }
 function cardFor(item,example){
- const cat=category[item.category]||category.juegos;
- const palette=example?item.colors:(colors[item.category]||colors.juegos);
- const a=document.createElement('article');a.className='card';
- const link=document.createElement('a');link.className='card-link';
+ const cat=category.get(item.category)||{id:'todos',name:'Creación del Club',wash:'#f4cb93'};
+ const a=document.createElement('article');a.className='kr-card';a.dataset.category=cat.id;
+ const link=document.createElement('a');link.className='kr-card-link';
+ const reader=cat.id==='libros'||cat.id==='historietas'||cat.id==='cuentos'||cat.id==='blogs';
+ const action=cat.id==='juegos'?'Jugar':reader?'Leer':cat.id==='videos'||cat.id==='animaciones'?'Ver':'Explorar';
+ const name=String(item.title||'Mi creación').slice(0,80);
  link.href=example?'club-krueka-ejemplo.html?ejemplo='+encodeURIComponent(item.id):
    'club-krueka-obra.html?obra='+encodeURIComponent(item.id);
- link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label',(example?'Probar ejemplo: ':'Abrir obra aprobada: ')+String(item.title||'Creación'));
- const cover=document.createElement('div');cover.className='cover';cover.style.setProperty('--a',palette[0]);cover.style.setProperty('--b',palette[1]);cover.style.setProperty('--c',palette[2]);
- const graphic=document.createElement('span');graphic.className='cover-emoji';graphic.textContent=example?item.icon:cat.emoji;
- const secondary=document.createElement('span');secondary.className='mini-emoji';secondary.textContent=example?item.secondary:'✦';
- const tag=document.createElement('span');tag.className='cover-label';tag.textContent=example?'💡 MODELO DEL CLUB':'✓ OBRA APROBADA';
- cover.append(graphic,secondary,tag);
- const info=document.createElement('div');info.className='card-info';
- const meta=document.createElement('span');meta.className='card-meta';meta.textContent=cat.name+(example?' · Ejemplo original':' · Alumno del club');
- const title=document.createElement('h3');title.textContent=String(item.title||'Mi creación').slice(0,80);
- const desc=document.createElement('p');desc.textContent=example?String(item.short||'').slice(0,130):'Creación publicada y aprobada para explorar.';
- const cta=document.createElement('span');cta.className='card-action';cta.textContent=cat.id==='juegos'?'▶ Jugar en nueva pestaña':'👁 Explorar en nueva pestaña';
- info.append(meta,title,desc,cta);link.append(cover,info);a.append(link);
+ link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label',action+': '+name+' (nueva pestaña)');
+ const cover=document.createElement('div');cover.className='kr-card-cover';cover.style.setProperty('--wash',cat.wash);
+ const tag=document.createElement('span');tag.textContent=example?'Modelo del Club':'Obra aprobada';
+ cover.append(tag,artwork(cat));
+ const info=document.createElement('div');info.className='kr-card-info';
+ const meta=document.createElement('span');meta.className='kr-card-meta';meta.textContent=cat.name;
+ const title=document.createElement('h3');title.textContent=name;
+ info.append(meta,title);
+ if(example){const desc=document.createElement('p');desc.textContent=String(item.short||'').slice(0,130);info.append(desc);}
+ const cta=document.createElement('span');cta.className='kr-card-action';cta.textContent=action;
+ const arrow=document.createElement('b');arrow.setAttribute('aria-hidden','true');arrow.textContent='↗';cta.append(arrow);
+ info.append(cta);link.append(cover,info);a.append(link);
  return a;
 }
 function emptyMessage(parent,title,description){
@@ -89,42 +77,50 @@ function emptyMessage(parent,title,description){
  const strong=document.createElement('strong');strong.textContent=title;
  const p=document.createElement('p');p.textContent=description;box.append(strong,p);parent.append(box);
 }
+function plural(n,s,p){return n+' '+(n===1?s:p);}
 function render(){
  const s=approved.filter(matches),m=demo.filter(matches);
  const showStudent=scope!=='ejemplos',showDemo=scope!=='alumnos';
  sections.alumnos.hidden=!showStudent;sections.ejemplos.hidden=!showDemo;
- elems.spotlight.hidden=Boolean(term)||(scope==='alumnos')||filter!=='todos';
  elems.studentCards.replaceChildren();elems.demoCards.replaceChildren();
  if(showStudent){
   for(const item of s)elems.studentCards.append(cardFor(item,false));
-  if(!s.length)emptyMessage(elems.studentCards,loaded?'Todavía no hay obras en esta selección.':'Conectando con las creaciones…',loaded?'Probá otra categoría o explorá los modelos del Club.':'Esperá unos segundos.');
+  if(!s.length){
+   if(state==='error')emptyMessage(elems.studentCards,'No pudimos cargar las obras.','Revisá tu conexión y pulsá «Actualizar obras». Los modelos del Club siguen disponibles.');
+   else if(state==='loading')emptyMessage(elems.studentCards,'Buscando obras aprobadas…','Podés explorar los modelos mientras se carga la galería.');
+   else if(term||filter!=='todos')emptyMessage(elems.studentCards,'No hay obras de alumnos con este filtro.','Probá otra categoría o cambiá lo que buscaste.');
+   else emptyMessage(elems.studentCards,'Todavía no hay obras publicadas.','Los proyectos aparecen acá cuando el profe los aprueba.');
+  }
  }
  if(showDemo){
   for(const item of m)elems.demoCards.append(cardFor(item,true));
-  if(!m.length)emptyMessage(elems.demoCards,'Sin modelos con ese filtro','Probá otra categoría o cambiá la búsqueda.');
+  if(!m.length)emptyMessage(elems.demoCards,'No hay modelos con ese filtro.','Probá otra categoría o cambiá lo que buscaste.');
  }
- elems.studentCount.textContent=s.length+' creaciones';
- elems.demoCount.textContent=m.length+' modelos';
- elems.total.textContent=(showStudent?s.length:0)+(showDemo?m.length:0)+' resultados';
- elems.status.textContent=loaded?s.length+' obras aprobadas en esta selección.':'Cargando creaciones aprobadas…';
+ const total=(showStudent?s.length:0)+(showDemo?m.length:0);
+ elems.studentCount.textContent=state==='ready'?plural(s.length,'obra','obras'):'';
+ elems.demoCount.textContent=plural(m.length,'modelo','modelos');
+ elems.total.textContent=plural(total,'resultado','resultados');
+ elems.status.textContent=state==='ready'?plural(s.length,'obra aprobada','obras aprobadas')+' en esta selección.':
+  state==='loading'?'Cargando creaciones aprobadas…':'No se pudo cargar la lista de obras aprobadas.';
 }
 async function load(){
- elems.status.textContent='Consultando los proyectos aprobados del Club…';
+ state='loading';elems.reload.disabled=true;render();
  try{
   const res=await fetch(API,{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:'{}'});
   const data=await res.json();
   if(!res.ok||!Array.isArray(data))throw Error('No se pudo consultar');
   approved=data.filter(item=>item&&typeof item.id==='string'&&typeof item.title==='string');
-  loaded=true;render();
+  state='ready';
   const selected=new URLSearchParams(location.search).get('obra');
   if(selected&&approved.some(p=>String(p.id)===selected))location.replace('club-krueka-obra.html?obra='+encodeURIComponent(selected));
  }catch(_err){
-  approved=[];loaded=true;render();
-  elems.status.textContent='No pudimos comprobar las publicaciones. Verificá internet y pulsá Actualizar obras.';
+  approved=[];state='error';
+ }finally{
+  elems.reload.disabled=false;render();
  }
 }
-document.getElementById('reload').onclick=load;
-document.getElementById('search-form').onsubmit=e=>{e.preventDefault();term=document.getElementById('search').value.trim().toLocaleLowerCase('es');render();};
-document.getElementById('search').addEventListener('input',e=>{term=String(e.target.value||'').trim().toLocaleLowerCase('es');render()});
-initFilters();render();load();
+elems.reload.onclick=load;
+document.getElementById('search-form').onsubmit=e=>{e.preventDefault();term=fold(document.getElementById('search').value.trim());render();};
+document.getElementById('search').addEventListener('input',e=>{term=fold(String(e.target.value||'').trim());render()});
+initFilters();load();
 })();

@@ -17,6 +17,7 @@ jobs:
           node-version: '22'
       - run: npm install --prefix "$RUNNER_TEMP/club-browser" --ignore-scripts playwright-core@1.56.1
       - run: NODE_PATH="$RUNNER_TEMP/club-browser/node_modules" node tests/club-modelos-browser.test.cjs
+      - run: NODE_PATH="$RUNNER_TEMP/club-browser/node_modules" node tests/club-public-catalog-browser.test.cjs
   club_avanzados:
     runs-on: ubuntu-latest
     steps:
