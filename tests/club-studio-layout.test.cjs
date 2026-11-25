@@ -10,7 +10,7 @@ test('el taller compacto carga en ambas entradas por código y después de los m
  for(const page of ['studio.html','club-krueka.html']){
   const html=read(page);
   assert.match(html,/club\/club-studio-layout\.css\?v=20261121layout1/);
-  assert.match(html,/js\/club-studio-access\.js\?v=20261121[a-z0-9]+/);
+  assert.match(html,/js\/club-studio-access\.js\?v=\d{8}[a-z0-9]*"/);
   assert.ok(html.indexOf('club/club-studio-layout.css')>html.indexOf('club/club-studio-club.css'));
  }
 });

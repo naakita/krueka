@@ -64,6 +64,16 @@
 #krueka-studio .ct-lab-selection strong{grid-column:1/-1;color:#fff0b4;font-size:12px}
 #krueka-studio .ct-lab-selection label{min-width:0;display:grid;gap:2px;font-size:11px;color:#d8effb}
 #krueka-studio .ct-lab-selection input{width:100%}
+#krueka-studio .ct-lab-object-picker{display:grid;gap:4px;font-size:12px;color:#d7ebf8}
+#krueka-studio .ct-lab-object-picker select,#krueka-studio .ct-lab-selection input[type="text"]{min-width:0;width:100%;min-height:38px;padding:6px 8px;color:#f4fbff;background:#0b2032;border:1px solid #7da3a4;border-radius:7px;font:inherit}
+#krueka-studio .ct-lab-selection input[type="color"]{min-height:36px;padding:2px;background:#0b2032;border:1px solid #7da3a4;border-radius:7px}
+#krueka-studio .ct-lab-nudge{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+#krueka-studio .ct-lab-nudge button{min-width:43px;min-height:42px}
+#krueka-studio .ct-art-lab button:disabled{opacity:.55;cursor:default}
+#krueka-studio .ct-art-lab :is(select,input,canvas):focus-visible,#krueka-studio .ct-cover-art summary:focus-visible{outline:2px solid #ffe69a;outline-offset:2px}
+#krueka-studio .ct-cover-art{min-width:0;margin:0}
+#krueka-studio .ct-cover-art summary{display:list-item;padding:10px 12px;color:#d5f4ff;background:#143651;border:1px solid #628ca5;border-radius:8px;font-size:13px;font-weight:750;cursor:pointer}
+#krueka-studio .ct-cover-art[open] .ct-art-lab{margin-top:6px}
 #krueka-studio .ct-lab-hint{font-size:12px;color:#f5deb4}
 #krueka-studio .ct-lab-count{font-size:11px;color:#b5d0e2}
 #krueka-studio .ct-art-lab.ct-canvas-expanded{position:fixed;inset:53px 10px 10px;z-index:10000;overflow:auto;align-content:start;padding:12px 16px;background:#0d2235;box-shadow:0 0 0 100vmax #0009,0 20px 60px #000b}

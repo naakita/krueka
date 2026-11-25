@@ -6,6 +6,50 @@ on:
 permissions:
   contents: read
 jobs:
+  club_modelos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/club-browser" --ignore-scripts playwright-core@1.56.1
+      - run: NODE_PATH="$RUNNER_TEMP/club-browser/node_modules" node tests/club-modelos-browser.test.cjs
+      - run: NODE_PATH="$RUNNER_TEMP/club-browser/node_modules" node tests/club-public-catalog-browser.test.cjs
+  club_avanzados:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - run: node tests/studio-creative.test.cjs
+      - run: node tests/studio-creative-browser.test.cjs
+      - run: node --check js/club-studio-bloques.js
+      - run: node --test tests/club-studio-bloques.test.cjs
+      - run: node tests/club-studio-bloques-browser.test.cjs
+      - run: node --check js/club-studio-showcase.js
+      - run: node tests/studio-neon-rift.test.cjs
+      - run: node tests/studio-neon-rift-browser.cjs
+      - run: node --check js/club-studio-forge.js
+      - run: node tests/studio-forge.test.cjs
+      - run: node tests/studio-forge-browser.test.cjs
+      - run: node --check js/club-studio-missions.js
+      - run: node tests/studio-missions.test.cjs
+      - run: node tests/studio-missions-browser.test.cjs
+      - run: node --check js/club-studio-heroes.js
+      - run: node tests/studio-heroes.test.cjs
+      - run: node tests/studio-heroes-browser.test.cjs
+      - run: node tests/studio-heroes-editor-browser.test.cjs
+      - run: node --check js/club-studio-game-builder.js
+      - run: node tests/studio-game-builder.test.cjs
+      - run: node --check js/club-studio-render-pro.js
+      - run: node tests/studio-render-pro.test.cjs
+      - run: node tests/studio-render-pro-browser.test.cjs
   club_guias:
     runs-on: ubuntu-latest
     steps:
@@ -102,29 +146,6 @@ jobs:
       - run: node tests/club-talleres-browser.test.cjs
       - run: node --test tests/academia-ia.test.cjs
       - run: node --test tests/academia-ia-teacher-demo.test.cjs
-      - run: node tests/studio-creative.test.cjs
-      - run: node tests/studio-creative-browser.test.cjs
-      - run: node --check js/club-studio-bloques.js
-      - run: node --test tests/club-studio-bloques.test.cjs
-      - run: node tests/club-studio-bloques-browser.test.cjs
-      - run: node --check js/club-studio-showcase.js
-      - run: node tests/studio-neon-rift.test.cjs
-      - run: node tests/studio-neon-rift-browser.cjs
-      - run: node --check js/club-studio-forge.js
-      - run: node tests/studio-forge.test.cjs
-      - run: node tests/studio-forge-browser.test.cjs
-      - run: node --check js/club-studio-missions.js
-      - run: node tests/studio-missions.test.cjs
-      - run: node tests/studio-missions-browser.test.cjs
-      - run: node --check js/club-studio-heroes.js
-      - run: node tests/studio-heroes.test.cjs
-      - run: node tests/studio-heroes-browser.test.cjs
-      - run: node tests/studio-heroes-editor-browser.test.cjs
-      - run: node --check js/club-studio-game-builder.js
-      - run: node tests/studio-game-builder.test.cjs
-      - run: node --check js/club-studio-render-pro.js
-      - run: node tests/studio-render-pro.test.cjs
-      - run: node tests/studio-render-pro-browser.test.cjs
       - run: node --check js/club-studio-alt-help.js
       - run: node tests/studio-alternative-chat.test.cjs
       - run: node tests/studio-alternative-chat-browser.test.cjs
@@ -167,4 +188,6 @@ jobs:
       - run: node --check js/krueka-clase-temporal.js
       - run: node tests/krueka-live-class.test.cjs
       - run: node tests/krueka-live-class-history.test.cjs
-      - run: node tests/krueka-live-class-browser.test.cjs
+      - run: node tests/krueka-material-preview.test.cjs
+      - run: npm install --prefix "$RUNNER_TEMP/class-browser" --ignore-scripts playwright-core@1.56.1
+      - run: NODE_PATH="$RUNNER_TEMP/class-browser/node_modules" node tests/krueka-live-class-browser.test.cjs

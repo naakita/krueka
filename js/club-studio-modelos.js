@@ -53,10 +53,22 @@ const templates={
   {type:'pen',color:'#a24adc',width:9,points:[[80,245],[130,213],[192,235],[252,191],[320,230],[420,170]]}
  ]}}
 };
-function editable(s){
+function editable(s,changes={}){
  if(s.category==='juegos')return window.KruekaEjemplos.make(s);
- if(s.category==='animaciones')return originalCreate('animation');
- if(s.category==='videos')return originalCreate('video-edit');
+ if(s.id==='animacion'||s.id==='video'){
+  const files=originalCreate(s.starter),cfg=kits.read(files);cfg.title=s.title;
+  if(s.id==='animacion'){
+   const speed=Math.max(1,Math.min(10,Number(changes.speed)||5));cfg.duration=+(2*(2.8-speed*.22)).toFixed(2);
+   cfg.background=/^#[a-f0-9]{6}$/i.test(changes.color)?changes.color:'#176f93';
+   cfg.caption='El robot baila en la pista';cfg.actors=[{id:'robot',icon:'🤖',name:'Robot bailarín',frames:[{t:0,x:30,y:68},{t:cfg.duration/2,x:65,y:45,angle:15},{t:cfg.duration,x:30,y:68}]}];
+  }else{
+   const texts=Array.isArray(changes.clips)&&changes.clips.length===4?changes.clips:['Una idea aparece','Probamos nuestro primer invento','La aventura despega','¡Lo conseguimos juntos!'];
+   cfg.clips=texts.map((v,i)=>({id:'escena-'+i,title:String(v).slice(0,80),subtitle:String(v).slice(0,100),duration:2.2,color:['#203263','#533474','#156175','#56304e'][i]}));
+  }
+  files['game-config.js']=kits.configFile(StudioMedia.clean(cfg));return files;
+ }
+ if(s.id==='dibujo'&&changes.tools)return club.build({kind:s.category,title:s.title,...templates.dibujo,tools:changes.tools});
+ if(s.id==='flyer'&&changes.title)return club.build({kind:s.category,...templates.flyer,title:String(changes.title).slice(0,70),color:changes.color});
  const data=templates[s.id];if(!data)return originalCreate(s.starter);
  return club.build({kind:s.category,title:s.title,...data});
 }
@@ -82,10 +94,11 @@ for(const model of list){
 // su taller visual; el videojuego se abre directamente en el editor de código.
 const originalCreateProject=studio.createKit;
 studio.createKit=async function(id){
- const r=await originalCreateProject.apply(this,arguments);
- if(typeof id==='string'&&id.startsWith('modelo-')){
+ const before=this.projectId;const r=await originalCreateProject.apply(this,arguments);
+ if(this.projectId!==before&&typeof id==='string'&&id.startsWith('modelo-')){
   if(club.isCreative(this))this.showTab('club-work');
   else if(id==='modelo-neon')this.showTab('programacion');
+  else if(id==='modelo-animacion'||id==='modelo-video')this.showTab('create');
  }
  return r;
 };
@@ -102,7 +115,24 @@ studio.open=async function(){
  const dialog=this.dialog('Crear mi versión de '+spec.title,
   '<p>Esta es una <b>base editable del Club Krueka</b>. Se creará un proyecto nuevo en tu cuenta; los anteriores no se borrarán. Después podés personalizarlo y enviarlo al profe.</p><div class="row" style="display:flex;gap:10px;flex-wrap:wrap"><button class="ks-btn primary" id="krueka-use-model" type="button">✦ Crear mi versión</button><button class="ks-btn" id="krueka-cancel-model" type="button">Ahora no</button></div>');
  dialog.querySelector('#krueka-use-model').onclick=async()=>{
-  await this.createKit('modelo-'+spec.id);
+  if(this.busy)return;
+  const before=this.projectId,key=new URLSearchParams(location.search).get('boceto');
+  if(key){
+   try{
+    if(!/^[a-f0-9-]{36}$/.test(key))throw Error();
+    const handle='krueka-modelo:'+key,raw=sessionStorage.getItem(handle);
+    if(!raw||raw.length>180000)throw Error();
+    const draft=JSON.parse(raw);if(draft.id!==spec.id||!draft.content)throw Error();
+    const files=editable(spec,spec.id==='dibujo'?{tools:draft.content}:draft.content);
+    await this.startProject(this.validFiles(files),spec.id==='flyer'?String(draft.content.title).slice(0,70):spec.title);
+    if(this.projectId===before)return;
+    sessionStorage.removeItem(handle);this.showTab(club.isCreative(this)?'club-work':'create');
+   }catch(e){
+    dialog.querySelector('p').textContent='No se pudo abrir este borrador. Volvé al modelo en la pestaña donde trabajaste y elegí Crear mi versión.';
+    return;
+   }
+  }else await this.createKit('modelo-'+spec.id);
+  if(this.projectId===before)return;
   try{history.replaceState(null,'',location.pathname);}catch(_e){}
  };
  dialog.querySelector('#krueka-cancel-model').onclick=()=>{

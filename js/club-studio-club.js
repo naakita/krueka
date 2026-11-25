@@ -196,7 +196,7 @@ function selectPart(index){
 }
 function arrangeTools(kind){
  const host=work.querySelector('#ck-specific-tools'),assets=work.querySelector('[data-pane="assets"]');
- const drawing=host.querySelector('.ct-drawing-box'),format=host.querySelector('.ct-format');
+ const drawing=host.querySelector(':scope > .ct-drawing-box'),format=host.querySelector('.ct-format');
  const canvas=work.querySelector('#ck-draw-first'),textTools=work.querySelector('#ck-format');
  canvas.replaceChildren();textTools.replaceChildren();assets.replaceChildren();
  if(format)textTools.append(format);

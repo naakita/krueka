@@ -96,6 +96,17 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
     work.querySelector('[data-section="'+section+'"]').click();
     verify(!work.querySelector('[data-pane="'+section+'"]').hidden,'abrir '+section);
    }
+   if(id!=='dibujos'){
+    work.querySelector('[data-section="assets"]').click();
+    const art=work.querySelector('.ct-cover-art');
+    verify(art&&art.hidden===false,'ArteLab para portada '+id);
+    art.querySelector('summary').click();
+    art.querySelector('[data-tab="objetos"]').click();
+    const input=art.querySelector('[aria-label="Texto para colocar en el dibujo"]');
+    input.value='Portada del taller';input.nextElementSibling.click();
+    verify(art.open&&StudioIA.files['index.html'].includes('>Portada del taller</text>'),'ilustración en portada '+id);
+    work.querySelector('[data-section="content"]').click();
+   }
    if(id==='historietas'){
     const scene=work.querySelector('.ck-scene:not([hidden])');
     [...scene.querySelectorAll('button')].find(b=>b.textContent==='Duplicar').click();

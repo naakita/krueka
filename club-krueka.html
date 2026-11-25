@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-PY">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="index,follow">
 <meta name="referrer" content="no-referrer">
-<title>Club Krueka · Creá, compartí y explorá</title>
+<meta name="description" content="El taller creativo del Club Krueka. Dibujá, escribí historias, programá juegos y explorá la galería de los alumnos.">
+<title>Club Krueka · Talleres creativos</title>
 <link rel="icon" href="logo.svg">
 <link rel="stylesheet" href="club/club-studio.css?v=20261009f">
 <link rel="stylesheet" href="club/club-studio-access.css?v=20261114web1">
@@ -13,37 +14,82 @@
 <link rel="stylesheet" href="club/club-studio-programacion.css?v=20261114web1">
 <link rel="stylesheet" href="club/club-studio-bloques.css?v=20261121bloques1">
 <link rel="stylesheet" href="club/club-studio-club.css?v=20261120mesa">
-<link rel="stylesheet" href="club/club-studio-talleres.css?v=20261121magma1">
+<link rel="stylesheet" href="club/club-studio-talleres.css?v=20261125">
 <link rel="stylesheet" href="club/club-studio-medios.css?v=20261114media2">
 <link rel="stylesheet" href="club/club-prompts-3d.css?v=1">
 <link rel="stylesheet" href="club/club-studio-layout.css?v=20261121layout1">
+<link rel="stylesheet" href="club/club-krueka-public.css?v=20261125tinta2">
 </head>
 <body class="studio-access">
-<main id="studio-entry" class="studio-entry kc-entry">
-  <header class="studio-entry-top"><a href="index.html" aria-label="Krueka, inicio"><img src="logo.svg" alt="Krueka" width="125" height="52"></a><a class="kc-gallery-link" href="club-krueka-galeria.html">Galería del Club →</a></header>
-  <div class="kc-entry-layout">
-    <section class="kc-access-pane" aria-labelledby="club-title">
-      <h1 id="club-title">Club<br><em>Krueka.</em></h1>
-      <p class="kc-intro">Un taller para crear videojuegos con bloques, animar personajes, dibujar y contar tus propias historias.</p>
-      <p><a class="kc-gallery-link" href="club-krueka-guia.html">📖 Guías de Scratch y Roblox paso a paso →</a></p>
-      <p><a class="kc-gallery-link" href="club-prompts-3d.html">Prompts para programar juegos 3D →</a></p>
-      <form id="studio-login-form">
+<main id="studio-entry" class="studio-entry kc-entry kr-public kr-home">
+  <a class="kr-skip" href="#studio-code">Ir al acceso al Club</a>
+  <header class="kr-masthead">
+    <a class="kr-wordmark" href="club-krueka.html" aria-current="page"><b aria-hidden="true">K</b><span>Club Krueka</span></a>
+    <nav aria-label="Club Krueka">
+      <a href="#talleres">Talleres</a>
+      <a href="club-krueka-galeria.html">Galería <span class="kr-arrow" aria-hidden="true"></span></a>
+    </nav>
+    <a class="kr-network" href="index.html">Ir a Krueka <span class="kr-arrow" aria-hidden="true"></span></a>
+  </header>
+
+  <div class="kr-hero">
+    <section class="kr-hero-copy" aria-labelledby="club-title">
+      <p class="kr-kicker"><span class="kr-dot" aria-hidden="true"></span> Club de informática <span aria-hidden="true">/</span> Taller creativo</p>
+      <h1 id="club-title">Acá se <em>crea.</em></h1>
+      <p class="kr-intro">Dibujá, escribí historias, programá juegos y mostrá lo que hiciste. Cada taller empieza con una idea tuya.</p>
+      <form id="studio-login-form" class="kr-login">
         <label for="studio-code">Tu código del Club</label>
-        <div class="kc-code-row"><input id="studio-code" name="code" maxlength="6" pattern="[A-Za-z0-9]{6}" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="6 letras o números" required aria-describedby="studio-login-message">
+        <div class="kr-login-fields"><input id="studio-code" name="code" maxlength="6" pattern="[A-Za-z0-9]{6}" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="6 letras o números" required aria-describedby="studio-login-message">
         <button id="studio-login-button" type="submit" disabled>Preparando…</button></div>
       </form>
       <p id="studio-login-message" class="studio-entry-message" role="status" aria-live="polite">Cargando los talleres…</p>
-      <details class="kc-access-help"><summary>Ayuda para entrar</summary><p>Pedile tu código personal al profe. Necesitás internet para entrar y guardar. En una computadora compartida, usá <b>Salir</b> al terminar.</p><p id="studio-browser-state"></p></details>
+      <details class="kr-access-help"><summary>¿Dónde consigo mi código?</summary><p>Pedile tu código personal al profe. Necesitás internet para entrar y guardar. Si compartís la computadora, usá <b>Salir</b> al terminar.</p><p id="studio-browser-state"></p></details>
     </section>
-    <section class="kc-samples" aria-label="Creaciones que podés probar sin código">
-      <a class="kc-poster kc-poster-game" href="ejemplos/pabellon.html?modo=juego"><span class="kc-sky" aria-hidden="true"><i></i><b></b></span><span class="kc-poster-copy"><small>Videojuego</small><strong>El pabellón 3D</strong><span>Jugar →</span></span></a>
-      <a class="kc-poster kc-poster-book" href="club-krueka-ejemplo.html?ejemplo=drama&amp;vista=libro"><span class="kc-paper" aria-hidden="true"></span><span class="kc-poster-copy"><small>Teatro</small><strong>El misterio del aula</strong><span>Hojear →</span></span></a>
-      <a class="kc-poster kc-poster-comic" href="club-krueka-ejemplo.html?ejemplo=comic"><span class="kc-bubble" aria-hidden="true">!</span><span class="kc-poster-copy"><small>Historieta</small><strong>Entre viñetas</strong><span>Leer →</span></span></a>
-    </section>
+    <figure class="kr-hero-art">
+      <img src="assets/club/taller-cartel.svg" width="620" height="540" alt="">
+      <figcaption><span>Cuaderno del Club</span><span>01 <span aria-hidden="true">/</span> La mesa de trabajo</span></figcaption>
+    </figure>
   </div>
-  <footer class="kc-entry-footer"><details><summary>Más espacios del Club</summary><nav aria-label="Otros espacios"><a href="ejemplos/pabellon.html?modo=cine">Cortometraje 3D</a><a href="ejemplos/krueka-odyssey.html">Odyssey 3D</a><a href="academia-ia.html">Academia IA</a><a href="programacion-juegos.html">Juegos publicados</a><a href="personajes.html">Personajes 2D</a></nav></details><nav aria-label="Ayuda de acceso"><a href="accesos.html">Otros accesos</a><a href="informacion.html">Uso y privacidad</a><a href="informacion.html#ayuda">Ayuda</a></nav></footer>
+
+  <section class="kr-workshops" id="talleres" aria-labelledby="workshop-title">
+    <p class="kr-kicker">Elegí qué querés hacer</p>
+    <div class="kr-section-lead"><h2 id="workshop-title">Los talleres</h2><p>No necesitás un código para recorrer la galería y probar los modelos de ejemplo.</p></div>
+    <div class="kr-workshop-grid">
+      <article class="kr-workshop kr-program">
+        <div class="kr-workshop-art"><span>01 / Programación</span><svg viewBox="0 0 100 72" aria-hidden="true"><use href="assets/club/taller-pictogramas.svg#juegos"/></svg></div>
+        <h3>Programá y jugá</h3><p>Juegos 2D y 3D, programación por bloques, páginas y aplicaciones web.</p>
+        <a href="club-krueka-ejemplo.html?ejemplo=neon">Probá un videojuego <span class="kr-arrow" aria-hidden="true"></span></a>
+      </article>
+      <article class="kr-workshop kr-writing">
+        <div class="kr-workshop-art"><span>02 / Historias</span><svg viewBox="0 0 100 72" aria-hidden="true"><use href="assets/club/taller-pictogramas.svg#libros"/></svg></div>
+        <h3>Contá una historia</h3><p>Creá libros, cuentos, historietas, obras de teatro y blogs.</p>
+        <a href="club-krueka-ejemplo.html?ejemplo=cuento&amp;vista=libro">Hojeá un cuento <span class="kr-arrow" aria-hidden="true"></span></a>
+      </article>
+      <article class="kr-workshop kr-visual">
+        <div class="kr-workshop-art"><span>03 / Artes visuales</span><svg viewBox="0 0 100 72" aria-hidden="true"><use href="assets/club/taller-pictogramas.svg#dibujos"/></svg></div>
+        <h3>Dibujá y diseñá</h3><p>Pintá en ArteLab, coloreá láminas, componé una escena o diseñá un afiche.</p>
+        <a href="club-krueka-ejemplo.html?ejemplo=dibujo">Probá ArteLab <span class="kr-arrow" aria-hidden="true"></span></a>
+      </article>
+      <article class="kr-workshop kr-motion">
+        <div class="kr-workshop-art"><span>04 / Movimiento</span><svg viewBox="0 0 100 72" aria-hidden="true"><use href="assets/club/taller-pictogramas.svg#videos"/></svg></div>
+        <h3>Dale movimiento</h3><p>Animá personajes, armá un anime original o montá escenas en video.</p>
+        <a href="club-krueka-ejemplo.html?ejemplo=video">Probá el mini estudio <span class="kr-arrow" aria-hidden="true"></span></a>
+      </article>
+    </div>
+  </section>
+
+  <section class="kr-showcase" aria-labelledby="showcase-title">
+    <a class="kr-showcase-image" href="ejemplos/pabellon.html?modo=juego"><img src="assets/club/laguna-atardecer.webp" alt="" width="640" height="360" loading="lazy"><span>Modelo del Club · El pabellón 3D <b class="kr-arrow" aria-hidden="true"></b></span></a>
+    <div><p class="kr-kicker">La exposición del Club</p><h2 id="showcase-title">Mirá lo que se hace acá.</h2><p>Explorá los trabajos que los alumnos publicaron con aprobación del profe. Los modelos del Club tienen su propia sección.</p><a class="kr-button kr-button-orange" href="club-krueka-galeria.html">Abrir la galería <span class="kr-arrow" aria-hidden="true"></span></a></div>
+  </section>
+
+  <footer class="kr-footer">
+    <a class="kr-wordmark" href="club-krueka.html"><b aria-hidden="true">K</b><span>Club Krueka</span></a>
+    <nav aria-label="Recursos y ayuda del Club"><a href="club-krueka-guia.html">Guías de Scratch y Roblox</a><a href="club-prompts-3d.html">Guía de juegos 3D</a><a href="accesos.html">Otros accesos</a><a href="informacion.html">Uso y privacidad</a><a href="informacion.html#ayuda">Ayuda</a></nav>
+    <details><summary>Más espacios del Club</summary><nav aria-label="Otros espacios"><a href="ejemplos/pabellon.html?modo=cine">Cortometraje 3D</a><a href="ejemplos/krueka-odyssey.html">Odyssey 3D</a><a href="academia-ia.html">Academia IA</a><a href="programacion-juegos.html">Juegos publicados</a><a href="personajes.html">Personajes 2D</a></nav></details>
+  </footer>
 </main>
 <noscript><p class="studio-entry-message">Activá JavaScript en este navegador para abrir tu taller.</p></noscript>
-<script src="js/club-studio-access.js?v=20261121krita1pilotowork1"></script>
+<script src="js/club-studio-access.js?v=20261125"></script>
 </body>
 </html>

@@ -22,7 +22,7 @@ function appendText(parent,text){
 }
 function open(host,blob,name){
  if(active)active.destroy();
- let alive=true,renderTask=null,pdfTask=null,pdfDocument=null,imgUrl=null,expanded=false;
+ let alive=true,renderTask=null,pdfTask=null,pdfDocument=null,pdfResize=null,pdfFrame=0,imgUrl=null,expanded=false;
  const surface=node('div','preview-surface'),tools=node('div','preview-controls');
  const body=node('div','preview-body');
  const title=node('strong','preview-name',name||'Material de la clase');
@@ -36,7 +36,7 @@ function open(host,blob,name){
  const view={
   destroy(){
    if(!alive)return;
-   alive=false;document.removeEventListener('keydown',onKey);
+   alive=false;pdfResize?.disconnect();if(pdfFrame)cancelAnimationFrame(pdfFrame);document.removeEventListener('keydown',onKey);
    if(renderTask)renderTask.cancel();
    if(pdfTask)pdfTask.destroy().catch(()=>{});
    if(imgUrl)URL.revokeObjectURL(imgUrl);
@@ -65,17 +65,31 @@ function open(host,blob,name){
   const lib=await (pdfModule ||= import(new URL('assets/vendor/pdfjs/pdf.min.mjs',document.baseURI).href));
   if(!alive)return;
   lib.GlobalWorkerOptions.workerSrc=new URL('assets/vendor/pdfjs/pdf.worker.min.mjs',document.baseURI).href;
-  pdfTask=lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())});
+  const bytes=new Uint8Array(await blob.arrayBuffer());if(!alive)return;
+  pdfTask=lib.getDocument({data:bytes});
   pdfDocument=await pdfTask.promise;if(!alive)return;
   body.replaceChildren();
   let pageNumber=1,zoom=1,drawNumber=0;
-  const nav=node('div','preview-page-nav'),prev=action('Anterior',()=>{if(pageNumber>1){pageNumber--;draw();}}),
-   next=action('Siguiente',()=>{if(pageNumber<pdfDocument.numPages){pageNumber++;draw();}}),
-   less=action('−',()=>{zoom=Math.max(.6,zoom-.2);draw();}),more=action('+',()=>{zoom=Math.min(2.4,zoom+.2);draw();}),
+  const nav=node('div','preview-page-nav'),prev=action('Anterior',()=>{if(pageNumber>1){pageNumber--;requestDraw();}}),
+   next=action('Siguiente',()=>{if(pageNumber<pdfDocument.numPages){pageNumber++;requestDraw();}}),
+   less=action('−',()=>{zoom=Math.max(.6,zoom-.2);requestDraw();}),more=action('+',()=>{zoom=Math.min(2.4,zoom+.2);requestDraw();}),
    count=node('span','preview-page-count');
-  const canvas=node('canvas','preview-pdf-canvas');
+  const scroller=node('div','preview-pdf-scroll'),canvas=node('canvas','preview-pdf-canvas');
   canvas.setAttribute('aria-label','Página del documento PDF');
-  nav.append(prev,count,next,less,more);body.append(nav,canvas);
+  scroller.tabIndex=0;scroller.setAttribute('aria-label','Área del PDF');
+  scroller.append(canvas);nav.append(prev,count,next,less,more);body.append(nav,scroller);
+  let lastWidth=scroller.clientWidth;
+  const requestDraw=()=>draw().catch(e=>{if(alive)notice(body,'No se pudo preparar la página del PDF: '+e.message);});
+  if(typeof ResizeObserver==='function'){
+   pdfResize=new ResizeObserver(()=>{
+    const width=scroller.clientWidth;
+    if(alive&&width>0&&width!==lastWidth){
+     lastWidth=width;if(pdfFrame)cancelAnimationFrame(pdfFrame);
+     pdfFrame=requestAnimationFrame(()=>{pdfFrame=0;requestDraw();});
+    }
+   });
+   pdfResize.observe(scroller);
+  }
   async function draw(){
    const ticket=++drawNumber;
    if(renderTask){renderTask.cancel();try{await renderTask.promise;}catch(_){/* cancelado */}}
@@ -83,7 +97,7 @@ function open(host,blob,name){
    const page=await pdfDocument.getPage(pageNumber);
    if(!alive||ticket!==drawNumber)return;
    const original=page.getViewport({scale:1});
-   const fit=Math.min(1.4,Math.max(.48,(body.clientWidth-28)/original.width));
+   const fit=Math.min(1.4,Math.max(1,scroller.clientWidth)/original.width);
    const viewport=page.getViewport({scale:fit*zoom});
    const ratio=Math.min(window.devicePixelRatio||1,2),ctx=canvas.getContext('2d');
    canvas.width=Math.floor(viewport.width*ratio);canvas.height=Math.floor(viewport.height*ratio);
