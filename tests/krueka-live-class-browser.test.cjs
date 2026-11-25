@@ -1,18 +1,15 @@
-const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
-const bin=['chromium','chromium-browser','google-chrome','google-chrome-stable'].find(c=>cp.spawnSync(c,['--version'],{encoding:'utf8',timeout:2500}).status===0);
-assert.ok(bin,'No hay Chromium');
 const raw=fs.readFileSync(path.join(root,'actividades-clase.html'),'utf8');
 const client=fs.readFileSync(path.join(root,'js/krueka-clase-temporal.js'),'utf8');
-const temp=path.join(root,'__test_temp_classes.html');
 // PDF mínimo válido para comprobar la carga del visor canvas sin descargas.
 const pdfFixture=(()=>{
- const stream='BT /F1 22 Tf 46 190 Td (Guia de clase visible en pantalla) Tj ET\n';
+ const stream='0 0 0 rg 46 150 120 45 re f\n';
  const objects=[
   '<< /Type /Catalog /Pages 2 0 R >>',
-  '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-  '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 500 300] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
-  '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+  '<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>',
+  '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 500 300] /Resources << >> /Contents 5 0 R >>',
+  '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 900 300] /Resources << >> /Contents 5 0 R >>',
   '<< /Length '+Buffer.byteLength(stream)+' >>\nstream\n'+stream+'endstream'
  ];
  let content='%PDF-1.4\n',offsets=[];
@@ -28,25 +25,79 @@ const mock='<script>'+
 'if(body&&body.action==="guide")return {ok:true,blob:async()=>new Blob([Uint8Array.from(atob("'+pdfFixture+'"),c=>c.charCodeAt(0))],{type:"application/pdf"})};'+
 'return {ok:false,json:async()=>({ok:false,error:"Mock sin entrega real"})};};'+
 '</script>';
-const test='<script>setTimeout(function(){try{'+
-'var code=document.getElementById("student-code"),form=document.getElementById("lookup-form");'+
-'code.value="ABCDEFGHJKLM";form.dispatchEvent(new Event("submit",{cancelable:true,bubbles:true}));'+
-'setTimeout(function(){'+
-'var view=document.getElementById("activity-view"),inst=document.getElementById("activity-instructions"),heading=document.getElementById("activity-title");'+
-'var checks={student:!document.getElementById("student").hidden,teacher:document.getElementById("teacher").hidden,'+
-'view:view&&!view.hidden,heading:heading&&heading.textContent==="Actividad real de prueba",instructions:inst&&inst.textContent.includes("entregalo en la clase"),file:!!document.getElementById("student-file"),pdf:!document.getElementById("student-pdf").hidden,pdfCanvas:!!document.querySelector("#student-pdf-frame canvas"),noNativeViewer:document.getElementById("student-pdf-frame").tagName==="DIV",expandButton:document.getElementById("open-guide").tagName==="BUTTON",overflow:document.documentElement.scrollWidth-innerWidth<=3};'+
-'var bad=Object.keys(checks).filter(function(k){return !checks[k]});document.body.dataset.test=bad.length?"FAIL:"+bad.join(","):"PASS";'+
-'},2200);'+
-'}catch(err){document.body.dataset.test="ERROR:"+err.message}},350)</script>';
-try{
- const cleaned=raw.replace(/<script src="https:\/\/cdn\.jsdelivr[^>]*><\/script>/g,'').replace(/<script src="https:\/\/challenges\.cloudflare[^>]*><\/script>/g,'')
-  .replace(/<script src="js\/krueka-clase-temporal\.js[^>]*><\/script>/,mock+'<script>'+client+'</script>');
- fs.writeFileSync(temp,cleaned.replace('</body>',test+'</body>'));
- for(const size of ['390,850','1350,900']){
-  const r=cp.spawnSync(bin,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--allow-file-access-from-files','--disable-background-networking','--window-size='+size,'--virtual-time-budget=7000','--dump-dom','file://'+temp],{encoding:'utf8',timeout:45000,maxBuffer:15000000});
-  assert.equal(r.status,0,'Chromium falló '+(r.stderr||'').slice(-600));
-  const status=r.stdout.match(/data-test="([^"]+)"/)?.[1]||'SIN_RESULTADO';
-  assert.equal(status,'PASS',size+' '+status);
-  console.log('PASS Actividades clase Chromium '+size+' + consigna y acceso privado.');
- }
-}finally{try{fs.unlinkSync(temp)}catch(_){}}
+const fixture=raw.replace(/<script src="https:\/\/cdn\.jsdelivr[^>]*><\/script>/g,'').replace(/<script src="https:\/\/challenges\.cloudflare[^>]*><\/script>/g,'')
+ .replace(/<script src="js\/krueka-clase-temporal\.js[^>]*><\/script>/,mock+'<script>'+client+'</script>');
+const server=http.createServer((req,res)=>{
+ const pathname=new URL(req.url,'http://localhost').pathname;
+ if(pathname==='/actividades-clase.html'){res.setHeader('Content-Type','text/html; charset=utf-8');res.end(fixture);return;}
+ const name=path.resolve(root,'.'+pathname);
+ if(!name.startsWith(root+path.sep)||!fs.existsSync(name)||!fs.statSync(name).isFile()){res.writeHead(404);res.end();return;}
+ res.setHeader('Content-Type',({'.js':'application/javascript','.mjs':'application/javascript','.css':'text/css','.svg':'image/svg+xml'})[path.extname(name)]||'application/octet-stream');
+ fs.createReadStream(name).pipe(res);
+});
+(async()=>{
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ let browser;
+ try{
+  const {chromium}=require('playwright-core');
+  browser=await chromium.launch({executablePath:process.env.STUDIO_CHROMIUM||'/usr/bin/google-chrome',headless:true,args:['--no-sandbox']});
+  const page=await browser.newPage();
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  for(const [width,height] of [[320,730],[390,850],[1350,900]]){
+   await page.setViewportSize({width,height});
+   await page.goto('http://127.0.0.1:'+server.address().port+'/actividades-clase.html');
+   await page.locator('#student-code').fill('ABCDEFGHJKLM');
+   await page.locator('#lookup-form').locator('button[type="submit"]').click();
+   await page.locator('#student-pdf-frame canvas').waitFor({timeout:12000});
+   const canvas=page.locator('#student-pdf-frame canvas'),scroller=page.locator('.preview-pdf-scroll');
+   const pageCount=page.locator('.preview-page-count');
+   await page.getByText('Página 1 de 2',{exact:true}).waitFor();
+   await page.waitForFunction(()=>{ // PDF.js realmente pintó la página, no solo insertó el canvas.
+    const c=document.querySelector('#student-pdf-frame canvas');
+    if(!c?.width||!c.height)return false;
+    const sample=c.getContext('2d').getImageData(Math.floor(c.width*.15),Math.floor(c.height*.4),1,1).data;
+    return sample[3]===255&&sample[0]<40&&sample[1]<40&&sample[2]<40;
+   });
+   const size=async()=>Math.round((await canvas.boundingBox()).width);
+   const fit=await size();
+   assert.ok(fit<=await scroller.evaluate(e=>e.clientWidth),'El PDF inicial cabe en el visor');
+   await page.getByRole('button',{name:'Siguiente',exact:true}).click();
+   await page.getByText('Página 2 de 2',{exact:true}).waitFor();
+   await page.getByRole('button',{name:'Anterior',exact:true}).click();
+   await page.getByText('Página 1 de 2',{exact:true}).waitFor();
+   await page.getByRole('button',{name:'+',exact:true}).click();
+   await page.waitForFunction(w=>document.querySelector('#student-pdf-frame canvas').getBoundingClientRect().width>w,fit);
+   const zoomed=await size();
+   if(width<600)assert.ok(await scroller.evaluate(e=>e.scrollWidth>e.clientWidth),'El zoom solo desplaza el área del PDF');
+   await page.getByRole('button',{name:'−',exact:true}).click();
+   await page.waitForFunction(w=>document.querySelector('#student-pdf-frame canvas').getBoundingClientRect().width<w,zoomed);
+   await page.locator('#open-guide').click();
+   await page.locator('.preview-surface.is-expanded').waitFor();
+   if(width<600)await page.waitForFunction(w=>document.querySelector('#student-pdf-frame canvas').getBoundingClientRect().width>w,fit);
+   await page.keyboard.press('Escape');
+   assert.equal(await page.locator('.preview-surface.is-expanded').count(),0);
+   await page.getByRole('button',{name:'Cerrar vista',exact:true}).click();
+   assert.equal(await canvas.count(),0);
+   await page.locator('#open-guide').click();
+   await page.getByText('Página 1 de 2',{exact:true}).waitFor();
+   assert.equal(await pageCount.innerText(),'Página 1 de 2');
+   await page.keyboard.press('Escape');
+   const checks=await page.evaluate(()=>{
+    const by=id=>document.getElementById(id),visible=id=>!by(id).hidden;
+    return {
+     student:visible('student'),teacher:!visible('teacher'),view:visible('activity-view'),
+     heading:by('activity-title').textContent==='Actividad real de prueba',
+     instructions:by('activity-instructions').textContent.includes('entregalo en la clase'),
+     file:!!by('student-file'),pdf:visible('student-pdf'),
+     noNativeViewer:by('student-pdf-frame').tagName==='DIV',
+     expandButton:by('open-guide').tagName==='BUTTON',overflow:document.documentElement.scrollWidth-innerWidth<=3
+    };
+   });
+   if(!checks.overflow)console.error(await page.evaluate(()=>Array.from(document.querySelectorAll('body *')).filter(el=>el.getBoundingClientRect().right>innerWidth+2&&el.getBoundingClientRect().width>0).slice(0,25).map(el=>[el.tagName,el.id,el.className,Math.round(el.getBoundingClientRect().right),el.scrollWidth,el.clientWidth])));
+   const bad=Object.keys(checks).filter(key=>!checks[key]);
+   assert.deepEqual(bad,[],width+' · '+bad.join(', '));
+   console.log('PASS Actividades clase Chromium '+width+'px · consigna y PDF privado visible.');
+   assert.deepEqual(errors,[],'Sin errores del visor');
+  }
+ }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
+})().catch(e=>{console.error(e);process.exitCode=1});

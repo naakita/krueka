@@ -18,7 +18,7 @@ main{max-width:1150px;margin:auto;padding:37px 22px 70px}
 .eyebrow{font-size:10px;letter-spacing:.16em;font-weight:900;color:#315dd8;text-transform:uppercase}
 h1{font-size:clamp(31px,5vw,53px);letter-spacing:-.06em;line-height:1.1;margin:14px 0;color:#142b4b}
 .hero p{color:#637993;font-size:14px;line-height:1.76}
-.grid{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;align-items:start}
+.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:18px;align-items:start}
 .card{background:#fff;border:1px solid #d9e5f2;border-radius:19px;padding:27px;box-shadow:0 15px 48px #1d528009}
 .card h2{font-size:21px;letter-spacing:-.035em;color:#1c3958;margin:0 0 11px}
 .card h3{font-size:16px;line-height:1.3;margin:0 0 8px}
@@ -49,6 +49,7 @@ textarea{min-height:185px;resize:vertical;line-height:1.7}input::placeholder,tex
 .preview-hint{font-size:14px!important;color:#47617e!important;line-height:1.6!important}
 .preview-page-nav{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 0 12px}
 .preview-page-nav .btn{min-height:35px;padding:7px 11px}.preview-page-count{font-size:13px;color:#385776;font-weight:800}
+.preview-pdf-scroll{max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-inline:contain}
 .preview-pdf-canvas{display:block;max-width:none;margin:0 auto;background:white;box-shadow:0 2px 15px #152c461b}
 .preview-image{display:block;max-width:100%;height:auto;max-height:70vh;object-fit:contain;margin:auto}
 .preview-plain{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.65 ui-monospace,Consolas,monospace;margin:0}
@@ -97,7 +98,7 @@ body.material-fullscreen{overflow:hidden}
 @media(max-width:480px){.class-tools{grid-template-columns:1fr}.class-advanced-grid{grid-template-columns:1fr}.class-advanced-grid .full{grid-column:auto}}
 footer{border-top:1px solid #dce7f3;text-align:center;padding:25px;font-size:11px;color:#8397ad}
 a:focus-visible,button:focus-visible{outline:3px solid #ff9b7b;outline-offset:3px}
-@media(max-width:760px){.grid{grid-template-columns:1fr}main{padding:28px 14px 53px}header{padding:14px}.card{padding:20px}.submission .review{grid-template-columns:1fr}.toolbar button{flex:1}.code{font-size:18px}}
+@media(max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}main{padding:28px 14px 53px}header{padding:14px}.card{padding:20px}.pdf-panel{padding:10px;overflow-wrap:anywhere}.preview-body{padding:8px}.submission .review{grid-template-columns:1fr}.toolbar button{flex:1}.code{font-size:18px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
@@ -202,6 +203,6 @@ a:focus-visible,button:focus-visible{outline:3px solid #ff9b7b;outline-offset:3p
 </section></main>
 <footer>Krueka · Paraguay · Plataforma educativa · <a href="informacion.html#privacidad">Privacidad</a> · <a href="accesos.html">Volver a los accesos</a></footer>
 <script src="assets/vendor/jszip.min.js" defer></script>
-<script src="js/krueka-material-preview.js?v=20261119a" defer></script>
+<script src="js/krueka-material-preview.js?v=20261125pdf" defer></script>
 <script src="js/krueka-clase-temporal.js?v=20261119a" defer></script>
 </body></html>
