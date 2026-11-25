@@ -7,8 +7,17 @@ async function until(fn){const deadline=Date.now()+20000;while(!fn()){if(Date.no
 window.__creativePhase='loading';
 (async()=>{
  await until(()=>window.KruekaStudioAccess?.ready);await KruekaStudioAccess.login('TEST01');
- check(StudioIA.tab==='home','inicio por talleres');check(document.querySelectorAll('[data-creative-start]').length===13,'trece rutas creativas, incluidos bloques');
- const initial=StudioIA.projectId;document.querySelector('[data-creative-start="animation"]').click();await until(()=>StudioKits.read(StudioIA.files)?.kind==='animation'&&!StudioIA.busy);
+ check(StudioIA.tab==='home','inicio por talleres');
+ const tiles=[...document.querySelectorAll('#ks-creative-home [data-creative-start]')];
+ check(tiles.length===StudioCreative.paths.length&&tiles.length>=14,'rutas de todos los talleres, incluidos libros y bloques');
+ const initial=StudioIA.projectId;
+ let animationTile=document.querySelector('[data-creative-start="animation"]');
+ if(!animationTile){
+  document.querySelector('[data-creative-path="animaciones"]').click();
+  animationTile=document.querySelector('[data-creative-kit="animation"]');
+ }
+ if(!animationTile)throw Error('No se encuentra el editor por poses dentro de Animaciones');
+ animationTile.click();await until(()=>StudioKits.read(StudioIA.files)?.kind==='animation'&&!StudioIA.busy);
  check(StudioIA.projectId!==initial&&StudioIA.tab==='create','animación nueva sin reemplazar juego');
  document.getElementById('km-actor-name').value='Explorador';document.getElementById('ks-media-actor-apply').click();
  check(StudioKits.read(StudioIA.files).actors[0].name==='Explorador','personaje editable');
@@ -44,7 +53,8 @@ let html=fs.readFileSync(path.join(root,'studio.html'),'utf8').replace('<head>',
    try{
     const page=await browser.newPage({viewport:{width:1280,height:900}});await page.goto('file://'+file);
     await page.waitForFunction(()=>window.__creativePhase==='video'||document.body.dataset.creativeSmoke,null,{timeout:30000});
-    assert.equal(await page.evaluate(()=>document.body.dataset.creativeSmoke),undefined,'Recorrido inicial');
+    const early=await page.evaluate(()=>document.body.dataset.creativeSmoke);
+    assert.equal(early,undefined,early||'Recorrido inicial');
     for(const width of [1280,390]){await page.setViewportSize({width,height:900});assert.equal(await page.evaluate(()=>document.getElementById('krueka-studio').scrollWidth>innerWidth),false,'Ancho '+width);
      assert.equal(await page.locator('#ks-create').isVisible(),true);
      if(process.env.STUDIO_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.STUDIO_SCREENSHOT_DIR,'creative-video-'+width+'.png')});
@@ -99,7 +109,9 @@ let html=fs.readFileSync(path.join(root,'studio.html'),'utf8').replace('<head>',
    if(!binary)for(const name of ['google-chrome','google-chrome-stable','chromium','chromium-browser'])if(cp.spawnSync(name,['--version'],{encoding:'utf8',timeout:3000}).status===0){binary=name;break;}
    assert.ok(binary,'Chromium no instalado');html=html.replace('window.__creativePhase=\'video\';','window.__creativeFinish=true;window.__creativePhase=\'video\';');fs.writeFileSync(file,html);
    const run=cp.spawnSync(binary,['--headless=new','--no-sandbox','--no-zygote','--disable-gpu','--disable-dev-shm-usage','--disable-background-networking','--window-size=1280,900','--virtual-time-budget=40000','--dump-dom','file://'+file],{encoding:'utf8',timeout:60000,maxBuffer:7e6});
-   assert.equal(run.status,0,(run.stderr||'').slice(-1000));assert.match(run.stdout,/data-creative-smoke="PASS"/,run.stdout.slice(-3500));
+   assert.equal(run.status,0,(run.stderr||'').slice(-1800));
+   const marker=run.stdout.match(/<body[^>]*?data-creative-smoke="([^"]*)"/)?.[1];
+   assert.equal(marker,'PASS',marker||'No se completó el recorrido creativo. '+run.stdout.match(/<p id="studio-login-message"[^>]*>([^<]*)<\/p>/)?.[1]);
   }
  }finally{fs.rmSync(directory,{recursive:true,force:true});}
  console.log('PASS navegador: talleres, animación, poses, montaje, recortes, bitácora, privacidad, recuperación, 3D y exportación cuando hay original de prueba.');
