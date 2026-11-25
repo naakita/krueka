@@ -159,3 +159,96 @@ test('los rellenos conservan el contorno y la portada de otros talleres muestra 
  raw.tools.strokes[0].fillColor='url(javascript:alert(1))';
  assert.match(enhance(raw,{})['index.html'],/fill="#227799" stroke="#227799"/);
 });
+
+test('la cubeta reconoce regiones cerradas por varios trazos y no cruza una división',()=>{
+ const width=12,height=10,pixels=new Uint8ClampedArray(width*height*4).fill(255);
+ const black=(x,y)=>{const i=(y*width+x)*4;pixels[i]=pixels[i+1]=pixels[i+2]=0;};
+ for(let x=2;x<=9;x++){black(x,2);black(x,7);}
+ for(let y=2;y<=7;y++){black(2,y);black(9,y);black(5,y);}
+ const rects=ctx.window.ClubTalleres.floodRegion(pixels,width,height,3,4,24);
+ assert.deepEqual(JSON.parse(JSON.stringify(rects)),[[3,3,2,4]],'solo selecciona el interior a la izquierda de la línea');
+ const right=ctx.window.ClubTalleres.floodRegion(pixels,width,height,7,4,24);
+ assert.deepEqual(JSON.parse(JSON.stringify(right)),[[6,3,3,4]],'la otra mitad sigue siendo una región separada');
+ assert.equal(ctx.window.ClubTalleres.floodRegion(pixels,width,height,0,0,24).reduce((total,r)=>total+r[2]*r[3],0),72,'el exterior no invade los interiores');
+});
+
+test('la tolerancia une colores cercanos pero conserva barreras e islas',()=>{
+ const pixels=new Uint8ClampedArray([200,200,200,255,202,202,202,255,0,0,0,255,200,200,200,255]);
+ const area=rects=>rects.reduce((total,r)=>total+r[2]*r[3],0);
+ assert.equal(area(ctx.window.ClubTalleres.floodRegion(pixels,4,1,0,0,1)),1);
+ assert.equal(area(ctx.window.ClubTalleres.floodRegion(pixels,4,1,0,0,3)),2);
+ assert.equal(area(ctx.window.ClubTalleres.floodRegion(pixels,4,1,3,0,100)),1,'no salta por encima de una barrera oscura');
+ assert.deepEqual(Array.from(ctx.window.ClubTalleres.floodRegion([],4,1,0,0)),[],'rechaza una imagen incompleta');
+});
+
+test('un relleno libre se conserva al guardar y reabrir y se exporta como geometría estática',()=>{
+ const tools={strokes:[{type:'pen',color:'#132436',points:[[20,20],[80,20],[80,60],[20,60],[20,20]]},{type:'region',color:'#f58035',opacity:1,layer:'base',rects:[[23,23,54,34]],points:[]}]};
+ const files=enhance({kind:'dibujos',tools},{}),restored=enhance(JSON.parse(files['obra.json']),{});
+ assert.equal(restored['index.html'],files['index.html']);
+ assert.match(files['index.html'],/d="M23 23h54v34h-54Z" fill="#f58035"/);
+ assert.match(files['index.html'],/stroke="#132436"/,'el contorno se conserva');
+ assert.equal(JSON.parse(restored['obra.json']).tools.strokes[1].type,'region');
+});
+
+test('las figuras permiten colores por componente, deformación, reflejo y puntos editables persistentes',()=>{
+ const raw={kind:'dibujos',tools:{stamps:[
+  {id:'objrobot',kind:'vector',template:'robot',x:150,y:100,color:'#67c2dd',scale:1.4,scaleX:1.8,scaleY:.7,angle:25,flipX:true,contour:'#a12244',border:3,partStyles:{cabeza:{color:'#ffe166',x:10,y:-20,scaleX:1.3,scaleY:.8}}},
+  {id:'objforma',kind:'polygon',x:400,y:150,color:'#a222aa',border:0,vertices:[[-45,-30],[35,-50],[50,40],[-25,15]]}
+ ]}};
+ const files=enhance(raw,{}),saved=JSON.parse(files['obra.json']),again=enhance(saved,{});
+ assert.equal(again['index.html'],files['index.html'],'guardar y reabrir no aplana los objetos');
+ assert.match(files['index.html'],/scale\(-1\.8 0\.7\)/);
+ assert.match(files['index.html'],/translate\(10 -20\) scale\(1\.3 0\.8\)/);
+ assert.match(files['index.html'],/fill="#ffe166"/);
+ assert.match(files['index.html'],/stroke="#a12244"/);
+ assert.match(files['index.html'],/stroke="none" stroke-width="0"/,'sin borde también al convertir el SVG en PNG');
+ assert.match(files['index.html'],/M-45 -30L35 -50L50 40L-25 15Z/);
+ assert.equal(saved.tools.stamps[0].partStyles.cabeza.color,'#ffe166');
+ assert.equal(saved.tools.stamps[1].vertices[1][1],-50);
+ raw.tools.stamps[0].hidden=true;
+ assert.doesNotMatch(enhance(raw,{})['index.html'],/fill="#ffe166"/,'ocultar no borra el objeto del proyecto');
+ assert.equal(normalize(raw).tools.stamps.length,2);
+});
+
+test('las figuras nuevas conservan su paleta por componentes independientemente del pincel',()=>{
+ const raw={kind:'dibujos',tools:{ink:'#193959',stamps:[{id:'objpalette',kind:'vector',template:'robot',x:300,y:160,color:'#193959'}]}};
+ const files=enhance(raw,{}),saved=JSON.parse(files['obra.json']);
+ assert.equal(saved.tools.stamps[0].palette,true);
+ assert.match(files['index.html'],/fill="#78cee0"/,'el cuerpo conserva su color');
+ assert.match(files['index.html'],/fill="#ffe084"/,'la cabeza tiene un color distinto');
+ assert.match(files['index.html'],/fill="#ef7f80"/,'los detalles mantienen su paleta');
+ assert.doesNotMatch(files['index.html'],/fill="#193959"/,'insertar no pinta toda la figura con la tinta activa');
+ assert.equal(enhance(saved,{})['index.html'],files['index.html']);
+ saved.tools.stamps[0].palette=false;saved.tools.stamps[0].color='#dd7733';
+ assert.match(enhance(saved,{})['index.html'],/fill="#dd7733"/,'la elección posterior de color base sí se aplica');
+});
+
+test('las medidas vectoriales corresponden a los límites visibles, sin los márgenes de la lámina',()=>{
+ const api=ctx.window.ClubTalleres;
+ const robot=normalize({kind:'dibujos',tools:{stamps:[{id:'objbounds',kind:'vector',template:'robot',border:0,x:300,y:160}]}}).tools.stamps[0];
+ // El robot va de X=161 a 445 y de Y=3 a 312; no ocupa la lámina de 600 × 320.
+ const natural=api.objectGeometry(robot);
+ assert.ok(Math.abs(natural.width/natural.height-284/309)<1e-10);
+ assert.equal(natural.height,140);
+ const svg=api.sketchMarkup([],'#fffdf7',{stamps:[robot]});
+ assert.ok(svg.includes('scale('+(140/309)+') translate(-303 -157.5)'),'la figura queda centrada en su contorno visible');
+ robot.border=2;
+ const bordered=api.objectGeometry(robot);
+ assert.ok(Math.abs(bordered.width-natural.width-2)<1e-10);
+ assert.ok(Math.abs(bordered.height-natural.height-2)<1e-10,'las medidas incluyen el contorno');
+ robot.scaleX=220/bordered.width;robot.scaleY=160/bordered.height;
+ const saved=JSON.parse(enhance({kind:'dibujos',tools:{stamps:[robot]}},{})['obra.json']).tools.stamps[0];
+ const size=api.objectGeometry(saved);
+ assert.ok(Math.abs(size.width*saved.scale*saved.scaleX-220)<1e-8);
+ assert.ok(Math.abs(size.height*saved.scale*saved.scaleY-160)<1e-8);
+ saved.partStyles.cabeza={scaleX:3,scaleY:1,x:10,y:0};
+ assert.ok(api.objectGeometry(saved).width>size.width,'los cambios de forma actualizan los límites reales del objeto');
+});
+
+test('una obra amplia no pierde trazos ni objetos al normalizarla',()=>{
+ const raw={kind:'dibujos',tools:{strokes:Array.from({length:110},(_,i)=>({type:'pen',color:'#123456',points:[[i,20],[i+3,30]]})),stamps:Array.from({length:45},(_,i)=>({id:'objmuestra'+i,kind:'cube',x:i*10,y:100,color:'#346688'}))}};
+ const saved=JSON.parse(enhance(raw,{})['obra.json']);
+ assert.equal(saved.tools.strokes.length,110);assert.equal(saved.tools.stamps.length,45);
+ assert.equal(saved.tools.strokes[0].points[0][0],0,'conserva también los primeros trazos');
+ assert.equal(saved.tools.stamps[0].id,'objmuestra0','conserva también los primeros objetos');
+});

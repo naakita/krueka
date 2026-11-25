@@ -48,3 +48,32 @@
 @media(max-width:1000px){#krueka-studio .kc-paths{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:780px){#krueka-studio .kc-home{padding:17px 14px 28px}#krueka-studio .kc-welcome h2{font-size:25px}#krueka-studio .kc-path{padding:16px}#krueka-studio .kc-paths{gap:12px;margin:18px 0;grid-template-columns:1fr}#krueka-studio .ks-tabs .ks-btn{font-size:10px;padding:8px 7px}#krueka-studio .km-timeline button{grid-template-columns:22px minmax(0,1fr)}#krueka-studio .km-timeline small{grid-column:2}}
 @media(prefers-reduced-motion:reduce){#krueka-studio .kc-home *{scroll-behavior:auto!important}}
+#krueka-studio .km-transport{border-color:#64a7d0;background:#152f49}
+#krueka-studio .km-transport-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#krueka-studio .km-transport-top h3{margin:0}
+#krueka-studio .km-transport output{color:#def5ff;font-size:14px;font-variant-numeric:tabular-nums}
+#krueka-studio .km-transport input[type=range]{width:100%;height:32px;padding:0;accent-color:#8bdcf6;cursor:ew-resize}
+#krueka-studio .km-exact-time{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#krueka-studio .km-exact-time input{max-width:120px;font-variant-numeric:tabular-nums}
+#krueka-studio .km-check{display:flex;align-items:center;gap:8px;min-height:32px;margin:5px 0;font-size:14px}
+#krueka-studio .km-check input[type=checkbox]{width:18px;height:18px;min-height:18px;flex:0 0 18px;accent-color:#64c9e5}
+#krueka-studio .km-layer-options{display:flex;gap:5px 18px;flex-wrap:wrap;margin:9px 0}
+#krueka-studio .km-pose-fields{padding:0;margin:0;border:0;min-width:0}
+#krueka-studio .km-ruler{display:flex;justify-content:space-between;margin:14px 12px 7px 39%;color:#adcbe3;font-size:12px;font-variant-numeric:tabular-nums}
+#krueka-studio .km-track-row{display:grid;grid-template-columns:minmax(95px,38%) minmax(0,1fr);align-items:center;gap:10px;margin:6px 0}
+#krueka-studio .km-track-row>.ks-btn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;min-height:40px}
+#krueka-studio .km-track-row [aria-pressed=true]{background:#21496c;border-color:#85c4ee}
+#krueka-studio .km-track{height:40px;margin:0 12px;position:relative;cursor:crosshair;background:repeating-linear-gradient(to right,#98b8d52b 0,#98b8d52b 1px,transparent 1px,transparent 25%),#0b1c30;border-radius:6px;border-bottom:2px solid #5e7896}
+#krueka-studio .km-track-playhead{position:absolute;top:-4px;bottom:-4px;width:2px;background:#f6ce66;pointer-events:none;z-index:2}
+#krueka-studio .km-key{position:absolute;top:10px;width:20px;height:20px;min-height:20px;padding:0;transform:translateX(-50%) rotate(45deg);border:2px solid #7acbdf;background:#294a6e;border-radius:3px;cursor:pointer;z-index:3}
+#krueka-studio .km-key[aria-current=true]{background:#f4ce73;border-color:#fff3c8}
+#krueka-studio .km-key:focus-visible{outline:3px solid #fff;outline-offset:3px}
+#krueka-studio .km-layer-hidden .km-track{opacity:.45}
+#krueka-studio .km-clip-strip{display:flex;gap:3px;overflow-x:auto;max-width:100%;padding:4px 0 10px;margin:8px 0}
+#krueka-studio .km-clip-segment{display:grid;gap:4px;flex-basis:0;min-width:84px;max-width:220px;padding:10px 8px;text-align:left;border:1px solid #789cbd;border-top:5px solid var(--km-clip-color);border-radius:8px;background:#142d47;color:#f2f7ff;cursor:pointer}
+#krueka-studio .km-clip-segment[aria-pressed=true]{border-color:#9fe2f3;box-shadow:inset 0 0 0 1px #9fe2f3;background:#244766}
+#krueka-studio .km-clip-segment b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#krueka-studio .km-clip-segment span,#krueka-studio .km-clip-segment small{font-size:12px;color:#c5dced}
+#krueka-studio .km-trim-result{display:block;padding:9px 12px;border-radius:8px;background:#102d40;color:#c1edf5;font-size:14px;font-variant-numeric:tabular-nums}
+#krueka-studio .km-actions .ks-btn{font-size:14px;min-height:36px}
+@media(max-width:600px){#krueka-studio .km-track-row{grid-template-columns:minmax(80px,35%) minmax(0,1fr);gap:4px}#krueka-studio .km-ruler{margin-left:37%}#krueka-studio .km-actions{gap:6px}#krueka-studio .km-transport .km-actions .ks-btn{flex:1 1 42%}}

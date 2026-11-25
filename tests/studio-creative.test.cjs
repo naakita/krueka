@@ -24,3 +24,4 @@ vm.runInContext(fs.readFileSync(path.join(root,'js/club-studio-media-editor.js')
 // El estado de un proyecto no debe incluir blobs o URLs transitorias: se guarda solo la configuración.
 assert.ok(!JSON.stringify(K.create('video-edit')).includes('blob:'));
 console.log('PASS: proyectos autónomos, poses e interpolación, tiempos y recortes, IDs únicos, imágenes admitidas y límites de guardado.');
+require('./studio-media-tools.test.cjs');

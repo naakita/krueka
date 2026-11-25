@@ -18,6 +18,7 @@ jobs:
       - run: npm install --prefix "$RUNNER_TEMP/club-browser" --ignore-scripts playwright-core@1.56.1
       - run: NODE_PATH="$RUNNER_TEMP/club-browser/node_modules" node tests/club-modelos-browser.test.cjs
       - run: NODE_PATH="$RUNNER_TEMP/club-browser/node_modules" node tests/club-public-catalog-browser.test.cjs
+      - run: NODE_PATH="$RUNNER_TEMP/club-browser/node_modules" node tests/club-premium-media-browser.test.cjs
   club_avanzados:
     runs-on: ubuntu-latest
     steps:
@@ -87,6 +88,9 @@ jobs:
       - run: node --check js/club-studio-layout.js
       - run: node --test tests/club-studio-layout.test.cjs
       - run: node tests/club-studio-layout-browser.test.cjs
+      - run: node --check js/club-studio-suite.js
+      - run: node --test tests/club-studio-suite.test.cjs
+      - run: node tests/club-studio-suite-browser.test.cjs
   club_libros:
     runs-on: ubuntu-latest
     steps:
@@ -126,6 +130,7 @@ jobs:
       - run: node --check js/decisions.js
       - run: node --test tests/decisions.test.cjs
       - run: node --check js/club-studio-ai.js
+      - run: node --test tests/studio-preview-transition.test.cjs
       - run: node supabase/functions/krueka-studio-ai/index.test.cjs
       - run: node tests/studio-client.test.cjs
       - run: node --check js/club-studio-access.js

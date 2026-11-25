@@ -99,6 +99,33 @@
 #krueka-studio .ck-book-image-card span{font-size:11px;color:#bbd7e9}
 #krueka-studio .ck-book-image-card button{min-height:30px;padding:4px 9px;font-size:12px}
 #krueka-studio #ck-book-message{min-height:1.3em;font-size:12px;color:#c8ebd4}
+#krueka-studio .ct-canvas-viewport{min-width:0;max-width:100%;max-height:60dvh;overflow:auto;overscroll-behavior:contain;background:repeating-conic-gradient(#d4dee7 0 25%,#e8eef4 0 50%) 0/20px 20px;padding:4px;border:1px solid #7799af;border-radius:8px;scrollbar-color:#517da0 #e2eaf1}
+#krueka-studio .ct-art-lab .ct-canvas-viewport .ct-canvas{display:block;width:100%;height:auto;max-width:none;max-height:none;min-height:0;aspect-ratio:600/320;object-fit:fill;border:0;outline:1px solid #9db9cb;border-radius:0;margin:0;flex:none}
+#krueka-studio .ct-lab-navigation{display:flex;align-items:center;flex-wrap:wrap;gap:6px;color:#d8effb;font:14px/1.3 system-ui}
+#krueka-studio .ct-lab-navigation output{min-width:76px;text-align:center}
+#krueka-studio .ct-vector-library{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+#krueka-studio .ct-vector-library button{display:grid;gap:5px;place-items:center;padding:8px;min-height:84px}
+#krueka-studio .ct-vector-library svg{width:100%;height:58px;background:#f2f7fb;border-radius:5px}
+#krueka-studio .ct-vector-library span{font-size:13px}
+#krueka-studio .ct-emoji-library{border-top:1px solid #557994;padding-top:10px;color:#eaf6ff}
+#krueka-studio .ct-emoji-library summary{cursor:pointer;font:700 14px/1.5 system-ui;padding:4px 0}
+#krueka-studio .ct-emoji-library p{margin:9px 0}
+#krueka-studio .ct-emoji-library .ct-lab-object-group{margin-top:10px}
+#krueka-studio .ct-fill-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+#krueka-studio .ct-fill-controls label{max-width:170px}
+#krueka-studio .ct-object-components{grid-column:1/-1;display:grid;gap:9px;grid-template-columns:repeat(2,minmax(0,1fr));padding-top:10px;border-top:1px solid #6c91a2}
+#krueka-studio .ct-lab-selection :is(input[type="number"],select){min-width:0;width:100%;min-height:37px;padding:6px 8px;color:#f4fbff;background:#0b2032;border:1px solid #7da3a4;border-radius:7px;font:inherit}
+#krueka-studio .ct-lab-selection .ct-lab-checkbox{display:flex;flex-direction:row;grid-column:1/-1;gap:8px;align-items:center}
+#krueka-studio .ct-lab-selection .ct-lab-checkbox input{width:18px;height:18px}
+#krueka-studio .ct-art-lab :is(button,label,.ct-lab-panel p){font-size:14px}
+#krueka-studio .ct-art-lab :is(.ct-lab-hint,.ct-lab-count){font-size:13px;line-height:1.45}
+#krueka-studio .ct-art-lab.ct-canvas-expanded .ct-lab-panel{max-height:30dvh;overflow:auto}
+#krueka-studio .ct-art-lab.ct-canvas-expanded .ct-canvas-viewport{max-height:65dvh;min-height:260px}
+#krueka-studio .ct-art-lab.ct-canvas-expanded .ct-lab-selection{max-height:50dvh;overflow:auto}
+/* El tema claro del formulario no debe oscurecer texto sobre las tarjetas de ArteLab. */
+#krueka-studio .ck-editor .ct-art-lab :is(.ct-lab-panel,.ct-lab-selection) :is(label,p,small,span,strong,summary){color:#eaf6ff}
+#krueka-studio .ck-editor .ct-art-lab.ct-canvas-expanded :is(label,p,small,span,strong,summary,output){color:#eaf6ff}
+#krueka-studio .ck-editor .ct-art-lab:not(.ct-canvas-expanded) .ct-lab-navigation{color:#334858}
 @media(max-width:520px){
  #krueka-studio .ct-controls,#krueka-studio .ct-scene-tools{grid-template-columns:1fr}
  #krueka-studio .ct-paintbar input[type="range"]{width:60px}
