@@ -13,7 +13,7 @@ assert.match(html,/krueka-material-preview\.js\?v=/);
 assert.match(html,/assets\/vendor\/jszip\.min\.js/);
 assert.match(client,/KruekaMaterialPreview\.open\(previewHost,blob,m\.file_name\)/);
 assert.match(client,/KruekaMaterialPreview\.open\(\$\('student-pdf-frame'\),pdf/);
-assert.match(client,/Descargar para editar \(opcional\)/);
+assert.match(client,/Descargar archivo/);
 assert.doesNotMatch(client,/window\.open\('about:blank'/);
 assert.match(viewer,/pdfDocument\.getPage\(pageNumber\)/);
 assert.match(viewer,/page\.render\(/);

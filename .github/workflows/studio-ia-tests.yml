@@ -193,6 +193,9 @@ jobs:
       - run: node --check js/krueka-clase-temporal.js
       - run: node tests/krueka-live-class.test.cjs
       - run: node tests/krueka-live-class-history.test.cjs
+      - run: node tests/krueka-live-class-materials.test.cjs
+      - run: node --test tests/krueka-live-class-material-queue.test.cjs
+      - run: node --test tests/krueka-live-class-materials-backend.test.cjs
       - run: node tests/krueka-material-preview.test.cjs
       - run: npm install --prefix "$RUNNER_TEMP/class-browser" --ignore-scripts playwright-core@1.56.1
       - run: NODE_PATH="$RUNNER_TEMP/class-browser/node_modules" node tests/krueka-live-class-browser.test.cjs
