@@ -24,7 +24,8 @@ const sample=(name,mimeType,content,preview=false,storedMime=mimeType)=>({name,m
 const files=[
  sample('guia-ejemplo.pdf','application/pdf',Buffer.from(pdfFixture,'base64'),true),
  sample('lectura.txt','text/plain','Texto de lectura: <img src=x onerror="window.__unsafeMaterialExecuted=true">\nNo interpretar etiquetas.',true),
- sample('tabla.csv','text/csv','nombre,puntos\nAna,10\nLuz,20\n',true),
+ // Extensión reconocida con bytes binarios: el MIME validado también debe bloquear su visor.
+ sample('tabla.csv','text/csv',Buffer.from([97,44,98,10,0,255,128]),false,'application/octet-stream'),
  sample('instrucciones.rtf','application/rtf','{\\rtf1\\ansi Material de prueba de Krueka}',true),
  sample('respuesta-perdida.png','image/png',Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWuQAAAAASUVORK5CYII=','base64'),true),
  sample('imagen.gif','image/gif',Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64'),true),
