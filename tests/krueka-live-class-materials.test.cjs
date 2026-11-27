@@ -8,7 +8,9 @@ const sql=read('supabase/migrations/20261112210000_class_multiple_materials.sql'
 new vm.Script(client);
 assert.match(html,/id="new-pdf"[^>]*multiple/);
 assert.match(html,/id="student-materials-list"/);
-assert.match(client,/uploadMaterials\(r\.activity\.id,files\)/);
+assert.match(client,/uploadMaterials\(createdActivityId,queue\)/);
+assert.match(client,/data\.set\('upload_id',entry\.id\)/);
+assert.doesNotMatch(html.match(/<input[^>]*id="new-pdf"[^>]*>/)?.[0]||'',/\baccept=/);
 assert.match(client,/staff\('delete-material'/);
 assert.match(client,/staff\('list-materials'/);
 assert.match(client,/action:'material'/);
@@ -26,4 +28,4 @@ assert.match(sql,/enable row level security/);
 assert.match(sql,/on conflict\(object_path\) do nothing/);
 assert.match(sql,/krueka_live_materials_guard_trigger/);
 assert.match(sql,/public=false/);
-console.log('PASS: archivos múltiples, formatos seguros, descargas protegidas y PDF anteriores.');
+console.log('PASS: archivos múltiples de cualquier formato, descargas protegidas y PDF anteriores.');

@@ -116,43 +116,82 @@ async function materialDownload(req:Request,code:string,materialId:string){
  const fresh=await activityByCode(code);
  if(!fresh||fresh.id!==a.id||fresh.code_hash!==a.code_hash)
   return fail(req,"El código dejó de estar disponible.",403);
- const inline=m.mime_type==="application/pdf"||m.mime_type.startsWith("image/");
- const filename=encodeURIComponent(m.file_name);
- return new Response(file,{headers:{...cors(req),"Content-Type":m.mime_type,
-  "Content-Disposition":(inline?"inline":"attachment")+"; filename*=UTF-8''"+filename,
+ const mime=Object.values(MATERIAL_MIME).includes(m.mime_type)?m.mime_type:"application/octet-stream";
+ const filename=encodeURIComponent(m.file_name).replace(/['()*]/g,c=>"%"+c.charCodeAt(0).toString(16).toUpperCase());
+ return new Response(file,{headers:{...cors(req),"Content-Type":mime,
+  "Content-Disposition":"attachment; filename*=UTF-8''"+filename,
   "X-Content-Type-Options":"nosniff","Content-Security-Policy":"sandbox"}});
 }
 async function uploadMaterial(req:Request,form:FormData){
  const staff=await teacher(req);
  if(!staff)return fail(req,"Iniciá sesión como docente.",403);
- const id=String(form.get("activity_id")||""),file=form.get("material");
+ const id=String(form.get("activity_id")||"").toLowerCase(),file=form.get("material");
  if(!uuid(id))return fail(req,"Actividad incorrecta.");
  if(!(file instanceof File)||file.size<1||file.size>MAX)
   return fail(req,"Elegí un archivo de hasta 10 MB.");
- const ext=/\.[a-z0-9]+$/i.exec(file.name)?.[0].toLowerCase()||"";
- if(!MATERIAL_MIME[ext])return fail(req,"Tipo de documento no admitido por seguridad.");
+ const requestedId=String(form.get("upload_id")||"");
+ if(requestedId&&!uuid(requestedId))return fail(req,"Identificador de carga incorrecto.");
+ const uploadId=(requestedId||crypto.randomUUID()).toLowerCase(),path="materials/"+id+"/"+uploadId+".bin";
  const {data:a,error:ae}=await supa.from("krueka_live_activities")
   .select("id").eq("id",id).eq("teacher_id",staff.id).eq("accepting",true).maybeSingle();
  if(ae||!a)return fail(req,"Clase cerrada o sin autorización.",403);
+ const previous=()=>supa.from("krueka_live_materials")
+  .select("id,file_name,mime_type,size_bytes,uploaded_at")
+  .eq("activity_id",id).eq("id",uploadId).eq("object_path",path).maybeSingle();
+ // Una respuesta perdida se puede reintentar incluso cuando la clase ya tiene 20 materiales.
+ // La identidad y la ruta están ligadas a esta actividad; nunca se sobrescribe otro archivo.
+ const {data:existing,error:existingError}=await previous();
+ if(existingError)return fail(req,"No se pudo comprobar la carga anterior.",503);
+ if(existing)return json(req,{ok:true,material:existing});
  const {count,error:ce}=await supa.from("krueka_live_materials")
   .select("id",{count:"exact",head:true}).eq("activity_id",id);
  if(ce)return fail(req,"No se pudo comprobar el límite de archivos.",503);
  if((count||0)>=MAX_MATERIALS)return fail(req,"Cada actividad admite hasta 20 materiales.",400);
  const bytes=new Uint8Array(await file.arrayBuffer());
- if(!validateMaterial(bytes,ext))return fail(req,"El formato o contenido del archivo no es válido.");
- const path="materials/"+id+"/"+crypto.randomUUID()+ext;
+ const ext=/\.[a-z0-9]+$/i.exec(file.name)?.[0].toLowerCase()||"";
+ // Sólo los formatos reconocidos reciben un MIME de vista previa. Los demás se
+ // conservan byte por byte como adjuntos, incluidos archivos sin extensión.
+ const mime=MATERIAL_MIME[ext]&&validateMaterial(bytes,ext)?MATERIAL_MIME[ext]:"application/octet-stream";
  const {error:ue}=await supa.storage.from(STORAGE)
-  .upload(path,new Blob([bytes],{type:MATERIAL_MIME[ext]}),
-  {contentType:MATERIAL_MIME[ext],upsert:false,cacheControl:"0"});
- if(ue)return fail(req,"No se pudo guardar el documento.",503);
+  .upload(path,new Blob([bytes],{type:mime}),
+  {contentType:mime,upsert:false,cacheControl:"0"});
+ const createdHere=!ue;
+ if(ue){
+  const {data:completed,error:lookupError}=await previous();
+  if(completed)return json(req,{ok:true,material:completed});
+  if(lookupError)return fail(req,"No se pudo comprobar la carga anterior. Podés reintentar el mismo archivo.",503);
+  // Puede haber terminado Storage antes de una interrupción del registro. Sólo
+  // recuperamos la ruta propia y si conserva exactamente los bytes del reintento.
+  const {data:stored,error:readError}=await supa.storage.from(STORAGE).download(path);
+  if(readError||!stored)return fail(req,"No se pudo completar la carga. Podés reintentar el mismo archivo.",503);
+  if(stored.size!==bytes.length)return fail(req,"Este identificador ya corresponde a otro archivo. Quitá este pendiente y agregalo de nuevo.",409);
+  const storedBytes=new Uint8Array(await stored.arrayBuffer());
+  if(!storedBytes.every((value,index)=>value===bytes[index]))
+   return fail(req,"Este identificador ya corresponde a otro archivo. Quitá este pendiente y agregalo de nuevo.",409);
+  const {data:registered,error:registeredError}=await previous();
+  if(registered)return json(req,{ok:true,material:registered});
+  if(registeredError)return fail(req,"No se pudo comprobar la carga anterior. Podés reintentar el mismo archivo.",503);
+ }
  const name=safeFileName(file.name).slice(0,175);
  const {data:active,error:check}=await supa.from("krueka_live_activities")
-  .select("id").eq("id",id).eq("teacher_id",staff.id).eq("accepting",true).maybeSingle();
- if(check||!active){await supa.storage.from(STORAGE).remove([path]);return fail(req,"La clase se cerró durante la carga.",403);}
+  .select("id,accepting").eq("id",id).eq("teacher_id",staff.id).maybeSingle();
+ if(check||!active?.accepting){
+  const {data:completed,error:lookupError}=await previous();
+  if(createdHere&&!check&&active?.accepting===false&&!lookupError&&!completed)
+   await supa.storage.from(STORAGE).remove([path]);
+  return fail(req,"La clase se cerró durante la carga.",403);
+ }
  const {data:saved,error:se}=await supa.from("krueka_live_materials")
-  .insert({activity_id:id,file_name:name,object_path:path,mime_type:MATERIAL_MIME[ext],size_bytes:file.size})
+  .insert({id:uploadId,activity_id:id,file_name:name,object_path:path,mime_type:mime,size_bytes:file.size})
   .select("id,file_name,mime_type,size_bytes,uploaded_at").single();
- if(se||!saved){await supa.storage.from(STORAGE).remove([path]);return fail(req,"No se pudo registrar el archivo o se alcanzó el límite.",503);}
+ if(se||!saved){
+  const {data:completed,error:lookupError}=await previous();
+  if(completed)return json(req,{ok:true,material:completed});
+  // Con identidad estable otro reintento puede registrar el objeto después de
+  // esta consulta. Conservarlo evita borrar una carga confirmada concurrente.
+  if(!requestedId&&createdHere&&!lookupError)await supa.storage.from(STORAGE).remove([path]);
+  return fail(req,"No se pudo registrar el archivo o se alcanzó el límite.",503);
+ }
  return json(req,{ok:true,material:saved});
 }
 

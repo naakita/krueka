@@ -66,11 +66,21 @@ body.material-fullscreen{overflow:hidden}
 .steps li{margin-bottom:12px}
 .filearea{border:2px dashed #9bbfe8;border-radius:13px;background:#f3f9ff;padding:16px}
 .filearea input{border:0;background:transparent;padding:5px 0;font-size:12px;min-height:0}
+.material-queue{min-width:0;margin-top:12px}.material-queue .toolbar{margin-top:10px}
+.material-queue-summary{font-size:14px!important;color:#365675!important;font-weight:750}
+.material-queue-list{display:grid;gap:9px;margin-top:12px;max-height:390px;overflow:auto}
+.material-queue-row{border:1px solid #cdddeb;background:#fff;border-radius:10px;padding:11px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 10px;align-items:start}
+.material-queue-row strong{font-size:14px;overflow-wrap:anywhere}.material-queue-row>div>small{display:block;font-size:12px;color:#48647e;margin-top:4px}
+.material-queue-row .btn{min-height:32px;padding:5px 9px}.material-queue-row progress{grid-column:1/-1;width:100%;height:9px;accent-color:#3058d5}
+.material-queue-row[data-state="uploaded"]{border-color:#95cbaa;background:#f1fbf5}.material-queue-row[data-state="error"]{border-color:#e3a49f;background:#fff6f4}
+.material-queue-row[data-state="error"] small{color:#993f37}.material-queue-notice{font-size:14px;color:#993f37;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:10px}
+.material-panel{margin-top:14px;padding:12px;border:1px dashed #b8cee4;border-radius:11px;background:#f4f8ff}
 .activity-head{display:flex;justify-content:space-between;align-items:start;gap:14px;flex-wrap:wrap}
 .activity-info{font-size:12px;font-weight:750;color:#55758f}
 .activity-info span{padding:4px 8px;background:#eaf3ff;border-radius:6px;margin:0 5px 5px 0;display:inline-flex}
 .list{display:grid;gap:13px;margin-top:21px}
 .item{border:1px solid #d9e5f3;border-radius:14px;background:#fcfdff;padding:16px}
+.item>strong{overflow-wrap:anywhere}
 .item .itemtitle{font-size:16px;font-weight:850;color:#243e61;margin-bottom:4px}
 .item small{font-size:11px;color:#8093a9}
 .item p{margin:8px 0}
@@ -119,7 +129,7 @@ a:focus-visible,button:focus-visible{outline:3px solid #ff9b7b;outline-offset:3p
      <span class="tag">● Clase habilitada</span><h2 style="margin-top:15px" id="activity-title"></h2>
      <div class="activity-info" id="activity-info"></div>
      <h3 style="margin-top:22px">Consigna del profesor</h3><div class="instructions" id="activity-instructions"></div>
-     <section id="student-materials" class="pdf-panel" hidden><h3>📚 Materiales de esta actividad</h3><p class="note">Elegí «Ver vista previa» para leer aquí sin descargar. También podés ampliar el documento a toda la pantalla.</p><div id="student-materials-list" class="list"></div><div id="materials-message" role="status" aria-live="polite"></div></section>
+     <section id="student-materials" class="pdf-panel" hidden><h3>📚 Materiales de esta actividad</h3><p class="note">Podés descargar todos los archivos. Los formatos compatibles también ofrecen «Ver vista previa» para leer y ampliar aquí.</p><div id="student-materials-list" class="list"></div><div id="materials-message" role="status" aria-live="polite"></div></section>
      <section id="student-pdf" class="pdf-panel" hidden aria-label="Guía PDF de la actividad">
       <h3>📄 PDF para realizar la actividad</h3><p id="student-pdf-name" class="note"></p>
       <p class="note">Leé directamente el PDF aquí. No se inicia ninguna descarga al mostrarlo.</p>
@@ -164,9 +174,9 @@ a:focus-visible,button:focus-visible{outline:3px solid #ff9b7b;outline-offset:3p
      <div class="field"><label for="new-grade">Grado o curso</label><input id="new-grade" required maxlength="100" minlength="2" placeholder="Ej.: Octavo grado"></div>
      <div class="field"><label for="new-subject">Materia</label><input id="new-subject" required maxlength="100" minlength="2" placeholder="Ej.: Informática"></div>
      <div class="field"><label for="new-title">Título de la actividad</label><input id="new-title" required minlength="4" maxlength="140" placeholder="Ej.: Ejercicios de funciones en Excel"></div>
-     <div class="field"><label for="new-instructions">Indicaciones adicionales (opcional si adjuntás el PDF)</label><textarea id="new-instructions" maxlength="10000" placeholder="Podés explicar qué archivo deben entregar o aclarar las instrucciones del PDF…"></textarea></div>
-     <div class="field"><label for="new-pdf">📚 Documentos para los alumnos (opcional)</label>
-      <div class="filearea"><input type="file" id="new-pdf" name="guide" multiple accept=".pdf,.docx,.xlsx,.pptx,.doc,.xls,.ppt,.odt,.ods,.odp,.txt,.csv,.rtf,.jpg,.jpeg,.png,.webp,.gif,.zip"><p class="note">Seleccioná varios archivos: Word, Excel, PowerPoint, PDF, imágenes, texto, ODF o ZIP. Hasta 10 MB por archivo y 20 materiales por actividad.</p></div>
+     <div class="field"><label for="new-instructions">Indicaciones adicionales (opcional si adjuntás archivos)</label><textarea id="new-instructions" maxlength="10000" placeholder="Podés explicar qué archivo deben entregar o aclarar las instrucciones de los materiales…"></textarea></div>
+     <div class="field"><label for="new-pdf">📚 Archivos para los alumnos (opcional)</label>
+      <div class="filearea"><input type="file" id="new-pdf" name="guide" multiple hidden><p class="note">Cualquier tipo de archivo. Agregá uno o varios, en las tandas que necesites. Hasta 20 materiales por actividad y 10 MB por archivo.</p><div id="new-material-queue" class="material-queue"></div></div>
      </div>
      <button class="btn wide" id="create-button" type="submit">+ Crear actividad y generar código</button>
     </form>
@@ -204,5 +214,5 @@ a:focus-visible,button:focus-visible{outline:3px solid #ff9b7b;outline-offset:3p
 <footer>Krueka · Paraguay · Plataforma educativa · <a href="informacion.html#privacidad">Privacidad</a> · <a href="accesos.html">Volver a los accesos</a></footer>
 <script src="assets/vendor/jszip.min.js" defer></script>
 <script src="js/krueka-material-preview.js?v=20261125pdf" defer></script>
-<script src="js/krueka-clase-temporal.js?v=20261119a" defer></script>
+<script src="js/krueka-clase-temporal.js?v=20261127a" defer></script>
 </body></html>
