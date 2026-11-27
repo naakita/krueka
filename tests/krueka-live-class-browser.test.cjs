@@ -256,16 +256,25 @@ async function runBrowser(){
   await page.locator('#lookup-button').click();
   await page.waitForFunction(()=>document.querySelectorAll('#student-materials-list > .item').length===12);
   const materialRows=page.locator('#student-materials-list > .item');
+  let completedDownloads=0;
   for(const file of files){
    const item=materialRows.filter({has:page.getByText(file.name,{exact:true})});
    assert.equal(await item.count(),1,file.name+' se muestra una sola vez');
    assert.equal(await item.getByRole('button',{name:'Ver vista previa',exact:true}).count(),file.preview?1:0,file.name+' usa MIME validado para decidir la vista previa');
+   // Blink descarta en silencio la descarga 11 de una ráfaga inferior a 1 s.
+   // Respetar ese límite conserva las doce descargas reales y sus comprobaciones.
+   // chromium/src/third_party/blink/renderer/core/frame/local_frame.cc: ShouldThrottleDownload.
+   if(completedDownloads&&completedDownloads%10===0)await new Promise(resolve=>setTimeout(resolve,1100));
+   console.log('Descargando material Chromium: '+file.name);
    const waiting=page.waitForEvent('download');
    await item.getByRole('button',{name:'↓ Descargar archivo',exact:true}).click();
    const download=await waiting,stream=await download.createReadStream(),chunks=[];
    assert.ok(stream,'La descarga tiene contenido');for await(const chunk of stream)chunks.push(chunk);
    assert.equal(download.suggestedFilename(),file.name);assert.deepEqual(Buffer.concat(chunks),file.buffer,'Bytes exactos al descargar '+file.name);
+   completedDownloads++;
+   console.log('PASS descarga Chromium '+file.name+' · '+file.buffer.length+' bytes exactos.');
   }
+  assert.equal(completedDownloads,files.length,'Se completan y comprueban las doce descargas');
   const textRow=materialRows.filter({has:page.getByText('lectura.txt',{exact:true})});
   await textRow.getByRole('button',{name:'Ver vista previa',exact:true}).click();
   await textRow.locator('.preview-plain').waitFor();
