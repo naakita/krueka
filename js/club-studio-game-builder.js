@@ -98,3 +98,221 @@ function install(){
 const api={TYPES,CATS,normalise,draw,render,install};window.KruekaGameBuilder=api;
 if(!install()){let n=0;const t=setInterval(()=>{if(install()||++n>30)clearInterval(t)},100);}
 })();
+/* Editor inicial de videojuegos: escena visual + eventos de condición y acción. */
+(function(){
+'use strict';
+const S=window.StudioIA,K=window.StudioKits;
+if(!S||!K||!Array.isArray(K.catalog)||typeof K.create!=='function'||typeof K.art!=='function'||window.StudioEscenas)return;
+const ID='escena-visual',W=12,H=8;
+const types={
+ hero:{label:'Personaje',icon:'◆',color:'#60dbc5'},
+ coin:{label:'Moneda',icon:'●',color:'#ffd270'},
+ wall:{label:'Muro',icon:'▦',color:'#6780a2'},
+ hazard:{label:'Peligro',icon:'▲',color:'#ff849d'},
+ exit:{label:'Portal',icon:'◉',color:'#a8a2ff'}
+};
+const palette={forest:'Bosque',space:'Estación',sunset:'Atardecer'};
+const ruleTypes={
+ coin:{label:'El personaje toca una moneda',verb:'Sumar puntos y recoger la moneda',max:10},
+ hazard:{label:'El personaje toca un peligro',verb:'Restar vidas y volver al inicio',max:3},
+ exit:{label:'El personaje entra al portal',verb:'Ganar si alcanza la meta de puntos',max:99}
+};
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const number=(v,a,b,d)=>Number.isInteger(Number(v))?Math.max(a,Math.min(b,Number(v))):d;
+function clean(raw){
+ const c=raw&&typeof raw==='object'?raw:{};
+ const cells=new Set(),ids=new Set(),single=new Set(),objects=[];
+ for(const [i,o] of (Array.isArray(c.objects)?c.objects.slice(0,70):[]).entries()){
+  if(!o||!Object.hasOwn(types,o.type))continue;
+  const x=number(o.x,0,W-1,0),y=number(o.y,0,H-1,0),p=x+','+y;
+  if(cells.has(p)||(['hero','exit'].includes(o.type)&&single.has(o.type)))continue;
+  let id=/^[a-z0-9-]{1,33}$/.test(String(o.id))?String(o.id):'obj-'+i,k=0;
+  while(ids.has(id))id='obj-'+i+'-'+(++k);
+  cells.add(p);ids.add(id);single.add(o.type);
+  objects.push({id,type:o.type,x,y,color:/^#[0-9a-f]{6}$/i.test(o.color)?o.color:types[o.type].color,label:String(o.label||types[o.type].label).slice(0,32)});
+ }
+ const used=new Set(),rules=[];
+ for(const r of Array.isArray(c.rules)?c.rules.slice(0,3):[]){
+  if(!r||!Object.hasOwn(ruleTypes,r.when)||used.has(r.when))continue;
+  used.add(r.when);rules.push({when:r.when,amount:number(r.amount,r.when==='exit'?0:1,ruleTypes[r.when].max,1)});
+ }
+ return {kind:ID,title:String(c.title||'Mi primer juego').trim().slice(0,60)||'Mi primer juego',theme:Object.hasOwn(palette,c.theme)?c.theme:'forest',objects,rules};
+}
+function starter(layout='forest'){
+ const basic=[['hero',1,5],['coin',3,5],['coin',5,3],['coin',8,2],['exit',10,2],['wall',4,5],['wall',4,4],['hazard',7,4]];
+ const space=[['hero',1,6],['coin',3,6],['coin',5,4],['coin',8,1],['exit',10,1],['wall',6,5],['wall',6,4],['hazard',7,3]];
+ const blank=[['hero',1,5],['exit',10,2]];
+ const items=layout==='space'?space:layout==='blank'?blank:basic;
+ return clean({theme:layout==='space'?'space':'forest',objects:items.map(([type,x,y],i)=>({id:'pieza-'+(i+1),type,x,y})),rules:layout==='blank'?[{when:'exit',amount:0}]:[{when:'coin',amount:1},{when:'hazard',amount:1},{when:'exit',amount:3}]});
+}
+function inspect(c){
+ const issues=[],hero=c.objects.find(o=>o.type==='hero'),exit=c.objects.find(o=>o.type==='exit');
+ const rule=when=>c.rules.find(r=>r.when===when);
+ if(!hero)issues.push('Falta el personaje. Agregalo en Escena.');
+ if(!exit)issues.push('Falta el portal. Agregalo en Escena.');
+ if(!rule('exit'))issues.push('Falta la regla para ganar cuando se entra al portal.');
+ const barriers=new Set(c.objects.filter(o=>o.type==='wall'||(o.type==='hazard'&&rule('hazard'))).map(o=>o.x+','+o.y));
+ const reachable=new Set(),todo=hero?[[hero.x,hero.y]]:[];
+ for(let i=0;i<todo.length;i++){
+  const [x,y]=todo[i],key=x+','+y;if(reachable.has(key))continue;reachable.add(key);
+  for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const a=x+dx,b=y+dy,key=a+','+b;
+   if(a>=0&&a<W&&b>=0&&b<H&&!reachable.has(key)&&!barriers.has(key))todo.push([a,b]);
+  }
+ }
+ if(hero&&exit&&!reachable.has(exit.x+','+exit.y))issues.push('El portal no tiene un camino seguro desde el personaje. Mové un muro o un peligro.');
+ const points=c.objects.filter(o=>o.type==='coin'&&reachable.has(o.x+','+o.y)).length*(rule('coin')?.amount||0);
+ if(rule('exit')?.amount>points)issues.push('La meta es '+rule('exit').amount+' pero solo hay '+points+' puntos disponibles por un camino seguro. Sumá monedas o bajá la meta.');
+ return issues;
+}
+function runtime(){
+ const cfg=window.KRUEKA_GAME,T={hero:'◆',coin:'●',wall:'▦',hazard:'▲',exit:'◉'};
+ const at=(x,y)=>cfg.objects.find(o=>o.x===x&&o.y===y);
+ const home=cfg.objects.find(o=>o.type==='hero'),go=id=>document.getElementById(id);
+ function mk(tag,t){const el=document.createElement(tag);if(t)el.textContent=t;return el;}
+ let x,y,score,lives,used,ended,message;
+ function render(){
+  const board=go('arena');board.replaceChildren();
+  for(let yy=0;yy<8;yy++)for(let xx=0;xx<12;xx++){
+   const o=at(xx,yy),p=mk('span');
+   p.className='tile';
+   if(xx===x&&yy===y){p.textContent=T.hero;p.style.color=home.color;}
+   else if(o&&o.type!=='hero'&&!used.has(o.id)){p.textContent=T[o.type];p.style.color=o.color;}
+   board.append(p);
+  }
+  go('score').textContent='Puntos: '+score+' · Vidas: '+lives;
+  go('msg').textContent=message;
+ }
+ function reset(focus=false){
+  score=0;lives=3;used=new Set();ended=false;x=home?.x;y=home?.y;
+  message=home?'Usá las flechas para jugar.':'Falta el personaje; volvé al editor.';
+  render();if(focus)go('arena').focus();
+ }
+ function move(dx,dy){
+  if(!home||ended)return;
+  const a=x+dx,b=y+dy;if(a<0||a>=12||b<0||b>=8)return;
+  const o=at(a,b);if(o?.type==='wall')return;x=a;y=b;
+  const r=o&&cfg.rules.find(z=>z.when===o.type);
+  if(r&&o.type==='coin'&&!used.has(o.id)){used.add(o.id);score+=r.amount;message='¡Moneda recogida!';}
+  if(r&&o.type==='hazard'){lives=Math.max(0,lives-r.amount);x=home.x;y=home.y;if(!lives)ended=true;message=ended?'Perdiste. Probá de nuevo.':'Perdiste vidas y volviste al inicio.';}
+  if(r&&o.type==='exit'){ended=score>=r.amount;message=ended?'¡Ganaste!':'El portal pide '+r.amount+' puntos.';}
+  render();
+ }
+ const dirs={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+ document.addEventListener('keydown',e=>{if(dirs[e.key]){e.preventDefault();move(...dirs[e.key]);}});
+ document.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>move(...dirs[b.dataset.dir]));
+ go('reset').onclick=()=>reset(true);
+ go('title').textContent=cfg.title;document.title=cfg.title;go('arena').dataset.theme=cfg.theme;reset();
+}
+const css='*{box-sizing:border-box}body{margin:0;background:#101929;color:#f0f7ff;font:15px/1.45 system-ui}main{max-width:840px;margin:auto;padding:clamp(9px,3vw,22px)}small{color:#80d9ca;letter-spacing:.14em;font-size:10px}h1{font-size:clamp(19px,3.3vw,31px);margin:4px 0}#score{font-weight:700}#arena{outline:2px solid #45667a;margin-top:12px;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));border-radius:9px;overflow:hidden;--a:#23463f;--b:#172e34}#arena[data-theme=space]{--a:#2b3655;--b:#202743}#arena[data-theme=sunset]{--a:#604447;--b:#472f40}.tile{display:grid;place-items:center;aspect-ratio:1;background:var(--a);border-right:1px solid #ffffff1b;border-bottom:1px solid #ffffff1b;font-size:clamp(11px,4vw,28px);font-weight:800}.tile:nth-child(even){background:var(--b)}button{padding:7px 12px;min-height:35px;background:#244861;border:1px solid #6e99ac;border-radius:7px;color:white;font:inherit}nav{display:flex;gap:5px;flex-wrap:wrap}#msg{min-height:22px;color:#d9e5f2}';
+function files(c=starter()){
+ c=clean(c);
+ return {'index.html':'<!doctype html><html lang="es-PY"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="style.css"></head><body><main><small>TALLER DE VIDEOJUEGOS</small><h1 id="title"></h1><div id="score"></div><div id="arena" tabindex="0" aria-label="Tablero del videojuego"></div><p id="msg" role="status"></p><nav aria-label="Controles"><button data-dir="ArrowLeft" aria-label="Izquierda">←</button><button data-dir="ArrowUp" aria-label="Arriba">↑</button><button data-dir="ArrowDown" aria-label="Abajo">↓</button><button data-dir="ArrowRight" aria-label="Derecha">→</button><button id="reset">Reiniciar</button></nav></main><script src="game-config.js"></script><script src="game.js"></script></body></html>',
+ 'style.css':css,'game.js':'('+runtime.toString()+')();','game-config.js':K.configFile(c),'tipo-club.txt':'juegos',
+ 'LEEME.md':'# Taller de videojuegos visual\n\nUbicá el personaje, las piezas y el portal en Escena. En Reglas, elegí una condición y revisá qué hace su acción. Probá de principio a fin antes de guardar o enviar. No hace falta conectar un proveedor de IA.'};
+}
+function mounted(studio,el,raw){
+ const c=clean(raw);
+ const identity=(studio.sid?.()||'')+'|'+studio.projectId;
+ if(studio.visualIdentity!==identity){studio.visualIdentity=identity;studio.visualTab='scene';studio.visualPick='coin';studio.visualSelected='';studio.visualNotice='';}
+ const part=studio.visualTab||'scene';
+ el.innerHTML='<section id="kv-world" class="ks-settings"><header><small>CLUB KRUEKA / VIDEOJUEGOS</small><h2>Tu juego visual</h2><p>Armá la escena, elegí qué pasa y jugá para comprobarlo. No necesitás IA.</p></header>'+
+  '<nav class="ks-scene-actions" aria-label="Etapas de creación"><button type="button" class="ks-btn" data-kv-tab="scene">1. Escena</button><button type="button" class="ks-btn" data-kv-tab="rules">2. Reglas</button><button type="button" class="ks-btn" data-kv-tab="test">3. Probar</button><button type="button" class="ks-btn" id="kv-save">Guardar proyecto</button></nav>'+
+  '<div id="kv-panel"></div><p id="kv-notice" role="status"></p></section>';
+ const panel=el.querySelector('#kv-panel'),msg=el.querySelector('#kv-notice');
+ msg.textContent=studio.visualNotice||'';
+ const tell=t=>{studio.visualNotice=t;msg.textContent=t;};
+ const apply=(data,note='Cambio aplicado. Probá o guardá tu proyecto.')=>{
+  if(studio.busy||!studio.cloudReady)return;
+  const next=clean(data);
+  studio.checkpoint();studio.files=studio.validFiles({...studio.files,'game-config.js':K.configFile(next)});
+  studio.title=next.title;studio.visualNotice=note;studio.changed();studio.refreshAll();studio.lock(false);
+ };
+ el.querySelector('#kv-save').onclick=async()=>{if(!studio.busy&&studio.cloudReady)tell(await studio.save()?'Proyecto guardado. Buscalo luego en Mis proyectos.':'No se pudo guardar. Revisá tu conexión.');};
+ el.querySelectorAll('[data-kv-tab]').forEach(b=>{
+  b.setAttribute('aria-pressed',String(b.dataset.kvTab===part));
+  b.onclick=()=>{studio.visualTab=b.dataset.kvTab;mounted(studio,el,c);el.querySelector('[data-kv-tab='+studio.visualTab+']')?.focus();if(studio.visualTab==='test')studio.renderPreview();};
+ });
+ if(part==='scene'){
+  const selected=c.objects.find(o=>o.id===studio.visualSelected);
+  const typesHTML=Object.entries(types).map(([k,t])=>'<button type="button" class="ks-btn" draggable="true" data-kv-tool="'+k+'">'+t.icon+' '+t.label+'</button>').join('');
+  panel.innerHTML='<label>Nombre del juego <input id="kv-title" maxlength="60" value="'+esc(c.title)+'"></label><label>Ambiente <select id="kv-theme">'+Object.entries(palette).map(([id,label])=>'<option value="'+id+'" '+(c.theme===id?'selected':'')+'>'+label+'</option>').join('')+'</select></label>'+
+   '<div class="kv-pal" aria-label="Piezas">'+typesHTML+'</div><p>Arrastrá una pieza al tablero, o elegila y tocá una casilla libre. Para mover una pieza puesta, seleccionala y tocá otro lugar.</p>'+
+   '<div id="kv-grid" role="group" aria-label="Tablero editable"></div>'+
+   '<details><summary>Otras escenas iniciales</summary><p>Estas opciones crean un proyecto separado. El actual no se reemplaza.</p><div class="ks-scene-actions"><button class="ks-btn" id="kv-new-space">Estación espacial</button><button class="ks-btn" id="kv-new-blank">Escena básica</button></div></details>'+
+   '<div id="kv-inspector"></div>';
+  const grid=panel.querySelector('#kv-grid');grid.dataset.theme=c.theme;
+  const gridCells=new Map(c.objects.map(o=>[o.x+','+o.y,o]));
+  const setSelect=id=>{studio.visualSelected=id;mounted(studio,el,c);};
+  function place(spec,x,y){
+   const current=gridCells.get(x+','+y);
+   if(current){setSelect(current.id);return;}
+   if(spec.startsWith('id:')){
+    const id=spec.slice(3);if(!c.objects.some(o=>o.id===id))return;
+    studio.visualSelected='';apply({...c,objects:c.objects.map(o=>o.id===id?{...o,x,y}:o)});return;
+   }
+   const t=Object.hasOwn(types,spec)?types[spec]:null;if(!t)return;
+   if(['hero','exit'].includes(spec)&&c.objects.some(o=>o.type===spec)){tell('Ya existe '+t.label.toLowerCase()+'. Seleccionalo para moverlo.');return;}
+   if(c.objects.length>=70){tell('Llegaste al máximo de 70 piezas. Quitá una antes de agregar otra.');return;}
+   let n=1;while(c.objects.some(o=>o.id==='pieza-'+n))n++;
+   const o={id:'pieza-'+n,type:spec,x,y,label:t.label,color:t.color};
+   studio.visualSelected='';apply({...c,objects:[...c.objects,o]});
+  }
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   const o=gridCells.get(x+','+y),b=document.createElement('button');b.type='button';b.dataset.cell=x+','+y;
+   b.setAttribute('aria-label',(o?o.label:'Casilla libre')+' '+(x+1)+', '+(y+1));
+   if(o){b.textContent=types[o.type].icon;b.style.color=o.color;b.draggable=true;b.ondragstart=e=>e.dataTransfer.setData('application/x-krueka-piece','id:'+o.id);}
+   if(o?.id===selected?.id&&o)b.classList.add('kv-selected');
+   b.onclick=()=>place(selected?'id:'+selected.id:studio.visualPick,x,y);
+   b.ondragover=e=>{if(e.dataTransfer.types.includes('application/x-krueka-piece'))e.preventDefault();};
+   b.ondrop=e=>{const value=e.dataTransfer.getData('application/x-krueka-piece');if(value){e.preventDefault();place(value,x,y);}};
+   grid.append(b);
+  }
+  // One Tab stop for the scene. Arrow keys move across its cells.
+  const cellButtons=[...grid.querySelectorAll('[data-cell]')];
+  for(const b of cellButtons)b.tabIndex=-1;
+  (grid.querySelector('.kv-selected')||cellButtons[0]).tabIndex=0;
+  grid.addEventListener('focusin',e=>{if(!e.target.matches('[data-cell]'))return;for(const b of cellButtons)b.tabIndex=b===e.target?0:-1;});
+  grid.onkeydown=e=>{
+   const key={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+   if(!key||!e.target.dataset.cell)return;e.preventDefault();
+   const [x,y]=e.target.dataset.cell.split(',').map(Number);
+   grid.querySelector('[data-cell="'+(x+key[0])+','+(y+key[1])+'"]')?.focus();
+  };
+  panel.querySelectorAll('[data-kv-tool]').forEach(b=>{
+   b.setAttribute('aria-pressed',String(!selected&&studio.visualPick===b.dataset.kvTool));
+   b.onclick=()=>{studio.visualPick=b.dataset.kvTool;setSelect('');el.querySelector('[data-kv-tool='+studio.visualPick+']')?.focus();};
+   b.ondragstart=e=>e.dataTransfer.setData('application/x-krueka-piece',b.dataset.kvTool);
+  });
+  panel.querySelector('#kv-title').onchange=e=>apply({...c,title:e.target.value});
+  panel.querySelector('#kv-theme').onchange=e=>apply({...c,theme:e.target.value});
+  async function newScene(layout){const prior=studio.projectId,title=layout==='space'?'Estación espacial':'Escena básica';await studio.startProject(files({...starter(layout),title}),title);if(prior!==studio.projectId)studio.showTab('create');}
+  panel.querySelector('#kv-new-space').onclick=()=>newScene('space');
+  panel.querySelector('#kv-new-blank').onclick=()=>newScene('blank');
+  const detail=panel.querySelector('#kv-inspector');
+  if(selected){
+   detail.innerHTML='<h3>Pieza seleccionada</h3><label>Nombre <input id="kv-name" maxlength="32" value="'+esc(selected.label)+'"></label><label>Color <input id="kv-color" type="color" value="'+selected.color+'"></label><button type="button" class="ks-btn" id="kv-apply-piece">Aplicar a la pieza</button> <button type="button" class="ks-btn" id="kv-remove">Quitar pieza</button>';
+   detail.querySelector('#kv-apply-piece').onclick=()=>apply({...c,objects:c.objects.map(o=>o.id===selected.id?{...o,label:detail.querySelector('#kv-name').value,color:detail.querySelector('#kv-color').value}:o)});
+   detail.querySelector('#kv-remove').onclick=()=>{studio.visualSelected='';apply({...c,objects:c.objects.filter(o=>o.id!==selected.id)});};
+  }else detail.textContent='Tocá una pieza del tablero para ver su nombre y color.';
+ }else if(part==='rules'){
+  panel.innerHTML='<h3>Si pasa esto → hacé esto</h3><p>Activá las reglas del juego y elegí los valores. Una regla puede cambiar cómo se juega sin tocar el escenario.</p>'+
+   Object.entries(ruleTypes).map(([key,r])=>{const saved=c.rules.find(x=>x.when===key);return '<fieldset><legend>'+r.label+'</legend><label><input type="checkbox" data-kv-rule="'+key+'" '+(saved?'checked':'')+'> Activar</label><label>'+r.verb+' <input type="number" data-kv-amount="'+key+'" min="'+(key==='exit'?0:1)+'" max="'+r.max+'" value="'+(saved?.amount??1)+'"></label></fieldset>';}).join('')+
+   '<button type="button" class="ks-btn primary" id="kv-apply-rules">Aplicar reglas</button>';
+  panel.querySelector('#kv-apply-rules').onclick=()=>apply({...c,rules:[...panel.querySelectorAll('[data-kv-rule]:checked')].map(n=>({when:n.dataset.kvRule,amount:Number(panel.querySelector('[data-kv-amount='+n.dataset.kvRule+']').value)}))});
+ }else{
+  const alerts=inspect(c);panel.innerHTML='<h3>Probá como jugador</h3><p>Verificá las flechas, juntá puntos y llegá al portal. Al perder, probá Reiniciar.</p><ul id="kv-diagnosis"></ul><button type="button" class="ks-btn primary" id="kv-play">▶ Jugar en la vista previa</button>';
+  for(const x of alerts.length?alerts:['No se detectaron problemas de recorrido. Jugá una partida completa igualmente.']){const li=document.createElement('li');li.textContent=x;panel.querySelector('ul').append(li);}
+  panel.querySelector('#kv-play').onclick=()=>studio.playCurrent();
+ }
+}
+const create=K.create.bind(K),art=K.art.bind(K);
+K.catalog.unshift({id:ID,icon:'🎮',title:'Videojuego visual 2D',tag:'Escena · Reglas · Probar',description:'Arrastrá piezas, definí reglas y jugá sin cuentas externas ni créditos.'});
+K.create=id=>id===ID?files():create(id);
+K.art=id=>id===ID?'🎮':art(id);
+const render=S.renderCreator;
+S.renderCreator=function(){const c=K.read(this.files),el=document.getElementById('ks-create');return c?.kind===ID&&el?mounted(this,el,c):render.apply(this,arguments);};
+const swap=S.switchProject;
+S.switchProject=async function(id){const r=await swap.apply(this,arguments);if(this.projectId===id&&K.read(this.files)?.kind===ID){this.visualTab='scene';this.renderCreator();this.showTab('create');}return r;};
+window.StudioEscenas={ID,clean,starter,inspect,files};
+})();
