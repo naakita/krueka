@@ -1,0 +1,82 @@
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),vm=require('node:vm'),crypto=require('node:crypto');
+const {chromium}=require('playwright');
+const root=path.resolve(__dirname,'..');
+const fixture=fs.readFileSync(path.join(__dirname,'studio-classroom-browser.test.cjs'),'utf8');
+const setup=vm.runInNewContext(fixture.match(/const setup=(`[^]*?`);\nconst smoke=/)[1]);
+const kit={configFile:()=>'',catalog:[],creators:{},create(){},art(){}};
+const model={window:{StudioKits:kit},StudioKits:kit};
+const source=fs.readFileSync(path.join(root,'js/club-studio-3d.js'),'utf8');
+vm.runInNewContext(source.replace('window.Studio3D={','window.previousRuntime=standardGame;window.Studio3D={'),model);
+const old=model.window.previousRuntime,api=model.window.Studio3D;
+assert.equal(crypto.createHash('sha256').update(old).digest('hex'),'83d841570c0199972f8e06ec452f95887b15207294ddf52ea8980c35ebc53cb0');
+const edited={'game.js':old+'\n// Mi proyecto personalizado'};
+assert.equal(api.previewFiles(edited),edited);
+assert.equal(api.previewFiles({'game.js':old,other:'original'}).other,'original');
+const fileNames=['first','second'];
+(async()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'kr-zoom-'));
+ const orig=fs.readFileSync(path.join(root,'club-krueka.html'),'utf8'),file=n=>path.join(dir,n+'.html');
+ function write(n,s,pre=''){fs.writeFileSync(file(n),orig.replace('<head>','<head><base href="file://'+root+'/">'+s+pre));}
+ write('first',setup.replace("if(body.action==='save'){","if(body.action==='save'&&b.failSave)return {status:503,data:{ok:false,error:'Fallo de guardado de prueba'}};if(body.action==='save'){"));
+ const browser=await chromium.launch({executablePath:process.env.STUDIO_CHROMIUM||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--no-zygote','--disable-dev-shm-usage']});
+ try{
+  const errors=[];
+  async function open(n,opts){
+   const page=await browser.newPage(opts);page.on('pageerror',e=>errors.push(e.message));await page.route(/^https?:/,r=>r.abort());
+   await page.goto('file://'+file(n));await page.waitForFunction(()=>window.KruekaStudioAccess?.ready);
+   return page;
+  }
+  const page=await open(fileNames[0],{viewport:{width:1200,height:860}});
+  await page.evaluate(()=>KruekaStudioAccess.login('TEST01'));
+  await page.getByRole('button',{name:/Nuevo proyecto/}).click();await page.locator('#kc-new-world').click();await page.locator('#k3d-builder').waitFor();
+  await page.locator('#k3d-zone-template').selectOption('cubes');await page.locator('#k3d-zone-add').click();
+  const frame=page.frameLocator('#ks-frame'),canvas=frame.locator('#arena'),level=frame.locator('#kr-view-level');
+  await frame.locator('#hud').getByText(/Aldea de cubos/).waitFor();
+  const scene=await page.evaluate(()=>StudioIA.files['game-config.js']);
+  const id=await page.evaluate(()=>StudioIA.projectId);
+  const pixels=async()=>crypto.createHash('sha256').update(await canvas.screenshot()).digest('hex');
+  const before=await pixels();
+  await frame.getByRole('button',{name:'Acercar zona'}).press('Space');assert.equal(await level.textContent(),'125%');
+  for(let i=0;i<3;i++)await frame.getByRole('button',{name:'Acercar zona'}).click();
+  assert.equal(await level.textContent(),'200%');assert.equal(await frame.getByRole('button',{name:'Acercar zona'}).isDisabled(),true);
+  await page.waitForTimeout(200);
+  assert.notEqual(await pixels(),before,'La proyección debe cambiar de verdad');
+  await frame.getByRole('button',{name:'Mover vista'}).click();
+  const box=await canvas.boundingBox(),zoomed=await pixels();
+  await page.mouse.move(box.x+box.width/2,box.y+box.height/2);await page.mouse.down();await page.mouse.move(box.x+box.width/2+65,box.y+box.height/2+35,{steps:4});await page.mouse.up();
+  await page.waitForTimeout(110);
+  assert.notEqual(await pixels(),zoomed,'Debe poder inspeccionar otra parte de la zona');
+  assert.equal(await page.locator('#k3d-piece-editor').count(),0,'Mover cámara no selecciona una pieza');
+  await frame.getByRole('button',{name:'Alejar zona'}).click();assert.equal(await level.textContent(),'175%');
+  await frame.getByRole('button',{name:'Centrar'}).click();assert.equal(await level.textContent(),'100%');
+  assert.equal(await page.evaluate(()=>StudioIA.files['game-config.js']),scene);
+  // Dejar el motor anterior en el archivo: el visor lo reconoce sin sustituirlo al guardar.
+  await page.evaluate(code=>{StudioIA.files['game.js']=code;StudioIA.renderPreview();window.__backend.failSave=true;},old);
+  await level.waitFor();
+  await page.locator('#k3d-save').click();await page.getByText(/No se pudo guardar. Reintentá/).waitFor();
+  await page.evaluate(()=>window.__backend.failSave=false);
+  await page.locator('#k3d-save').click();await page.getByText(/Proyecto y piezas guardados en Krueka/).waitFor();
+  const data=await page.evaluate(()=>JSON.parse(JSON.stringify(window.__backend)));
+  assert.equal(data.projects.find(p=>p.id===id).files['game.js'],old);
+  await page.close();
+  data.sessions={};
+  write(fileNames[1],setup,'<script>Object.assign(window.__backend,'+JSON.stringify(data).replace(/</g,'\\u003c')+');</script>');
+  const phone=await open(fileNames[1],{viewport:{width:360,height:780},hasTouch:true,isMobile:true});
+  await phone.evaluate(()=>KruekaStudioAccess.login('TEST02'));
+  await phone.locator('#ks-projects').click();
+  assert.equal(await phone.locator('[data-project="'+id+'"]').count(),0,'No debe mostrarlo a otro alumno');
+  await phone.evaluate(async()=>{await StudioIA.close();await KruekaStudioAccess.login('TEST01');});
+  await phone.locator('#ks-projects').click();await phone.locator('[data-project="'+id+'"]').click();await phone.locator('#k3d-builder').waitFor();
+  assert.equal(await phone.evaluate(()=>StudioIA.files['game-config.js']),scene);
+  await phone.locator('#k3d-zone-select').selectOption('1');
+  const mobile=phone.frameLocator('#ks-frame');
+  await mobile.locator('#hud').getByText(/Aldea de cubos/).waitFor();
+  await mobile.getByRole('button',{name:'Acercar zona'}).tap();
+  assert.equal(await mobile.locator('#kr-view-level').textContent(),'125%');
+  assert.ok(await mobile.locator('.kr-inspect-view').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Controles sin desbordar');
+  await phone.locator('#k3d-play').click();await mobile.getByRole('button',{name:/Editar escena/}).waitFor();
+  assert.ok(await mobile.getByRole('button',{name:'Mover vista'}).isDisabled());
+  assert.deepEqual(errors,[]);
+  console.log('PASS: zoom, pan, reset, keyboard/touch, old engine, failed/retried save, reopen in clean context and separate student.');
+ }finally{await browser.close();fs.rmSync(dir,{recursive:true,force:true});}
+})().catch(e=>{console.error(e);process.exitCode=1});
