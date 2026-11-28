@@ -1,9 +1,9 @@
 /* Contexto del chat del alumno. Sólo lee el proyecto que está abierto. */
 (function(){
 'use strict';
-let selection=null,scope='',owner='',root=null;
+let selection=null,scope='',owner='',root=null,toolsOpen=false;
 function identity(s){return s.sid()+'|'+s.projectId;}
-function reset(s){if(owner!==identity(s)){owner=identity(s);selection=null;scope='';}}
+function reset(s){if(owner!==identity(s)){owner=identity(s);selection=null;scope='';toolsOpen=false;}}
 function recordSelection(e){
  const s=window.StudioIA,el=e.target;
  if(!s||el.tagName!=='TEXTAREA'||!el.closest('#krueka-studio'))return;
@@ -110,6 +110,47 @@ function inspect(s){
  const constrained=model&&['animation','video-edit'].includes(model.kind)?'escenas.json':window.StudioPython?.isPython(s)?'codigo-python.txt':key;
  return {files,description,info,evidence,apply,key:constrained,creative:!!d,selection:!!sel};
 }
+function simpleChat(s,section){
+ const form=section.querySelector('#ks-form'),q=form?.querySelector('#ks-prompt'),chat=section.querySelector('#ks-chat');
+ if(!form||!q||!chat)return;
+ section.classList.add('ks-chat-first');
+ let head=section.querySelector('#ks-simple-head');
+ if(!head){
+  head=document.createElement('header');head.id='ks-simple-head';
+  head.innerHTML='<div class="ks-simple-label">CHAT DEL PROYECTO</div><h2>¿Qué querés cambiar?</h2><p id="ks-simple-state" role="status"></p>';
+  section.prepend(head);head.after(form);
+  const bar=document.createElement('div');bar.id='ks-simple-bar';
+  bar.innerHTML='<button type="button" class="ks-btn" id="ks-simple-example">Usar un ejemplo</button><button type="button" class="ks-btn" id="ks-simple-rules">Abrir las reglas</button><button type="button" class="ks-btn" id="ks-simple-tools" aria-expanded="false">Más opciones</button>';
+  form.after(bar);
+  const heading=document.createElement('div');heading.id='ks-simple-history';heading.textContent='Conversación';chat.before(heading);
+ }
+ const kind=window.StudioKits?.read(s.files)?.kind;
+ const blocks=window.StudioBloques?.isBlocks(s)===true;
+ const choseLocal=section.querySelector('#ks-help-mode')?.value==='local';
+ const online=s.aiReady===true&&!choseLocal&&(!blocks||s.aiStatus?.blocksChat===true);
+ const local=(!online&&!blocks&&window.StudioClassroom?.supportsLocal(s.files))===true;
+ const workType=work(s)?.kind,media=['animation','video-edit'].includes(kind);
+ const example=workType?'Revisá mi '+({dibujos:'dibujo',libros:'libro',historietas:'historieta',dramas:'obra',cuentos:'cuento',blogs:'publicación'}[workType]||'creación')+' y sugerime una mejora.':media?'Explicame cómo mejorar el paso entre dos escenas.':blocks?'Cambiá la meta a 4 puntos.':kind==='pabellon-juego'?'Cambiá la luz del jardín a noche.':
+  ['race','platform','stars'].includes(kind)?'Cambiá la meta a 10 puntos.':
+  ['space3d','explore3d'].includes(kind)?'Cambiá la velocidad a 4.':kind==='quiz'?'Cambiá el escenario a bosque.':'Explicame cómo se gana en este juego.';
+ head.querySelector('#ks-simple-state').textContent=online?'Escribí un cambio y probalo en la vista previa.':
+  local?'La ayuda local puede cambiar algunas reglas. No está usando IA.':
+  media?'Podés pedir una guía local. El chat no aplicará cambios ahora.':'El chat no puede aplicar cambios ahora. Podés guardar la idea o abrir las reglas.';
+ form.querySelector('label').textContent='Escribí tu pedido';
+ q.placeholder='Ejemplo: '+example;
+ const send=form.querySelector('#ks-send'),tip=form.querySelector('#ks-compose-tip');
+ if(!s.busy)send.textContent=online?'Enviar a la IA':local?'Aplicar ayuda local':media?'Ver guía local':'Guardar idea';
+ if(tip)tip.textContent=online?'Un cambio por vez.':'';
+ const active=()=>!s.busy&&s.cloudReady;
+ const exampleButton=section.querySelector('#ks-simple-example'),rules=section.querySelector('#ks-simple-rules'),tools=section.querySelector('#ks-simple-tools');
+ exampleButton.disabled=rules.disabled=!active();
+ exampleButton.onclick=()=>{if(!active())return;if(!q.value.trim()){s.draft=example;q.value=example;s.changed();}q.focus();};
+ rules.onclick=()=>{if(active())s.showTab(blocks?'bloques':workType?'club-work':'create');};
+ tools.setAttribute('aria-expanded',String(toolsOpen));
+ tools.textContent=toolsOpen?'Ocultar opciones':'Más opciones';
+ tools.onclick=()=>{toolsOpen=!toolsOpen;simpleChat(s,section);};
+ section.classList.toggle('ks-simple-tools-open',toolsOpen);
+}
 function mount(s){
  const section=document.getElementById('ks-ai');if(!section)return;
  reset(s);
@@ -131,6 +172,7 @@ function mount(s){
   };
   document.addEventListener('select',recordSelection,true);
  }
+ simpleChat(s,section);
  const d=work(s),select=root.querySelector('select');selectScope(s,d);
  const options=[['','Proyecto completo']];
  if(selection)options.push(['selection','Mi selección']);
@@ -152,5 +194,10 @@ function localReview(s){
  return 'Revisión local de '+ctx.description+'\n'+ctx.info+'\n'+ctx.evidence+'\nLa evaluación con IA estará disponible al conectar el proveedor.';
 }
 function asksReview(text){return /^(?:mir[áa]|revis[áa]|evalu[áa]|le[ée]|analiz[áa]|qu[ée] (?:hice|hay|tengo))\b/i.test(String(text).normalize('NFD').replace(/[\u0300-\u036f]/g,''));}
+const studio=window.StudioIA;
+if(studio)for(const name of ['renderAIStatus','lock']){
+ const original=studio[name];
+ studio[name]=function(){const r=original.apply(this,arguments),section=document.getElementById('ks-ai');if(section)simpleChat(this,section);return r;};
+}
 window.ClubProjectChat={inspect,mount,localReview,asksReview,resetSelection(){selection=null;scope='';owner='';}};
 })();

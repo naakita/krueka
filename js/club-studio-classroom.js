@@ -6,6 +6,7 @@ if(window.StudioClassroom)return;
 let mounted=null,help='ai';
 const examples='Probá: «vidas 5 y tiempo 90», «velocidad 180», «meta 15 puntos», «escenario bosque» o «personaje robot». Para ideas nuevas, elegí IA del taller o Bases y reglas.';
 const plain=text=>String(text||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function supportsLocal(files){return ['stars','race','platform','quiz','explore3d','space3d'].includes(StudioKits.read(files)?.kind);}
 function localChange(files,text){
  const cfg=StudioKits.read(files),input=plain(text),next=cfg?JSON.parse(JSON.stringify(cfg)):null,changes=[];
  const basic=cfg&&['stars','race','platform','quiz'].includes(cfg.kind),scene=cfg&&['explore3d','space3d'].includes(cfg.kind);
@@ -113,6 +114,17 @@ function install(){
  studio.lock=function(){const r=lock.apply(this,arguments);sync(this);return r;};
  studio.send=async function(){
   if(help!=='local')return send.apply(this,arguments);
+  const draft=document.getElementById('ks-prompt')?.value.trim();
+  if(!supportsLocal(this.files)&&!window.ClubProjectChat?.asksReview(draft)){
+   if(!draft||this.busy||!this.cloudReady)return;
+   this.busy=true;this.lock(true);
+   try{
+    this.say('user',draft,{pending:true});
+    this.say('sys','Guardé tu idea. El juego no cambió. Podés seguir en Bases y reglas.');
+    this.draft='';document.getElementById('ks-prompt').value='';this.changed();await this.save();
+   }finally{this.busy=false;this.lock(false);}
+   return;
+  }
   if(this.busy||!this.cloudReady)return;
   const q=document.getElementById('ks-prompt'),text=q.value.trim();if(!text)return;
   this.busy=true;this.lock(true);
@@ -132,5 +144,5 @@ function install(){
  };
  studio.__classroomInstalled=true;
 }
-window.StudioClassroom={localChange,lesson,mount,sync,install};install();
+window.StudioClassroom={supportsLocal,localChange,lesson,mount,sync,install};install();
 })();
