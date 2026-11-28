@@ -35,7 +35,7 @@ function enhance(source){
   patch("if(collected.size===cfg.objects.filter(o=>o.type==='crystal').length&&Math.abs(player.x)<1.4&&player.z<-11)",
    "if(collected.size===cfg.objects.filter(o=>o.type==='crystal').length&&terminals.size===2&&Math.abs(player.x)<1.4&&player.z<-11)");
  }
- patch('reset();bindCanvas();cinematicSetup();function frame(now)','reset();bindCanvas();cinematicSetup();odysseySetup();function frame(now)');
+ patch('bindCanvas();cinematicSetup();function frame(now)','bindCanvas();cinematicSetup();odysseySetup();function frame(now)');
  patch('update(dt);if(now-lastDraw','update(dt);odysseyUpdate(dt);if(now-lastDraw');
  return src;
 }

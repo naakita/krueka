@@ -3,7 +3,7 @@
 (function(){
 'use strict';
 if(window.Krueka3DToolbox)return;
-const MAX=48,LEGACY_ENGINE_SHA=new Set(['83d841570c0199972f8e06ec452f95887b15207294ddf52ea8980c35ebc53cb0','2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724','6ac7fb92baebef6cbe7b33581328d73bd6b46971bac93b3b35c64ae49076c8bf','6fb29499505463c07798affd1679d74ecf416c5377e7d6b362c710c4da630951','6e5ecea16fec798f34a58733d2468bac4749217c1e6d35f210d4bdfbe0777350']),DEPTH=28,ZONE_MAX=4;
+const MAX=48,LEGACY_ENGINE_SHA=new Set(['a5103c2696d3653579d684db63ccae09591b184336a6a95f8b9a7fe650bb7043','83d841570c0199972f8e06ec452f95887b15207294ddf52ea8980c35ebc53cb0','2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724','6ac7fb92baebef6cbe7b33581328d73bd6b46971bac93b3b35c64ae49076c8bf','6fb29499505463c07798affd1679d74ecf416c5377e7d6b362c710c4da630951','6e5ecea16fec798f34a58733d2468bac4749217c1e6d35f210d4bdfbe0777350']),ZONE_MAX=5;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 // Blocks and courses built entirely from the existing, lightweight scene objects.
 const terrainPiece=(type,label,x,z,size,height,color)=>({type,label,x,z,size,height,color});
@@ -125,14 +125,19 @@ function makeObject(spec,i){
  return {id:'kit-'+i+'-'+spec.type,type:spec.type,label:spec.label||spec.type,x:spec.x,z:spec.z,size:spec.size||1,height:spec.height||1.5,color:spec.color||'#67e8f9'};
 }
 function template(id){const p=presets[id];if(!p)return null;return {theme:p.theme,lighting:p.lighting,objects:p.generate().slice(0,MAX).map(makeObject)};}
-const zoneOf=o=>o.zone||0,zGlobal=o=>o.z-DEPTH*zoneOf(o);
-const zonesOf=cfg=>[{name:'Zona inicial',theme:cfg.theme},...(cfg.zones||[])];
+const zoneOf=o=>o.zone||0;
+const zonesOf=cfg=>Studio3D.layout(cfg).zones;
 const atZone=(cfg,zone)=>cfg.objects.filter(o=>zoneOf(o)===zone);
 const activeZone=(studio,cfg)=>Math.max(0,Math.min(zonesOf(cfg).length-1,studio.expansionZone||0));
-function appendZone(raw,id,source=0){
- const cfg=Studio3D.normalise(raw),zones=zonesOf(cfg),index=zones.length;
+function appendZone(raw,id,source=0,direction){
+ const cfg=Studio3D.normalise(raw),map=Studio3D.layout(cfg),zones=map.zones,index=zones.length;
  if(index>=ZONE_MAX)throw Error('El recorrido admite hasta '+ZONE_MAX+' zonas.');
  if(!Number.isInteger(source)||!zones[source])throw Error('Seleccioná una zona válida.');
+ const edge=direction==null?map.directions.find(([key])=>!map.exits[source].some(e=>e.id===key)):map.directions.find(([key])=>key===direction);
+ if(!edge)throw Error('Elegí hacia dónde querés ampliar el mapa.');
+ const [key,dx,dz]=edge;
+ if(map.exits[source].some(e=>e.id===key))throw Error('Ya hay una zona de ese lado. Elegí otra dirección.');
+ const col=zones[source].col+dx,row=zones[source].row+dz;
  let theme,name,sourceObjects;
  if(id==='copy'){({theme,name}=zones[source]);name=(name.slice(0,25)+' copia').slice(0,32);sourceObjects=atZone(cfg,source);}
  else if(id==='empty'){theme=zones[source].theme;name='Zona libre';sourceObjects=[];}
@@ -140,23 +145,25 @@ function appendZone(raw,id,source=0){
  else throw Error('Elegí un ambiente válido.');
  const used=new Set(cfg.objects.map(o=>o.id));
  const added=sourceObjects.map((o,i)=>{let id='zona-'+(index+1)+'-objeto-'+(i+1),n=0;while(used.has(id))id='zona-'+(index+1)+'-objeto-'+(i+1)+'-'+(++n);used.add(id);return {...o,id,zone:index};});
- return Studio3D.normalise({...cfg,zones:[...cfg.zones,{name,theme}],objects:[...cfg.objects,...added]});
+ return Studio3D.normalise({...cfg,zones:[...cfg.zones,{name,theme,col,row}],objects:[...cfg.objects,...added]});
 }
 function validate(raw){
- const cfg=Studio3D.normalise(raw),objs=cfg.objects,last=zonesOf(cfg).length-1,portalZ=-12-DEPTH*last;
- const obstacles=objs.filter(o=>['crate','pillar','tree','house','car','wall','rock','lamp','mountain','airplane'].includes(o.type));
- const blocks=(x,z)=>obstacles.some(o=>Math.abs(x-o.x)<(o.type==='tree'?o.size*.25:o.size*.5)+.3&&Math.abs(z-zGlobal(o))<(o.type==='tree'?o.size*.25:o.size*.5)+.3);
+ const cfg=Studio3D.normalise(raw),map=Studio3D.layout(cfg),objs=cfg.objects;
+ const positions=new Map(objs.map(o=>[o.id,map.point(o)]));
+ const obstacles=objs.filter(o=>['crate','pillar','tree','house','car','wall','rock','lamp','mountain','airplane'].includes(o.type))
+  .map(o=>({...positions.get(o.id),radius:(o.type==='tree'?o.size*.25:o.size*.5)+.3}));
+ const blocks=(x,z)=>obstacles.some(o=>Math.abs(x-o.x)<o.radius&&Math.abs(z-o.z)<o.radius);
  const seen=new Set(['0,11']),queue=[[0,11]];
  for(let i=0;i<queue.length;i++){
   const [x,z]=queue[i];for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
    const nx=x+dx,nz=z+dz,key=nx+','+nz;
-   if(nx < -10||nx > 10||nz < portalZ||nz > 12||seen.has(key)||blocks(nx,nz))continue;
+   if(!map.walkable(nx,nz)||seen.has(key)||blocks(nx,nz))continue;
    seen.add(key);queue.push([nx,nz]);
   }
  }
  const crystals=objs.filter(o=>o.type==='crystal');
- const unreachable=crystals.filter(o=>!queue.some(([x,z])=>Math.hypot(x-o.x,z-zGlobal(o))<o.size*.6+.4));
- const finish=queue.some(([x,z])=>Math.abs(x)<1.4&&z<portalZ+1);
+ const unreachable=crystals.filter(o=>{const p=positions.get(o.id);return !queue.some(([x,z])=>Math.hypot(x-p.x,z-p.z)<o.size*.6+.4);});
+ const finish=queue.some(([x,z])=>map.atGate(x,z));
  const warnings=[];
  if(blocks(0,11))warnings.push('Un obstáculo cubre el punto de salida del personaje.');
  if(!finish)warnings.push('La salida del portal está bloqueada según la cuadrícula de prueba.');
@@ -193,9 +200,10 @@ function exportObj(raw){
   for(const f of [[1,2,3,4],[1,5,2],[2,5,3],[3,5,4],[4,5,1]])out.push('f '+f.map(i=>i+index-1).join(' '));
   index+=5;
  };
- zonesOf(scene).forEach((_,index)=>box(index?'suelo_zona_'+(index+1):'suelo',0,-.65,-DEPTH*index,24,.6,28));
+ const layout=Studio3D.layout(scene);
+ layout.zones.forEach((zone,index)=>box(index?'suelo_zona_'+(index+1):'suelo',zone.x,-.65,zone.z,layout.width,.6,layout.depth));
  for(const o of scene.objects){
-  const n=o.id,x=o.x,z=zGlobal(o),s=o.size,h=o.height;
+  const n=o.id,{x,z}=layout.point(o),s=o.size,h=o.height;
   if(o.type==='crystal'){box(n+'_base',x,0,z,s,.15,s);pyramid(n+'_gema',x,.4,z,s*.35,s*.95);}
   else if(o.type==='tree'){box(n+'_tronco',x,0,z,s*.24,h*.45,s*.24);pyramid(n+'_copa',x,h*.2,z,s*.65,h*.9);}
   else if(o.type==='house'){box(n+'_pared',x,0,z,s,h*.75,s);pyramid(n+'_techo',x,h*.75,z,s*.72,h*.32);}
@@ -242,6 +250,8 @@ async function importScene(studio,file){
   if(++counts[index]>MAX)throw Error('Una zona supera el máximo de objetos.');
  }
  const next=window.Studio3D.normalise(incoming.scene);
+ if(importedZones.some((zone,i)=>zone&&(Object.hasOwn(zone,'col')||Object.hasOwn(zone,'row'))&&(zone.col!==next.zones[i].col||zone.row!==next.zones[i].row)))
+  throw Error('El plano tiene zonas superpuestas, desconectadas o coordenadas inválidas.');
  if(!confirm('Se reemplazará el escenario de ESTE proyecto. Podés volver con Deshacer. ¿Importar?'))return false;
  await commitScene(studio,next);return true;
 }
@@ -428,8 +438,7 @@ function pieceEditor(studio,source,{existing=false}={}){
   point.className=tag;point.title=text;point.textContent=tag==='k3d-place-existing'?'•':text;map.append(point);return point;
  }
  for(const o of local)if(!existing||o.id!==source.id)mark(o.label,o.x,o.z,'k3d-place-existing',o.color);
- mark(zone?'Desde '+zonesOf(cfg)[zone-1].name:'Inicio',0,11,'k3d-place-landmark');
- mark(zone===zonesOf(cfg).length-1?'Portal':'Próxima zona',0,-12,'k3d-place-landmark');
+ for(const [label,x,z] of zoneLandmarks(cfg,zone))mark(label,x,z,'k3d-place-landmark');
  const marker=mark('✚',draft.x,draft.z,'k3d-place-marker',draft.color);
  function coords(){
   const vx=x.valueAsNumber,vz=z.valueAsNumber,valid=x.validity.valid&&z.validity.valid;
@@ -553,7 +562,7 @@ function scenePanel(studio,section,cfg){
  function paint(){
   const visible=local.filter(o=>(ui.group==='all'||sceneTypes[o.type]?.[2]===ui.group)&&(o.label+' '+(sceneTypes[o.type]?.[0]||'')).toLocaleLowerCase().includes(ui.search.trim().toLocaleLowerCase()));
   const list=q('scene-list');list.replaceChildren();map.replaceChildren();
-  for(const [label,x,z] of [[zone?'← Zona anterior':'Inicio',0,11],[zone===zonesOf(cfg).length-1?'Portal':'Siguiente zona →',0,-12]]){
+  for(const [label,x,z] of zoneLandmarks(cfg,zone)){
    const marker=document.createElement('span');marker.className='k3d-marker';marker.textContent=label;place(marker,x,z);map.append(marker);
   }
   for(const o of visible){
@@ -617,19 +626,41 @@ function scenePanel(studio,section,cfg){
  paint();mode();inspector();
 }
 
+function zoneLandmarks(cfg,zone){
+ const map=Studio3D.layout(cfg),area=map.zones[zone],marks=[];
+ if(zone===0)marks.push(['Inicio',0,11]);
+ for(const {label,dx,dz,index} of map.exits[zone])marks.push([label.split(' ')[0]+' Zona '+(index+1),dx*9.3,dz*11]);
+ if(zone===map.zones.length-1)marks.push(['Portal',map.gate.x-area.x,map.gate.z-area.z]);
+ return marks;
+}
 function zonesPanel(studio,el,host,cfg){
- const zones=zonesOf(cfg),zone=activeZone(studio,cfg),full=zones.length>=ZONE_MAX;
+ const layout=Studio3D.layout(cfg),zones=layout.zones,zone=activeZone(studio,cfg),full=zones.length>=ZONE_MAX;
  const panel=document.createElement('section');
  panel.id='k3d-zone-manager';panel.className='ks-settings';
- panel.innerHTML='<h3>Ampliá tu mundo · '+zones.length+' de '+ZONE_MAX+' zonas</h3><p>Agregá una zona al final para caminar de un ambiente al siguiente. El portal queda en la última zona.</p>'+
-  '<div class="ks-fields"><label>Zona que estás editando<select id="k3d-zone-select"></select></label><label>Ambiente de la nueva zona<select id="k3d-zone-template"></select></label></div>'+
+ panel.innerHTML='<h3>Ampliá tu mundo · '+zones.length+' de '+ZONE_MAX+' zonas</h3><p>Elegí una zona de partida y hacia dónde ampliarla. Al crear la nueva zona, ya queda lista para colocar objetos. La última zona tiene el portal.</p><div class="k3d-area-map" id="k3d-zone-map" role="group" aria-label="Plano de zonas. Arriba corresponde al norte"></div>'+
+  '<div class="ks-fields"><label>Zona que estás editando<select id="k3d-zone-select"></select></label><label>¿Hacia dónde ampliás?<select id="k3d-zone-direction"></select></label><label>Ambiente de la nueva zona<select id="k3d-zone-template"></select></label></div>'+
   '<div class="ks-scene-actions"><button type="button" class="ks-btn" id="k3d-zone-copy">Duplicar zona actual</button><button type="button" class="ks-btn primary" id="k3d-zone-add">Agregar zona</button></div>'+
   (zone?'<label>Nombre de esta zona<input type="text" id="k3d-zone-name" maxlength="32" required></label><button type="button" class="ks-btn" id="k3d-zone-rename">Guardar nombre de zona</button>':'')+
   '<p id="k3d-zone-message" role="status"></p>';
  host.append(panel);
- const q=name=>panel.querySelector('#k3d-zone-'+name),selector=q('select'),preset=q('template'),note=q('message');
+ const q=name=>panel.querySelector('#k3d-zone-'+name),selector=q('select'),direction=q('direction'),preset=q('template'),note=q('message');
  for(const [i,entry] of zones.entries())selector.add(new Option((i+1)+'. '+entry.name+(i===zones.length-1?' · Portal':''),String(i)));
  selector.value=String(zone);
+ const board=q('map'),left=Math.min(...zones.map(p=>p.col)),right=Math.max(...zones.map(p=>p.col)),top=Math.min(...zones.map(p=>p.row));
+ board.style.cssText='display:grid;grid-template-columns:repeat('+(right-left+1)+', minmax(36px, 48px));gap:4px;margin:8px 0';
+ for(const [i,entry] of zones.entries()){
+  const cell=document.createElement('button');cell.type='button';cell.className='ks-btn';
+  cell.textContent=String(i+1);cell.title=entry.name;cell.setAttribute('aria-label','Editar zona '+(i+1)+': '+entry.name);
+  cell.setAttribute('aria-pressed',String(i===zone));cell.style.cssText='padding:5px;min-height:40px;grid-column:'+(entry.col-left+1)+';grid-row:'+(entry.row-top+1)+(i===zone?';border-color:#67e8f9;font-weight:800':'');
+  cell.onclick=()=>{selector.value=String(i);selector.onchange();};board.append(cell);
+ }
+ for(const [id,,,label] of layout.directions){
+  const used=layout.exits[zone].some(e=>e.id===id),option=new Option(label+(used?' · Ocupado':''),id);
+  option.disabled=used;direction.add(option);
+ }
+ const preferred=[...direction.options].find(o=>!o.disabled&&o.value===studio.expansionDirection)||[...direction.options].find(o=>!o.disabled);
+ if(preferred)direction.value=preferred.value;else direction.selectedIndex=-1;
+ direction.onchange=()=>{studio.expansionDirection=direction.value;};
  for(const [id,p] of [['empty',{name:'Zona libre (sin objetos)'}],...Object.entries(presets)])preset.add(new Option(p.name,id));
  if([...preset.options].some(o=>o.value===studio.expansionPreset))preset.value=studio.expansionPreset;
  preset.onchange=()=>{studio.expansionPreset=preset.value;};
@@ -641,9 +672,11 @@ function zonesPanel(studio,el,host,cfg){
  if(previewFocus)frame.removeEventListener('load',previewFocus);
  if(frame){frame.kruekaZoneFocus=focus;frame.addEventListener('load',focus);}
  focus();
- q('copy').disabled=q('add').disabled=preset.disabled=studio.busy||!studio.cloudReady||full;
+ const unavailable=studio.busy||!studio.cloudReady||full||!preferred;
+ q('copy').disabled=q('add').disabled=preset.disabled=direction.disabled=unavailable;
  for(const button of [q('copy'),q('add')])button.dataset.limitReached=String(full);
  if(full)note.textContent='Llegaste a '+ZONE_MAX+' zonas. Todavía podés editar los ambientes y sus piezas.';
+ else if(!preferred)note.textContent='Todos los lados de esta zona están ocupados. Elegí otra zona de partida.';
  selector.onchange=()=>{
   studio.expansionZone=Number(selector.value);studio.selectedSceneObject=null;
   Studio3D.renderEditor(studio,el,read(cfg,studio));
@@ -651,18 +684,18 @@ function zonesPanel(studio,el,host,cfg){
  };
  let committing=false;
  async function add(id){
-  if(studio.busy||!studio.cloudReady||full||committing)return;
+  if(studio.busy||!studio.cloudReady||full||committing||!preferred)return;
   committing=true;q('copy').disabled=q('add').disabled=selector.disabled=true;
   const from=studio.expansionZone;
   try{
-   const prior=read(cfg,studio),next=appendZone(prior,id,zone);
-   studio.expansionZone=next.zones.length;studio.builderNotice='✓ Nueva zona conectada al final. En el juego, cruzá la línea para entrar.';
+   const prior=read(cfg,studio),next=appendZone(prior,id,zone,direction.value);
+   studio.expansionZone=next.zones.length;studio.builderNotice='✓ Nueva zona conectada y seleccionada. Ya podés agregar objetos o personajes.';
    await commitScene(studio,next,null,true);
    el.querySelector('#k3d-zone-select')?.focus();
   }catch(e){
    studio.expansionZone=from;studio.builderNotice='';
    note.textContent=e.message;
-  }finally{committing=false;if(panel.isConnected)q('copy').disabled=q('add').disabled=selector.disabled=false;}
+  }finally{committing=false;if(panel.isConnected){q('copy').disabled=q('add').disabled=unavailable;selector.disabled=false;}}
  }
  q('copy').onclick=()=>add('copy');
  q('add').onclick=()=>add(preset.value);

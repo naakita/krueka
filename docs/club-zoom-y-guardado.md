@@ -18,3 +18,20 @@ no reemplaza una copia de seguridad independiente de toda la plataforma.
 El visor puede ampliar proyectos con el motor estándar de noviembre de 2026
 (revisión de las plantillas de bloques), sin sustituir el archivo guardado.
 No reescribe motores modificados por el alumno.
+
+## Ampliar el plano de Mundo 3D
+
+1. En **Ampliá tu mundo**, elegí la **Zona que estás editando** o tocá su
+   número en el mapa.
+2. En **¿Hacia dónde ampliás?**, elegí **Arriba**, **Derecha**, **Abajo** o
+   **Izquierda**. Arriba del mapa es norte (**↑** al jugar). Un borde que ya
+   tiene una zona está marcado **Ocupado** y no se puede superponer.
+3. Elegí un ambiente y tocá **Agregar zona**, o tocá **Duplicar zona actual**
+   para copiar también sus piezas. La nueva zona queda seleccionada.
+4. Usá **＋ Objeto**, **＋ Personaje** o **Plantillas** para poblarla.
+   **Probar mundo** permite atravesar las uniones marcadas y volver.
+5. Guardá el proyecto. El plano, sus zonas y las piezas se conservan.
+
+Incluye hasta **cinco zonas en total** (la inicial más cuatro) y 48 objetos
+por zona. El portal está en un borde libre de la última zona agregada. Las
+zonas antiguas en fila mantienen su posición y sus objetos.

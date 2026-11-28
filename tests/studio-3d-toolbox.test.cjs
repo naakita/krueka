@@ -100,7 +100,8 @@ assert.equal(tool.validate(city).crystals,4,'la misión incluye las recompensas 
 const fourth=tool.appendZone(city,'empty',2);
 assert.equal(fourth.zones.length,3);
 assert.equal(fourth.objects.length,city.objects.length);
-assert.throws(()=>tool.appendZone(fourth,'empty'),/hasta 4/);
+const fifth=tool.appendZone(fourth,'empty',3);
+assert.throws(()=>tool.appendZone(fifth,'empty'),/hasta 5/);
 assert.throws(()=>tool.appendZone(city,'desconocida'),/ambiente válido/);
 assert.match(tool.exportObj(city),/o suelo_zona_3\n/);
 assert.match(tool.exportObj(city),/o zona-3-objeto-1_pared\n/);
@@ -109,6 +110,21 @@ const fullTwo=tool.appendZone(fullStart,'copy');
 assert.equal(fullTwo.objects.length,96,'el límite aplica a cada zona, no al mundo');
 assert.equal(new Set(fullTwo.objects.map(o=>o.id)).size,96);
 assert.equal(engine.normalise({zones:[{}],objects:[{type:'rock',zone:45}]}).objects[0].zone,undefined);
+let cross={theme:'station',objects:[]};
+for(const dir of ['up','right','down','left'])cross=tool.appendZone(cross,'empty',0,dir);
+const map=engine.layout(cross);
+assert.deepEqual(JSON.stringify(map.zones.map(z=>[z.col,z.row])),'[[0,0],[0,-1],[1,0],[0,1],[-1,0]]');
+assert.equal(map.exits[0].length,4);
+assert.equal(map.walkable(12,1),true);
+assert.equal(map.walkable(12,12),false,'no atraviesa una esquina');
+assert.equal(map.walkable(36,0),false,'no se camina sobre el vacío');
+assert.equal(map.locate(-24,0),4);
+assert.equal(map.atGate(-24,-12),true);
+const south=tool.appendZone({objects:[]},'empty',0,'down');
+assert.equal(engine.layout(south).gate.dir,'right','el portal no tapa la entrada norte');
+assert.equal(tool.validate(south).route,true);
+assert.throws(()=>tool.appendZone(tool.appendZone({objects:[]},'empty',0,'right'),'empty',0,'right'),/Ya hay una zona/);
+assert.deepEqual(JSON.stringify(engine.normalise({zones:[{},{},{}]}).zones.map(z=>[z.col,z.row])),'[[0,-1],[0,-2],[0,-3]]');
 async function importTests(){
  let saved=null,changed=0;
  const s={cloudReady:true,busy:false,files:original,validFiles:x=>x,checkpoint(){},changed(){changed++},refreshAll(){},lock(){}};
@@ -120,12 +136,13 @@ async function importTests(){
  await assert.rejects(()=>tool.importScene(s,{size:2000,text:async()=>JSON.stringify({...incoming,format:'otro'})}),/no es un archivo/);
  await assert.rejects(()=>tool.importScene(s,{size:100001,text:async()=>''}),/100 KB/);
  assert.equal(changed,1,'Las importaciones rechazadas no deben modificar el proyecto');
- const dense=engine.normalise({zones:[{},{},{}],objects:Array.from({length:192},(_,i)=>({zone:Math.floor(i/48),id:'a'.repeat(28)+i,label:'í'.repeat(32),type:'character',avatarStyle:'explorador',color:'#010101',x:1.12345678912345,z:2.12345678912345,size:3.12345678912345,height:4.12345678912345}))});
+ await assert.rejects(()=>tool.importScene(s,{size:2000,text:async()=>JSON.stringify({...incoming,scene:{zones:[{col:0,row:0}],objects:[]}})}),/superpuestas/);
+ const dense=engine.normalise({zones:[{},{},{},{}],objects:Array.from({length:240},(_,i)=>({zone:Math.floor(i/48),id:'a'.repeat(28)+i,label:'í'.repeat(32),type:'character',avatarStyle:'explorador',color:'#010101',x:1.12345678912345,z:2.12345678912345,size:3.12345678912345,height:4.12345678912345}))});
  const formatted=JSON.stringify({...incoming,scene:dense},null,2);
  const expanded={...s,files:original};
  assert.ok(Buffer.byteLength(formatted)>50000,'un mundo ampliado puede exceder el límite anterior de importación');
  assert.equal(await tool.importScene(expanded,{size:Buffer.byteLength(formatted),text:async()=>formatted}),true);
- assert.equal(K.read(expanded.files).objects.length,192,'la escena exportada e importada no pierde piezas');
+ assert.equal(K.read(expanded.files).objects.length,240,'la escena exportada e importada no pierde piezas');
  console.log('PASS: motor 3D, tipos, plantillas jugables, validación de rutas, importación segura y accesos privados.');
 }
 importTests().catch(e=>{console.error(e);process.exitCode=1});

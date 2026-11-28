@@ -173,7 +173,7 @@ function inject(game){
  game=game.slice(0,a)+'cinemaScene();\n  '+game.slice(close);
  game=game.replace('dx=dx/length*cfg.speed*dt;dz=dz/length*cfg.speed*dt;',
  'dx=dx/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;dz=dz/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;');
- game=game.replace('reset();bindCanvas();function frame(now)', 'reset();bindCanvas();cinematicSetup();function frame(now)');
+ game=game.replace('bindCanvas();function frame(now)', 'bindCanvas();cinematicSetup();function frame(now)');
  game=game.replace("'Cristales '","'Registros '");
  game=game.replace("box(p.x,0,p.z,s,.15,s,palette.edge);crystal(p.x,1+Math.sin(elapsed*2+o.x)*.12,p.z,s*.45,o.color);",
  "box(p.x,0,p.z,s*.75,1.25,s*.65,'#344953');box(p.x,1.27,p.z+s*.34,s*.59,.42,.05,o.color,0,true);");
@@ -183,7 +183,7 @@ function inject(game){
  return game;
 }
 function create(){
- const base=Studio3D.create();
+ const base=Studio3D.create(true);
  const objects=[
  {id:'intel-1',type:'crystal',label:'Registro · Plaza',x:-4.4,z:8,size:1.2,height:1.4,color:'#72c1ca'},
  {id:'intel-2',type:'crystal',label:'Registro · Terminal',x:4.4,z:1,size:1.2,height:1.4,color:'#72c1ca'},
