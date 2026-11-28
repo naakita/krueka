@@ -32,6 +32,14 @@ No reescribe motores modificados por el alumno.
    **Probar mundo** permite atravesar las uniones marcadas y volver.
 5. Guardá el proyecto. El plano, sus zonas y las piezas se conservan.
 
-Incluye hasta **cinco zonas en total** (la inicial más cuatro) y 48 objetos
-por zona. El portal está en un borde libre de la última zona agregada. Las
-zonas antiguas en fila mantienen su posición y sus objetos.
+Ya no hay un número máximo fijo de zonas por mundo. Se mantienen 48
+objetos por zona y el límite de tamaño de guardado de Studio. Un mapa con
+muchas zonas vacías ocupa menos que uno lleno de piezas. Si no entra otro
+cambio, el editor avisa antes de aplicarlo y conserva lo que ya hiciste.
+
+En mapas grandes, buscá una zona por nombre o número. El plano muestra la
+zona seleccionada y su alrededor. Al jugar se dibujan la zona actual y las
+vecinas; se conservan las reglas, el tiempo y el objetivo global. El portal
+queda en la última zona agregada, preferentemente sobre un borde sin vecino.
+El diagnóstico avisa si no verificó la ruta completa. Las zonas antiguas
+conservan su posición y sus objetos.

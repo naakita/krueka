@@ -26,7 +26,7 @@ const setup=vm.runInNewContext(fixture.match(/const setup=(`[^]*?`);\nconst smok
    await hud.getByText('Zona '+dir,{exact:false}).waitFor();
    if(i===0){await zone.selectOption('0');await page.waitForFunction(()=>document.querySelector('#k3d-zone-direction option[value="up"]')?.disabled);}
   }
-  assert.ok(await page.locator('#k3d-zone-add').isDisabled());assert.equal(await page.locator('#k3d-zone-map button').count(),5);
+  assert.ok(await page.locator('#k3d-zone-add').isEnabled());assert.equal(await page.locator('#k3d-zone-map button').count(),5);
   await page.getByRole('button',{name:'Editar zona 3: Zona right'}).click();assert.equal(await zone.inputValue(),'2');
   await page.locator('#k3d-new-character').click();
   const edit=page.locator('#k3d-piece-editor');

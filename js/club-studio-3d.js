@@ -22,9 +22,9 @@ function normalise(raw){
   const c=raw&&typeof raw==='object'?raw:{},num=(v,a,b,d)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Number(v))):d;
   const color=(v,d)=>/^#[0-9a-f]{6}$/i.test(String(v))?String(v):d,ids=new Set();
   const themes=['station','forest','island'],theme=themes.includes(c.theme)?c.theme:'station';
-  const zones=(Array.isArray(c.zones)?c.zones:[]).slice(0,4).map((z,i)=>({name:String(z?.name||'Zona '+(i+2)).trim().slice(0,32)||'Zona '+(i+2),theme:themes.includes(z?.theme)?z.theme:theme}));
+  const zones=(Array.isArray(c.zones)?c.zones:[]).map((z,i)=>({name:String(z?.name||'Zona '+(i+2)).trim().slice(0,32)||'Zona '+(i+2),theme:themes.includes(z?.theme)?z.theme:theme}));
   const counts=Array(zones.length+1).fill(0);
-  const objects=(Array.isArray(c.objects)?c.objects:[]).slice(0,240).flatMap((o,i)=>{
+  const objects=(Array.isArray(c.objects)?c.objects:[]).flatMap((o,i)=>{
     o=o&&typeof o==='object'?o:{};
     const zone=Number.isInteger(o.zone)&&o.zone>=0&&o.zone<=zones.length?o.zone:0;
     if(counts[zone]>=48)return [];counts[zone]++;
@@ -294,7 +294,7 @@ function mountInspectionCamera(){
   // funcionan con teclado o pantalla táctil sin pedir gestos especiales.
   refresh();
 }
-const oldNormaliserSource=normalise.toString().replace('.slice(0,4).map((z,i)','.slice(0,3).map((z,i)').replace('.slice(0,240).flatMap','.slice(0,192).flatMap');
+const oldNormaliserSource=normalise.toString().replace('[]).map((z,i)','[]).slice(0,3).map((z,i)').replace('[]).flatMap','[]).slice(0,192).flatMap');
 const baseNormalise=normalise;
 const standardGame='/* Motor 3D propio: geometría, cámara, iluminación, colisiones y modo compatible. */\nconst avatarProfiles = '+avatarProfiles.toString()+';\nconst normalise = '+oldNormaliserSource+';\n('+runtime.toString()+')();';
 const inspectableGame=standardGame
@@ -319,18 +319,18 @@ function gridDirections(){
  return [['up',0,-1,'↑ Arriba'],['right',1,0,'→ Derecha'],['down',0,1,'↓ Abajo'],['left',-1,0,'← Izquierda']];
 }
 function mapNormalise(raw){
- const cfg=baseNormalise(raw),placed=[{col:0,row:0}],input=Array.isArray(raw?.zones)?raw.zones:[];
- const occupied=(col,row)=>placed.some(p=>p.col===col&&p.row===row);
+ const cfg=baseNormalise(raw),placed=[{col:0,row:0}],input=Array.isArray(raw?.zones)?raw.zones:[],directions=gridDirections();
+ const cells=new Set(['0,0']),key=(col,row)=>col+','+row,occupied=(col,row)=>cells.has(key(col,row));
  for(const [i,z] of cfg.zones.entries()){
-  const pick=input[i]||{},valid=Number.isInteger(pick.col)&&Number.isInteger(pick.row)&&
-   !occupied(pick.col,pick.row)&&placed.some(p=>Math.abs(p.col-pick.col)+Math.abs(p.row-pick.row)===1);
+  const pick=input[i]||{},valid=Number.isSafeInteger(pick.col)&&Number.isSafeInteger(pick.row)&&
+   !occupied(pick.col,pick.row)&&directions.some(([,dx,dz])=>occupied(pick.col+dx,pick.row+dz));
   let col=pick.col,row=pick.row;
   if(!valid){
-   outer:for(const parent of [...placed].reverse())for(const [,dx,dz] of gridDirections()){
-    col=parent.col+dx;row=parent.row+dz;if(!occupied(col,row))break outer;
+   outer:for(let j=placed.length-1;j>=0;j--)for(const [,dx,dz] of directions){
+    col=placed[j].col+dx;row=placed[j].row+dz;if(!occupied(col,row))break outer;
    }
   }
-  placed.push({col,row});Object.assign(z,{col,row});
+  cells.add(key(col,row));placed.push({col,row});Object.assign(z,{col,row});
  }
  return cfg;
 }
@@ -344,8 +344,8 @@ function worldLayout(cfg){
  const gateIndex=zones.length-1,goal=zones[gateIndex];
  // Dejar el portal en un borde libre, aun cuando la zona final tenga un
  // vecino arriba. Primero se intenta la posición clásica.
- const gateSide=directions.find(([id])=>!exits[gateIndex].some(e=>e.id===id))||directions[0];
- const [gateDir,gdx,gdz]=gateSide,gate={x:goal.x+gdx*9.75,z:goal.z+gdz*12,dir:gateDir,dx:gdx,dz:gdz};
+ const gateSide=directions.find(([id])=>!exits[gateIndex].some(e=>e.id===id));
+ const [gateDir,gdx,gdz]=gateSide||directions[0],gate={x:goal.x+gdx*(gateSide?9.75:6),z:goal.z+gdz*(gateSide?12:7),dir:gateDir,dx:gdx,dz:gdz};
  function locate(x,z){return byCell.get(Math.floor((x+width/2)/width)+','+Math.floor((z+depth/2)/depth));}
  function walkable(x,z){
   const i=locate(x,z);if(i===undefined)return false;
@@ -373,11 +373,17 @@ function portalMesh(gate,palette,open){
 }
 function runtimeGrid(base){
  const declarations=[gridDirections,mapNormalise,worldLayout].map(fn=>fn.toString()).join('\n');
- const enlarged=base.replace('const normalise = function normalise','const baseNormalise = function normalise').replace('.slice(0,3).map((z,i)','.slice(0,4).map((z,i)').replace('.slice(0,192).flatMap','.slice(0,240).flatMap');
+ const enlarged=base.replace('const normalise = '+oldNormaliserSource,'const baseNormalise = '+normalise.toString());
  return enlarged
   .replace(';\n(function runtime(isolated){',';\n'+declarations+'\nconst normalise=mapNormalise;\n(function runtime(isolated){')
   .replace(/const zones=\[\{name:'Zona inicial'.*\n  const worldZ=.*?;/,'const map=worldLayout(cfg),zones=map.zones,lastZone=zones.length-1;')
   .replace('[0,0,-step*(editing?viewZone:playerZone)]','[zones[editing?viewZone:playerZone].x,0,zones[editing?viewZone:playerZone].z]')
+  .replace(/const crystals=cfg.objects.filter[^;]+;/,`const crystals=cfg.objects.filter(o=>o.type==='crystal'),zoneObjects=zones.map(()=>[]);
+  for(const obj of cfg.objects)zoneObjects[obj.zone||0].push(obj);
+  const nearbyObjects=zoneObjects.map((objs,i)=>objs.concat(...map.exits[i].map(e=>zoneObjects[e.index])));`)
+  .replace('function blocked(x,z){return cfg.objects.some','function blocked(x,z){return nearbyObjects[playerZone].some')
+  .replace('for(const o of cfg.objects){const p=objectPosition(o),near=', 'for(const o of nearbyObjects[playerZone]){const p=objectPosition(o),near=')
+
   .replace(/function objectPosition\(o\)\{[^\n]+/,"function objectPosition(o){const p=map.point(o);p.x+=o.type==='drone'?Math.sin(elapsed*1.1+o.z)*1.5:0;return p;}")
   .replace('  function geometry(){','  '+connectorMesh.toString()+'\n  '+portalMesh.toString()+'\n  function geometry(){')
   .replace('for(let i=Math.max(0,nearby-1);i<=Math.min(lastZone,nearby+1);i++){','const visible=[nearby,...map.exits[nearby].map(e=>e.index)];\n    for(const i of visible){')
@@ -423,7 +429,7 @@ function renderEditor(studio,el,raw){
   const compatibleTypes=studio.files?.['game.js']===create()['game.js']?types:Object.fromEntries(Object.entries(types).filter(([key])=>(key!=='character'&&!['mountain','airplane','shield','staff'].includes(key))||key===selected?.type));
   const options=(entries,value)=>Object.entries(entries).map(([id,label])=>'<option value="'+id+'" '+(id===value?'selected':'')+'>'+esc(label)+'</option>').join('');
   el.innerHTML='<div class="ks-section-label">CONSTRUÍ · ILUMINÁ · JUGÁ</div><h2>Tu mundo 3D</h2><p>Mové objetos, elegí las luces y probá tu recorrido. Estos controles funcionan sin IA.</p><div class="ks-light-grid">'+Object.entries(lights).map(([id,label])=>'<button class="ks-btn ks-light '+id+'" data-light="'+id+'" aria-pressed="'+(id===cfg.lighting)+'"><span></span>'+label+'</button>').join('')+'</div><section class="ks-settings"><h3>Ambientación y reglas</h3><label>Nombre en el juego<input data-scene="title" maxlength="60" value="'+esc(cfg.title)+'"></label><div class="ks-fields"><label>Mundo<select data-scene="theme">'+options(themes,cfg.zones[zone-1]?.theme||cfg.theme)+'</select></label><label>Color del explorador<input data-scene="avatarColor" type="color" value="'+cfg.avatarColor+'"></label><label>Velocidad<input data-scene="speed" type="number" min="2" max="9" step=".5" value="'+cfg.speed+'"></label><label>Vidas<input data-scene="lives" type="number" min="1" max="9" value="'+cfg.lives+'"></label><label>Tiempo (segundos)<input data-scene="seconds" type="number" min="30" max="300" value="'+cfg.seconds+'"></label><label>Cámara<select data-scene="camera">'+options({follow:'Seguir al personaje',orbit:'Vista general'},cfg.camera)+'</select></label><label>Calidad<select data-scene="quality">'+options({low:'Liviana',high:'Más nitidez'},cfg.quality)+'</select></label></div><button id="ks-scene-apply" class="ks-btn primary">Aplicar y probar</button></section><section class="ks-settings" id="ks-scene-objects"><h3>Objetos del mundo · '+objects.length+' / 48</h3><p>Tocá un objeto en la vista de edición o elegilo aquí. X mueve a los lados; Z, adelante y atrás.</p><div class="ks-scene-list">'+objects.map(o=>'<button class="ks-btn" data-object="'+o.id+'" aria-pressed="'+(o.id===selected?.id)+'">'+esc(o.label)+'<small>'+esc(types[o.type])+'</small></button>').join('')+'</div>'+ (selected?'<label>Nombre del objeto<input data-object-field="label" maxlength="32" value="'+esc(selected.label)+'"></label><div class="ks-fields"><label>Tipo<select data-object-field="type">'+options(compatibleTypes,selected.type)+'</select></label>'+[['x','Posición X',-10,10],['z','Posición Z',-12,12],['size','Tamaño',.4,4],['height','Altura',.5,5]].map(([id,label,min,max])=>'<label>'+label+'<input data-object-field="'+id+'" type="number" min="'+min+'" max="'+max+'" step=".5" value="'+selected[id]+'"></label>').join('')+'<label>Color<input data-object-field="color" type="color" value="'+selected.color+'"></label></div><div class="ks-scene-actions"><button id="ks-object-apply" class="ks-btn primary">Guardar objeto</button><button id="ks-object-copy" class="ks-btn">Duplicar</button><button id="ks-object-remove" class="ks-btn">Quitar</button></div>':'<p>Agregá objetos para construir tu recorrido.</p>')+'<div class="ks-scene-add"><select id="ks-object-type" aria-label="Tipo de objeto nuevo">'+options(Object.fromEntries(Object.entries(compatibleTypes).filter(([key])=>key!=='character')),'crystal')+'</select><button id="ks-object-add" class="ks-btn">＋ Agregar objeto</button></div></section><button id="ks-scene-bases" class="ks-btn">Cambiar base de juego</button><p class="ks-tip">Tus cambios se guardan en game-config.js y se pueden deshacer. Aplicar reinicia la vista del juego.</p>';
-  const apply=next=>{if(studio.busy||!studio.cloudReady)return;studio.checkpoint();studio.files['game-config.js']=StudioKits.configFile(normalise(next));studio.changed();studio.refreshAll();studio.lock(false);};
+  const apply=next=>{if(studio.busy||!studio.cloudReady)return;try{const files=studio.validFiles({...studio.files,'game-config.js':StudioKits.configFile(mapNormalise(next))});studio.checkpoint();studio.files=files;}catch(e){const note=document.getElementById('k3d-zone-message');if(note)note.textContent='No se pudo aplicar: '+e.message;return;}studio.changed();studio.refreshAll();studio.lock(false);};
   el.querySelectorAll('[data-light]').forEach(b=>b.onclick=()=>apply({...cfg,lighting:b.dataset.light}));
   el.querySelector('#ks-scene-apply').onclick=()=>{const next={...cfg};el.querySelectorAll('[data-scene]').forEach(x=>next[x.dataset.scene]=x.type==='number'?Number(x.value):x.value);if(zone){next.zones=cfg.zones.map((item,i)=>i===zone-1?{...item,theme:next.theme}:item);next.theme=cfg.theme;}apply(next);};
   el.querySelectorAll('[data-object]').forEach(b=>b.onclick=()=>{studio.selectedSceneObject=b.dataset.object;window.Studio3D.renderEditor(studio,el,cfg);if(el.querySelector('#k3d-manual'))el.querySelector('#k3d-manual').open=true;document.getElementById('ks-frame')?.contentWindow?.postMessage({type:'krueka-scene-highlight',id:b.dataset.object},'*');});
@@ -440,6 +446,12 @@ function renderEditor(studio,el,raw){
 window.Studio3D={normalise:mapNormalise,layout:worldLayout,create,renderEditor,piecePreview,avatarProfiles,previewFiles};
 StudioKits.catalog.unshift({id:'explore3d',icon:'🧊',title:'Exploradores 3D',tag:'Mundos, luces y objetos',description:'Construí una escena 3D, explorá y abrí el portal.',challenge:'Compará dos luces, mové un obstáculo y explicá cómo cambia el recorrido.'});
 const originalCreate=StudioKits.create.bind(StudioKits),originalArt=StudioKits.art.bind(StudioKits);
+const originalConfig=StudioKits.configFile.bind(StudioKits);
+StudioKits.configFile=function(cfg){
+ const pretty=originalConfig(cfg);
+ if(cfg?.kind!=='explore3d'||pretty.length<70000)return pretty;
+ return '/* Mapa 3D. Editá las zonas y sus piezas en el taller. */\nwindow.KRUEKA_GAME = '+JSON.stringify(cfg)+';\n';
+};
 StudioKits.create=id=>id==='explore3d'?create():originalCreate(id);
 StudioKits.art=id=>id==='explore3d'?'<svg viewBox="0 0 190 65" role="img" aria-label="Mundo 3D" xmlns="http://www.w3.org/2000/svg"><path d="M15 46L95 9l80 37-80 18z" fill="#243f5f"/><path d="M50 28l15-9 15 9v21l-15 9-15-9z" fill="#a5b4fc"/><path d="M65 19v39m-15-30l15 9 15-9" stroke="#e0e7ff" fill="none"/><path d="M119 17l9-14 9 14-9 17z" fill="#67e8f9"/><path d="M115 45h31" stroke="#67e8f9" stroke-width="3"/><path d="M32 46l61 15 62-15" stroke="#4bbde2" fill="none"/></svg>':originalArt(id);
 })();
