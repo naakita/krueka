@@ -113,7 +113,7 @@ function runtime(){
     elapsed+=dt;if(paused||ended)return;time-=dt;invincible=Math.max(0,invincible-dt);if(time<=0){ended=true;status.textContent='Se terminó el tiempo. Ajustá el recorrido o intentá otra vez.';return;}
     let dx=Number(!!(keys.ArrowRight||keys.d))-Number(!!(keys.ArrowLeft||keys.a)),dz=Number(!!(keys.ArrowDown||keys.s))-Number(!!(keys.ArrowUp||keys.w)),length=Math.hypot(dx,dz)||1;dx=dx/length*cfg.speed*dt;dz=dz/length*cfg.speed*dt;
     if(!blocked(player.x+dx,player.z))player.x=clamp(player.x+dx,-10.5,10.5);if(!blocked(player.x,player.z+dz))player.z=clamp(player.z+dz,-12.5,12.5);if(dx||dz)player.angle=Math.atan2(dx,dz);
-    if(cfg.jumpEnabled&&(keys[' ']||keys.jump)&&player.y===0)player.vy=7;player.vy-=18*dt;player.y=Math.max(0,player.y+player.vy*dt);if(player.y===0)player.vy=0;
+    if(cfg.jumpEnabled){if((keys[' ']||keys.jump)&&player.y===0)player.vy=7;}player.vy-=18*dt;player.y=Math.max(0,player.y+player.vy*dt);if(player.y===0)player.vy=0;
     for(const o of cfg.objects){const p=objectPosition(o),near=Math.hypot(player.x-p.x,player.z-p.z);
       if(o.type==='crystal'&&near<o.size*.6+.4&&!collected.has(o.id)){collected.add(o.id);status.textContent=collected.size===cfg.objects.filter(x=>x.type==='crystal').length?'¡Abriste el portal! Llegá al arco del fondo.':'Cristal encontrado. Buscá el siguiente.';}
       if(o.type==='drone'&&near<o.size*.6+.35&&player.y<1.3&&invincible===0){lives--;invincible=1.8;if(lives<=0){ended=true;status.textContent='Fin del intento. Podés mover obstáculos y probar una ruta distinta.';}}
