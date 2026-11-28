@@ -54,6 +54,17 @@ for(const p of cards){
  assert.equal(built.objects[0].id,'cristal-prueba','Nunca borra una creación anterior');
  assert.equal(tool.validate(built).ok,true,'Plantilla jugable: '+p.name);
 }
+const robot=cards.find(p=>p.name==='Robot violeta'),pilot=cards.find(p=>p.name==='Piloto celeste');
+const chosen=tool.mergePiece(simple,pilot,true);
+const added=tool.mergePiece(tool.mergePiece(chosen,robot),robot);
+assert.equal(added.avatarStyle,'piloto','Agregar no cambia al protagonista');
+assert.equal(added.objects.length,chosen.objects.length+2);
+const characters=added.objects.filter(o=>o.type==='character');
+assert.ok(characters.every(o=>o.avatarStyle==='robot'));
+assert.notEqual(characters[0].id,characters[1].id);
+assert.notEqual(characters[0].x,characters[1].x);
+assert.match(tool.exportObj(added),/o pieza-1_cabeza/);
+assert.match(original['game.js'],/o\.type==='character'\)\{avatar/);
 const plane=cards.find(p=>p.name==='Avión de exhibición');
 const withPlane=tool.mergePiece(simple,plane);
 assert.throws(()=>tool.mergePiece(withPlane,plane),/ya está en esas coordenadas/);

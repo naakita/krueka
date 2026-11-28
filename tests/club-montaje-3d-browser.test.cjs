@@ -26,7 +26,58 @@ const setup=vm.runInNewContext(fixture.match(/const setup=(`[^]*?`);\nconst smok
   await page.locator('#k3d-apply-part').click();
   await page.getByText(/Montañas nevadas aplicado/).waitFor();
   await pick('personaje','Piloto celeste');
+  await page.locator('#k3d-hero').click();
+  await page.waitForFunction(()=>StudioKits.read(StudioIA.files).avatarStyle==='piloto');
+  if(process.env.KRUEKA_OLD_3D_GAME){
+   // Drive a project containing the exact shipped pre-character engine, without inserting real account data.
+   const oldGame=fs.readFileSync(process.env.KRUEKA_OLD_3D_GAME,'utf8');
+   await page.evaluate(game=>{StudioIA.files['game.js']=game;StudioIA.refreshAll();},oldGame);
+  }
+  await pick('personaje','Robot violeta');
   await page.locator('#k3d-apply-part').click();
+  await page.getByText(/Robot violeta aplicado/).waitFor();
+  await pick('personaje','Explorador del bosque');
+  await page.locator('#k3d-apply-part').click();
+  await page.getByText(/Explorador del bosque aplicado/).waitFor();
+  const scene=page.locator('#k3d-scene-panel');
+  const objects=()=>page.evaluate(()=>StudioKits.read(StudioIA.files).objects);
+  assert.equal((await objects()).filter(o=>o.type==='character').length,2);
+  await scene.getByLabel('Mostrar').selectOption('cast');
+  await scene.getByLabel('Buscar objetos').fill('robot');
+  await scene.getByRole('button',{name:/Robot violeta Personaje/}).click();
+  await scene.getByLabel('Nombre',{exact:true}).fill('Aliado violeta');
+  await scene.getByLabel('Modelo del personaje').selectOption('piloto');
+  await scene.getByRole('button',{name:'Aplicar cambios'}).click();
+  await scene.getByText(/Objeto actualizado/).waitFor();
+  await scene.getByLabel('Buscar objetos').fill('');
+  await scene.getByRole('button',{name:'Plano 2D'}).click();
+  assert.ok(await scene.locator('#k3d-map').isVisible());
+  await scene.getByRole('button',{name:'Cuadrícula'}).click();
+  assert.equal(await scene.getByRole('button',{name:'Cuadrícula'}).getAttribute('aria-pressed'),'false');
+  await scene.getByRole('button',{name:'Acercar plano'}).click();
+  assert.match(await scene.locator('#k3d-map').getAttribute('style'),/125%/);
+  await scene.getByRole('button',{name:'Alejar plano'}).click();
+  const beforeMove=(await objects()).find(o=>o.label==='Aliado violeta');
+  await scene.getByRole('button',{name:'Mover en el plano'}).click();
+  await scene.locator('#k3d-map').click({position:{x:25,y:75}});
+  await scene.getByText(/Objeto movido/).waitFor();
+  const afterMove=(await objects()).find(o=>o.id===beforeMove.id);
+  assert.notEqual(afterMove.x,beforeMove.x);
+  assert.equal(afterMove.avatarStyle,'piloto');
+  await scene.getByRole('button',{name:'Deshacer',exact:false}).click();
+  assert.equal((await objects()).find(o=>o.id===beforeMove.id).x,beforeMove.x);
+  await scene.getByRole('button',{name:'Rehacer',exact:false}).click();
+  assert.equal((await objects()).find(o=>o.id===beforeMove.id).x,afterMove.x);
+  await scene.getByRole('button',{name:'Duplicar',exact:true}).click();
+  await scene.getByText(/Aliado violeta copia agregado/).waitFor();
+  assert.equal((await objects()).filter(o=>o.type==='character').length,3);
+  await scene.getByRole('button',{name:'Quitar',exact:true}).click();
+  await scene.getByText(/Objeto quitado/).waitFor();
+  await scene.locator('#k3d-quick-add').click();
+  await scene.getByLabel('Objeto nuevo').selectOption('tree');
+  await scene.getByRole('button',{name:'Agregar a la escena'}).click();
+  await scene.getByText(/Árbol agregado/).waitFor();
+  await scene.getByRole('button',{name:'Vista 3D'}).click();
   await pick('movimiento','Correr y saltar');
   await page.locator('#k3d-apply-part').click();
   await pick('vehiculo','Avión de exhibición');
@@ -55,7 +106,7 @@ const setup=vm.runInNewContext(fixture.match(/const setup=(`[^]*?`);\nconst smok
   assert.equal(live.files['index.html'],start.files['index.html']);
   if(process.env.STUDIO_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.STUDIO_SCREENSHOT_DIR,'montaje-3d.png')});
   await page.locator('#k3d-edit').click();
-  assert.ok(await page.locator('[data-object-field=color]').isVisible());
+  assert.ok(await page.locator('#k3d-inspector input[type=color]').isVisible());
   await page.locator('#k3d-play').click();
   await page.frameLocator('#ks-frame').getByRole('button',{name:'Editar escena',exact:false}).waitFor();
   await page.locator('#k3d-save').click();
@@ -64,9 +115,11 @@ const setup=vm.runInNewContext(fixture.match(/const setup=(`[^]*?`);\nconst smok
   await page.locator('#ks-projects').click();
   await page.locator('[data-project="'+start.id+'"]').click();
   await page.locator('#k3d-builder').waitFor();
-  const reopened=await page.evaluate(()=>({id:StudioIA.projectId,part:JSON.parse(StudioIA.files['mis-plantillas-3d.json'])[0]}));
+  const reopened=await page.evaluate(()=>({id:StudioIA.projectId,part:JSON.parse(StudioIA.files['mis-plantillas-3d.json'])[0],cfg:StudioKits.read(StudioIA.files)}));
   assert.equal(reopened.id,start.id);
   assert.equal(reopened.part.name,'Mi avión verde');
+  assert.equal(reopened.cfg.objects.find(o=>o.id===beforeMove.id).x,afterMove.x);
+  assert.equal(reopened.cfg.objects.filter(o=>o.type==='character').length,2);
   await page.setViewportSize({width:390,height:820});
   assert.ok(await page.locator('#k3d-category').isVisible());
   assert.ok(await page.evaluate(()=>document.getElementById('krueka-studio').scrollWidth<=innerWidth+1));
@@ -74,6 +127,17 @@ const setup=vm.runInNewContext(fixture.match(/const setup=(`[^]*?`);\nconst smok
   await page.locator('#ks-projects').click();
   await page.getByRole('dialog',{name:'Mis proyectos'}).waitFor();
   assert.equal(await page.locator('[data-project="'+start.id+'"]').count(),0);
+  // A learner's hand-edited engine is never overwritten, including during an upgrade attempt.
+  await page.locator('#ks-dialog-close').click();
+  await page.getByRole('button',{name:/Nuevo proyecto/}).click();
+  await page.locator('#kc-new-world').click();
+  await page.locator('#k3d-builder').waitFor();
+  const custom=await page.evaluate(()=>{StudioIA.files['game.js']+='\n// Estudiante'; StudioIA.refreshAll();return StudioIA.files['game.js'];});
+  await pick('personaje','Robot violeta');
+  await page.locator('#k3d-apply-part').click();
+  await page.getByText(/Este juego usa un motor distinto/).waitFor();
+  assert.equal(await page.evaluate(()=>StudioIA.files['game.js']),custom);
+  assert.equal((await objects()).filter(o=>o.type==='character').length,0);
   assert.deepEqual(errors,[]);
   console.log('PASS: nuevo mundo, plantillas aditivas, sintaxis, ruta, color editable, piezas privadas, prueba, guardado y reapertura; escritorio y móvil.');
  }finally{await browser.close();fs.rmSync(temp,{recursive:true,force:true});}
