@@ -90,3 +90,19 @@
 #krueka-studio #k3d-build-result:empty{display:none}
 #krueka-studio .ks-top #ks-new{display:inline-flex;align-items:center;white-space:nowrap}
 @media(max-width:600px){#krueka-studio .ks-top #ks-new{font-size:10px;padding:4px 6px}}
+
+#krueka-studio #kv-world{margin:1px 0 12px;border-color:#3b6b79}
+#krueka-studio #kv-world header small{font-size:10px;letter-spacing:.12em;color:#8ddacc}
+#krueka-studio #kv-world h2{margin:4px 0 6px}
+#krueka-studio #kv-world [aria-pressed="true"]{border-color:#8deada;background:#21463f;color:white}
+#krueka-studio #kv-world .kv-pal{display:flex;gap:5px;flex-wrap:wrap;margin:10px 0}
+#krueka-studio #kv-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));border-radius:10px;overflow:hidden;border:1px solid #628e93;--kv-a:#21463f;--kv-b:#1b343a}
+#krueka-studio #kv-grid[data-theme=space]{--kv-a:#2c3653;--kv-b:#212942}
+#krueka-studio #kv-grid[data-theme=sunset]{--kv-a:#604447;--kv-b:#472f40}
+#krueka-studio #kv-grid button{appearance:none;min-width:0;width:100%;aspect-ratio:1;padding:0;border:0;border-right:1px solid #ffffff21;border-bottom:1px solid #ffffff21;background:var(--kv-a);color:#ecf6ff;font:700 clamp(12px,2.7vw,23px)/1 system-ui}
+#krueka-studio #kv-grid button:nth-child(even){background:var(--kv-b)}
+#krueka-studio #kv-grid button:focus-visible,#krueka-studio #kv-grid .kv-selected{outline:2px solid #f8e9a7;outline-offset:-2px}
+#krueka-studio #kv-world :is(fieldset,details,#kv-inspector){border:1px solid #355571;border-radius:8px;padding:9px;margin:10px 0}
+#krueka-studio #kv-world fieldset input[type=checkbox]{width:17px;height:17px;vertical-align:middle}
+#krueka-studio #kv-world fieldset legend{font-weight:700;font-size:13px}
+#krueka-studio #kv-world #kv-notice:not(:empty){padding:8px;background:#173541;border-radius:7px}

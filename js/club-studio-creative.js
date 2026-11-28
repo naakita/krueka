@@ -19,7 +19,8 @@ const families=[
 ];
 let activeFamily='Todos';
 function homeMarkup(studio){
- const cards=paths.map(p=>{
+ const cards=paths.map(entry=>{
+  const p=entry.id==='juegos'&&window.StudioEscenas?{...entry,first:StudioEscenas.ID,text:'Armá una escena, elegí las reglas y probá tu videojuego.',kits:[StudioEscenas.ID,...entry.kits]}:entry;
   const family=families.find(f=>f.ids.includes(p.id))?.label||'Otros';
   const more=p.kits.length>1?'<button class="kc-variants" data-creative-path="'+p.id+'">Otras plantillas</button>':'';
   return '<article class="kc-path" data-family="'+family+'"><button class="kc-start" data-creative-start="'+p.first+'"><span class="kc-icon" aria-hidden="true">'+p.icon+'</span><span><strong>'+p.title+'</strong><small>'+p.text+'</small></span><b aria-hidden="true">↗</b></button>'+more+'</article>';
@@ -50,12 +51,12 @@ function renderHome(studio){
  filterHome(activeFamily);
 }
 function showOptions(studio,path){
- const selected=paths.find(p=>p.id===path),ids=selected?selected.kits:StudioKits.catalog.map(k=>k.id),kits=ids.map(id=>StudioKits.catalog.find(k=>k.id===id)).filter(Boolean);
+ const selected=paths.find(p=>p.id===path),ids=selected?(path==='juegos'&&window.StudioEscenas?[StudioEscenas.ID,...selected.kits]:selected.kits):StudioKits.catalog.map(k=>k.id),kits=ids.map(id=>StudioKits.catalog.find(k=>k.id===id)).filter(Boolean);
  const dialog=studio.dialog(selected?selected.title:'Elegí tu próxima creación','<p>Cada opción crea un proyecto propio. Tus trabajos anteriores siguen en Mis proyectos.</p><div class="ks-kit-grid">'+kits.map(k=>'<button class="ks-kit" data-creative-kit="'+k.id+'"><span>'+StudioKits.art(k.id)+'</span><b>'+esc(k.title)+'</b><small>'+esc(k.description)+'</small></button>').join('')+'</div>');
  dialog.querySelectorAll('[data-creative-kit]').forEach(b=>b.onclick=()=>studio.createKit(b.dataset.creativeKit));
 }
 function decorateEditor(studio){
- const el=document.getElementById('ks-create');if(!el||el.querySelector('.kc-editor-guide'))return;
+ const el=document.getElementById('ks-create');if(!el||el.querySelector('.kc-editor-guide')||el.querySelector('#kv-world'))return;
  const guide=document.createElement('div');guide.className='kc-editor-guide';guide.innerHTML='<span>1 · Creá</span><b>2 · Personalizá</b><button class="ks-btn" id="kc-test">3 · Probá</button><button class="ks-btn" id="kc-lesson">Guía de la clase</button>';
  if(el.querySelector('#k3d-builder'))guide.hidden=true;
  el.insertBefore(guide,el.firstChild);guide.querySelector('#kc-test').onclick=()=>studio.playCurrent();guide.querySelector('#kc-lesson').onclick=()=>studio.showTab('learn');
