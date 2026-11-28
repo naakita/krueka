@@ -271,6 +271,46 @@ function runtime(isolated){
   document.getElementById('rotate-left').onclick=()=>yaw+=.25;document.getElementById('rotate-right').onclick=()=>yaw-=.25;
   reset();bindCanvas();function frame(now){const dt=last?Math.min((now-last)/1000,.06):0;last=now;update(dt);if(now-lastDraw>=1000/30){draw();lastDraw=now;}requestAnimationFrame(frame);}requestAnimationFrame(frame);
 }
+// La cámara de inspección solo cambia la proyección: no toca el archivo de
+// escena, la posición del jugador, las reglas ni el estado guardado.
+function mountInspectionCamera(){
+  const turn=document.querySelector('.camera'),stage=turn?.closest('.stage');
+  if(!stage)return;
+  const bar=document.createElement('div');bar.className='kr-inspect-view';bar.setAttribute('role','group');bar.setAttribute('aria-label','Cámara de la zona');
+  bar.innerHTML='<b>Vista 3D</b><button type="button" id="kr-view-out" aria-label="Alejar zona">−</button><output id="kr-view-level" aria-label="Zoom de la zona">100%</output><button type="button" id="kr-view-in" aria-label="Acercar zona">＋</button><button type="button" id="kr-view-pan" aria-pressed="false" title="Arrastrá el escenario para mover la vista">Mover vista</button><button type="button" id="kr-view-reset">Centrar</button>';
+  stage.before(bar);
+  const style=document.createElement('style');
+  style.textContent='.kr-inspect-view{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0;color:#e6f0fa;font:12px system-ui}.kr-inspect-view b{color:#b8d1e7;margin-right:2px}.kr-inspect-view button{min-width:42px;min-height:42px;padding:6px 9px}.kr-inspect-view button:disabled{opacity:.5;cursor:default}.kr-inspect-view button[aria-pressed=true]{background:var(--accent);color:#082437}.kr-inspect-view :focus-visible{outline:2px solid #fef08a;outline-offset:2px}.kr-inspect-view output{min-width:33px;text-align:center;font-variant-numeric:tabular-nums}';
+  document.head.append(style);
+  const out=document.getElementById('kr-view-out'),level=document.getElementById('kr-view-level'),inside=document.getElementById('kr-view-in'),move=document.getElementById('kr-view-pan');
+  function refresh(){level.value=Math.round(inspectionZoom*100)+'%';out.disabled=inspectionZoom<=.75;inside.disabled=inspectionZoom>=2;move.disabled=!editing;move.setAttribute('aria-pressed',String(editing&&inspectionPan));}
+  function zoom(delta){inspectionZoom=clamp(inspectionZoom+delta,.75,2);refresh();}
+  out.onclick=()=>zoom(-.25);inside.onclick=()=>zoom(.25);
+  move.onclick=()=>{inspectionPan=!inspectionPan;refresh();};
+  document.getElementById('kr-view-reset').onclick=()=>{inspectionZoom=1;inspectionX=inspectionZ=0;inspectionPan=false;yaw=inspectionYaw;refresh();};
+  mode.addEventListener('click',refresh);
+  document.getElementById('restart').addEventListener('click',refresh);
+  // La rueda normal mantiene el desplazamiento del panel. Los botones también
+  // funcionan con teclado o pantalla táctil sin pedir gestos especiales.
+  refresh();
+}
+const standardGame='/* Motor 3D propio: geometría, cámara, iluminación, colisiones y modo compatible. */\nconst avatarProfiles = '+avatarProfiles.toString()+';\nconst normalise = '+normalise.toString()+';\n('+runtime.toString()+')();';
+const inspectableGame=standardGame
+  .replace('  function camera(){','  let inspectionZoom=1,inspectionX=0,inspectionZ=0,inspectionPan=false;const inspectionYaw=yaw;\n  function camera(){')
+  .replace('    const z=unit(sub(eye,target))','    if(editing&&!isolated){target[0]+=inspectionX;eye[0]+=inspectionX;target[2]+=inspectionZ;eye[2]+=inspectionZ;}\n    const z=unit(sub(eye,target))')
+  .replace('const f=1/Math.tan(Math.PI/8)','const f=(isolated?1:inspectionZoom)/Math.tan(Math.PI/8)')
+  .replace('lastX:e.clientX,moved:false','lastX:e.clientX,lastY:e.clientY,pointer:e.pointerId,pan:!isolated&&editing&&(inspectionPan||e.shiftKey),moved:false')
+  .replace('canvas.onpointerdown=e=>{drag=','canvas.onpointerdown=e=>{if(drag||!e.isPrimary||e.button!==0)return;drag=')
+  .replace('if(!drag)return;const delta=','if(!drag||drag.pointer!==e.pointerId)return;const delta=')
+  .replace('yaw-=delta*(isolated?.011:.007);drag.lastX=e.clientX;', 'if(drag.pan){const pixel=31/Math.max(180,canvas.clientHeight)/inspectionZoom,dy=e.clientY-drag.lastY;inspectionX=clamp(inspectionX-(delta*Math.cos(yaw)+dy*Math.sin(yaw))*pixel,-12,12);inspectionZ=clamp(inspectionZ+(delta*Math.sin(yaw)-dy*Math.cos(yaw))*pixel,-14,14);}else yaw-=delta*(isolated?.011:.007);drag.lastX=e.clientX;drag.lastY=e.clientY;')
+  .replace('canvas.onpointerup=e=>{if(!isolated&&drag&&!drag.moved&&editing)', 'canvas.onpointerup=e=>{if(!drag||drag.pointer!==e.pointerId)return;if(!isolated&&!drag.pan&&!drag.moved&&editing)')
+  .replace('canvas.onpointercancel=()=>drag=null;','canvas.onpointercancel=canvas.onlostpointercapture=e=>{if(drag?.pointer===e.pointerId)drag=null;};')
+  .replace('viewZone=clamp(e.data.zone,0,lastZone);picked=null;', 'const next=clamp(e.data.zone,0,lastZone);if(next!==viewZone)inspectionX=inspectionZ=0;viewZone=next;picked=null;')
+  .replace("addEventListener('keydown',e=>{if([", "addEventListener('keydown',e=>{if(e.target?.closest?.('button'))return;if([")
+  .replace('  reset();bindCanvas();','  reset();('+mountInspectionCamera.toString()+')();bindCanvas();');
+// El visor habilita el zoom para proyectos de la edición anterior sin
+// reescribir el motor guardado ni tocar proyectos con JavaScript propio.
+function previewFiles(files){return files?.['game.js']===standardGame?{...files,'game.js':inspectableGame}:files;}
 const themes={station:'Estación neón',forest:'Bosque de cristales',island:'Isla flotante'},lights={cryo:'Azul frío',alert:'Alerta roja',sunset:'Atardecer'},types={crystal:'Cristal',crate:'Bloque',pillar:'Columna',tree:'Árbol',drone:'Dron',beacon:'Baliza',house:'Casa',car:'Auto decorativo',road:'Camino',wall:'Muro',rock:'Roca',lamp:'Farola',arch:'Arco',mountain:'Montaña',airplane:'Avión decorativo',shield:'Escudo de fantasía',staff:'Vara de luz',character:'Personaje de escena'};
 function create(){
   const objects=[[-7,8],[7,7],[-5,2],[6,1],[-7,-5],[7,-8],[0,-7]].map(([x,z],i)=>({id:'crystal-'+i,type:'crystal',label:'Cristal '+(i+1),x,z,size:1,height:1.5,color:'#67e8f9'}));
@@ -278,7 +318,7 @@ function create(){
   const cfg=normalise({title:'Exploradores 3D',objects});
   return {'index.html':'<!doctype html>\n<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Exploradores 3D</title><link rel="stylesheet" href="style.css"></head><body><main><header><div><small>KRUEKA · MI MUNDO 3D</small><h1 id="game-title"></h1></div><button id="mode">▶ Jugar</button></header><div class="toolbar"><span id="hud" role="status"></span><span id="renderer"></span><button id="pause">Pausar</button><button id="restart">Reiniciar</button></div><div class="stage"><canvas id="arena" tabindex="0" aria-label="Mundo 3D: arrastrá para girar la vista"></canvas><div class="camera"><button id="rotate-left" aria-label="Girar cámara a la izquierda">↶</button><button id="rotate-right" aria-label="Girar cámara a la derecha">↷</button></div><div class="badge">CREÁ TU PROPIO RECORRIDO</div></div><div id="controls"><button data-key="ArrowLeft" aria-label="Izquierda">←</button><button data-key="ArrowUp" aria-label="Avanzar">↑</button><button data-key="ArrowDown" aria-label="Retroceder">↓</button><button data-key="ArrowRight" aria-label="Derecha">→</button><button data-key="jump">Saltar</button></div><p id="status" role="status"></p></main><script src="game-config.js"><\/script><script src="game.js"><\/script></body></html>',
     'style.css':'*{box-sizing:border-box}body{margin:0;background:#081329;color:#eef6ff;font-family:system-ui,sans-serif;--accent:#67e8f9}main{max-width:1100px;margin:auto;padding:14px}header{display:flex;justify-content:space-between;align-items:center;gap:12px}h1{font-size:clamp(22px,3vw,32px);margin:5px 0}small{font-size:10px;letter-spacing:.18em;color:var(--accent)}button{border:1px solid #ffffff30;background:#172338;color:#e9f5ff;border-radius:10px;font:inherit;font-size:12px;padding:10px 13px;cursor:pointer;touch-action:none}#mode{background:var(--accent);color:#102238;font-weight:800;white-space:nowrap}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;margin:10px 0}#hud{font-weight:750;flex:1;min-width:170px}#renderer{color:#9ab0cd;font-size:10px}.stage{position:relative;border:1px solid #5a7caa66;border-radius:16px;overflow:hidden;box-shadow:0 16px 60px #0004}canvas{display:block;width:100%;height:clamp(300px,56vh,600px);touch-action:none;outline:0}.camera{position:absolute;right:12px;bottom:12px;display:flex;gap:6px}.badge{position:absolute;left:14px;top:14px;pointer-events:none;color:#abc7e1;font-size:9px;letter-spacing:.12em}#controls{display:flex;justify-content:center;gap:6px;margin:12px 0}#controls button{min-width:42px;min-height:42px}#status{font-size:12px;text-align:center;line-height:1.5;color:#a8bdd7;min-height:36px}@media(max-width:480px){main{padding:9px}#renderer{display:none}canvas{height:340px}#controls button{padding:9px 11px}.toolbar button{padding:8px}}',
-    'game-config.js':StudioKits.configFile(cfg),'game.js':'/* Motor 3D propio: geometría, cámara, iluminación, colisiones y modo compatible. */\nconst avatarProfiles = '+avatarProfiles.toString()+';\nconst normalise = '+normalise.toString()+';\n('+runtime.toString()+')();',
+    'game-config.js':StudioKits.configFile(cfg),'game.js':inspectableGame,
     'LEEME.md':'# Exploradores 3D\n\nTema: Escenarios 3D y reglas de un videojuego.\nCapacidad: Construir y probar un recorrido, modificando objetos y ambientación.\nIndicadores: ubico objetos; comparo dos luces; pruebo colisiones y controles; explico una mejora.\n\n1. Elegí Bases y reglas: cambiá luces, escenario y personaje.\n2. Seleccioná un objeto en la escena o en la lista; cambiá X y Z, tamaño y altura.\n3. Probá con Jugar: juntá cristales y llegá al arco del fondo.\n4. Si es difícil, mové un obstáculo o aumentá el tiempo.\n5. Escribí acá qué cambiaste y qué mejoró. Enviá al profe.\n\nLos controles visuales no consultan IA. El Chat puede guardar ideas pendientes de conexión.\n'};
 }
 function piecePreview(){
@@ -305,7 +345,7 @@ function renderEditor(studio,el,raw){
   for(const id of ['ks-object-add','ks-object-copy']){const b=el.querySelector('#'+id);if(b){b.dataset.limitReached=String(objects.length>=48);b.disabled=studio.busy||!studio.cloudReady||objects.length>=48;}}
   el.querySelector('#ks-scene-bases').onclick=()=>studio.showKits();
 }
-window.Studio3D={normalise,create,renderEditor,piecePreview,avatarProfiles};
+window.Studio3D={normalise,create,renderEditor,piecePreview,avatarProfiles,previewFiles};
 StudioKits.catalog.unshift({id:'explore3d',icon:'🧊',title:'Exploradores 3D',tag:'Mundos, luces y objetos',description:'Construí una escena 3D, explorá y abrí el portal.',challenge:'Compará dos luces, mové un obstáculo y explicá cómo cambia el recorrido.'});
 const originalCreate=StudioKits.create.bind(StudioKits),originalArt=StudioKits.art.bind(StudioKits);
 StudioKits.create=id=>id==='explore3d'?create():originalCreate(id);

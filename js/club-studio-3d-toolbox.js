@@ -3,7 +3,7 @@
 (function(){
 'use strict';
 if(window.Krueka3DToolbox)return;
-const MAX=48,LEGACY_ENGINE_SHA=new Set(['2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724','6ac7fb92baebef6cbe7b33581328d73bd6b46971bac93b3b35c64ae49076c8bf','6fb29499505463c07798affd1679d74ecf416c5377e7d6b362c710c4da630951','6e5ecea16fec798f34a58733d2468bac4749217c1e6d35f210d4bdfbe0777350']),DEPTH=28,ZONE_MAX=4;
+const MAX=48,LEGACY_ENGINE_SHA=new Set(['83d841570c0199972f8e06ec452f95887b15207294ddf52ea8980c35ebc53cb0','2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724','6ac7fb92baebef6cbe7b33581328d73bd6b46971bac93b3b35c64ae49076c8bf','6fb29499505463c07798affd1679d74ecf416c5377e7d6b362c710c4da630951','6e5ecea16fec798f34a58733d2468bac4749217c1e6d35f210d4bdfbe0777350']),DEPTH=28,ZONE_MAX=4;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 // Blocks and courses built entirely from the existing, lightweight scene objects.
 const terrainPiece=(type,label,x,z,size,height,color)=>({type,label,x,z,size,height,color});
@@ -684,7 +684,7 @@ function builder(studio,el,cfg){
  const section=document.createElement('section');section.id='k3d-builder';section.className='ks-settings';
  section.innerHTML='<div class="ks-section-label">TU PROYECTO DE VIDEOJUEGO</div><h2>Construí tu mundo por partes</h2><p>Editá una pieza en primer plano, elegí dónde colocarla y probá el mundo. Nada cambia hasta confirmar.</p>'+
   '<div class="ks-scene-actions"><button type="button" class="ks-btn" id="k3d-new">＋ Nuevo mundo 3D</button><button type="button" class="ks-btn" id="k3d-projects">Mis proyectos</button><button type="button" class="ks-btn" id="k3d-save">Guardar proyecto</button><button type="button" class="ks-btn primary" id="k3d-play">▶ Probar mundo</button><button type="button" class="ks-btn" id="k3d-edit">Editar una pieza</button></div>'+
-  '<div id="k3d-zone-slot"></div><div id="k3d-scene-slot"></div><details open><summary>1. Elegí una plantilla</summary><label>Categoría <select id="k3d-category"></select></label><label>Plantilla <select id="k3d-piece"></select></label><p id="k3d-about"></p>'+
+  '<p class="ks-tip">Antes de salir, tocá «Guardar proyecto» y esperá la confirmación. La próxima clase, entrá con tu mismo código y abrilo en «Mis proyectos».</p><div id="k3d-zone-slot"></div><div id="k3d-scene-slot"></div><details open><summary>1. Elegí una plantilla</summary><label>Categoría <select id="k3d-category"></select></label><label>Plantilla <select id="k3d-piece"></select></label><p id="k3d-about"></p>'+
   '<div class="ks-scene-actions"><button type="button" class="ks-btn primary" id="k3d-apply-part">Agregar al mundo</button><button type="button" class="ks-btn" id="k3d-copy-code">Copiar plantilla</button><button type="button" class="ks-btn" id="k3d-hero" hidden>Usar como protagonista</button></div></details>'+
   '<details id="k3d-paste-panel"><summary>2. Pegar o editar una plantilla</summary><label>Código de la plantilla<textarea id="k3d-paste-code" rows="7" maxlength="16000" spellcheck="false"></textarea></label><p>Para cambiar un color, editá <code>color</code>. Para cambiar un molde, elegí antes otra plantilla o editá el tipo con un valor de la misma categoría. Pegá JSON, no JavaScript.</p><div class="ks-scene-actions"><button type="button" class="ks-btn primary" id="k3d-apply-paste">Revisar y agregar</button><button type="button" class="ks-btn" id="k3d-save-part">Guardar en mis plantillas</button></div></details>'+
   '<section><h3>3. Revisá el recorrido</h3><div id="k3d-diagnostico" role="status"></div></section><p id="k3d-build-result" class="ks-class-note" role="status"></p>';
@@ -722,7 +722,16 @@ function builder(studio,el,cfg){
  if(studio.builderNotice){say(studio.builderNotice);studio.builderNotice='';}
  cat.onchange=options;selector.onchange=description;options();
  query('new').onclick=()=>newWorld(studio);query('projects').onclick=()=>studio.showProjects();
- query('save').onclick=async()=>{if(!studio.cloudReady||studio.busy)return;say(await studio.save()?'✓ Proyecto y piezas guardados. Buscalos en Mis proyectos.':'No se pudo guardar. Reintentá antes de salir.');};
+ query('save').onclick=async()=>{
+  if(!studio.cloudReady||studio.busy){say('El guardado todavía no está disponible. Reintentá antes de salir.');return;}
+  const id=studio.projectId,owner=studio.sid?.(),button=query('save');
+  button.disabled=true;say('Guardando en Krueka…');
+  try{
+   const saved=await studio.save();
+   if(!section.isConnected||studio.projectId!==id||studio.sid?.()!==owner)return;
+   say(!saved?'No se pudo guardar. Reintentá antes de salir.':studio.dirty?'Hay cambios más recientes. Volvé a guardar antes de salir.':'✓ Proyecto y piezas guardados en Krueka. Podés continuar desde Mis proyectos.');
+  }finally{button.disabled=false;}
+ };
  query('play').onclick=()=>studio.playCurrent();
  query('edit').onclick=()=>{const o=cfg.objects.find(item=>item.id===studio.selectedSceneObject);if(o)pieceEditor(studio,o,{existing:true});else el.querySelector('#k3d-scene-panel')?.scrollIntoView({block:'nearest'});};
  query('copy-code').onclick=async()=>{

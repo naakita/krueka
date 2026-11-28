@@ -320,7 +320,8 @@ const StudioIA={__loaded:true,
     const parts=(base+rel).split('/'),out=[];for(const p of parts){if(!p||p==='.')continue;if(p==='..')out.pop();else out.push(p)}return out.join('/');
   },
   buildPreview(path){
-    const files=path==='index.html'&&window.ClubTalleres?.readingFiles?ClubTalleres.readingFiles(this.files):this.files;
+    let files=path==='index.html'&&window.ClubTalleres?.readingFiles?ClubTalleres.readingFiles(this.files):this.files;
+    if(path==='index.html'&&window.Studio3D?.previewFiles)files=Studio3D.previewFiles(files);
     let html=files[path]||'<h1>Archivo no encontrado</h1>',base=this.dirname(path),self=this;
     html=html.replace(/<link\b([^>]*?)href=["']([^"']+)["']([^>]*)>/gi,(m,a,href,b)=>{
       const p=self.resolve(base,href);return files[p]!=null?'<style data-file="'+esc(p)+'">'+String(files[p]).replace(/<\/style/gi,'<\\/style')+'</style>':m;
