@@ -349,7 +349,7 @@ const StudioIA={__loaded:true,
       const cfg=StudioKits.read(this.files);const scene=cfg?.kind==='space3d'?window.StudioMissions:cfg?.kind==='explore3d'?window.Studio3D:null;
       if(this.busy||!this.cloudReady||!scene)return;
       if(!scene.normalise(cfg).objects.some(o=>o.id===e.data.id))return;
-      this.selectedSceneObject=e.data.id;this.renderCreator();this.showTab('create');const manual=document.getElementById('k3d-manual');if(manual)manual.open=true;document.getElementById('ks-scene-objects')?.scrollIntoView({block:'nearest'});return;
+      this.selectedSceneObject=e.data.id;this.renderCreator();this.showTab('create');const props=document.getElementById('k3d-properties');if(props){props.open=true;props.scrollIntoView({block:'nearest'});}else{const manual=document.getElementById('k3d-manual');if(manual)manual.open=true;document.getElementById('ks-scene-objects')?.scrollIntoView({block:'nearest'});}return;
     }
     if(e.data.type==='krueka-studio-error'){this.errors.push(String(e.data.text).slice(0,1000));this.errors=this.errors.slice(-10);this.renderErrors();return;}
     if(e.data.type!=='krueka-studio-nav')return;
