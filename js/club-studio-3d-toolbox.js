@@ -3,7 +3,7 @@
 (function(){
 'use strict';
 if(window.Krueka3DToolbox)return;
-const MAX=48,LEGACY_ENGINE_SHA=new Set(['2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724','6ac7fb92baebef6cbe7b33581328d73bd6b46971bac93b3b35c64ae49076c8bf']),FILENAME='escena-krueka.json';
+const MAX=48,LEGACY_ENGINE_SHA=new Set(['2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724','6ac7fb92baebef6cbe7b33581328d73bd6b46971bac93b3b35c64ae49076c8bf','6fb29499505463c07798affd1679d74ecf416c5377e7d6b362c710c4da630951']),DEPTH=28,ZONE_MAX=4;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const presets={
  city:{name:'Ciudad low-poly',theme:'station',lighting:'sunset',generate(){
@@ -46,35 +46,52 @@ function makeObject(spec,i){
  return {id:'kit-'+i+'-'+spec.type,type:spec.type,label:spec.label||spec.type,x:spec.x,z:spec.z,size:spec.size||1,height:spec.height||1.5,color:spec.color||'#67e8f9'};
 }
 function template(id){const p=presets[id];if(!p)return null;return {theme:p.theme,lighting:p.lighting,objects:p.generate().slice(0,MAX).map(makeObject)};}
-function validate(cfg){
- const objs=Array.isArray(cfg.objects)?cfg.objects:[];
+const zoneOf=o=>o.zone||0,zGlobal=o=>o.z-DEPTH*zoneOf(o);
+const zonesOf=cfg=>[{name:'Zona inicial',theme:cfg.theme},...(cfg.zones||[])];
+const atZone=(cfg,zone)=>cfg.objects.filter(o=>zoneOf(o)===zone);
+const activeZone=(studio,cfg)=>Math.max(0,Math.min(zonesOf(cfg).length-1,studio.expansionZone||0));
+function appendZone(raw,id,source=0){
+ const cfg=Studio3D.normalise(raw),zones=zonesOf(cfg),index=zones.length;
+ if(index>=ZONE_MAX)throw Error('El recorrido admite hasta '+ZONE_MAX+' zonas.');
+ if(!Number.isInteger(source)||!zones[source])throw Error('Seleccioná una zona válida.');
+ let theme,name,sourceObjects;
+ if(id==='copy'){({theme,name}=zones[source]);name=(name.slice(0,25)+' copia').slice(0,32);sourceObjects=atZone(cfg,source);}
+ else if(id==='empty'){theme=zones[source].theme;name='Zona libre';sourceObjects=[];}
+ else if(Object.hasOwn(presets,id)){const p=template(id);theme=p.theme;name=presets[id].name;sourceObjects=p.objects;}
+ else throw Error('Elegí un ambiente válido.');
+ const used=new Set(cfg.objects.map(o=>o.id));
+ const added=sourceObjects.map((o,i)=>{let id='zona-'+(index+1)+'-objeto-'+(i+1),n=0;while(used.has(id))id='zona-'+(index+1)+'-objeto-'+(i+1)+'-'+(++n);used.add(id);return {...o,id,zone:index};});
+ return Studio3D.normalise({...cfg,zones:[...cfg.zones,{name,theme}],objects:[...cfg.objects,...added]});
+}
+function validate(raw){
+ const cfg=Studio3D.normalise(raw),objs=cfg.objects,last=zonesOf(cfg).length-1,portalZ=-12-DEPTH*last;
  const obstacles=objs.filter(o=>['crate','pillar','tree','house','car','wall','rock','lamp','mountain','airplane'].includes(o.type));
- const blocks=(x,z)=>obstacles.some(o=>Math.abs(x-o.x)<(o.type==='tree'?o.size*.25:o.size*.5)+.3&&Math.abs(z-o.z)<(o.type==='tree'?o.size*.25:o.size*.5)+.3);
- const seen=new Set(['0,11']),queue=[[0,11]],canReach=new Set();
+ const blocks=(x,z)=>obstacles.some(o=>Math.abs(x-o.x)<(o.type==='tree'?o.size*.25:o.size*.5)+.3&&Math.abs(z-zGlobal(o))<(o.type==='tree'?o.size*.25:o.size*.5)+.3);
+ const seen=new Set(['0,11']),queue=[[0,11]];
  for(let i=0;i<queue.length;i++){
   const [x,z]=queue[i];for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
    const nx=x+dx,nz=z+dz,key=nx+','+nz;
-   if(nx < -10||nx > 10||nz < -12||nz > 12||seen.has(key)||blocks(nx,nz))continue;
+   if(nx < -10||nx > 10||nz < portalZ||nz > 12||seen.has(key)||blocks(nx,nz))continue;
    seen.add(key);queue.push([nx,nz]);
   }
  }
  const crystals=objs.filter(o=>o.type==='crystal');
- const unreachable=crystals.filter(o=>!queue.some(([x,z])=>Math.hypot(x-o.x,z-o.z)<o.size*.6+.4));
- const finish=queue.some(([x,z])=>Math.abs(x)<1.4&&z<-11);
+ const unreachable=crystals.filter(o=>!queue.some(([x,z])=>Math.hypot(x-o.x,z-zGlobal(o))<o.size*.6+.4));
+ const finish=queue.some(([x,z])=>Math.abs(x)<1.4&&z<portalZ+1);
  const warnings=[];
- if(objs.length>MAX)warnings.push('El juego admite como máximo '+MAX+' objetos.');
  if(blocks(0,11))warnings.push('Un obstáculo cubre el punto de salida del personaje.');
  if(!finish)warnings.push('La salida del portal está bloqueada según la cuadrícula de prueba.');
  if(!crystals.length)warnings.push('No hay cristales: el portal se abrirá sin recolectar objetos.');
  if(unreachable.length)warnings.push(unreachable.length+' cristales no parecen alcanzables; revisá las barreras.');
- if(objs.length>36)warnings.push('Este mundo puede ir lento en PC antiguas: usá Calidad liviana.');
+ if(zonesOf(cfg).some((_,i)=>atZone(cfg,i).length>36))warnings.push('Las zonas cargadas pueden ir más lentas en PC antiguas: usá Calidad liviana.');
  return {ok:!warnings.some(w=>/bloquead|alcanzables|punto de salida/.test(w)),warnings,objects:objs.length,crystals:crystals.length,route:finish};
 }
 function read(cfg,studio){return window.Studio3D.normalise(window.StudioKits.read(studio.files)||cfg);}
 function set(studio,next,selectedId,game){if(studio.busy||!studio.cloudReady)throw Error('Esperá a que termine el guardado o ingresá con tu código.');
  const safe=window.Studio3D.normalise(next);
  const files=studio.validFiles({...studio.files,...(game?{'game.js':game}:{}),'game-config.js':StudioKits.configFile(safe)});
- studio.checkpoint();studio.files=files;studio.selectedSceneObject=selectedId||safe.objects.find(o=>o.id===studio.selectedSceneObject)?.id||safe.objects[0]?.id||null;
+ const visible=atZone(safe,activeZone(studio,safe));
+ studio.checkpoint();studio.files=files;studio.selectedSceneObject=selectedId||visible.find(o=>o.id===studio.selectedSceneObject)?.id||visible[0]?.id||null;
  studio.changed();studio.refreshAll();studio.lock(false);return safe;
 }
 function download(data,name){
@@ -97,9 +114,9 @@ function exportObj(raw){
   for(const f of [[1,2,3,4],[1,5,2],[2,5,3],[3,5,4],[4,5,1]])out.push('f '+f.map(i=>i+index-1).join(' '));
   index+=5;
  };
- box('suelo',0,-.65,0,24,.6,28);
+ zonesOf(scene).forEach((_,index)=>box(index?'suelo_zona_'+(index+1):'suelo',0,-.65,-DEPTH*index,24,.6,28));
  for(const o of scene.objects){
-  const n=o.id,x=o.x,z=o.z,s=o.size,h=o.height;
+  const n=o.id,x=o.x,z=zGlobal(o),s=o.size,h=o.height;
   if(o.type==='crystal'){box(n+'_base',x,0,z,s,.15,s);pyramid(n+'_gema',x,.4,z,s*.35,s*.95);}
   else if(o.type==='tree'){box(n+'_tronco',x,0,z,s*.24,h*.45,s*.24);pyramid(n+'_copa',x,h*.2,z,s*.65,h*.9);}
   else if(o.type==='house'){box(n+'_pared',x,0,z,s,h*.75,s);pyramid(n+'_techo',x,h*.75,z,s*.72,h*.32);}
@@ -129,15 +146,22 @@ async function characterEngine(studio){
 }
 async function commitScene(studio,next,selectedId,upgrade=false){
  const previous=studio.files,code=previous['game.js'],level=previous['game-config.js'],project=studio.projectId,owner=studio.sid?.();
- const game=upgrade||next.objects.some(o=>o.type==='character')?await characterEngine(studio):null;
+ const game=upgrade||next.zones?.length||next.objects.some(o=>o.type==='character')?await characterEngine(studio):null;
  if(studio.files!==previous||studio.files['game.js']!==code||studio.files['game-config.js']!==level||studio.projectId!==project||studio.sid?.()!==owner)throw Error('Cambió el proyecto. Repetí la acción en el mundo que estás editando.');
  return set(studio,next,selectedId,game);
 }
 async function importScene(studio,file){
- if(!file||file.size>50000)throw Error('Elegí un archivo JSON de hasta 50 KB.');
+ if(!file||file.size>100000)throw Error('Elegí un archivo JSON de hasta 100 KB.');
  const incoming=JSON.parse(await file.text());
  if(!incoming||incoming.format!=='krueka-scene' || incoming.version!==1 || !incoming.scene || !Array.isArray(incoming.scene.objects))throw Error('Este no es un archivo de escena de Krueka.');
- if(incoming.scene.objects.length>MAX)throw Error('La escena supera el máximo de objetos.');
+ const importedZones=Array.isArray(incoming.scene.zones)?incoming.scene.zones:[];
+ if(importedZones.length>=ZONE_MAX)throw Error('La escena supera el máximo de zonas.');
+ const counts=Array(importedZones.length+1).fill(0);
+ for(const o of incoming.scene.objects){
+  const index=o?.zone??0;
+  if(!Number.isInteger(index)||index<0||index>importedZones.length)throw Error('Hay una pieza asignada a una zona inexistente.');
+  if(++counts[index]>MAX)throw Error('Una zona supera el máximo de objetos.');
+ }
  const next=window.Studio3D.normalise(incoming.scene);
  if(!confirm('Se reemplazará el escenario de ESTE proyecto. Podés volver con Deshacer. ¿Importar?'))return false;
  await commitScene(studio,next);return true;
@@ -222,16 +246,20 @@ function freeCharacterSpot(objects){
   if(!objects.some(o=>Math.hypot(o.x-x,o.z-z)<Math.max(1.4,o.size*.7)))return {x,z};
  throw Error('No se encontró un lugar libre. Mové algún objeto para sumar otro personaje.');
 }
-function mergePiece(cfg,p,protagonist=false){
- const objects=[...(cfg.objects||[])];
+function mergePiece(raw,p,protagonist=false,zone=0){
+ const cfg=Studio3D.normalise(raw),objects=[...cfg.objects],local=atZone(cfg,zone);
+ if(!zonesOf(cfg)[zone])throw Error('Seleccioná una zona existente.');
  const adding=p.category==='personaje'&&!protagonist;
- const pieces=adding?[{type:'character',label:p.name.slice(0,32),...freeCharacterSpot(objects),size:1,height:2,color:p.settings.avatarColor||cfg.avatarColor,avatarStyle:p.settings.avatarStyle||cfg.avatarStyle}]:p.objects;
- if(objects.length+pieces.length>MAX)throw Error('No hay espacio. El mundo admite hasta '+MAX+' objetos. No se agregó nada.');
+ const pieces=adding?[{type:'character',label:p.name.slice(0,32),...freeCharacterSpot(local),size:1,height:2,color:p.settings.avatarColor||cfg.avatarColor,avatarStyle:p.settings.avatarStyle||cfg.avatarStyle}]:p.objects;
+ if(local.length+pieces.length>MAX)throw Error('No hay espacio. Cada zona admite hasta '+MAX+' objetos. No se agregó nada.');
  let seq=0;const used=new Set(objects.map(o=>o.id));
  pieces.forEach(o=>{
-  if(objects.some(old=>old.type===o.type&&old.x===o.x&&old.z===o.z))throw Error('Coherencia · «'+o.label+'» ya está en esas coordenadas. Cambiá X o Z antes de agregar otra copia.');
-  let id;do{id='pieza-'+(++seq);}while(used.has(id));used.add(id);objects.push({...o,id});});
- return Studio3D.normalise({...cfg,...(adding?{}:p.settings),objects});
+  if(local.some(old=>old.type===o.type&&old.x===o.x&&old.z===o.z))throw Error('Coherencia · «'+o.label+'» ya está en esas coordenadas. Cambiá X o Z antes de agregar otra copia.');
+  let id;do{id='pieza-'+(++seq);}while(used.has(id));used.add(id);const entry={...o,id,zone};objects.push(entry);local.push(entry);
+ });
+ const next={...cfg,...(adding?{}:p.settings),objects};
+ if(zone&&p.settings.theme){next.theme=cfg.theme;next.zones=cfg.zones.map((entry,i)=>i===zone-1?{...entry,theme:p.settings.theme}:entry);}
+ return Studio3D.normalise(next);
 }
 function initialWorld(){
  const files=Studio3D.create();
@@ -266,7 +294,8 @@ function pieceEditor(studio,source,{existing=false}={}){
  if(!app||studio.busy||!studio.cloudReady||app.querySelector('#k3d-piece-editor'))return;
  const openingProject=studio.projectId,ownership=studio.sid?.(),openingConfig=studio.files['game-config.js'];
  const cfg=read({},studio),dialog=document.createElement('dialog');
- if(!existing&&cfg.objects.length>=MAX){window.alert('El mundo ya tiene '+MAX+' objetos. Quitá uno para sumar otra pieza.');return;}
+ const zone=existing?zoneOf(source):activeZone(studio,cfg),local=atZone(cfg,zone);
+ if(!existing&&local.length>=MAX){window.alert('Esta zona ya tiene '+MAX+' objetos. Elegí otra zona o quitá uno.');return;}
  dialog.id='k3d-piece-editor';dialog.setAttribute('aria-labelledby','k3d-piece-title');dialog.className='ks-settings';
  dialog.innerHTML='<header><div><div class="ks-section-label" id="k3d-step">1 DE 2 · EDITÁ LA PIEZA</div><h2 id="k3d-piece-title">Editar pieza</h2></div><button type="button" id="k3d-piece-close" class="ks-btn">Cancelar</button></header>'+
   '<section id="k3d-detail-step"><div class="k3d-detail-layout"><div class="k3d-detail-preview"><iframe id="k3d-piece-model" title="Vista 3D de la pieza, independiente del mundo" sandbox="allow-scripts"></iframe><p>Girá la pieza con el mouse, el dedo o los botones.</p></div>'+
@@ -285,7 +314,7 @@ function pieceEditor(studio,source,{existing=false}={}){
  const kind=source.type||'character', current=cfg.objects.find(o=>o.id===source.id);
  let suggested={x:source.x,z:source.z};
  if(suggested.x==null||suggested.z==null){
-  try{suggested=freeCharacterSpot(cfg.objects);}catch(e){suggested={x:3,z:4};}
+  try{suggested=freeCharacterSpot(local);}catch(e){suggested={x:3,z:4};}
  }
  for(const [id,[name]] of Object.entries(sceneTypes))fields.type.add(new Option(name,id));
  const draft={id:source.id,type:kind,label:source.label||sceneTypes[kind][0],avatarStyle:source.avatarStyle||'robot',color:source.color||(kind==='character'?'#a5b4fc':'#67e8f9'),size:source.size??1,height:source.height??(kind==='character'?2:1.5),...suggested};
@@ -312,8 +341,9 @@ function pieceEditor(studio,source,{existing=false}={}){
   point.style.left=left+'%';point.style.top=top+'%';if(color)point.style.setProperty('--dot',color);
   point.className=tag;point.title=text;point.textContent=tag==='k3d-place-existing'?'•':text;map.append(point);return point;
  }
- for(const o of cfg.objects)if(!existing||o.id!==source.id)mark(o.label,o.x,o.z,'k3d-place-existing',o.color);
- mark('Inicio',0,11,'k3d-place-landmark');mark('Portal',0,-12,'k3d-place-landmark');
+ for(const o of local)if(!existing||o.id!==source.id)mark(o.label,o.x,o.z,'k3d-place-existing',o.color);
+ mark(zone?'Desde '+zonesOf(cfg)[zone-1].name:'Inicio',0,11,'k3d-place-landmark');
+ mark(zone===zonesOf(cfg).length-1?'Portal':'Próxima zona',0,-12,'k3d-place-landmark');
  const marker=mark('✚',draft.x,draft.z,'k3d-place-marker',draft.color);
  function coords(){
   const vx=x.valueAsNumber,vz=z.valueAsNumber,valid=x.validity.valid&&z.validity.valid;
@@ -321,7 +351,7 @@ function pieceEditor(studio,source,{existing=false}={}){
   if(!valid){q('placement-note').textContent='Ingresá una posición dentro del plano.';return;}
   const [left,top]=worldPosition(vx,vz);marker.style.left=left+'%';marker.style.top=top+'%';
   marker.style.setProperty('--dot',fields.color.value);
-  const occupied=cfg.objects.some(o=>(!existing||o.id!==source.id)&&Math.hypot(o.x-vx,o.z-vz)<.8);
+  const occupied=local.some(o=>(!existing||o.id!==source.id)&&Math.hypot(o.x-vx,o.z-vz)<.8);
   q('placement-note').textContent=occupied?'Hay otro objeto cerca. Si querés, elegí un lugar libre.':'La cruz marca el lugar de tu pieza.';
  }
  x.oninput=z.oninput=coords;
@@ -347,7 +377,7 @@ function pieceEditor(studio,source,{existing=false}={}){
   if(studio.projectId!==openingProject||studio.sid?.()!==ownership||studio.files['game-config.js']!==openingConfig){status.textContent='El proyecto cambió. Cerrá esta ficha y volvé a abrir la pieza.';return;}
   if(studio.busy||!studio.cloudReady){status.textContent='Esperá a que termine el guardado e intentá de nuevo.';return;}
   const ids=new Set(cfg.objects.map(o=>o.id));let seq=0;
-  const o={...shape(),x:x.valueAsNumber,z:z.valueAsNumber};
+  const o={...shape(),zone,x:x.valueAsNumber,z:z.valueAsNumber};
   if(existing&&current)o.id=current.id;
   else {while(ids.has('objeto-'+(++seq)));o.id='objeto-'+seq;}
   const next=Studio3D.normalise({...cfg,objects:existing?cfg.objects.map(item=>item.id===o.id?o:item):[...cfg.objects,o]});
@@ -370,9 +400,10 @@ function pieceEditor(studio,source,{existing=false}={}){
 function scenePanel(studio,section,cfg){
  const id=(studio.sid?.()||'')+'|'+studio.projectId;
  if(id!==panelOwner){panelOwner=id;panelState={group:'all',search:'',grid:true,zoom:1,pane:'3d',moving:false};}
+ const zone=activeZone(studio,cfg),local=atZone(cfg,zone);
  const ui=panelState,locked=()=>studio.busy||!studio.cloudReady;
  const article=document.createElement('section');article.id='k3d-scene-panel';article.className='ks-settings';
- article.innerHTML='<header><div><h3>Objetos de escena</h3><small>'+cfg.objects.length+' / '+MAX+' objetos</small></div><div class="k3d-add-buttons"><button type="button" class="ks-btn primary" id="k3d-new-character">＋ Personaje</button><button type="button" class="ks-btn" id="k3d-quick-add" aria-expanded="false">＋ Objeto</button></div></header>'+
+ article.innerHTML='<header><div><h3>Objetos de escena</h3><small>'+local.length+' / '+MAX+' objetos · '+esc(zonesOf(cfg)[zone].name)+'</small></div><div class="k3d-add-buttons"><button type="button" class="ks-btn primary" id="k3d-new-character">＋ Personaje</button><button type="button" class="ks-btn" id="k3d-quick-add" aria-expanded="false">＋ Objeto</button></div></header>'+
   '<div class="k3d-command" role="group" aria-label="Herramientas de escena">'+
   '<button type="button" class="ks-btn" data-view="map">Plano 2D</button><button type="button" class="ks-btn" data-view="3d">Vista 3D</button>'+
   '<button type="button" class="ks-btn" id="k3d-undo" data-suite-undo>↶ Deshacer</button><button type="button" class="ks-btn" id="k3d-redo" data-suite-redo>↷ Rehacer</button></div>'+
@@ -386,7 +417,7 @@ function scenePanel(studio,section,cfg){
  section.append(article);
  const q=name=>article.querySelector('#k3d-'+name),map=q('map'),status=q('scene-feedback');
  const btn=(text,onClick)=>{const b=document.createElement('button');b.type='button';b.className='ks-btn';b.textContent=text;b.onclick=onClick;return b;};
- let selected=cfg.objects.find(o=>o.id===studio.selectedSceneObject);
+ let selected=local.find(o=>o.id===studio.selectedSceneObject);
  if(ui.notice){status.textContent=ui.notice;ui.notice='';}
  q('quick-fields').hidden=!ui.addOpen;q('quick-add').setAttribute('aria-expanded',String(!!ui.addOpen));
  q('quick-add').onclick=()=>{ui.addOpen=q('quick-fields').hidden;q('quick-fields').hidden=!ui.addOpen;q('quick-add').setAttribute('aria-expanded',String(ui.addOpen));if(ui.addOpen)q('new-kind').focus();};
@@ -413,10 +444,10 @@ function scenePanel(studio,section,cfg){
  const unique=()=>{const ids=new Set(cfg.objects.map(o=>o.id));let next=0;while(ids.has('objeto-'+(++next)));return 'objeto-'+next;};
  function add(source,copy=false){
   if(locked())return;
-  if(cfg.objects.length>=MAX){status.textContent='Llegaste a '+MAX+' objetos. Quitá uno antes de agregar otro.';return;}
+  if(local.length>=MAX){status.textContent='Esta zona llegó a '+MAX+' objetos. Elegí otra zona o quitá uno.';return;}
   try{
-   const spot=freeCharacterSpot(cfg.objects);
-   const object={label:sceneTypes[source.type][0],size:1,height:source.type==='character'?2:1.5,color:source.type==='character'?'#a5b4fc':'#67e8f9',...source,...spot,id:unique()};
+   const spot=freeCharacterSpot(local);
+   const object={label:sceneTypes[source.type][0],size:1,height:source.type==='character'?2:1.5,color:source.type==='character'?'#a5b4fc':'#67e8f9',...source,...spot,id:unique(),zone};
    if(copy)object.label=(source.label.slice(0,26)+' copia');
    ui.props=true;ui.search='';ui.group='all';
    update({...cfg,objects:[...cfg.objects,object]},object.id,'✓ '+object.label+' agregado al mundo.');
@@ -434,9 +465,9 @@ function scenePanel(studio,section,cfg){
  }
  const place=(node,x,z)=>{node.style.left=((x+10)/20*88+6)+'%';node.style.top=((z+12)/24*88+6)+'%';};
  function paint(){
-  const visible=cfg.objects.filter(o=>(ui.group==='all'||sceneTypes[o.type]?.[2]===ui.group)&&(o.label+' '+(sceneTypes[o.type]?.[0]||'')).toLocaleLowerCase().includes(ui.search.trim().toLocaleLowerCase()));
+  const visible=local.filter(o=>(ui.group==='all'||sceneTypes[o.type]?.[2]===ui.group)&&(o.label+' '+(sceneTypes[o.type]?.[0]||'')).toLocaleLowerCase().includes(ui.search.trim().toLocaleLowerCase()));
   const list=q('scene-list');list.replaceChildren();map.replaceChildren();
-  for(const [label,x,z] of [['Inicio',0,11],['Portal',0,-12]]){
+  for(const [label,x,z] of [[zone?'← Zona anterior':'Inicio',0,11],[zone===zonesOf(cfg).length-1?'Portal':'Siguiente zona →',0,-12]]){
    const marker=document.createElement('span');marker.className='k3d-marker';marker.textContent=label;place(marker,x,z);map.append(marker);
   }
   for(const o of visible){
@@ -447,7 +478,7 @@ function scenePanel(studio,section,cfg){
     else{const type=document.createElement('small');type.textContent=kind;b.append(type);list.append(b);}
    }
   }
-  if(!visible.length)list.textContent=cfg.objects.length?'No hay objetos que coincidan con el filtro.':'Todavía no agregaste objetos.';
+  if(!visible.length)list.textContent=local.length?'No hay objetos que coincidan con el filtro.':'Todavía no agregaste objetos a esta zona.';
  }
  function inspector(){
   const form=q('inspector');form.replaceChildren();
@@ -500,17 +531,79 @@ function scenePanel(studio,section,cfg){
  paint();mode();inspector();
 }
 
+function zonesPanel(studio,el,host,cfg){
+ const zones=zonesOf(cfg),zone=activeZone(studio,cfg),full=zones.length>=ZONE_MAX;
+ const panel=document.createElement('section');
+ panel.id='k3d-zone-manager';panel.className='ks-settings';
+ panel.innerHTML='<h3>Ampliá tu mundo · '+zones.length+' de '+ZONE_MAX+' zonas</h3><p>Agregá una zona al final para caminar de un ambiente al siguiente. El portal queda en la última zona.</p>'+
+  '<div class="ks-fields"><label>Zona que estás editando<select id="k3d-zone-select"></select></label><label>Ambiente de la nueva zona<select id="k3d-zone-template"></select></label></div>'+
+  '<div class="ks-scene-actions"><button type="button" class="ks-btn" id="k3d-zone-copy">Duplicar zona actual</button><button type="button" class="ks-btn primary" id="k3d-zone-add">Agregar zona</button></div>'+
+  (zone?'<label>Nombre de esta zona<input type="text" id="k3d-zone-name" maxlength="32" required></label><button type="button" class="ks-btn" id="k3d-zone-rename">Guardar nombre de zona</button>':'')+
+  '<p id="k3d-zone-message" role="status"></p>';
+ host.append(panel);
+ const q=name=>panel.querySelector('#k3d-zone-'+name),selector=q('select'),preset=q('template'),note=q('message');
+ for(const [i,entry] of zones.entries())selector.add(new Option((i+1)+'. '+entry.name+(i===zones.length-1?' · Portal':''),String(i)));
+ selector.value=String(zone);
+ for(const [id,p] of [['empty',{name:'Zona libre (sin objetos)'}],...Object.entries(presets)])preset.add(new Option(p.name,id));
+ if([...preset.options].some(o=>o.value===studio.expansionPreset))preset.value=studio.expansionPreset;
+ preset.onchange=()=>{studio.expansionPreset=preset.value;};
+ const frame=document.getElementById('ks-frame');
+ function focus(){
+  if(panel.isConnected&&StudioKits.read(studio.files)?.kind==='explore3d')frame?.contentWindow?.postMessage({type:'krueka-scene-zone',zone},'*');
+ }
+ let previewFocus=frame?.kruekaZoneFocus;
+ if(previewFocus)frame.removeEventListener('load',previewFocus);
+ if(frame){frame.kruekaZoneFocus=focus;frame.addEventListener('load',focus);}
+ focus();
+ q('copy').disabled=q('add').disabled=preset.disabled=studio.busy||!studio.cloudReady||full;
+ for(const button of [q('copy'),q('add')])button.dataset.limitReached=String(full);
+ if(full)note.textContent='Llegaste a '+ZONE_MAX+' zonas. Todavía podés editar los ambientes y sus piezas.';
+ selector.onchange=()=>{
+  studio.expansionZone=Number(selector.value);studio.selectedSceneObject=null;
+  Studio3D.renderEditor(studio,el,read(cfg,studio));
+  el.querySelector('#k3d-zone-select')?.focus();
+ };
+ let committing=false;
+ async function add(id){
+  if(studio.busy||!studio.cloudReady||full||committing)return;
+  committing=true;q('copy').disabled=q('add').disabled=selector.disabled=true;
+  const from=studio.expansionZone;
+  try{
+   const prior=read(cfg,studio),next=appendZone(prior,id,zone);
+   studio.expansionZone=next.zones.length;studio.builderNotice='✓ Nueva zona conectada al final. En el juego, cruzá la línea para entrar.';
+   await commitScene(studio,next,null,true);
+   el.querySelector('#k3d-zone-select')?.focus();
+  }catch(e){
+   studio.expansionZone=from;studio.builderNotice='';
+   note.textContent=e.message;
+  }finally{committing=false;if(panel.isConnected)q('copy').disabled=q('add').disabled=selector.disabled=false;}
+ }
+ q('copy').onclick=()=>add('copy');
+ q('add').onclick=()=>add(preset.value);
+ if(zone){
+  const input=q('name');input.value=zones[zone].name;
+  q('rename').onclick=()=>{
+   const name=input.value.trim();
+   if(!name){note.textContent='Escribí el nombre de la zona.';return;}
+   const current=read(cfg,studio);
+   const next={...current,zones:current.zones.map((entry,i)=>i===zone-1?{...entry,name}:entry)};
+   void commitScene(studio,next).catch(e=>{note.textContent=e.message;});
+  };
+ }
+}
+
 function builder(studio,el,cfg){
  const identity=(studio.sid?.()||'')+'|'+studio.projectId;
  if(identity!==draftOwner){draftOwner=identity;draftCode='';draftOpen=false;studio.builderCategory='ambiente';}
  const section=document.createElement('section');section.id='k3d-builder';section.className='ks-settings';
  section.innerHTML='<div class="ks-section-label">TU PROYECTO DE VIDEOJUEGO</div><h2>Construí tu mundo por partes</h2><p>Editá una pieza en primer plano, elegí dónde colocarla y probá el mundo. Nada cambia hasta confirmar.</p>'+
   '<div class="ks-scene-actions"><button type="button" class="ks-btn" id="k3d-new">＋ Nuevo mundo 3D</button><button type="button" class="ks-btn" id="k3d-projects">Mis proyectos</button><button type="button" class="ks-btn" id="k3d-save">Guardar proyecto</button><button type="button" class="ks-btn primary" id="k3d-play">▶ Probar mundo</button><button type="button" class="ks-btn" id="k3d-edit">Editar una pieza</button></div>'+
-  '<div id="k3d-scene-slot"></div><details open><summary>1. Elegí una plantilla</summary><label>Categoría <select id="k3d-category"></select></label><label>Plantilla <select id="k3d-piece"></select></label><p id="k3d-about"></p>'+
+  '<div id="k3d-zone-slot"></div><div id="k3d-scene-slot"></div><details open><summary>1. Elegí una plantilla</summary><label>Categoría <select id="k3d-category"></select></label><label>Plantilla <select id="k3d-piece"></select></label><p id="k3d-about"></p>'+
   '<div class="ks-scene-actions"><button type="button" class="ks-btn primary" id="k3d-apply-part">Agregar al mundo</button><button type="button" class="ks-btn" id="k3d-copy-code">Copiar plantilla</button><button type="button" class="ks-btn" id="k3d-hero" hidden>Usar como protagonista</button></div></details>'+
   '<details id="k3d-paste-panel"><summary>2. Pegar o editar una plantilla</summary><label>Código de la plantilla<textarea id="k3d-paste-code" rows="7" maxlength="16000" spellcheck="false"></textarea></label><p>Para cambiar un color, editá <code>color</code>. Para cambiar un molde, elegí antes otra plantilla o editá el tipo con un valor de la misma categoría. Pegá JSON, no JavaScript.</p><div class="ks-scene-actions"><button type="button" class="ks-btn primary" id="k3d-apply-paste">Revisar y agregar</button><button type="button" class="ks-btn" id="k3d-save-part">Guardar en mis plantillas</button></div></details>'+
   '<section><h3>3. Revisá el recorrido</h3><div id="k3d-diagnostico" role="status"></div></section><p id="k3d-build-result" class="ks-class-note" role="status"></p>';
  el.prepend(section);
+ zonesPanel(studio,el,section.querySelector('#k3d-zone-slot'),cfg);
  scenePanel(studio,section.querySelector('#k3d-scene-slot'),cfg);
  const query=id=>section.querySelector('#k3d-'+id);
  const say=msg=>{query('build-result').textContent=msg;};
@@ -537,7 +630,7 @@ function builder(studio,el,cfg){
    (p.category==='vehiculo'||p.category==='prop'?'Decorativo: no se conduce ni activa acciones.':'Los objetos que ya tenés se conservan.');
  }
  const check=validate(cfg);
- query('diagnostico').replaceChildren(...[cfg.objects.length+' de '+MAX+' objetos · '+check.crystals+' cristales',...(check.warnings.length?check.warnings:['Sin alertas básicas. Probá con las flechas y llegá al portal.'])].map(text=>{
+ query('diagnostico').replaceChildren(...[cfg.objects.length+' objetos en '+zonesOf(cfg).length+' zona'+(cfg.zones.length?'s':'')+' · '+check.crystals+' cristales',...(check.warnings.length?check.warnings:['Sin alertas básicas. Probá con las flechas y llegá al portal.'])].map(text=>{
   const p=document.createElement('p');p.textContent=text;return p;
  }));
  if(studio.builderNotice){say(studio.builderNotice);studio.builderNotice='';}
@@ -556,7 +649,7 @@ function builder(studio,el,cfg){
   try{
    const p=parsePiece(raw);
    const upgrade=p.objects.some(o=>newTypes.includes(o.type))||protagonist||p.category==='movimiento';
-   const before=read(cfg,studio),next=mergePiece(before,p,protagonist),result=validate(next);
+   const before=read(cfg,studio),next=mergePiece(before,p,protagonist,activeZone(studio,before)),result=validate(next);
    if(!result.ok&&(p.category!=='personaje'||validate(before).ok))throw Error('Coherencia · '+result.warnings.find(w=>/bloquead|alcanzables|punto de salida/.test(w))+' No se aplicó el cambio.');
    studio.builderNotice='✓ '+p.name+' aplicado. Probá el mundo o usá Deshacer.';
    await commitScene(studio,next,next.objects.length>before.objects.length?next.objects.at(-1)?.id:null,upgrade);
@@ -592,7 +685,7 @@ function append(studio,el,cfg){
  section.innerHTML='<summary>Herramientas avanzadas de escena</summary><p class="ks-section-label">LABORATORIO 3D</p>'+
  '<h3>Construí un mundo en minutos</h3><p>Elegí un escenario original para aprender cómo se distribuyen las casas, los caminos, los vehículos y los desafíos. Solo reemplaza la escena de este proyecto después de tu confirmación.</p>'+
  '<div class="ks-scene-actions">'+Object.entries(presets).map(([id,p])=>'<button class="ks-btn" type="button" data-preset="'+id+'">'+esc(p.name)+'</button>').join('')+'</div>'+
- '<h3>Comprobá tu nivel</h3><p>'+check.objects+' de '+MAX+' objetos · '+check.crystals+' cristales · '+(check.route?'Hay ruta al portal':'No se detecta una ruta al portal')+'</p>'+
+ '<h3>Comprobá tu nivel</h3><p>'+check.objects+' objetos · '+zonesOf(current).length+' zonas · '+check.crystals+' cristales · '+(check.route?'Hay ruta al portal':'No se detecta una ruta al portal')+'</p>'+
  (check.warnings.length?'<ul>'+check.warnings.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p>✓ Sin advertencias básicas. Jugá la misión igualmente: esta comprobación no reemplaza una prueba real.</p>')+
  '<div class="ks-scene-actions"><button class="ks-btn" type="button" id="k3d-export">Descargar escena (.json)</button><button class="ks-btn" type="button" id="k3d-obj">Exportar geometría 3D (.obj)</button><button class="ks-btn" type="button" id="k3d-import">Abrir escena (.json)</button><input id="k3d-file" type="file" accept=".json,application/json" hidden></div>'+
  '<h3>Biblioteca gratuita de creación 3D</h3><p>El archivo .obj permite abrir una geometría estática simple en Blender, sin colores ni animaciones. Estos sitios son opcionales, externos y conviene abrirlos con supervisión del docente. No se descargan recursos ni se envían datos de alumnos automáticamente.</p>'+
@@ -603,8 +696,13 @@ function append(studio,el,cfg){
  const msg=s=>{const node=section.querySelector('#k3d-message');if(node)node.textContent=s;};
  section.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
   const p=template(b.dataset.preset);if(!p)return;
-  if(!confirm('Esta plantilla reemplazará todos los objetos actuales del mundo. Tus otros proyectos no cambiarán. ¿Continuar?'))return;
-  try{set(studio,{...current,...p});}catch(e){msg(e.message);}
+  if(!confirm('Esta plantilla reemplazará los objetos de la zona seleccionada. Las otras zonas y proyectos no cambian. ¿Continuar?'))return;
+  const zone=activeZone(studio,current),otherObjects=current.objects.filter(o=>zoneOf(o)!==zone);
+  const next={...current,objects:otherObjects};
+  try{
+   const chosen=mergePiece(next,{category:'ambiente',name:'Plantilla',objects:p.objects,settings:{theme:p.theme,lighting:p.lighting}},false,zone);
+   void commitScene(studio,chosen).catch(e=>msg(e.message));
+  }catch(e){msg(e.message);}
  });
  section.querySelector('#k3d-export').onclick=()=>download({format:'krueka-scene',version:1,scene:current},'mi-escena-3d-krueka.json');
  section.querySelector('#k3d-obj').onclick=()=>{const blob=new Blob([exportObj(current)],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='escenario-krueka.obj';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);};
@@ -614,7 +712,12 @@ function append(studio,el,cfg){
 function install(){
  if(!window.Studio3D||window.Studio3D.__toolboxReady)return false;
  const original=window.Studio3D.renderEditor;
- window.Studio3D.renderEditor=function(studio,el,cfg){const out=original(studio,el,cfg);append(studio,el,cfg);return out;};
+ window.Studio3D.renderEditor=function(studio,el,cfg){
+  const owner=(studio.sid?.()||'')+'|'+studio.projectId;
+  if(studio.expansionOwner!==owner){studio.expansionOwner=owner;studio.expansionZone=0;}
+  studio.expansionZone=activeZone(studio,Studio3D.normalise(cfg));
+  const out=original(studio,el,cfg);append(studio,el,cfg);return out;
+ };
  const studio=window.StudioIA;
  if(studio?.switchProject){
   const open=studio.switchProject;
@@ -622,6 +725,6 @@ function install(){
  }
  window.Studio3D.__toolboxReady=true;return true;
 }
-window.Krueka3DToolbox={editSelection(studio,id){const object=read({},studio).objects.find(o=>o.id===id);if(object)pieceEditor(studio,object,{existing:true});},MAX,presets,resources,template,validate,exportObj,importScene,install,library,parsePiece,mergePiece,initialWorld,newWorld};
+window.Krueka3DToolbox={editSelection(studio,id){const object=read({},studio).objects.find(o=>o.id===id);if(object)pieceEditor(studio,object,{existing:true});},MAX,ZONE_MAX,presets,resources,template,appendZone,validate,exportObj,importScene,install,library,parsePiece,mergePiece,initialWorld,newWorld};
 install();
 })();

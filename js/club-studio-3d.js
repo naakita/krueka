@@ -5,11 +5,17 @@ if(window.Studio3D||!window.StudioKits)return;
 function normalise(raw){
   const c=raw&&typeof raw==='object'?raw:{},num=(v,a,b,d)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Number(v))):d;
   const color=(v,d)=>/^#[0-9a-f]{6}$/i.test(String(v))?String(v):d,ids=new Set();
-  const objects=(Array.isArray(c.objects)?c.objects:[]).slice(0,48).map((o,i)=>{
-    o=o&&typeof o==='object'?o:{};let id=/^[a-z0-9-]{1,32}$/.test(String(o.id))?String(o.id):'object-'+i;let salt=0;while(ids.has(id))id='object-'+i+'-'+(++salt);ids.add(id);
-    return {id,type:['crystal','crate','pillar','tree','drone','beacon','house','car','road','wall','rock','lamp','arch','mountain','airplane','shield','staff','character'].includes(o.type)?o.type:'crate',label:String(o.label||'Objeto '+(i+1)).slice(0,32),x:num(o.x,-10,10,0),z:num(o.z,-12,12,0),size:num(o.size,.4,4,1),height:num(o.height,.5,5,1.5),color:color(o.color,'#67e8f9'),...(o.type==='character'?{avatarStyle:['robot','piloto','explorador'].includes(o.avatarStyle)?o.avatarStyle:'robot'}:{})};
+  const themes=['station','forest','island'],theme=themes.includes(c.theme)?c.theme:'station';
+  const zones=(Array.isArray(c.zones)?c.zones:[]).slice(0,3).map((z,i)=>({name:String(z?.name||'Zona '+(i+2)).trim().slice(0,32)||'Zona '+(i+2),theme:themes.includes(z?.theme)?z.theme:theme}));
+  const counts=Array(zones.length+1).fill(0);
+  const objects=(Array.isArray(c.objects)?c.objects:[]).slice(0,192).flatMap((o,i)=>{
+    o=o&&typeof o==='object'?o:{};
+    const zone=Number.isInteger(o.zone)&&o.zone>=0&&o.zone<=zones.length?o.zone:0;
+    if(counts[zone]>=48)return [];counts[zone]++;
+    let id=/^[a-z0-9-]{1,32}$/.test(String(o.id))?String(o.id):'object-'+i;let salt=0;while(ids.has(id))id='object-'+i+'-'+(++salt);ids.add(id);
+    return {id,type:['crystal','crate','pillar','tree','drone','beacon','house','car','road','wall','rock','lamp','arch','mountain','airplane','shield','staff','character'].includes(o.type)?o.type:'crate',label:String(o.label||'Objeto '+(i+1)).slice(0,32),x:num(o.x,-10,10,0),z:num(o.z,-12,12,0),size:num(o.size,.4,4,1),height:num(o.height,.5,5,1.5),color:color(o.color,'#67e8f9'),...(zone?{zone}:{}),...(o.type==='character'?{avatarStyle:['robot','piloto','explorador'].includes(o.avatarStyle)?o.avatarStyle:'robot'}:{})};
   });
-  return {...c,kind:'explore3d',title:String(c.title||'Exploradores 3D').slice(0,60),theme:['station','forest','island'].includes(c.theme)?c.theme:'station',lighting:['cryo','alert','sunset'].includes(c.lighting)?c.lighting:'cryo',avatarColor:color(c.avatarColor,'#a5b4fc'),avatarStyle:['robot','piloto','explorador'].includes(c.avatarStyle)?c.avatarStyle:'robot',jumpEnabled:c.jumpEnabled!==false,speed:num(c.speed,2,9,5),lives:Math.round(num(c.lives,1,9,3)),seconds:Math.round(num(c.seconds,30,300,120)),camera:c.camera==='orbit'?'orbit':'follow',quality:c.quality==='high'?'high':'low',objects};
+  return {...c,kind:'explore3d',title:String(c.title||'Exploradores 3D').slice(0,60),theme,zones,lighting:['cryo','alert','sunset'].includes(c.lighting)?c.lighting:'cryo',avatarColor:color(c.avatarColor,'#a5b4fc'),avatarStyle:['robot','piloto','explorador'].includes(c.avatarStyle)?c.avatarStyle:'robot',jumpEnabled:c.jumpEnabled!==false,speed:num(c.speed,2,9,5),lives:Math.round(num(c.lives,1,9,3)),seconds:Math.round(num(c.seconds,30,300,120)),camera:c.camera==='orbit'?'orbit':'follow',quality:c.quality==='high'?'high':'low',objects};
 }
 function runtime(isolated){
   'use strict';
@@ -19,7 +25,11 @@ function runtime(isolated){
   let player,collected,lives,time,invincible,elapsed,ended=false,paused=true,editing=true,last=0,lastDraw=0,yaw=.48,picked=null,drag=null,viewProjection;
   const keys={},clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255),sub=(a,b)=>a.map((v,i)=>v-b[i]),cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],unit=a=>{const d=Math.hypot(...a)||1;return a.map(v=>v/d)};
   const light={cryo:{direction:[.5,1,.7],tint:[.5,.84,1],accent:'#67e8f9',bg:'#081329'},alert:{direction:[-.5,1,.3],tint:[1,.36,.3],accent:'#fb7185',bg:'#241025'},sunset:{direction:[-.8,.7,.5],tint:[1,.8,.5],accent:'#fbbf24',bg:'#212039'}}[cfg.lighting];
-  const palette={station:{floor:'#192c46',edge:'#344a66',accent:'#4fbce7'},forest:{floor:'#244b3e',edge:'#18362f',accent:'#86efac'},island:{floor:'#354364',edge:'#63739b',accent:'#c4b5fd'}}[cfg.theme];
+  const palettes={station:{floor:'#192c46',edge:'#344a66',accent:'#4fbce7'},forest:{floor:'#244b3e',edge:'#18362f',accent:'#86efac'},island:{floor:'#354364',edge:'#63739b',accent:'#c4b5fd'}};
+  const zones=[{name:'Zona inicial',theme:cfg.theme},...cfg.zones],step=28,lastZone=zones.length-1,gateZ=-12-step*lastZone;
+  const worldZ=o=>o.z-step*(o.zone||0),zoneOf=z=>clamp(Math.floor((14-z)/step),0,lastZone);
+  const crystals=cfg.objects.filter(o=>o.type==='crystal'),zoneObjects=zones.map((_,i)=>cfg.objects.filter(o=>(o.zone||0)===i));
+  let palette=palettes[cfg.theme],viewZone=0,playerZone=0;
   document.body.style.setProperty('--accent',light.accent);document.body.style.background=light.bg;
   let model=null,drawQueued=false;
   function queueDraw(){if(!drawQueued){drawQueued=true;requestAnimationFrame(()=>{drawQueued=false;if(model)draw();});}}
@@ -40,7 +50,7 @@ function runtime(isolated){
   }catch(_e){if(!cpu())return;}
   function matrixMultiply(a,b){const out=new Float32Array(16);for(let col=0;col<4;col++)for(let row=0;row<4;row++)for(let k=0;k<4;k++)out[col*4+row]+=a[k*4+row]*b[col*4+k];return out;}
   function camera(){
-    const follow=!editing&&cfg.camera==='follow',focus=isolated?Math.max(1.25,model.height*.58):0,target=isolated?[0,focus,0]:follow?[player.x,0,player.z-1]:[0,0,0],distance=isolated?Math.max(6,model.height*1.9,model.size*1.8,5.7/(canvas.width/canvas.height)):follow?19:30,eye=[target[0]+Math.sin(yaw)*distance,isolated?focus+1.65:follow?13:23,target[2]+Math.cos(yaw)*distance];
+    const follow=!editing&&cfg.camera==='follow',focus=isolated?Math.max(1.25,model.height*.58):0,target=isolated?[0,focus,0]:follow?[player.x,0,player.z-1]:[0,0,-step*(editing?viewZone:playerZone)],distance=isolated?Math.max(6,model.height*1.9,model.size*1.8,5.7/(canvas.width/canvas.height)):follow?19:30,eye=[target[0]+Math.sin(yaw)*distance,isolated?focus+1.65:follow?13:23,target[2]+Math.cos(yaw)*distance];
     const z=unit(sub(eye,target)),x=unit(cross([0,1,0],z)),y=cross(z,x),dot=(a,b)=>a.reduce((n,v,i)=>n+v*b[i],0);
     const view=new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,eye),-dot(y,eye),-dot(z,eye),1]);
     const f=1/Math.tan(Math.PI/8),aspect=canvas.width/canvas.height,near=.1,far=100;
@@ -58,7 +68,7 @@ function runtime(isolated){
   }
   function pyramid(x,y,z,size,height,color){mesh([[x-size,y,z-size],[x+size,y,z-size],[x+size,y,z+size],[x-size,y,z+size],[x,y+height,z]],[[0,4,1],[1,4,2],[2,4,3],[3,4,0]],color);}
   function crystal(x,y,z,s,color){const a=elapsed*.8,co=Math.cos(a),si=Math.sin(a),v=[[0,-s,0],[s,0,0],[0,0,s],[-s,0,0],[0,0,-s],[0,s,0]].map(p=>[x+p[0]*co+p[2]*si,y+p[1],z-p[0]*si+p[2]*co]);mesh(v,[[0,2,1],[0,3,2],[0,4,3],[0,1,4],[5,1,2],[5,2,3],[5,3,4],[5,4,1]],color);}
-  function objectPosition(o){return {x:o.x+(o.type==='drone'?Math.sin(elapsed*1.1+o.z)*1.5:0),z:o.z};}
+  function objectPosition(o){return {x:o.x+(o.type==='drone'?Math.sin(elapsed*1.1+o.z)*1.5:0),z:worldZ(o)};}
   function objectMesh(o,p){const s=o.size;
       if(o.type==='crystal'){box(p.x,0,p.z,s,.15,s,palette.edge);crystal(p.x,1+Math.sin(elapsed*2+o.x)*.12,p.z,s*.45,o.color);}
       else if(o.type==='character'){avatar(p.x,0,p.z,o.color,o.avatarStyle,s,o.height/2);}
@@ -84,21 +94,36 @@ function runtime(isolated){
       box(0,-.12,0,4.4,.1,4.4,palette.edge);drawLayer=1;
       objectMesh(model,{x:0,z:0});return;
     }
-    box(0,-.65,0,24,.6,28,palette.edge);drawLayer=1;
-    for(let x=-10;x<=10;x+=4)for(let z=-12;z<=12;z+=4)box(x,-.06,z,3.94,.06,3.94,((x+z)/4)%2?palette.floor:palette.edge);
-    drawLayer=2;
-    for(let z=-12;z<=12;z+=4){
-      if(cfg.theme==='station'){for(const x of [-11,11]){box(x,0,z,.5,3,.6,palette.edge);box(x,.3,z,.55,2.3,.2,light.accent,0,true);}box(0,-.02,z,.04,.02,3.8,light.accent,0,true);}
-      else if(cfg.theme==='forest')for(const x of [-11,11]){box(x,0,z,.4,1,.4,'#715843');pyramid(x,.8,z,1.3,2.8,'#296b54');}
-      else for(const x of [-11,11])crystal(x,.4,z,.4,'#c4b5fd');
+    const nearby=editing?viewZone:playerZone;
+    for(let i=Math.max(0,nearby-1);i<=Math.min(lastZone,nearby+1);i++){
+      const terrain=zones[i].theme,offset=-i*step;palette=palettes[terrain];
+      drawLayer=0;box(0,-.65,offset,24,.6,28,palette.edge);
+      drawLayer=1;
+      for(let x=-10;x<=10;x+=4)for(let z=-12;z<=12;z+=4)box(x,-.06,z+offset,3.94,.06,3.94,((x+z)/4)%2?palette.floor:palette.edge);
+      if(i<lastZone){
+        box(0,-.04,offset-14,21,.035,.36,palette.accent,0,true);
+        for(const x of [-8,8]){box(x,0,offset-14,.2,1.7,.2,palette.edge);box(x,1.7,offset-14,.35,.3,.35,palette.accent,0,true);}
+      }
+      drawLayer=2;
+      for(let local=-12;local<=12;local+=4){
+        const z=local+offset;
+        if(terrain==='station'){for(const x of [-11,11]){box(x,0,z,.5,3,.6,palette.edge);box(x,.3,z,.55,2.3,.2,light.accent,0,true);}box(0,-.02,z,.04,.02,3.8,light.accent,0,true);}
+        else if(terrain==='forest')for(const x of [-11,11]){box(x,0,z,.4,1,.4,'#715843');pyramid(x,.8,z,1.3,2.8,'#296b54');}
+        else for(const x of [-11,11])crystal(x,.4,z,.4,'#c4b5fd');
+      }
+      for(const o of zoneObjects[i]){
+        if(o.type==='crystal'&&collected.has(o.id))continue;
+        const p=objectPosition(o),s=o.size;objectMesh(o,p);
+        if(picked===o.id){box(p.x,-.01,p.z,s+1,.08,.06,'#fde68a',0,true);box(p.x,-.01,p.z,.06,.08,s+1,'#fde68a',0,true);}
+      }
     }
-    for(const o of cfg.objects){
-      if(o.type==='crystal'&&collected.has(o.id))continue;
-      const p=objectPosition(o),s=o.size;objectMesh(o,p);
-      if(picked===o.id){box(p.x,-.01,p.z,s+1,.08,.06,'#fde68a',0,true);box(p.x,-.01,p.z,.06,.08,s+1,'#fde68a',0,true);}
+    if(lastZone<=nearby+1){
+      palette=palettes[zones[lastZone].theme];
+      const gate=collected.size===crystals.length?'#86efac':'#8b9ab1';
+      box(-1.3,0,gateZ,.4,3,.4,palette.edge);box(1.3,0,gateZ,.4,3,.4,palette.edge);box(0,2.6,gateZ,3,.4,.4,gate,0,true);box(0,.02,gateZ+.3,2.6,.05,1.3,gate);
     }
-    const crystals=cfg.objects.filter(o=>o.type==='crystal'),open=collected.size===crystals.length,gate=open?'#86efac':'#8b9ab1';
-    box(-1.3,0,-12,.4,3,.4,palette.edge);box(1.3,0,-12,.4,3,.4,palette.edge);box(0,2.6,-12,3,.4,.4,gate,0,true);box(0,.02,-11.7,2.6,.05,1.3,gate);
+    if(Math.abs(playerZone-nearby)>1)return;
+    palette=palettes[zones[playerZone].theme];
     const x=player.x,y=player.y,z=player.z,walk=Math.sin(elapsed*9)*(keys.ArrowLeft||keys.ArrowRight||keys.ArrowUp||keys.ArrowDown||keys.w||keys.a||keys.s||keys.d?1:0);
     avatar(x,y,z,cfg.avatarColor,cfg.avatarStyle,1,1,player.angle,walk);
   }
@@ -125,25 +150,27 @@ function runtime(isolated){
       ctx.fillStyle=light.bg;ctx.fillRect(0,0,w,h);const faces=triangles.map(t=>({p:t.p.map(project),color:t.color,layer:t.layer})).filter(t=>t.p.every(Boolean));faces.sort((a,b)=>a.layer-b.layer||b.p.reduce((n,p)=>n+p.depth,0)-a.p.reduce((n,p)=>n+p.depth,0));
       for(const t of faces){ctx.fillStyle='rgb('+t.color.map(v=>Math.round(v*255)).join(',')+')';ctx.beginPath();t.p.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill();}
     }
-    if(!isolated)hud.textContent='Cristales '+collected.size+' / '+cfg.objects.filter(o=>o.type==='crystal').length+' · Vidas '+lives+' · '+Math.max(0,Math.ceil(time))+' s';
+    if(!isolated){const i=editing?viewZone:playerZone;const note=(lastZone?'Zona '+(i+1)+' / '+zones.length+' · '+zones[i].name+' · ':'')+'Cristales '+collected.size+' / '+crystals.length+' · Vidas '+lives+' · '+Math.max(0,Math.ceil(time))+' s';if(hud.textContent!==note)hud.textContent=note;}
   }
-  function reset(){player={x:0,y:0,z:11,vy:0,angle:0};collected=new Set();lives=cfg.lives;time=cfg.seconds;elapsed=0;invincible=0;ended=false;paused=true;editing=true;last=0;Object.keys(keys).forEach(k=>keys[k]=false);mode.textContent='▶ Jugar';status.textContent='Vista de edición: arrastrá para girar; tocá un objeto para editarlo en Krueka.';}
-  function blocked(x,z){return cfg.objects.some(o=>['crate','pillar','tree','house','car','wall','rock','lamp','mountain','airplane'].includes(o.type)&&player.y<o.height-.1&&Math.abs(x-o.x)<(o.type==='tree'?o.size*.25:o.size*.5)+.3&&Math.abs(z-o.z)<(o.type==='tree'?o.size*.25:o.size*.5)+.3);}
+  function reset(){player={x:0,y:0,z:11,vy:0,angle:0};playerZone=0;collected=new Set();lives=cfg.lives;time=cfg.seconds;elapsed=0;invincible=0;ended=false;paused=true;editing=true;last=0;Object.keys(keys).forEach(k=>keys[k]=false);mode.textContent='▶ Jugar';status.textContent='Vista de edición: arrastrá para girar; tocá un objeto para editarlo en Krueka.';}
+  function blocked(x,z){return cfg.objects.some(o=>['crate','pillar','tree','house','car','wall','rock','lamp','mountain','airplane'].includes(o.type)&&player.y<o.height-.1&&Math.abs(x-o.x)<(o.type==='tree'?o.size*.25:o.size*.5)+.3&&Math.abs(z-worldZ(o))<(o.type==='tree'?o.size*.25:o.size*.5)+.3);}
   function update(dt){
     elapsed+=dt;if(paused||ended)return;time-=dt;invincible=Math.max(0,invincible-dt);if(time<=0){ended=true;status.textContent='Se terminó el tiempo. Ajustá el recorrido o intentá otra vez.';return;}
     let dx=Number(!!(keys.ArrowRight||keys.d))-Number(!!(keys.ArrowLeft||keys.a)),dz=Number(!!(keys.ArrowDown||keys.s))-Number(!!(keys.ArrowUp||keys.w)),length=Math.hypot(dx,dz)||1;dx=dx/length*cfg.speed*dt;dz=dz/length*cfg.speed*dt;
-    if(!blocked(player.x+dx,player.z))player.x=clamp(player.x+dx,-10.5,10.5);if(!blocked(player.x,player.z+dz))player.z=clamp(player.z+dz,-12.5,12.5);if(dx||dz)player.angle=Math.atan2(dx,dz);
+    if(!blocked(player.x+dx,player.z))player.x=clamp(player.x+dx,-10.5,10.5);if(!blocked(player.x,player.z+dz))player.z=clamp(player.z+dz,gateZ-.5,12.5);if(dx||dz)player.angle=Math.atan2(dx,dz);
+    const entered=zoneOf(player.z);
+    if(entered!==playerZone){playerZone=entered;status.textContent='Entraste en '+zones[entered].name+'. Podés volver por el mismo camino.';}
     if(cfg.jumpEnabled){if((keys[' ']||keys.jump)&&player.y===0)player.vy=7;}player.vy-=18*dt;player.y=Math.max(0,player.y+player.vy*dt);if(player.y===0)player.vy=0;
     for(const o of cfg.objects){const p=objectPosition(o),near=Math.hypot(player.x-p.x,player.z-p.z);
-      if(o.type==='crystal'&&near<o.size*.6+.4&&!collected.has(o.id)){collected.add(o.id);status.textContent=collected.size===cfg.objects.filter(x=>x.type==='crystal').length?'¡Abriste el portal! Llegá al arco del fondo.':'Cristal encontrado. Buscá el siguiente.';}
+      if(o.type==='crystal'&&near<o.size*.6+.4&&!collected.has(o.id)){collected.add(o.id);status.textContent=collected.size===crystals.length?'¡Abriste el portal! Llegá al arco de la última zona.':'Cristal encontrado. Buscá el siguiente.';}
       if(o.type==='drone'&&near<o.size*.6+.35&&player.y<1.3&&invincible===0){lives--;invincible=1.8;if(lives<=0){ended=true;status.textContent='Fin del intento. Podés mover obstáculos y probar una ruta distinta.';}}
     }
-    if(collected.size===cfg.objects.filter(o=>o.type==='crystal').length&&Math.abs(player.x)<1.4&&player.z<-11){ended=true;status.textContent='¡Misión cumplida! Construiste, probaste y exploraste tu mundo 3D.';}
+    if(collected.size===crystals.length&&Math.abs(player.x)<1.4&&player.z<gateZ+1){ended=true;status.textContent='¡Misión cumplida! Construiste, probaste y exploraste tu mundo 3D.';}
   }
   function bindCanvas(){
     canvas.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY,lastX:e.clientX,moved:false};canvas.setPointerCapture(e.pointerId);canvas.focus();};
     canvas.onpointermove=e=>{if(!drag)return;const delta=e.clientX-drag.lastX;drag.moved=drag.moved||Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>7;yaw-=delta*(isolated?.011:.007);drag.lastX=e.clientX;if(isolated)queueDraw();};
-    canvas.onpointerup=e=>{if(!isolated&&drag&&!drag.moved&&editing){const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*canvas.width/r.width,y=(e.clientY-r.top)*canvas.height/r.height;let best=null,distance=45;for(const o of cfg.objects){const p=project([o.x,o.type==='crystal'?1:o.height/2,o.z]);if(p){const d=Math.hypot(p.x-x,p.y-y);if(d<distance){best=o.id;distance=d;}}}if(best){picked=best;parent.postMessage({type:'krueka-scene-select',id:best},'*');}}drag=null;};
+    canvas.onpointerup=e=>{if(!isolated&&drag&&!drag.moved&&editing){const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*canvas.width/r.width,y=(e.clientY-r.top)*canvas.height/r.height;let best=null,distance=45;for(const o of zoneObjects[viewZone]){const p=project([o.x,o.type==='crystal'?1:o.height/2,worldZ(o)]);if(p){const d=Math.hypot(p.x-x,p.y-y);if(d<distance){best=o.id;distance=d;}}}if(best){picked=best;parent.postMessage({type:'krueka-scene-select',id:best},'*');}}drag=null;};
     canvas.onpointercancel=()=>drag=null;
   }
   if(isolated){
@@ -160,7 +187,11 @@ function runtime(isolated){
     document.getElementById('rotate-right').onclick=()=>{yaw-=.35;queueDraw();};
     return;
   }
-  addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='krueka-scene-highlight')return;picked=cfg.objects.some(o=>o.id===e.data.id)?e.data.id:null;});
+  addEventListener('message',e=>{
+    if(e.source!==parent)return;
+    if(e.data?.type==='krueka-scene-zone'&&Number.isInteger(e.data.zone)){viewZone=clamp(e.data.zone,0,lastZone);picked=null;}
+    else if(e.data?.type==='krueka-scene-highlight'){const object=cfg.objects.find(o=>o.id===e.data.id);picked=object?.id||null;if(object)viewZone=object.zone||0;}
+  });
   addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();keys[e.key.length===1?e.key.toLowerCase():e.key]=true;});
   addEventListener('keyup',e=>keys[e.key.length===1?e.key.toLowerCase():e.key]=false);addEventListener('blur',()=>Object.keys(keys).forEach(k=>keys[k]=false));
   document.addEventListener('visibilitychange',()=>{if(document.hidden&&!editing&&!ended){paused=true;document.getElementById('pause').textContent='Continuar';}});
@@ -186,22 +217,22 @@ function piecePreview(){
 }
 
 function renderEditor(studio,el,raw){
-  const cfg=normalise(raw),selected=cfg.objects.find(o=>o.id===studio.selectedSceneObject)||cfg.objects[0];studio.selectedSceneObject=selected?.id||null;
+  const cfg=normalise(raw),zone=Math.max(0,Math.min(cfg.zones.length,studio.expansionZone||0)),objects=cfg.objects.filter(o=>(o.zone||0)===zone),selected=objects.find(o=>o.id===studio.selectedSceneObject)||objects[0];studio.selectedSceneObject=selected?.id||null;
   const compatibleTypes=studio.files?.['game.js']===create()['game.js']?types:Object.fromEntries(Object.entries(types).filter(([key])=>(key!=='character'&&!['mountain','airplane','shield','staff'].includes(key))||key===selected?.type));
   const options=(entries,value)=>Object.entries(entries).map(([id,label])=>'<option value="'+id+'" '+(id===value?'selected':'')+'>'+esc(label)+'</option>').join('');
-  el.innerHTML='<div class="ks-section-label">CONSTRUÍ · ILUMINÁ · JUGÁ</div><h2>Tu mundo 3D</h2><p>Mové objetos, elegí las luces y probá tu recorrido. Estos controles funcionan sin IA.</p><div class="ks-light-grid">'+Object.entries(lights).map(([id,label])=>'<button class="ks-btn ks-light '+id+'" data-light="'+id+'" aria-pressed="'+(id===cfg.lighting)+'"><span></span>'+label+'</button>').join('')+'</div><section class="ks-settings"><h3>Ambientación y reglas</h3><label>Nombre en el juego<input data-scene="title" maxlength="60" value="'+esc(cfg.title)+'"></label><div class="ks-fields"><label>Mundo<select data-scene="theme">'+options(themes,cfg.theme)+'</select></label><label>Color del explorador<input data-scene="avatarColor" type="color" value="'+cfg.avatarColor+'"></label><label>Velocidad<input data-scene="speed" type="number" min="2" max="9" step=".5" value="'+cfg.speed+'"></label><label>Vidas<input data-scene="lives" type="number" min="1" max="9" value="'+cfg.lives+'"></label><label>Tiempo (segundos)<input data-scene="seconds" type="number" min="30" max="300" value="'+cfg.seconds+'"></label><label>Cámara<select data-scene="camera">'+options({follow:'Seguir al personaje',orbit:'Vista general'},cfg.camera)+'</select></label><label>Calidad<select data-scene="quality">'+options({low:'Liviana',high:'Más nitidez'},cfg.quality)+'</select></label></div><button id="ks-scene-apply" class="ks-btn primary">Aplicar y probar</button></section><section class="ks-settings" id="ks-scene-objects"><h3>Objetos del mundo · '+cfg.objects.length+' / 48</h3><p>Tocá un objeto en la vista de edición o elegilo aquí. X mueve a los lados; Z, adelante y atrás.</p><div class="ks-scene-list">'+cfg.objects.map(o=>'<button class="ks-btn" data-object="'+o.id+'" aria-pressed="'+(o.id===selected?.id)+'">'+esc(o.label)+'<small>'+esc(types[o.type])+'</small></button>').join('')+'</div>'+ (selected?'<label>Nombre del objeto<input data-object-field="label" maxlength="32" value="'+esc(selected.label)+'"></label><div class="ks-fields"><label>Tipo<select data-object-field="type">'+options(compatibleTypes,selected.type)+'</select></label>'+[['x','Posición X',-10,10],['z','Posición Z',-12,12],['size','Tamaño',.4,4],['height','Altura',.5,5]].map(([id,label,min,max])=>'<label>'+label+'<input data-object-field="'+id+'" type="number" min="'+min+'" max="'+max+'" step=".5" value="'+selected[id]+'"></label>').join('')+'<label>Color<input data-object-field="color" type="color" value="'+selected.color+'"></label></div><div class="ks-scene-actions"><button id="ks-object-apply" class="ks-btn primary">Guardar objeto</button><button id="ks-object-copy" class="ks-btn">Duplicar</button><button id="ks-object-remove" class="ks-btn">Quitar</button></div>':'<p>Agregá objetos para construir tu recorrido.</p>')+'<div class="ks-scene-add"><select id="ks-object-type" aria-label="Tipo de objeto nuevo">'+options(Object.fromEntries(Object.entries(compatibleTypes).filter(([key])=>key!=='character')),'crystal')+'</select><button id="ks-object-add" class="ks-btn">＋ Agregar objeto</button></div></section><button id="ks-scene-bases" class="ks-btn">Cambiar base de juego</button><p class="ks-tip">Tus cambios se guardan en game-config.js y se pueden deshacer. Aplicar reinicia la vista del juego.</p>';
+  el.innerHTML='<div class="ks-section-label">CONSTRUÍ · ILUMINÁ · JUGÁ</div><h2>Tu mundo 3D</h2><p>Mové objetos, elegí las luces y probá tu recorrido. Estos controles funcionan sin IA.</p><div class="ks-light-grid">'+Object.entries(lights).map(([id,label])=>'<button class="ks-btn ks-light '+id+'" data-light="'+id+'" aria-pressed="'+(id===cfg.lighting)+'"><span></span>'+label+'</button>').join('')+'</div><section class="ks-settings"><h3>Ambientación y reglas</h3><label>Nombre en el juego<input data-scene="title" maxlength="60" value="'+esc(cfg.title)+'"></label><div class="ks-fields"><label>Mundo<select data-scene="theme">'+options(themes,cfg.zones[zone-1]?.theme||cfg.theme)+'</select></label><label>Color del explorador<input data-scene="avatarColor" type="color" value="'+cfg.avatarColor+'"></label><label>Velocidad<input data-scene="speed" type="number" min="2" max="9" step=".5" value="'+cfg.speed+'"></label><label>Vidas<input data-scene="lives" type="number" min="1" max="9" value="'+cfg.lives+'"></label><label>Tiempo (segundos)<input data-scene="seconds" type="number" min="30" max="300" value="'+cfg.seconds+'"></label><label>Cámara<select data-scene="camera">'+options({follow:'Seguir al personaje',orbit:'Vista general'},cfg.camera)+'</select></label><label>Calidad<select data-scene="quality">'+options({low:'Liviana',high:'Más nitidez'},cfg.quality)+'</select></label></div><button id="ks-scene-apply" class="ks-btn primary">Aplicar y probar</button></section><section class="ks-settings" id="ks-scene-objects"><h3>Objetos del mundo · '+objects.length+' / 48</h3><p>Tocá un objeto en la vista de edición o elegilo aquí. X mueve a los lados; Z, adelante y atrás.</p><div class="ks-scene-list">'+objects.map(o=>'<button class="ks-btn" data-object="'+o.id+'" aria-pressed="'+(o.id===selected?.id)+'">'+esc(o.label)+'<small>'+esc(types[o.type])+'</small></button>').join('')+'</div>'+ (selected?'<label>Nombre del objeto<input data-object-field="label" maxlength="32" value="'+esc(selected.label)+'"></label><div class="ks-fields"><label>Tipo<select data-object-field="type">'+options(compatibleTypes,selected.type)+'</select></label>'+[['x','Posición X',-10,10],['z','Posición Z',-12,12],['size','Tamaño',.4,4],['height','Altura',.5,5]].map(([id,label,min,max])=>'<label>'+label+'<input data-object-field="'+id+'" type="number" min="'+min+'" max="'+max+'" step=".5" value="'+selected[id]+'"></label>').join('')+'<label>Color<input data-object-field="color" type="color" value="'+selected.color+'"></label></div><div class="ks-scene-actions"><button id="ks-object-apply" class="ks-btn primary">Guardar objeto</button><button id="ks-object-copy" class="ks-btn">Duplicar</button><button id="ks-object-remove" class="ks-btn">Quitar</button></div>':'<p>Agregá objetos para construir tu recorrido.</p>')+'<div class="ks-scene-add"><select id="ks-object-type" aria-label="Tipo de objeto nuevo">'+options(Object.fromEntries(Object.entries(compatibleTypes).filter(([key])=>key!=='character')),'crystal')+'</select><button id="ks-object-add" class="ks-btn">＋ Agregar objeto</button></div></section><button id="ks-scene-bases" class="ks-btn">Cambiar base de juego</button><p class="ks-tip">Tus cambios se guardan en game-config.js y se pueden deshacer. Aplicar reinicia la vista del juego.</p>';
   const apply=next=>{if(studio.busy||!studio.cloudReady)return;studio.checkpoint();studio.files['game-config.js']=StudioKits.configFile(normalise(next));studio.changed();studio.refreshAll();studio.lock(false);};
   el.querySelectorAll('[data-light]').forEach(b=>b.onclick=()=>apply({...cfg,lighting:b.dataset.light}));
-  el.querySelector('#ks-scene-apply').onclick=()=>{const next={...cfg};el.querySelectorAll('[data-scene]').forEach(x=>next[x.dataset.scene]=x.type==='number'?Number(x.value):x.value);apply(next);};
+  el.querySelector('#ks-scene-apply').onclick=()=>{const next={...cfg};el.querySelectorAll('[data-scene]').forEach(x=>next[x.dataset.scene]=x.type==='number'?Number(x.value):x.value);if(zone){next.zones=cfg.zones.map((item,i)=>i===zone-1?{...item,theme:next.theme}:item);next.theme=cfg.theme;}apply(next);};
   el.querySelectorAll('[data-object]').forEach(b=>b.onclick=()=>{studio.selectedSceneObject=b.dataset.object;window.Studio3D.renderEditor(studio,el,cfg);if(el.querySelector('#k3d-manual'))el.querySelector('#k3d-manual').open=true;document.getElementById('ks-frame')?.contentWindow?.postMessage({type:'krueka-scene-highlight',id:b.dataset.object},'*');});
   if(selected){
     el.querySelector('#ks-object-apply').onclick=()=>{const changed={...selected};el.querySelectorAll('[data-object-field]').forEach(x=>changed[x.dataset.objectField]=x.type==='number'?Number(x.value):x.value);apply({...cfg,objects:cfg.objects.map(o=>o.id===selected.id?changed:o)});};
     el.querySelector('#ks-object-remove').onclick=()=>apply({...cfg,objects:cfg.objects.filter(o=>o.id!==selected.id)});
     el.querySelector('#ks-object-copy').onclick=()=>add({...selected,x:Math.min(10,selected.x+1.5),label:selected.label+' copia'});
   }
-  function add(source){if(cfg.objects.length>=48)return;const object={id:'o-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6),type:'crystal',label:'Objeto nuevo',x:0,z:0,size:1,height:1.5,color:'#67e8f9',...source};object.id='o-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);studio.selectedSceneObject=object.id;apply({...cfg,objects:[...cfg.objects,object]});}
+  function add(source){if(objects.length>=48)return;const object={id:'o-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6),type:'crystal',label:'Objeto nuevo',x:0,z:0,size:1,height:1.5,color:'#67e8f9',...source,zone};object.id='o-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);studio.selectedSceneObject=object.id;apply({...cfg,objects:[...cfg.objects,object]});}
   el.querySelector('#ks-object-add').onclick=()=>add({type:el.querySelector('#ks-object-type').value,label:types[el.querySelector('#ks-object-type').value]+' nuevo'});
-  for(const id of ['ks-object-add','ks-object-copy']){const b=el.querySelector('#'+id);if(b){b.dataset.limitReached=String(cfg.objects.length>=48);b.disabled=studio.busy||!studio.cloudReady||cfg.objects.length>=48;}}
+  for(const id of ['ks-object-add','ks-object-copy']){const b=el.querySelector('#'+id);if(b){b.dataset.limitReached=String(objects.length>=48);b.disabled=studio.busy||!studio.cloudReady||objects.length>=48;}}
   el.querySelector('#ks-scene-bases').onclick=()=>studio.showKits();
 }
 window.Studio3D={normalise,create,renderEditor,piecePreview};
