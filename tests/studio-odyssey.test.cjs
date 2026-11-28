@@ -23,7 +23,7 @@ assert.equal(configured.environment.district,'city');assert.equal(configured.env
 assert.equal(configured.speed,9);assert.equal(configured.odyssey.neon,false);
 assert.throws(()=>O.enhance('not a game'),/incompatible/);
 const app=read('app.html'),entry=read('js/club-studio-access.js'),creative=read('js/club-studio-creative.js');
-assert.ok(app.includes('js/club-studio-odyssey.js?v=20261023d'));
+assert.match(app,/club-studio-odyssey[.]js[?]v=[0-9]{8}[a-z0-9]*"/);
 assert.ok(app.indexOf('club-studio-odyssey.js')>app.indexOf('club-studio-ai.js'));
 assert.ok(app.indexOf('club-studio-odyssey.js')<app.indexOf('club-studio-creative.js'));
 assert.ok(entry.indexOf("'club-studio-odyssey.js'")>entry.indexOf("'club-studio-ai.js'"));

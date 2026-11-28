@@ -25,9 +25,16 @@ function enhance(source){
  patch('dx=dx/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;dz=dz/length*cfg.speed*(keys.Shift?(cfg.motions?.run||1.55):1)*dt;',
  'dx=dx/length*cfg.speed*(vehicleOn?2.25:(keys.Shift?(cfg.motions?.run||1.55):1))*dt;dz=dz/length*cfg.speed*(vehicleOn?2.25:(keys.Shift?(cfg.motions?.run||1.55):1))*dt;');
  patch("if((keys[' ']||keys.jump)&&player.y===0)player.vy=7;","if(!vehicleOn&&(keys[' ']||keys.jump)&&player.y===0)player.vy=7;");
- patch('open=collected.size===crystals.length','open=collected.size===crystals.length&&terminals.size===2');
- patch("if(collected.size===cfg.objects.filter(o=>o.type==='crystal').length&&Math.abs(player.x)<1.4&&player.z<-11)",
- "if(collected.size===cfg.objects.filter(o=>o.type==='crystal').length&&terminals.size===2&&Math.abs(player.x)<1.4&&player.z<-11)");
+ const extended=src.includes('const gate=collected.size===crystals.length?');
+ if(extended){
+  patch('const gate=collected.size===crystals.length?','const gate=collected.size===crystals.length&&terminals.size===2?');
+  patch('if(collected.size===crystals.length&&Math.abs(player.x)<1.4&&player.z<gateZ+1)',
+   'if(collected.size===crystals.length&&terminals.size===2&&Math.abs(player.x)<1.4&&player.z<gateZ+1)');
+ }else{
+  patch('open=collected.size===crystals.length','open=collected.size===crystals.length&&terminals.size===2');
+  patch("if(collected.size===cfg.objects.filter(o=>o.type==='crystal').length&&Math.abs(player.x)<1.4&&player.z<-11)",
+   "if(collected.size===cfg.objects.filter(o=>o.type==='crystal').length&&terminals.size===2&&Math.abs(player.x)<1.4&&player.z<-11)");
+ }
  patch('reset();bindCanvas();cinematicSetup();function frame(now)','reset();bindCanvas();cinematicSetup();odysseySetup();function frame(now)');
  patch('update(dt);if(now-lastDraw','update(dt);odysseyUpdate(dt);if(now-lastDraw');
  return src;

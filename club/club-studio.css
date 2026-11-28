@@ -270,3 +270,14 @@
 #krueka-studio .kr-rp-promotion #kr-rp-main{display:block;width:100%;min-height:44px;background:linear-gradient(110deg,#237fad,#23669b);border:1px solid #8be3f4;color:#f4ffff;font-weight:800;font-size:13px;white-space:normal;line-height:1.3;box-shadow:0 4px 14px #061c3080}
 #krueka-studio .kr-rp-promotion #kr-rp-main:disabled{opacity:.55;filter:grayscale(.45);cursor:wait}
 #krueka-studio .kr-rp-promotion p{font-size:11px!important;line-height:1.5;color:#c3dce9!important;margin:8px 0 0!important}
+
+/* Cada borrador se abre o se elimina desde controles independientes. */
+#krueka-studio .ks-project-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;margin-top:8px}
+#krueka-studio .ks-project-row .ks-project-card{margin:0;min-width:0;overflow-wrap:anywhere}
+#krueka-studio .ks-project-row .ks-project-card:last-child{grid-column:1/-1}
+#krueka-studio .ks-project-row small{text-align:right}
+#krueka-studio .ks-project-delete{border-color:#a55c68;background:#3b212c;color:#ffdee2}
+#krueka-studio .ks-project-delete:hover{background:#542b3c}
+#krueka-studio .ks-delete-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+#ks-project-notice:empty,#ks-delete-feedback:empty{display:none}
+@media(max-width:490px){#krueka-studio .ks-project-row .ks-project-card{display:grid;gap:6px;padding:12px}#krueka-studio .ks-project-row small{text-align:left}}

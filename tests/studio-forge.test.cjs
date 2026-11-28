@@ -26,5 +26,5 @@ assert.equal(newConfig.environment.district,'city');
 assert.equal(newConfig.environment.weather,'rain');
 assert.ok(base.create('explore3d')['game.js'].length>5000);
 assert.ok(base.create('neon-rift')['game.js'].length>10000);
-assert.ok(read('app.html').includes('club-studio-forge.js?v=20261008a'));
+assert.match(read('app.html'),/club-studio-forge[.]js[?]v=[0-9]{8}[a-z0-9]*"/);
 console.log('PASS: personajes, escena, movimientos, diálogo, copia independiente, límites, 3D existente y código compilable.');

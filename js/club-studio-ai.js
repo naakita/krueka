@@ -206,16 +206,26 @@ const StudioIA={__loaded:true,
     this.renderChat();
     try{
       let last=null;try{last=localStorage.getItem('krueka-studio-last:'+this.sid())}catch(_e){}
-      if(!last){
+      let keepEmpty=last==='empty';
+      const newest=async()=>{
         const list=await this.request({action:'list'});
-        last=(list.projects||[]).slice().sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')))[0]?.id||'legacy';
+        return (list.projects||[]).slice().sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')))[0]?.id||'legacy';
+      };
+      if(!last||keepEmpty)last=await newest();
+      let d;
+      try{d=await this.request({action:'load',projectId:last});}
+      catch(e){
+        if(last==='legacy'||!/proyecto no encontrado/i.test(e.message))throw e;
+        // El último proyecto pudo ser borrado en otro equipo.
+        keepEmpty=true;last=await newest();d=await this.request({action:'load',projectId:last});
       }
-      const d=await this.request({action:'load',projectId:last});
       if(!panel.isConnected)return;
       this.cloudReady=true;this.updateAI(d.ai);
       if(d.project&&d.project.files&&Object.keys(d.project.files).length){
         this.adopt(d.project);
         this.say('sys','Proyecto recuperado de Krueka. Podés continuar desde cualquier computadora.');
+      }else if(keepEmpty){
+        this.projectId='new';this.dirty=false;
       }else{
         this.projectId='new';
         this.say('sys','Tu primer juego está listo. Probalo y cambiá sus reglas desde Bases y reglas.');
@@ -224,7 +234,7 @@ const StudioIA={__loaded:true,
     }catch(e){this.cloudReady=false;this.say('sys','No se pudo recuperar el proyecto: '+e.message+'. Salí y volvé a abrir el Studio para reintentar.');}
     if(!panel.isConnected)return;
     this.refreshAll();this.showTab('ai');this.lock(false);
-    panel.querySelector('#ks-save').textContent=this.cloudReady?(this.dirty?'⚠ Cambios pendientes de guardar':'✓ Proyecto guardado en Krueka'):'⚠ No se recuperó la nube';
+    panel.querySelector('#ks-save').textContent=this.cloudReady?(this.dirty?'⚠ Cambios pendientes de guardar':this.projectId==='new'?'Sin proyecto abierto':'✓ Proyecto guardado en Krueka'):'⚠ No se recuperó la nube';
   },
   async close(){if(this.busy)return;this.busy=true;this.lock(true);clearTimeout(this.saveTimer);clearTimeout(this.previewTimer);if(this.dirty&&this.cloudReady){const ok=await this.save();if(!ok&&!confirm('No se pudo guardar. Descargá una copia antes de salir. ¿Salir de todos modos?')){this.busy=false;this.lock(false);return;}}previewTransition=null;window.removeEventListener('message',this.messageHandler);document.getElementById('krueka-studio')?.remove();this.busy=false;},
   setMode(m){this.mode=m==='plan'?'plan':'build';document.querySelectorAll('#krueka-studio .ks-mode').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===this.mode)));},
@@ -425,10 +435,61 @@ const StudioIA={__loaded:true,
     finally{this.busy=false;this.lock(false);}
   },
   createKit(id){const kit=StudioKits.catalog.find(k=>k.id===id);if(kit)return this.startProject(StudioKits.create(id),kit.title);},
-  async showProjects(){
-    if(this.busy)return;const dialog=this.dialog('Mis proyectos','<p id="ks-project-list">Cargando proyectos…</p>');
-    try{const d=await this.request({action:'list'});if(!dialog.isConnected)return;const el=dialog.querySelector('#ks-project-list');el.innerHTML=(d.projects||[]).map(p=>'<button class="ks-project-card" data-project="'+esc(p.id)+'"><b>'+esc(p.title)+'</b><small>'+esc(({review:'En revisión',published:'Aprobado',draft:'Borrador'})[p.status]||'Proyecto')+'</small></button>').join('')||'Todavía no guardaste proyectos. Elegí Crear para comenzar.';el.querySelectorAll('[data-project]').forEach(b=>b.onclick=()=>this.switchProject(b.dataset.project));}
-    catch(e){dialog.querySelector('#ks-project-list').textContent=e.message;}
+  async showProjects(notice=''){
+    if(this.busy)return;
+    const dialog=this.dialog('Mis proyectos','<p id="ks-project-notice" role="status"></p><div id="ks-project-list">Cargando proyectos…</div>');
+    const el=dialog.querySelector('#ks-project-list');dialog.querySelector('#ks-project-notice').textContent=notice;
+    try{
+      const d=await this.request({action:'list'});if(!dialog.isConnected)return;
+      const active=this.projectId;
+      const canDelete=typeof window.KruekaStudioAccess?.rpc==='function'&&/^st-[a-f0-9]{64}$/.test(this.did());
+      const projects=d.projects||[];
+      function updated(p){const date=new Date(p.updated_at||'');return Number.isFinite(date.getTime())?date.toLocaleString('es-PY',{dateStyle:'short',timeStyle:'short',timeZone:'America/Asuncion'}):'';}
+      const eligible=p=>p.status==='draft'&&p.id!=='legacy'&&!!p.updated_at;
+      el.innerHTML=projects.map(p=>'<div class="ks-project-row"><button class="ks-project-card" data-project="'+esc(p.id)+'"><b>'+esc(p.title)+'</b><small>'+esc([({review:'En revisión',published:'Aprobado',draft:'Borrador'})[p.status]||'Proyecto',p.id===active?'Abierto':'',updated(p)].filter(Boolean).join(' · '))+'</small></button>'+
+       (canDelete&&eligible(p)?'<button type="button" class="ks-btn ks-project-delete" data-delete-project="'+esc(p.id)+'" aria-label="Borrar '+esc(p.title)+(updated(p)?' · '+esc(updated(p)):'')+(p.id===active?' · Abierto':'')+'">Borrar</button>':'')+'</div>').join('')||'Todavía no guardaste proyectos. Elegí Crear para comenzar.';
+      el.querySelectorAll('[data-project]').forEach(b=>b.onclick=()=>this.switchProject(b.dataset.project));
+      el.querySelectorAll('[data-delete-project]').forEach(b=>b.onclick=()=>{
+        const p=projects.find(item=>item.id===b.dataset.deleteProject);
+        if(p&&eligible(p))this.confirmProjectDeletion(p,updated(p));
+      });
+      if(!canDelete&&projects.some(eligible)){const tip=document.createElement('p');tip.textContent='Para borrar borradores, entrá al Club con tu código personal.';el.append(tip);}
+    }catch(e){if(dialog.isConnected)el.textContent=e.message;}
+  },
+  confirmProjectDeletion(project,updated){
+    if(this.busy||!this.cloudReady||typeof window.KruekaStudioAccess?.rpc!=='function')return;
+    const dialog=this.dialog('¿Borrar este proyecto?','<p><strong>'+esc(project.title)+'</strong>'+(updated?' · '+esc(updated):'')+(this.projectId===project.id?' · Proyecto abierto':'')+'</p><p>Vas a borrar el borrador y su historial. No se puede deshacer. Si querés conservarlo, cancelá y descargá una copia primero.</p><div class="ks-delete-actions"><button type="button" id="ks-cancel-delete" class="ks-btn">Cancelar</button><button type="button" id="ks-confirm-delete" class="ks-btn ks-project-delete">Borrar definitivamente</button></div><p id="ks-delete-feedback" role="status"></p>');
+    const back=()=>this.showProjects();
+    dialog.querySelector('#ks-cancel-delete').onclick=back;
+    dialog.querySelector('#ks-dialog-close').onclick=back;
+    dialog.querySelector('#ks-cancel-delete').focus();
+    dialog.querySelector('#ks-confirm-delete').onclick=async()=>{
+      if(this.busy||!dialog.isConnected)return;
+      const student=this.sid(),device=this.did(),active=this.projectId===project.id;
+      if(!/^st-[a-f0-9]{64}$/.test(device))return;
+      const msg=dialog.querySelector('#ks-delete-feedback');
+      let deleted=false,reload=false;
+      this.busy=true;this.lock(true);if(active){clearTimeout(this.saveTimer);clearTimeout(this.previewTimer);}
+      try{
+        await this.saveQueue;
+        if(!dialog.isConnected||this.sid()!==student||this.did()!==device)throw Error('La sesión cambió. Volvé a entrar al Club.');
+        const result=await window.KruekaStudioAccess.rpc('club_studio_borrar_borrador',{p_student:student,p_device:device,p_project:project.id,p_updated_at:project.updated_at});
+        if(result?.ok!==true){
+          reload=['missing','changed','protected'].includes(result?.code);
+          throw Error(result?.error||'No se pudo confirmar el borrado.');
+        }
+        deleted=true;
+        if(this.projectId===project.id){
+          this.adopt({id:'new',title:'Sin proyecto abierto',files:StudioKits.create('stars'),history:[],draft:''});
+          this.dirty=false;try{localStorage.setItem('krueka-studio-last:'+student,'empty')}catch(_e){}
+          this.refreshAll();this.showTab('home');
+          document.getElementById('ks-save').textContent='Sin proyecto abierto';
+        }
+      }catch(e){if(!deleted)msg.textContent=e.message;}
+      finally{this.busy=false;this.lock(false);if(active&&!deleted&&this.dirty)this.scheduleSave();}
+      if(deleted)this.showProjects('Borraste «'+project.title+'».');
+      else if(reload)this.showProjects(msg.textContent);
+    };
   },
   async switchProject(id){
     if(this.busy)return;this.busy=true;this.lock(true);if(this.dirty&&!(await this.save())){this.busy=false;this.lock(false);return;}
