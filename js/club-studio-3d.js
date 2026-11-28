@@ -11,7 +11,7 @@ function normalise(raw){
   });
   return {...c,kind:'explore3d',title:String(c.title||'Exploradores 3D').slice(0,60),theme:['station','forest','island'].includes(c.theme)?c.theme:'station',lighting:['cryo','alert','sunset'].includes(c.lighting)?c.lighting:'cryo',avatarColor:color(c.avatarColor,'#a5b4fc'),avatarStyle:['robot','piloto','explorador'].includes(c.avatarStyle)?c.avatarStyle:'robot',jumpEnabled:c.jumpEnabled!==false,speed:num(c.speed,2,9,5),lives:Math.round(num(c.lives,1,9,3)),seconds:Math.round(num(c.seconds,30,300,120)),camera:c.camera==='orbit'?'orbit':'follow',quality:c.quality==='high'?'high':'low',objects};
 }
-function runtime(){
+function runtime(isolated){
   'use strict';
   const cfg=normalise(window.KRUEKA_GAME),hud=document.getElementById('hud'),status=document.getElementById('status'),mode=document.getElementById('mode'),renderer=document.getElementById('renderer');
   document.getElementById('game-title').textContent=cfg.title;document.title=cfg.title;
@@ -21,6 +21,8 @@ function runtime(){
   const light={cryo:{direction:[.5,1,.7],tint:[.5,.84,1],accent:'#67e8f9',bg:'#081329'},alert:{direction:[-.5,1,.3],tint:[1,.36,.3],accent:'#fb7185',bg:'#241025'},sunset:{direction:[-.8,.7,.5],tint:[1,.8,.5],accent:'#fbbf24',bg:'#212039'}}[cfg.lighting];
   const palette={station:{floor:'#192c46',edge:'#344a66',accent:'#4fbce7'},forest:{floor:'#244b3e',edge:'#18362f',accent:'#86efac'},island:{floor:'#354364',edge:'#63739b',accent:'#c4b5fd'}}[cfg.theme];
   document.body.style.setProperty('--accent',light.accent);document.body.style.background=light.bg;
+  let model=null,drawQueued=false;
+  function queueDraw(){if(!drawQueued){drawQueued=true;requestAnimationFrame(()=>{drawQueued=false;if(model)draw();});}}
   function cpu(){
     if(gl){const old=canvas;canvas=old.cloneNode(false);old.replaceWith(canvas);}gl=null;
     ctx=canvas.getContext('2d');renderer.textContent='Modo compatible · sin WebGL';
@@ -33,12 +35,12 @@ function runtime(){
       program=gl.createProgram();const vs=shader(gl.VERTEX_SHADER,'attribute vec3 aPosition; attribute vec3 aColor; uniform mat4 uVP; varying vec3 vColor; varying float vDepth; void main(){gl_Position=uVP*vec4(aPosition,1.0);vColor=aColor;vDepth=gl_Position.w;}'),fs=shader(gl.FRAGMENT_SHADER,'precision mediump float; varying vec3 vColor; varying float vDepth; uniform vec3 uFog; void main(){float fog=clamp((vDepth-28.0)/60.0,0.0,0.75);gl_FragColor=vec4(mix(vColor,uFog,fog),1.0);}');
       gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error('Programa 3D no disponible');gl.deleteShader(vs);gl.deleteShader(fs);gl.useProgram(program);
       buffer=gl.createBuffer();positionLocation=gl.getAttribLocation(program,'aPosition');colorLocation=gl.getAttribLocation(program,'aColor');projectionLocation=gl.getUniformLocation(program,'uVP');gl.uniform3fv(gl.getUniformLocation(program,'uFog'),rgb(light.bg));gl.enable(gl.DEPTH_TEST);renderer.textContent='3D · WebGL';
-      canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(cpu())bindCanvas();});
+      canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();if(cpu()){bindCanvas();if(isolated)queueDraw();}});
     }else if(!cpu())return;
   }catch(_e){if(!cpu())return;}
   function matrixMultiply(a,b){const out=new Float32Array(16);for(let col=0;col<4;col++)for(let row=0;row<4;row++)for(let k=0;k<4;k++)out[col*4+row]+=a[k*4+row]*b[col*4+k];return out;}
   function camera(){
-    const follow=!editing&&cfg.camera==='follow',target=follow?[player.x,0,player.z-1]:[0,0,0],distance=follow?19:30,eye=[target[0]+Math.sin(yaw)*distance,follow?13:23,target[2]+Math.cos(yaw)*distance];
+    const follow=!editing&&cfg.camera==='follow',focus=isolated?Math.max(1.25,model.height*.58):0,target=isolated?[0,focus,0]:follow?[player.x,0,player.z-1]:[0,0,0],distance=isolated?Math.max(6,model.height*1.9,model.size*1.8,5.7/(canvas.width/canvas.height)):follow?19:30,eye=[target[0]+Math.sin(yaw)*distance,isolated?focus+1.65:follow?13:23,target[2]+Math.cos(yaw)*distance];
     const z=unit(sub(eye,target)),x=unit(cross([0,1,0],z)),y=cross(z,x),dot=(a,b)=>a.reduce((n,v,i)=>n+v*b[i],0);
     const view=new Float32Array([x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,eye),-dot(y,eye),-dot(z,eye),1]);
     const f=1/Math.tan(Math.PI/8),aspect=canvas.width/canvas.height,near=.1,far=100;
@@ -57,16 +59,7 @@ function runtime(){
   function pyramid(x,y,z,size,height,color){mesh([[x-size,y,z-size],[x+size,y,z-size],[x+size,y,z+size],[x-size,y,z+size],[x,y+height,z]],[[0,4,1],[1,4,2],[2,4,3],[3,4,0]],color);}
   function crystal(x,y,z,s,color){const a=elapsed*.8,co=Math.cos(a),si=Math.sin(a),v=[[0,-s,0],[s,0,0],[0,0,s],[-s,0,0],[0,0,-s],[0,s,0]].map(p=>[x+p[0]*co+p[2]*si,y+p[1],z-p[0]*si+p[2]*co]);mesh(v,[[0,2,1],[0,3,2],[0,4,3],[0,1,4],[5,1,2],[5,2,3],[5,3,4],[5,4,1]],color);}
   function objectPosition(o){return {x:o.x+(o.type==='drone'?Math.sin(elapsed*1.1+o.z)*1.5:0),z:o.z};}
-  function geometry(){
-    triangles=[];drawLayer=0;box(0,-.65,0,24,.6,28,palette.edge);drawLayer=1;
-    for(let x=-10;x<=10;x+=4)for(let z=-12;z<=12;z+=4)box(x,-.06,z,3.94,.06,3.94,((x+z)/4)%2?palette.floor:palette.edge);
-    drawLayer=2;
-    for(let z=-12;z<=12;z+=4){
-      if(cfg.theme==='station'){for(const x of [-11,11]){box(x,0,z,.5,3,.6,palette.edge);box(x,.3,z,.55,2.3,.2,light.accent,0,true);}box(0,-.02,z,.04,.02,3.8,light.accent,0,true);}
-      else if(cfg.theme==='forest')for(const x of [-11,11]){box(x,0,z,.4,1,.4,'#715843');pyramid(x,.8,z,1.3,2.8,'#296b54');}
-      else for(const x of [-11,11])crystal(x,.4,z,.4,'#c4b5fd');
-    }
-    for(const o of cfg.objects){if(o.type==='crystal'&&collected.has(o.id))continue;const p=objectPosition(o),s=o.size;
+  function objectMesh(o,p){const s=o.size;
       if(o.type==='crystal'){box(p.x,0,p.z,s,.15,s,palette.edge);crystal(p.x,1+Math.sin(elapsed*2+o.x)*.12,p.z,s*.45,o.color);}
       else if(o.type==='character'){avatar(p.x,0,p.z,o.color,o.avatarStyle,s,o.height/2);}
       else if(o.type==='tree'){box(p.x,0,p.z,s*.3,o.height*.45,s*.3,'#8b6650');pyramid(p.x,o.height*.25,p.z,s*.8,o.height*.85,o.color);pyramid(p.x,o.height*.6,p.z,s*.55,o.height*.7,o.color);}
@@ -84,6 +77,24 @@ function runtime(){
       else if(o.type==='lamp'){box(p.x,0,p.z,s*.15,o.height,s*.15,'#526477');box(p.x,o.height-.15,p.z,s*.62,.12,s*.5,o.color);box(p.x,o.height-.29,p.z,s*.46,.12,s*.38,'#ffe9a1',0,true);}
       else if(o.type==='arch'){box(p.x-s*.42,0,p.z,s*.18,o.height,s*.35,o.color);box(p.x+s*.42,0,p.z,s*.18,o.height,s*.35,o.color);box(p.x,o.height-.19,p.z,s*1.05,.22,s*.44,o.color);}
       else{box(p.x,0,p.z,s,o.height,s,o.color);box(p.x,o.height-.15,p.z,s*1.02,.12,s*1.02,palette.edge);}
+  }
+  function geometry(){
+    triangles=[];drawLayer=0;
+    if(isolated){
+      box(0,-.12,0,4.4,.1,4.4,palette.edge);drawLayer=1;
+      objectMesh(model,{x:0,z:0});return;
+    }
+    box(0,-.65,0,24,.6,28,palette.edge);drawLayer=1;
+    for(let x=-10;x<=10;x+=4)for(let z=-12;z<=12;z+=4)box(x,-.06,z,3.94,.06,3.94,((x+z)/4)%2?palette.floor:palette.edge);
+    drawLayer=2;
+    for(let z=-12;z<=12;z+=4){
+      if(cfg.theme==='station'){for(const x of [-11,11]){box(x,0,z,.5,3,.6,palette.edge);box(x,.3,z,.55,2.3,.2,light.accent,0,true);}box(0,-.02,z,.04,.02,3.8,light.accent,0,true);}
+      else if(cfg.theme==='forest')for(const x of [-11,11]){box(x,0,z,.4,1,.4,'#715843');pyramid(x,.8,z,1.3,2.8,'#296b54');}
+      else for(const x of [-11,11])crystal(x,.4,z,.4,'#c4b5fd');
+    }
+    for(const o of cfg.objects){
+      if(o.type==='crystal'&&collected.has(o.id))continue;
+      const p=objectPosition(o),s=o.size;objectMesh(o,p);
       if(picked===o.id){box(p.x,-.01,p.z,s+1,.08,.06,'#fde68a',0,true);box(p.x,-.01,p.z,.06,.08,s+1,'#fde68a',0,true);}
     }
     const crystals=cfg.objects.filter(o=>o.type==='crystal'),open=collected.size===crystals.length,gate=open?'#86efac':'#8b9ab1';
@@ -114,7 +125,7 @@ function runtime(){
       ctx.fillStyle=light.bg;ctx.fillRect(0,0,w,h);const faces=triangles.map(t=>({p:t.p.map(project),color:t.color,layer:t.layer})).filter(t=>t.p.every(Boolean));faces.sort((a,b)=>a.layer-b.layer||b.p.reduce((n,p)=>n+p.depth,0)-a.p.reduce((n,p)=>n+p.depth,0));
       for(const t of faces){ctx.fillStyle='rgb('+t.color.map(v=>Math.round(v*255)).join(',')+')';ctx.beginPath();t.p.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill();}
     }
-    hud.textContent='Cristales '+collected.size+' / '+cfg.objects.filter(o=>o.type==='crystal').length+' · Vidas '+lives+' · '+Math.max(0,Math.ceil(time))+' s';
+    if(!isolated)hud.textContent='Cristales '+collected.size+' / '+cfg.objects.filter(o=>o.type==='crystal').length+' · Vidas '+lives+' · '+Math.max(0,Math.ceil(time))+' s';
   }
   function reset(){player={x:0,y:0,z:11,vy:0,angle:0};collected=new Set();lives=cfg.lives;time=cfg.seconds;elapsed=0;invincible=0;ended=false;paused=true;editing=true;last=0;Object.keys(keys).forEach(k=>keys[k]=false);mode.textContent='▶ Jugar';status.textContent='Vista de edición: arrastrá para girar; tocá un objeto para editarlo en Krueka.';}
   function blocked(x,z){return cfg.objects.some(o=>['crate','pillar','tree','house','car','wall','rock','lamp','mountain','airplane'].includes(o.type)&&player.y<o.height-.1&&Math.abs(x-o.x)<(o.type==='tree'?o.size*.25:o.size*.5)+.3&&Math.abs(z-o.z)<(o.type==='tree'?o.size*.25:o.size*.5)+.3);}
@@ -131,9 +142,23 @@ function runtime(){
   }
   function bindCanvas(){
     canvas.onpointerdown=e=>{drag={x:e.clientX,y:e.clientY,lastX:e.clientX,moved:false};canvas.setPointerCapture(e.pointerId);canvas.focus();};
-    canvas.onpointermove=e=>{if(!drag)return;const delta=e.clientX-drag.lastX;drag.moved=drag.moved||Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>7;yaw-=delta*.007;drag.lastX=e.clientX;};
-    canvas.onpointerup=e=>{if(drag&&!drag.moved&&editing){const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*canvas.width/r.width,y=(e.clientY-r.top)*canvas.height/r.height;let best=null,distance=45;for(const o of cfg.objects){const p=project([o.x,o.type==='crystal'?1:o.height/2,o.z]);if(p){const d=Math.hypot(p.x-x,p.y-y);if(d<distance){best=o.id;distance=d;}}}if(best){picked=best;parent.postMessage({type:'krueka-scene-select',id:best},'*');}}drag=null;};
+    canvas.onpointermove=e=>{if(!drag)return;const delta=e.clientX-drag.lastX;drag.moved=drag.moved||Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>7;yaw-=delta*(isolated?.011:.007);drag.lastX=e.clientX;if(isolated)queueDraw();};
+    canvas.onpointerup=e=>{if(!isolated&&drag&&!drag.moved&&editing){const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*canvas.width/r.width,y=(e.clientY-r.top)*canvas.height/r.height;let best=null,distance=45;for(const o of cfg.objects){const p=project([o.x,o.type==='crystal'?1:o.height/2,o.z]);if(p){const d=Math.hypot(p.x-x,p.y-y);if(d<distance){best=o.id;distance=d;}}}if(best){picked=best;parent.postMessage({type:'krueka-scene-select',id:best},'*');}}drag=null;};
     canvas.onpointercancel=()=>drag=null;
+  }
+  if(isolated){
+    elapsed=0;
+    bindCanvas();
+    addEventListener('message',e=>{
+      if(e.source!==parent||e.data?.type!=='krueka-piece-model')return;
+      model=normalise({objects:[e.data.object]}).objects[0];
+      document.body.dataset.piece=model.type;
+      queueDraw();
+    });
+    addEventListener('resize',queueDraw);
+    document.getElementById('rotate-left').onclick=()=>{yaw+=.35;queueDraw();};
+    document.getElementById('rotate-right').onclick=()=>{yaw-=.35;queueDraw();};
+    return;
   }
   addEventListener('message',e=>{if(e.source!==parent||e.data?.type!=='krueka-scene-highlight')return;picked=cfg.objects.some(o=>o.id===e.data.id)?e.data.id:null;});
   addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();keys[e.key.length===1?e.key.toLowerCase():e.key]=true;});
@@ -155,6 +180,11 @@ function create(){
     'game-config.js':StudioKits.configFile(cfg),'game.js':'/* Motor 3D propio: geometría, cámara, iluminación, colisiones y modo compatible. */\nconst normalise = '+normalise.toString()+';\n('+runtime.toString()+')();',
     'LEEME.md':'# Exploradores 3D\n\nTema: Escenarios 3D y reglas de un videojuego.\nCapacidad: Construir y probar un recorrido, modificando objetos y ambientación.\nIndicadores: ubico objetos; comparo dos luces; pruebo colisiones y controles; explico una mejora.\n\n1. Elegí Bases y reglas: cambiá luces, escenario y personaje.\n2. Seleccioná un objeto en la escena o en la lista; cambiá X y Z, tamaño y altura.\n3. Probá con Jugar: juntá cristales y llegá al arco del fondo.\n4. Si es difícil, mové un obstáculo o aumentá el tiempo.\n5. Escribí acá qué cambiaste y qué mejoró. Enviá al profe.\n\nLos controles visuales no consultan IA. El Chat puede guardar ideas pendientes de conexión.\n'};
 }
+function piecePreview(){
+ const source="window.KRUEKA_GAME={};const normalise="+normalise.toString()+";("+runtime.toString()+")(true);";
+ return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'"><title>Vista de la pieza</title><style>*{box-sizing:border-box}body{margin:0;background:#081329;color:#f1f5ff;font:12px system-ui}canvas{display:block;width:100%;height:100dvh;touch-action:none}nav{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:8px}button{font:inherit;color:inherit;min-width:44px;min-height:38px;border:1px solid #728aa7;border-radius:8px;background:#13283c;cursor:pointer}#status{position:absolute;top:0;left:8px;right:8px}</style></head><body><span id="renderer" hidden></span><span id="game-title" hidden></span><p id="status" role="status"></p><canvas id="arena" tabindex="0" aria-label="Modelo 3D aislado: arrastrá para girarlo"></canvas><nav aria-label="Girar el modelo"><button id="rotate-left" aria-label="Girar a la izquierda">↶</button><button id="rotate-right" aria-label="Girar a la derecha">↷</button></nav><script>'+source+'<\/script></body></html>';
+}
+
 function renderEditor(studio,el,raw){
   const cfg=normalise(raw),selected=cfg.objects.find(o=>o.id===studio.selectedSceneObject)||cfg.objects[0];studio.selectedSceneObject=selected?.id||null;
   const compatibleTypes=studio.files?.['game.js']===create()['game.js']?types:Object.fromEntries(Object.entries(types).filter(([key])=>(key!=='character'&&!['mountain','airplane','shield','staff'].includes(key))||key===selected?.type));
@@ -174,7 +204,7 @@ function renderEditor(studio,el,raw){
   for(const id of ['ks-object-add','ks-object-copy']){const b=el.querySelector('#'+id);if(b){b.dataset.limitReached=String(cfg.objects.length>=48);b.disabled=studio.busy||!studio.cloudReady||cfg.objects.length>=48;}}
   el.querySelector('#ks-scene-bases').onclick=()=>studio.showKits();
 }
-window.Studio3D={normalise,create,renderEditor};
+window.Studio3D={normalise,create,renderEditor,piecePreview};
 StudioKits.catalog.unshift({id:'explore3d',icon:'🧊',title:'Exploradores 3D',tag:'Mundos, luces y objetos',description:'Construí una escena 3D, explorá y abrí el portal.',challenge:'Compará dos luces, mové un obstáculo y explicá cómo cambia el recorrido.'});
 const originalCreate=StudioKits.create.bind(StudioKits),originalArt=StudioKits.art.bind(StudioKits);
 StudioKits.create=id=>id==='explore3d'?create():originalCreate(id);
