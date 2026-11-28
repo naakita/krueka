@@ -72,12 +72,13 @@ const selectors=['pabellon-juego','pabellon-cine','arcade-web','blogs','historie
  const home=document.getElementById('ks-creative-home');
  home.querySelector('[data-kc-filter="Escribir"]').click();
  verify(home.querySelectorAll('.kc-path:not([hidden])').length===4,'filtro de escritura');
+ verify(home.querySelector('[data-creative-start="escena-visual"]'),'entrada principal del juego visual');
  home.querySelector('[data-kc-filter="Todos"]').click();
  const projects=[];
  for(const id of selectors){
   document.body.dataset.clubTest='Probando '+id;
   let tile=document.querySelector('[data-creative-start="'+id+'"]');
-  if(!tile&&['animation','arcade-web'].includes(id)){
+  if(!tile&&['animation','arcade-web','pabellon-juego'].includes(id)){
    home.querySelector('[data-creative-path="'+(id==='animation'?'animaciones':'juegos')+'"]').click();
    tile=document.querySelector('[data-creative-kit="'+id+'"]');
   }
