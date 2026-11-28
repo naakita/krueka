@@ -46,7 +46,7 @@ assert.ok(app.indexOf('club-studio-3d-toolbox.js')>app.indexOf('club-studio-3d.j
 assert.ok(access.includes("'club-studio-academy.js','club-studio-3d-toolbox.js'"));
 assert.match(studio,/club-studio-access\.js\?v=\d{8}[a-z0-9]*\"/i);
 const simple=K.read(tool.initialWorld()),cards=tool.library();
-assert.equal(cards.length,20);
+assert.ok(cards.length>=28,'Se conserva la biblioteca y se agregan personajes de bloques');
 assert.equal(new Set(cards.map(p=>p.category)).size,7);
 for(const p of cards){
  const clean=tool.parsePiece(JSON.stringify(p));
@@ -54,6 +54,17 @@ for(const p of cards){
  assert.equal(built.objects[0].id,'cristal-prueba','Nunca borra una creación anterior');
  assert.equal(tool.validate(built).ok,true,'Plantilla jugable: '+p.name);
 }
+const blockModels=Object.entries(engine.avatarProfiles()).filter(([,item])=>item.block);
+assert.equal(blockModels.length,8);
+for(const [style,p] of blockModels){
+ const card=cards.find(x=>x.name===p.name);
+ assert.ok(card,'Cada forma original tiene una plantilla en la biblioteca: '+style);
+ assert.equal(tool.parsePiece(JSON.stringify(card)).settings.avatarStyle,style);
+ const level=tool.mergePiece(simple,card);
+ assert.equal(level.objects.at(-1).avatarStyle,style);
+ assert.equal(tool.mergePiece(simple,card,true).avatarStyle,style);
+}
+assert.equal(engine.normalise({avatarStyle:'__proto__'}).avatarStyle,'robot');
 const robot=cards.find(p=>p.name==='Robot violeta'),pilot=cards.find(p=>p.name==='Piloto celeste');
 const chosen=tool.mergePiece(simple,pilot,true);
 const added=tool.mergePiece(tool.mergePiece(chosen,robot),robot);

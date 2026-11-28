@@ -3,8 +3,11 @@
 (function(){
 'use strict';
 if(window.Krueka3DToolbox)return;
-const MAX=48,LEGACY_ENGINE_SHA=new Set(['2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724','6ac7fb92baebef6cbe7b33581328d73bd6b46971bac93b3b35c64ae49076c8bf','6fb29499505463c07798affd1679d74ecf416c5377e7d6b362c710c4da630951']),DEPTH=28,ZONE_MAX=4;
+const MAX=48,LEGACY_ENGINE_SHA=new Set(['2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724','6ac7fb92baebef6cbe7b33581328d73bd6b46971bac93b3b35c64ae49076c8bf','6fb29499505463c07798affd1679d74ecf416c5377e7d6b362c710c4da630951','6e5ecea16fec798f34a58733d2468bac4749217c1e6d35f210d4bdfbe0777350']),DEPTH=28,ZONE_MAX=4;
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+// Blocks and courses built entirely from the existing, lightweight scene objects.
+const terrainPiece=(type,label,x,z,size,height,color)=>({type,label,x,z,size,height,color});
+const terrainCrystal=(label,x,z,color)=>terrainPiece('crystal',label,x,z,.9,1.2,color);
 const presets={
  city:{name:'Ciudad low-poly',theme:'station',lighting:'sunset',generate(){
   const out=[];
@@ -31,6 +34,82 @@ const presets={
   for(const z of [8,2,-4,-8])out.push({type:'crystal',label:'Meta parcial',x:0,z,size:.7,height:1,color:'#e9d5ff'});
   out.push({type:'arch',label:'Arco de llegada',x:0,z:-10,size:3,height:3,color:'#facc15'});
   return out;
+ }},
+ cubes:{name:'Aldea de cubos',theme:'forest',lighting:'sunset',generate(){
+  const o=[];
+  for(const z of [8,3,-2,-7])o.push(terrainPiece('road','Sendero de tierra',0,z,3.2,.5,'#a57747'));
+  for(const [x,z,wall] of [[-6.6,5,'#c79659'],[6.6,5,'#bd7858'],[-6.6,-4,'#aa774d'],[6.6,-4,'#d1ad73']]){
+   o.push(terrainPiece('house','Cabaña de la aldea',x,z,2.5,2.8,wall));
+   o.push(terrainPiece('crate','Huerto cuadrado',x+Math.sign(x)*2.4,z,1.45,.58,'#8dab58'));
+  }
+  for(const [x,z,height] of [[-9.5,9,1],[-9.5,3,1.3],[9.5,9,1],[9.5,1,1.15],[-8.5,-9,1.15],[8.5,-9,1.25]])o.push(terrainPiece('crate','Bloque de pasto',x,z,1.6,height,'#548a50'));
+  for(const x of [-2.8,2.8])o.push(terrainPiece('lamp','Farol de madera',x,-3,.7,2.5,'#f6b553'));
+  o.push(terrainPiece('arch','Entrada de la aldea',0,6,3.2,3.2,'#bc8b54'));
+  o.push(terrainCrystal('Tesoro del huerto',-3.8,3.5,'#f7df78'),terrainCrystal('Tesoro del sendero',3.8,-6,'#88f2c5'));
+  return o;
+ }},
+ mine:{name:'Mina de bloques',theme:'station',lighting:'alert',generate(){
+  const o=[];
+  for(const x of [-8.5,8.5])for(const z of [-8.5,-4.3,0,4.3,8.5]){
+   o.push(terrainPiece('crate','Estrato de roca',x,z,2.7,2.5+(Math.abs(z)%2),'#526079'));
+  }
+  for(const z of [6,0,-6]){
+   o.push(terrainPiece('arch','Soporte de madera',0,z,3.8,3.3,'#a47952'));
+   o.push(terrainPiece('road','Galería central',0,z,3.3,.5,'#3d485b'));
+  }
+  for(const [x,z] of [[-5,5],[5,1],[-5,-4],[5,-8]])o.push(terrainPiece('lamp','Lámpara de mina',x,z,.6,2.2,'#eabb76'));
+  for(const [x,z] of [[-5,7],[5,-4]])o.push(terrainPiece('pillar','Columna de piedra',x,z,1.2,2.6,'#68778e'));
+  o.push(terrainCrystal('Gema verde',-3.3,3,'#58efae'),terrainCrystal('Gema azul',3.3,-3,'#71d9ff'),terrainCrystal('Gema violeta',0,-9,'#bd99ff'));
+  return o;
+ }},
+ ice:{name:'Valle de hielo',theme:'island',lighting:'cryo',generate(){
+  const o=[];
+  for(const x of [-8.7,8.7])for(const [z,size,h] of [[8,2.5,1.6],[2.6,3,2.4],[-3,2.6,1.9],[-8.5,3,2.7]]){
+   o.push(terrainPiece('crate','Banco de hielo',x,z,size,h,z>0?'#b5e4ee':'#82b6df'));
+  }
+  for(const [x,z,h] of [[-7,-9.8,3.5],[7,-9.8,4.5]])o.push(terrainPiece('mountain','Pico nevado',x,z,2.2,h,'#b9d8e5'));
+  for(const [x,z] of [[-2.5,7.5],[2.5,3],[-2.5,-2],[2.5,-7]])o.push(terrainPiece('crate','Hielo bajo',x,z,1.8,.85,'#70a9d9'));
+  for(const z of [6,1,-4,-9])o.push(terrainPiece('road','Paso escarchado',0,z,1.8,.5,'#d7f1ff'));
+  for(const x of [-4.2,4.2])o.push(terrainPiece('beacon','Baliza polar',x,-5.6,.7,1.5,'#b0f9ff'));
+  o.push(terrainCrystal('Copo del este',4.3,4.2,'#c1faff'),terrainCrystal('Copo del oeste',-4.3,-4.2,'#e2ecff'));
+  return o;
+ }},
+ slalom:{name:'Parque de obstáculos',theme:'island',lighting:'sunset',generate(){
+  const o=[],palette=['#f66b83','#ffc64e','#45dbab','#7599f8','#bb80ee'];
+  for(const [i,z] of [7.2,3.4,-.3,-4,-7.8].entries()){
+   const away=i%2===0?-1:1,color=palette[i];
+   for(const x of [1.3,3.4,5.5])o.push(terrainPiece('crate','Bloque bajo del zigzag',away*x,z,1.48,.70+i%3*.13,color));
+   o.push(terrainPiece('road','Carril alterno',-away*2.6,z,1.7,.5,color));
+   o.push(terrainPiece('beacon','Marcador de color',-away*7,z,.6,1.3,color));
+   if(i%2===0)o.push(terrainCrystal('Cristal del zigzag',-away*3.3,z+.4,'#fff1a8'));
+  }
+  o.push(terrainPiece('arch','Arco del parque',0,-9.7,3.2,2.8,'#f5d279'));
+  return o;
+ }},
+ neon:{name:'Laboratorio neón',theme:'station',lighting:'cryo',generate(){
+  const o=[];
+  for(const [i,z] of [7.2,2,-3.2,-8.4].entries()){
+   const x=i%2===0?3.2:-3.2,col=i%2===0?'#51cddb':'#be82f6';
+   o.push(terrainPiece('wall','Panel de circuito',-x,z,3.5,1.4,col));
+   o.push(terrainPiece('arch','Marco de luz',x,z-1,2.8,2.5,col));
+   o.push(terrainPiece('road','Carril de laboratorio',x,z+.8,1.5,.5,col));
+   for(const side of [-1,1])o.push(terrainPiece('lamp','Lámpara técnica',side*8.2,z,.64,2.9,col));
+  }
+  o.push(terrainPiece('drone','Dron de vigilancia',-5.8,0,1,1,'#ed739c'),terrainPiece('drone','Dron de vigilancia',5.8,-5,1,1,'#61d6d8'));
+  o.push(terrainCrystal('Célula de energía',3.2,5.6,'#61f3ea'),terrainCrystal('Célula de energía',-3.2,-6,'#d7a5ff'));
+  return o;
+ }},
+ fortress:{name:'Fortaleza de bloques',theme:'forest',lighting:'sunset',generate(){
+  const o=[];
+  for(const x of [-8.5,8.5])for(const z of [-8.3,-2.8,2.8,8.3]){
+   o.push(terrainPiece('crate','Muro cuadrado',x,z,2.6,z<0?2.1:1.6,'#adb0aa'));
+  }
+  for(const [x,z] of [[-6.1,7.5],[6.1,7.5],[-6.1,-7.5],[6.1,-7.5]])o.push(terrainPiece('pillar','Torre cuadrada',x,z,1.9,3.4,'#77899a'));
+  for(const [x,z] of [[-3.5,3.2],[3.5,.6],[-3.5,-2],[3.5,-4.6]])o.push(terrainPiece('wall','Muro del patio',x,z,3.5,1.6,'#9ca6ad'));
+  for(const z of [7,-7])o.push(terrainPiece('arch',z>0?'Entrada del castillo':'Arco del patio',0,z,3.6,3,'#647c9c'));
+  for(const x of [-4.5,4.5])o.push(terrainPiece('lamp','Farol del castillo',x,-6,.7,2.4,'#f4c46e'));
+  o.push(terrainCrystal('Cristal del patio izquierdo',-5.6,0,'#93e7d6'),terrainCrystal('Cristal del patio derecho',5.6,-2.5,'#ffd685'),terrainCrystal('Cristal de la fortaleza',0,-9.4,'#d6c2ff'));
+  return o;
  }}
 };
 const resources=[
@@ -173,24 +252,23 @@ const categories=[
 ];
 const newTypes=['mountain','airplane','shield','staff'];
 const types=['crystal','tree','house','car','road','wall','rock','lamp','arch','crate','pillar','beacon',...newTypes];
-const enumOptions={theme:['station','forest','island'],lighting:['cryo','alert','sunset'],avatarStyle:['robot','piloto','explorador'],camera:['follow','orbit']};
+const avatars=Studio3D.avatarProfiles();
+const enumOptions={theme:['station','forest','island'],lighting:['cryo','alert','sunset'],avatarStyle:Object.keys(avatars),camera:['follow','orbit']};
 const optionsByGroup={ambiente:['theme','lighting'],personaje:['avatarColor','avatarStyle'],movimiento:['speed','jumpEnabled','camera'],material:[],vehiculo:[],prop:[],reto:['seconds']};
 const labels={theme:'Ambiente del suelo',lighting:'Iluminación',avatarStyle:'Modelo del personaje',avatarColor:'Color del personaje',camera:'Cámara',speed:'Velocidad',jumpEnabled:'Puede saltar',seconds:'Tiempo en segundos'};
 const item=(type,label,x,z,size,height,color)=>({type,label,x,z,size,height,color});
 const piece=(category,name,settings={},objects=[])=>({version:1,category,name,settings,objects});
 function library(){
- const sets=Object.fromEntries(['city','forest','track'].map(id=>[id,template(id)]));
- const components=[];
- for(const [id,name] of [['city','Barrio con avenida'],['forest','Bosque con sendero'],['track','Circuito de práctica']]){
-  const {theme,lighting,objects}=sets[id];
-  components.push(piece('ambiente',name,{theme,lighting},objects.filter(o=>o.type!=='crystal').map(({id,...o})=>o)));
- }
+ const aliases={city:'Barrio con avenida',forest:'Bosque con sendero',track:'Circuito de práctica'};
+ const components=Object.entries(presets).map(([id,preset])=>{
+  const {theme,lighting,objects}=template(id);
+  // Library pieces decorate the current zone without adding new objectives.
+  return piece('ambiente',aliases[id]||preset.name,{theme,lighting},objects.filter(o=>!['crystal','drone'].includes(o.type)).map(({id,...o})=>o));
+ });
  return [...components,
   piece('ambiente','Montañas nevadas',{theme:'island',lighting:'cryo'},[item('mountain','Pico norte',-8,-8,3.5,5,'#717d9e'),item('mountain','Pico este',8,-8,3.4,4.5,'#8896b5'),item('rock','Roca del sendero',-5,-2,1.1,1.1,'#9aa3ad')]),
   piece('ambiente','Orilla al atardecer',{theme:'island',lighting:'sunset'},[item('road','Pasarela',0,-2,3,.5,'#b98d64'),item('tree','Árbol de la orilla',-6,-4,1.5,3,'#39796a'),item('lamp','Luz del muelle',6,-4,.7,2.6,'#ffda77')]),
-  piece('personaje','Robot violeta',{avatarStyle:'robot',avatarColor:'#a5b4fc'}),
-  piece('personaje','Explorador del bosque',{avatarStyle:'explorador',avatarColor:'#4cae89'}),
-  piece('personaje','Piloto celeste',{avatarStyle:'piloto',avatarColor:'#4ca9e8'}),
+  ...Object.entries(avatars).map(([avatarStyle,p])=>piece('personaje',p.name,{avatarStyle,avatarColor:p.color})),
   piece('movimiento','Caminar despacio',{speed:3,jumpEnabled:false,camera:'follow'}),
   piece('movimiento','Correr y saltar',{speed:7,jumpEnabled:true,camera:'follow'}),
   piece('movimiento','Explorar con cámara fija',{speed:5,jumpEnabled:true,camera:'orbit'}),
@@ -288,6 +366,13 @@ const sceneTypes={
 };
 const groupNames={cast:'Personajes',terrain:'Escenario',props:'Piezas y vehículos',mission:'Retos y cristales'};
 let panelOwner='',panelState={};
+function avatarOptions(select){
+ for(const [isBlock,title] of [[false,'Clásicos'],[true,'Estilo de bloques']]){
+  const group=document.createElement('optgroup');group.label=title;
+  for(const [id,p] of Object.entries(avatars))if(!!p.block===isBlock)group.append(new Option(p.short,id));
+  select.append(group);
+ }
+}
 const worldPosition=(x,z)=>[6+(x+10)*4.4,6+(z+12)*88/24];
 function pieceEditor(studio,source,{existing=false}={}){
  const app=document.getElementById('krueka-studio');
@@ -299,7 +384,7 @@ function pieceEditor(studio,source,{existing=false}={}){
  dialog.id='k3d-piece-editor';dialog.setAttribute('aria-labelledby','k3d-piece-title');dialog.className='ks-settings';
  dialog.innerHTML='<header><div><div class="ks-section-label" id="k3d-step">1 DE 2 · EDITÁ LA PIEZA</div><h2 id="k3d-piece-title">Editar pieza</h2></div><button type="button" id="k3d-piece-close" class="ks-btn">Cancelar</button></header>'+
   '<section id="k3d-detail-step"><div class="k3d-detail-layout"><div class="k3d-detail-preview"><iframe id="k3d-piece-model" title="Vista 3D de la pieza, independiente del mundo" sandbox="allow-scripts"></iframe><p>Girá la pieza con el mouse, el dedo o los botones.</p></div>'+
-  '<div id="k3d-detail-fields"><label>Nombre<input id="k3d-piece-name" maxlength="32" required></label><label>Molde<select id="k3d-piece-type"></select></label><label id="k3d-piece-style-row">Forma del personaje<select id="k3d-piece-style"><option value="robot">Robot</option><option value="piloto">Piloto</option><option value="explorador">Explorador</option></select></label>'+
+  '<div id="k3d-detail-fields"><label>Nombre<input id="k3d-piece-name" maxlength="32" required></label><label>Molde<select id="k3d-piece-type"></select></label><label id="k3d-piece-style-row">Forma del personaje<select id="k3d-piece-style"></select></label>'+
   '<div class="ks-fields"><label>Color<input id="k3d-piece-color" type="color"></label><label>Tamaño<input id="k3d-piece-size" type="number" min="0.4" max="4" step="0.1" required></label><label id="k3d-piece-height-row">Altura<input id="k3d-piece-height" type="number" min="0.5" max="5" step="0.1" required></label></div></div></div>'+
   '<div class="k3d-piece-actions"><button type="button" class="ks-btn primary" id="k3d-place-step">Elegir dónde colocar →</button></div></section>'+
   '<section id="k3d-position-step" hidden><p>Tocá el plano para elegir un lugar o ajustá las coordenadas. Nada cambia hasta confirmar.</p>'+
@@ -318,6 +403,7 @@ function pieceEditor(studio,source,{existing=false}={}){
  }
  for(const [id,[name]] of Object.entries(sceneTypes))fields.type.add(new Option(name,id));
  const draft={id:source.id,type:kind,label:source.label||sceneTypes[kind][0],avatarStyle:source.avatarStyle||'robot',color:source.color||(kind==='character'?'#a5b4fc':'#67e8f9'),size:source.size??1,height:source.height??(kind==='character'?2:1.5),...suggested};
+ avatarOptions(fields.avatarStyle);
  for(const [key,field] of Object.entries(fields))field.value=draft[key];
  const x=q('place-x'),z=q('place-z');x.value=draft.x;z.value=draft.z;
  const shape=()=>Studio3D.normalise({objects:[{
@@ -487,7 +573,7 @@ function scenePanel(studio,section,cfg){
   function field(name,title,type,min,max){
    const label=document.createElement('label');label.textContent=title;
    const el=document.createElement(type==='model'?'select':'input');
-   if(type==='model')for(const [id,title] of [['robot','Robot'],['piloto','Piloto'],['explorador','Explorador']])el.add(new Option(title,id));
+   if(type==='model')avatarOptions(el);
    else{el.type=type;if(type==='text'){el.maxLength=32;el.required=true;}if(type==='number'){el.min=min;el.max=max;el.step='any';el.required=true;}}
    el.value=o[name];inputs[name]=el;label.append(el);fields.append(label);
   }
