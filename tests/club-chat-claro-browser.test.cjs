@@ -21,7 +21,7 @@ const setup=vm.runInNewContext(fixture.match(/const setup=(`[^]*?`);\nconst smok
   await page.locator('#ks-simple-head').getByRole('heading',{name:'¿Qué querés cambiar?'}).waitFor();
   const inp=page.getByLabel('Escribí tu pedido');
   assert.ok(await inp.isVisible());
-  assert.equal(await page.locator('#ks-send').textContent(),'Guardar idea');
+  assert.equal(await page.locator('#ks-send').textContent(),'Aplicar ayuda local');
   assert.equal(await page.locator('#ks-ai .ks-modes').isVisible(),false);
   assert.equal(await page.locator('#ks-project-context').isVisible(),false);
   await page.frameLocator('#ks-frame').getByText('El pabellón de las semillas',{exact:true}).waitFor();
@@ -34,10 +34,25 @@ const setup=vm.runInNewContext(fixture.match(/const setup=(`[^]*?`);\nconst smok
   await inp.fill('Me gustaría iluminar el jardín');
   await page.getByRole('button',{name:'Usar un ejemplo'}).click();
   assert.equal(await inp.inputValue(),'Me gustaría iluminar el jardín');
+  const before=await page.evaluate(()=>({...StudioIA.files}));
   await page.locator('#ks-send').click();
-  await page.getByText('Guardé tu idea. El juego no cambió.',{exact:false}).waitFor();
-  assert.ok(await page.evaluate(()=>StudioIA.history.some(x=>x.pending&&x.text==='Me gustaría iluminar el jardín')));
+  await page.getByText(/No cambié el juego/).waitFor();
   assert.equal(await page.evaluate(()=>StudioKits.read(StudioIA.files).light),'tarde');
+  await inp.fill('Cambiá la luz del jardín a noche.');
+  await page.locator('#ks-send').click();
+  await page.getByText(/Luz inicial: Atardecer → Noche/).waitFor();
+  await page.waitForFunction(()=>!StudioIA.busy);
+  await page.waitForFunction(()=>StudioKits.read(StudioIA.files).light==='noche');
+  assert.equal(await page.frameLocator('#ks-frame').locator('#luz').inputValue(),'noche');
+  assert.deepEqual(await page.evaluate(before=>Object.keys(StudioIA.files).filter(k=>StudioIA.files[k]!==before[k]),before),['game-config.js']);
+  await inp.fill('Cambiá la meta a 2 semillas.');
+  await page.locator('#ks-send').click();
+  await page.getByText(/Semillas para ganar: 3 → 2/).waitFor();
+  await page.waitForFunction(()=>!StudioIA.busy);
+  await page.frameLocator('#ks-frame').getByText('0 de 2 semillas',{exact:true}).waitFor();
+  assert.equal(await page.frameLocator('#ks-frame').locator('#luz').inputValue(),'noche');
+  await page.evaluate(()=>StudioIA.restore());
+  await page.frameLocator('#ks-frame').getByText('0 de 3 semillas',{exact:true}).waitFor();
   const more=page.getByRole('button',{name:'Más opciones'});
   await more.click();
   assert.equal(await page.locator('#ks-ai .ks-modes').isVisible(),true);
@@ -55,6 +70,6 @@ const setup=vm.runInNewContext(fixture.match(/const setup=(`[^]*?`);\nconst smok
   await page.evaluate(async()=>{await StudioIA.close();await KruekaStudioAccess.login('TEST02');StudioIA.showTab('ai');});
   assert.doesNotMatch(await page.locator('#ks-chat').innerText(),/Me gustaría iluminar/);
   assert.deepEqual(errors,[]);
-  console.log('PASS: el Pabellón abre con chat primero, vista previa, guardado explícito sin IA, reglas y opciones; móvil e historial aislado.');
+  console.log('PASS: el Pabellón abre con chat primero, vista previa, luz y meta locales, archivos intactos, deshacer, reglas y opciones; móvil e historial aislado.');
  }finally{await browser.close();fs.rmSync(temp,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1});

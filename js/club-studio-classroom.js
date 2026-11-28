@@ -6,9 +6,29 @@ if(window.StudioClassroom)return;
 let mounted=null,help='ai';
 const examples='Probá: «vidas 5 y tiempo 90», «velocidad 180», «meta 15 puntos», «escenario bosque» o «personaje robot». Para ideas nuevas, elegí IA del taller o Bases y reglas.';
 const plain=text=>String(text||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-function supportsLocal(files){return ['stars','race','platform','quiz','explore3d','space3d'].includes(StudioKits.read(files)?.kind);}
+function supportsLocal(files){return ['stars','race','platform','quiz','explore3d','space3d','pabellon-juego'].includes(StudioKits.read(files)?.kind);}
+function landscapeChange(files,cfg,input){
+ // The shortcut changes a single existing setting, never the landscape assets or game engine.
+ const prefix='(?:(?:cambia|pone|deja|ajusta)(?:me)?\\s+(?:(?:la|el|las)\\s+)?)?';
+ const end='\\s*[.!]?\\s*$';
+ const rules=[
+  {key:'light',label:'Luz inicial',matcher:new RegExp('^'+prefix+'(?:luz(?: inicial| del jardin)?|iluminacion)\\s+(?:(?:a|de|en)\\s+)?(dia|atardecer|noche)'+end),values:{dia:'dia',atardecer:'tarde',noche:'noche'},names:{dia:'Día',tarde:'Atardecer',noche:'Noche'}},
+  {key:'finish',label:'Color del mobiliario',matcher:new RegExp('^'+prefix+'(?:color del mobiliario|mobiliario)\\s+(?:(?:a|de|en)\\s+)?(verde jade|terracota|azul lago)'+end),values:{'verde jade':'jade',terracota:'arcilla','azul lago':'azul'},names:{jade:'Verde jade',arcilla:'Terracota',azul:'Azul lago'}},
+  {key:'seeds',label:'Semillas para ganar',matcher:new RegExp('^'+prefix+'(?:meta (?:en|de|a) |(?:cantidad de )?semillas (?:en |a )?)?(1|2|3|una|dos|tres) semillas'+end),values:{1:1,2:2,3:3,una:1,dos:2,tres:3}}
+ ];
+ for(const r of rules){
+  const m=r.matcher.exec(input.trim());
+  if(!m)continue;
+  const value=r.values[m[1]],before=cfg[r.key];
+  const show=v=>r.names?.[v]??v;
+  if(value===before)return {changes:[],notice:r.label+' ya está en '+show(value)+'. No cambié el juego.'};
+  return {changes:[r.label+': '+show(before)+' → '+show(value)],files:{...files,'game-config.js':StudioKits.configFile({...cfg,[r.key]:value})}};
+ }
+ return {changes:[],notice:'No cambié el juego. Probá una instrucción: «Cambiá la luz del jardín a noche», «Cambiá el mobiliario a terracota» o «Cambiá la meta a 2 semillas».'};
+}
 function localChange(files,text){
  const cfg=StudioKits.read(files),input=plain(text),next=cfg?JSON.parse(JSON.stringify(cfg)):null,changes=[];
+ if(cfg?.kind==='pabellon-juego')return landscapeChange(files,cfg,input);
  const basic=cfg&&['stars','race','platform','quiz'].includes(cfg.kind),scene=cfg&&['explore3d','space3d'].includes(cfg.kind);
  if(!basic&&!scene)return {changes,notice:'Este proyecto usa un editor especial. Abrí Bases y reglas para personalizarlo sin IA.'};
  if(/\b(no|sin)\s+(camb|modific|agreg|pon|aument|baj)/.test(input))return {changes,notice:examples};
@@ -134,7 +154,7 @@ function install(){
    else if(this.mode==='plan')this.say('sys','Ayuda local · plan de prueba: elegí una regla en Bases y reglas, anotá su valor, cambialo y compará el resultado con Probar. '+examples);
    else if(result.files){
     const files=this.validFiles(result.files);this.checkpoint();this.files=files;
-    this.say('sys','Ayuda local · sin IA generativa.\n'+result.changes.join('\n')+'\nProbá el juego y compará el resultado.',{artifact:{title:this.title,files:['game-config.js']}});
+    this.say('sys','Ayuda local · sin IA generativa.\n'+result.changes.join('\n')+'\nProbá el juego y compará el resultado.',{artifact:{title:this.title,files:StudioKits.read(files)?.kind==='pabellon-juego'?[]:['game-config.js']}});
     this.draft='';q.value='';
    }else{this.say('sys','Ayuda local · '+result.notice);this.draft=text;}
    if(this.mode==='plan'){this.draft='';q.value='';}

@@ -134,7 +134,7 @@ function simpleChat(s,section){
   ['race','platform','stars'].includes(kind)?'Cambiá la meta a 10 puntos.':
   ['space3d','explore3d'].includes(kind)?'Cambiá la velocidad a 4.':kind==='quiz'?'Cambiá el escenario a bosque.':'Explicame cómo se gana en este juego.';
  head.querySelector('#ks-simple-state').textContent=online?'Escribí un cambio y probalo en la vista previa.':
-  local?'La ayuda local puede cambiar algunas reglas. No está usando IA.':
+  local?(kind==='pabellon-juego'?'Empezá por la luz o el mobiliario. Después ajustá la meta. Son cambios locales, sin IA.':'La ayuda local puede cambiar algunas reglas. No está usando IA.'):
   media?'Podés pedir una guía local. El chat no aplicará cambios ahora.':'El chat no puede aplicar cambios ahora. Podés guardar la idea o abrir las reglas.';
  form.querySelector('label').textContent='Escribí tu pedido';
  q.placeholder='Ejemplo: '+example;
