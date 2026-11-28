@@ -61,9 +61,17 @@ function gameRuntime(){
  const canvas=document.getElementById('juego'),ctx=canvas.getContext('2d');
  const points=document.getElementById('puntos'),goal=document.getElementById('meta'),message=document.getElementById('mensaje');
  const player={x:460,y:260,angle:0,avatar:PROGRAMA.avatar,size:62,flash:0};
- const star={x:160,y:140};const state={score:0,speed:38,background:'#24395f',finished:false,frames:0};
+ const star={x:160,y:140}, pickupRadius=65;const state={score:0,speed:38,background:'#24395f',finished:false,frames:0};
  goal.textContent='Meta: '+PROGRAMA.goal;
- function positionStar(){star.x=65+Math.random()*830;star.y=65+Math.random()*410;}
+ function positionStar(){
+  // Spawn outside the current pickup area, including immediately after collecting.
+  for(let i=0;i<8;i++){
+   const x=65+Math.random()*830,y=65+Math.random()*410;
+   if(Math.hypot(player.x-x,player.y-y)>=pickupRadius){star.x=x;star.y=y;return;}
+  }
+  // A bounded fallback is always safely across the field from the player.
+  star.x=player.x<480?895:65;star.y=270;
+ }
  function say(text){message.textContent=String(text||'').slice(0,70);}
  function updateScore(){points.textContent=state.score+' punto'+(state.score===1?'':'s');if(state.score>=PROGRAMA.goal&&!state.finished){state.finished=true;say('🏆 ¡Misión cumplida! ¡Creaste tu propio juego!');}}
  function execute(list,key,depth,budget){
@@ -96,7 +104,7 @@ function gameRuntime(){
   player.x=Math.max(36,Math.min(924,player.x));player.y=Math.max(36,Math.min(504,player.y));
  }
  function trigger(type,key){if(!state.finished)execute(PROGRAMA.events[type],key,0,{count:0});}
- function checkStar(){if(Math.hypot(player.x-star.x,player.y-star.y)<65){positionStar();trigger('estrella');}}
+ function checkStar(){if(Math.hypot(player.x-star.x,player.y-star.y)<pickupRadius){positionStar();trigger('estrella');}}
  function control(key){if(state.finished)return;trigger('flechas',key);checkStar();draw();}
  function reset(){state.score=0;state.speed=38;state.background='#24395f';state.finished=false;player.x=460;player.y=260;player.angle=0;player.avatar=PROGRAMA.avatar;player.flash=0;positionStar();say('¡Usá las flechas para jugar!');updateScore();trigger('inicio');draw();}
  function draw(){
