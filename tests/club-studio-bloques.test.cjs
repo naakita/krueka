@@ -51,13 +51,8 @@ test('Se normalizan los bloques, las entradas y los límites',()=>{
  assert.ok(!js.includes('eval('));
 });
 
-test('Motor: flecha, colisión, puntos, función, condición y animación funcionan',()=>{
- const {api}=load();
- const program=api.starter();
- program.goal=2;
- program.events.estrella.push({id:'f',type:'llamar'});
- program.events.funcion=[{id:'cond',type:'si_puntos',value:1},{id:'add',type:'sumar',value:1},{id:'ani',type:'animar',value:5}];
- const js=api.gameSource(program),listeners={};
+function runGame(js,random){
+ const listeners={};
  const context2d={fillRect(){},beginPath(){},arc(){},fill(){},fillText(){},save(){},translate(){},rotate(){},restore(){},};
  const controls=['ArrowLeft','ArrowUp','ArrowDown','ArrowRight'].map(key=>({dataset:{key},addEventListener(type,fn){listeners['click:'+key]=fn}}));
  const elements={
@@ -65,13 +60,53 @@ test('Motor: flecha, colisión, puntos, función, condición y animación funcio
   reiniciar:{addEventListener(type,fn){listeners['restart']=fn}}
  };
  const doc={getElementById(id){return elements[id]},addEventListener(type,fn){listeners[type]=fn},querySelectorAll(){return controls}};
- const runtime={document:doc,Math:Object.assign(Object.create(Math),{random(){return .5}}),requestAnimationFrame(){},setInterval(){},console};
+ const runtime={document:doc,Math:Object.assign(Object.create(Math),{random}),requestAnimationFrame(){},setInterval(fn){listeners.tick=fn},console};
  vm.runInNewContext(js,runtime,{filename:'juego-generado.js'});
+ return {listeners,elements};
+}
+
+test('Motor: flecha, colisión, puntos, función, condición y animación funcionan',()=>{
+ const {api}=load();
+ const program=api.starter();
+ program.goal=2;
+ program.events.estrella.push({id:'f',type:'llamar'});
+ program.events.funcion=[{id:'cond',type:'si_puntos',value:1},{id:'add',type:'sumar',value:1},{id:'ani',type:'animar',value:5}];
+ let calls=0;
+ const {listeners,elements}=runGame(api.gameSource(program),()=>calls++%2===0?(540-65)/830:(260-65)/410);
  assert.equal(elements.puntos.textContent,'0 puntos');
  listeners.keydown({key:'ArrowRight',preventDefault(){}});
  assert.equal(elements.puntos.textContent,'2 puntos');
  assert.match(elements.mensaje.textContent,/Misión cumplida/);
  listeners.restart();
+ assert.equal(elements.puntos.textContent,'0 puntos');
+});
+
+test('No recoge una estrella recién creada sin mover al jugador',()=>{
+ const {api}=load();
+ // First choose two overlaps. Then spawn at x=540 (safe at reset);
+ // after one right move, all replacement attempts overlap and use the fallback.
+ const next=[[460,260],[460,260],[540,260]];
+ let i=0;
+ const {listeners,elements}=runGame(api.gameSource(api.starter()),()=>{
+  const [x,y]=next[Math.floor(i/2)]||[498,260];
+  return i++%2===0?(x-65)/830:(y-65)/410;
+ });
+ for(let k=0;k<5;k++)listeners.tick();
+ assert.equal(elements.puntos.textContent,'0 puntos');
+ listeners.keydown({key:'ArrowRight',preventDefault(){}});
+ assert.equal(elements.puntos.textContent,'1 punto');
+ for(let k=0;k<5;k++)listeners.tick();
+ assert.equal(elements.puntos.textContent,'1 punto');
+ listeners.restart();listeners.tick();
+ assert.equal(elements.puntos.textContent,'0 puntos');
+});
+
+test('Cada segundo conserva las acciones personalizadas',()=>{
+ const {api}=load(),program=api.starter();
+ program.events.segundo=[{id:'clock',type:'decir',value:'El reloj funciona'}];
+ const {listeners,elements}=runGame(api.gameSource(program),()=>0);
+ listeners.tick();
+ assert.equal(elements.mensaje.textContent,'El reloj funciona');
  assert.equal(elements.puntos.textContent,'0 puntos');
 });
 
