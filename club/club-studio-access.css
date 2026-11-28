@@ -6,3 +6,37 @@ body.studio-access #krueka-studio #ks-alternative-help{display:none}body.studio-
 
 @media(max-width:600px){body.studio-access #krueka-studio .ks-top #ks-save,body.studio-access #krueka-studio .ks-top .ks-focus-launch{display:none}body.studio-access #krueka-studio .ks-top{gap:6px}}
 @media(max-width:600px){body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-tabs{padding:8px;gap:5px}body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-tabs .ks-btn{font-size:11px;min-height:38px;padding:6px}body.studio-access #krueka-studio:not(.ks-chat-focus) #ks-ai-status{font-size:10px;padding:6px 9px;margin-top:6px}body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-class-tools{margin:0 10px;padding:4px 0}body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-modes{padding:5px 10px}body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-modes .ks-btn{font-size:11px;min-height:30px;padding:5px 8px}body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-compose{padding:8px}body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-compose label{display:block;font-size:11px;margin:0 0 4px;line-height:1.4}body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-compose textarea{height:62px;min-height:62px;font-size:13px;padding:8px}body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-compose .ks-tip{font-size:9px;line-height:1.4}body.studio-access #krueka-studio:not(.ks-chat-focus) .ks-compose .ks-actions{margin-top:6px;gap:6px}body.studio-access #krueka-studio:not(.ks-chat-focus) #ks-send{font-size:11px;padding:6px 8px;min-height:34px}}
+
+/* A first-time learner sees where to ask, then the response. Tools stay available. */
+#krueka-studio:not(.ks-chat-focus) #ks-ai.ks-chat-first:not([hidden]){
+ display:flex;flex-direction:column;min-height:0;overflow:auto;
+}
+#krueka-studio:not(.ks-chat-focus) #ks-ai.ks-chat-first > :not(#ks-chat){flex:none}
+#krueka-studio:not(.ks-chat-focus) #ks-ai.ks-chat-first > #ks-chat{flex:1 1 0;min-height:82px;padding:6px 15px 12px}
+#krueka-studio #ks-ai.ks-chat-first .ks-onboard{display:none}
+#krueka-studio #ks-simple-head{padding:16px 15px 6px}
+#krueka-studio #ks-simple-head .ks-simple-label{color:#9ec6e7;font-size:10px;font-weight:750;letter-spacing:.12em}
+#krueka-studio #ks-simple-head h2{margin:4px 0;font-size:clamp(19px,2.4vw,26px);line-height:1.2}
+#krueka-studio #ks-simple-state{font-size:12px;margin:6px 0;color:var(--ks-muted,#afc6db)}
+#krueka-studio #ks-ai.ks-chat-first #ks-form{padding:5px 15px 10px}
+#krueka-studio #ks-ai.ks-chat-first #ks-prompt{min-height:62px}
+#krueka-studio #ks-simple-bar{display:flex;flex-wrap:wrap;gap:6px;padding:0 15px 11px}
+#krueka-studio #ks-simple-bar .ks-btn{font-size:11px;min-height:32px}
+#krueka-studio #ks-simple-history{border-top:1px solid #7c9abd40;font-size:12px;font-weight:700;padding:10px 15px 2px}
+#krueka-studio #ks-ai.ks-chat-first:not(.ks-simple-tools-open) > :is(.ks-class-tools,.ks-modes,#ks-ai-status,#ks-usage,#ks-alternative-help){display:none}
+#krueka-studio.ks-chat-focus #ks-simple-head{display:none}
+#krueka-studio.ks-chat-focus #ks-simple-bar{justify-content:center}
+#krueka-studio.ks-chat-focus #ks-simple-history{color:#40576a}
+@media(max-width:600px){
+ #krueka-studio #ks-simple-head{padding:10px 10px 2px}
+ #krueka-studio #ks-ai.ks-chat-first #ks-form{padding:3px 10px 7px}
+ #krueka-studio #ks-simple-bar{padding:0 10px 6px}
+}
+@media(max-width:600px){
+ #krueka-studio #ks-simple-head h2{margin:2px 0}
+ #krueka-studio #ks-simple-state{margin:3px 0;font-size:11px;line-height:1.35}
+ #krueka-studio #ks-ai.ks-chat-first #ks-prompt{height:49px;min-height:49px}
+ #krueka-studio #ks-ai.ks-chat-first #ks-form .ks-actions{margin-top:4px}
+ #krueka-studio #ks-simple-history{padding:5px 10px 2px}
+ #krueka-studio:not(.ks-chat-focus) #ks-ai.ks-chat-first > #ks-chat{padding:4px 10px;min-height:58px}
+}
