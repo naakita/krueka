@@ -22,9 +22,9 @@ function normalise(raw){
   const c=raw&&typeof raw==='object'?raw:{},num=(v,a,b,d)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Number(v))):d;
   const color=(v,d)=>/^#[0-9a-f]{6}$/i.test(String(v))?String(v):d,ids=new Set();
   const themes=['station','forest','island'],theme=themes.includes(c.theme)?c.theme:'station';
-  const zones=(Array.isArray(c.zones)?c.zones:[]).slice(0,3).map((z,i)=>({name:String(z?.name||'Zona '+(i+2)).trim().slice(0,32)||'Zona '+(i+2),theme:themes.includes(z?.theme)?z.theme:theme}));
+  const zones=(Array.isArray(c.zones)?c.zones:[]).slice(0,4).map((z,i)=>({name:String(z?.name||'Zona '+(i+2)).trim().slice(0,32)||'Zona '+(i+2),theme:themes.includes(z?.theme)?z.theme:theme}));
   const counts=Array(zones.length+1).fill(0);
-  const objects=(Array.isArray(c.objects)?c.objects:[]).slice(0,192).flatMap((o,i)=>{
+  const objects=(Array.isArray(c.objects)?c.objects:[]).slice(0,240).flatMap((o,i)=>{
     o=o&&typeof o==='object'?o:{};
     const zone=Number.isInteger(o.zone)&&o.zone>=0&&o.zone<=zones.length?o.zone:0;
     if(counts[zone]>=48)return [];counts[zone]++;
@@ -294,7 +294,9 @@ function mountInspectionCamera(){
   // funcionan con teclado o pantalla táctil sin pedir gestos especiales.
   refresh();
 }
-const standardGame='/* Motor 3D propio: geometría, cámara, iluminación, colisiones y modo compatible. */\nconst avatarProfiles = '+avatarProfiles.toString()+';\nconst normalise = '+normalise.toString()+';\n('+runtime.toString()+')();';
+const oldNormaliserSource=normalise.toString().replace('.slice(0,4).map((z,i)','.slice(0,3).map((z,i)').replace('.slice(0,240).flatMap','.slice(0,192).flatMap');
+const baseNormalise=normalise;
+const standardGame='/* Motor 3D propio: geometría, cámara, iluminación, colisiones y modo compatible. */\nconst avatarProfiles = '+avatarProfiles.toString()+';\nconst normalise = '+oldNormaliserSource+';\n('+runtime.toString()+')();';
 const inspectableGame=standardGame
   .replace('  function camera(){','  let inspectionZoom=1,inspectionX=0,inspectionZ=0,inspectionPan=false;const inspectionYaw=yaw;\n  function camera(){')
   .replace('    const z=unit(sub(eye,target))','    if(editing&&!isolated){target[0]+=inspectionX;eye[0]+=inspectionX;target[2]+=inspectionZ;eye[2]+=inspectionZ;}\n    const z=unit(sub(eye,target))')
@@ -311,14 +313,104 @@ const inspectableGame=standardGame
 // El visor habilita el zoom para proyectos de la edición anterior sin
 // reescribir el motor guardado ni tocar proyectos con JavaScript propio.
 function previewFiles(files){return files?.['game.js']===standardGame?{...files,'game.js':inspectableGame}:files;}
+// El índice de la zona sigue identificando sus objetos. La cuadrícula solo
+// decide dónde aparece; los mundos antiguos conservan la misma fila vertical.
+function gridDirections(){
+ return [['up',0,-1,'↑ Arriba'],['right',1,0,'→ Derecha'],['down',0,1,'↓ Abajo'],['left',-1,0,'← Izquierda']];
+}
+function mapNormalise(raw){
+ const cfg=baseNormalise(raw),placed=[{col:0,row:0}],input=Array.isArray(raw?.zones)?raw.zones:[];
+ const occupied=(col,row)=>placed.some(p=>p.col===col&&p.row===row);
+ for(const [i,z] of cfg.zones.entries()){
+  const pick=input[i]||{},valid=Number.isInteger(pick.col)&&Number.isInteger(pick.row)&&
+   !occupied(pick.col,pick.row)&&placed.some(p=>Math.abs(p.col-pick.col)+Math.abs(p.row-pick.row)===1);
+  let col=pick.col,row=pick.row;
+  if(!valid){
+   outer:for(const parent of [...placed].reverse())for(const [,dx,dz] of gridDirections()){
+    col=parent.col+dx;row=parent.row+dz;if(!occupied(col,row))break outer;
+   }
+  }
+  placed.push({col,row});Object.assign(z,{col,row});
+ }
+ return cfg;
+}
+function worldLayout(cfg){
+ const width=24,depth=28,directions=gridDirections();
+ const zones=[{name:'Zona inicial',theme:cfg.theme,col:0,row:0},...(cfg.zones||[])].map((p,i)=>({...p,col:p.col??0,row:p.row??-i,x:(p.col??0)*width,z:(p.row??-i)*depth}));
+ const byCell=new Map(zones.map((p,i)=>[p.col+','+p.row,i]));
+ const exits=zones.map(p=>directions.flatMap(([id,dx,dz,label])=>{
+  const index=byCell.get((p.col+dx)+','+(p.row+dz));return index===undefined?[]:[{id,dx,dz,label,index}];
+ }));
+ const gateIndex=zones.length-1,goal=zones[gateIndex];
+ // Dejar el portal en un borde libre, aun cuando la zona final tenga un
+ // vecino arriba. Primero se intenta la posición clásica.
+ const gateSide=directions.find(([id])=>!exits[gateIndex].some(e=>e.id===id))||directions[0];
+ const [gateDir,gdx,gdz]=gateSide,gate={x:goal.x+gdx*9.75,z:goal.z+gdz*12,dir:gateDir,dx:gdx,dz:gdz};
+ function locate(x,z){return byCell.get(Math.floor((x+width/2)/width)+','+Math.floor((z+depth/2)/depth));}
+ function walkable(x,z){
+  const i=locate(x,z);if(i===undefined)return false;
+  const p=zones[i],lx=x-p.x,lz=z-p.z;
+  if(Math.abs(lx)<=10.5&&Math.abs(lz)<=12.5)return true;
+  return exits[i].some(({dx,dz})=>dx?dx*lx>=10.5&&Math.abs(lz)<=9:dz*lz>=12.5&&Math.abs(lx)<=10);
+ }
+ function point(o){const p=zones[o.zone||0];return {x:p.x+o.x,z:p.z+o.z};}
+ function atGate(x,z){const lx=x-gate.x,lz=z-gate.z;return Math.abs(gdx?lz:lx)<1.4&&Math.abs(gdx?lx:lz)<1.15;}
+ return {width,depth,zones,directions,exits,gate,locate,walkable,point,atGate};
+}
+function connectorMesh(p,edge,palette){
+ const {dx,dz}=edge,wide=dx?18:20;
+ box(p.x+dx*11.95,-.032,p.z+dz*13.95,dx?.34:wide,.03,dx?wide:.34,palette.accent,0,true);
+ for(const side of [-1,1]){
+  const x=p.x+dx*11.95+dz*side*(wide/2),z=p.z+dz*13.95+dx*side*(wide/2);
+  box(x,0,z,.2,1.5,.2,palette.edge);box(x,1.5,z,.32,.22,.32,palette.accent,0,true);
+ }
+}
+function portalMesh(gate,palette,open){
+ const {x,z,dx,dz}=gate,color=open?'#86efac':'#8b9ab1';
+ for(const dir of [-1,1])box(x+dz*dir*1.3,0,z+dx*dir*1.3,.4,3,.4,palette.edge);
+ box(x,2.6,z,dx?.4:3,.4,dx?3:.4,color,0,true);
+ box(x-dx*.3,.02,z-dz*.3,dx?1.3:2.6,.05,dx?2.6:1.3,color);
+}
+function runtimeGrid(base){
+ const declarations=[gridDirections,mapNormalise,worldLayout].map(fn=>fn.toString()).join('\n');
+ const enlarged=base.replace('const normalise = function normalise','const baseNormalise = function normalise').replace('.slice(0,3).map((z,i)','.slice(0,4).map((z,i)').replace('.slice(0,192).flatMap','.slice(0,240).flatMap');
+ return enlarged
+  .replace(';\n(function runtime(isolated){',';\n'+declarations+'\nconst normalise=mapNormalise;\n(function runtime(isolated){')
+  .replace(/const zones=\[\{name:'Zona inicial'.*\n  const worldZ=.*?;/,'const map=worldLayout(cfg),zones=map.zones,lastZone=zones.length-1;')
+  .replace('[0,0,-step*(editing?viewZone:playerZone)]','[zones[editing?viewZone:playerZone].x,0,zones[editing?viewZone:playerZone].z]')
+  .replace(/function objectPosition\(o\)\{[^\n]+/,"function objectPosition(o){const p=map.point(o);p.x+=o.type==='drone'?Math.sin(elapsed*1.1+o.z)*1.5:0;return p;}")
+  .replace('  function geometry(){','  '+connectorMesh.toString()+'\n  '+portalMesh.toString()+'\n  function geometry(){')
+  .replace('for(let i=Math.max(0,nearby-1);i<=Math.min(lastZone,nearby+1);i++){','const visible=[nearby,...map.exits[nearby].map(e=>e.index)];\n    for(const i of visible){')
+  .replace(/const terrain=zones\[i\].theme,offset=-i\*step;[^]*?      drawLayer=2;/,`const {theme:terrain,x:cx,z:cz}=zones[i];palette=palettes[terrain];
+      drawLayer=0;box(cx,-.65,cz,map.width,.6,map.depth,palette.edge);
+      drawLayer=1;
+      for(let x=-10;x<=10;x+=4)for(let z=-12;z<=12;z+=4)box(cx+x,-.06,cz+z,3.94,.06,3.94,((x+z)/4)%2?palette.floor:palette.edge);
+      for(const edge of map.exits[i])connectorMesh(zones[i],edge,palette);
+      drawLayer=2;`)
+  .replace('const z=local+offset;','const z=local+cz;')
+  .replace('for(const x of [-11,11]){box(x,0,z,.5,3,.6,palette.edge);box(x,.3,z,.55,2.3,.2,light.accent,0,true);}box(0,-.02,z,.04,.02,3.8,light.accent,0,true);','for(const side of [-1,1]){if(Math.abs(local)<=8&&map.exits[i].some(e=>e.dx===side))continue;const x=cx+side*11;box(x,0,z,.5,3,.6,palette.edge);box(x,.3,z,.55,2.3,.2,light.accent,0,true);}box(cx,-.02,z,.04,.02,3.8,light.accent,0,true);')
+  .replace("for(const x of [-11,11]){box(x,0,z,.4,1,.4,'#715843');", "for(const side of [-1,1]){if(Math.abs(local)<=8&&map.exits[i].some(e=>e.dx===side))continue;const x=cx+side*11;box(x,0,z,.4,1,.4,'#715843');")
+  .replace("for(const x of [-11,11])crystal(x,.4,z,.4,'#c4b5fd');","for(const side of [-1,1])if(!(Math.abs(local)<=8&&map.exits[i].some(e=>e.dx===side)))crystal(cx+side*11,.4,z,.4,'#c4b5fd');")
+  .replace(/    if\(lastZone<=nearby\+1\)\{[^]*?if\(Math.abs\(playerZone-nearby\)>1\)return;/,`    if(visible.includes(lastZone))portalMesh(map.gate,palettes[zones[lastZone].theme],collected.size===crystals.length);
+    if(!visible.includes(playerZone))return;`)
+  .replace('Math.abs(x-o.x)','Math.abs(x-map.point(o).x)').replace('Math.abs(z-worldZ(o))','Math.abs(z-map.point(o).z)')
+  .replace(/if\(!blocked\(player.x\+dx,player.z\)\)[^\n]+\n    const entered=zoneOf\(player.z\);/,`if(map.walkable(player.x+dx,player.z)&&!blocked(player.x+dx,player.z))player.x+=dx;
+    if(map.walkable(player.x,player.z+dz)&&!blocked(player.x,player.z+dz))player.z+=dz;
+    if(dx||dz)player.angle=Math.atan2(dx,dz);
+    const entered=map.locate(player.x,player.z)??playerZone;`)
+  .replace('Math.abs(player.x)<1.4&&player.z<gateZ+1','map.atGate(player.x,player.z)')
+  .replace("Llegá al arco de la última zona.","Buscá el portal de la última zona.")
+  .replace('const p=project([o.x,o.type===\'crystal\'?1:o.height/2,worldZ(o)]);',"const obj=objectPosition(o),p=project([obj.x,o.type==='crystal'?1:o.height/2,obj.z]);");
+}
+const directionalGame=runtimeGrid(inspectableGame);
 const themes={station:'Estación neón',forest:'Bosque de cristales',island:'Isla flotante'},lights={cryo:'Azul frío',alert:'Alerta roja',sunset:'Atardecer'},types={crystal:'Cristal',crate:'Bloque',pillar:'Columna',tree:'Árbol',drone:'Dron',beacon:'Baliza',house:'Casa',car:'Auto decorativo',road:'Camino',wall:'Muro',rock:'Roca',lamp:'Farola',arch:'Arco',mountain:'Montaña',airplane:'Avión decorativo',shield:'Escudo de fantasía',staff:'Vara de luz',character:'Personaje de escena'};
-function create(){
+function create(legacy=false){
   const objects=[[-7,8],[7,7],[-5,2],[6,1],[-7,-5],[7,-8],[0,-7]].map(([x,z],i)=>({id:'crystal-'+i,type:'crystal',label:'Cristal '+(i+1),x,z,size:1,height:1.5,color:'#67e8f9'}));
   objects.push(...[[-4,6],[4,3],[-3,-2],[5,-5]].map(([x,z],i)=>({id:'block-'+i,type:'crate',label:'Bloque '+(i+1),x,z,size:2,height:1.2,color:'#526889'})),...[[0,4],[-4,-6]].map(([x,z],i)=>({id:'drone-'+i,type:'drone',label:'Dron '+(i+1),x,z,size:1,height:1,color:'#fb7185'})),{id:'beacon-0',type:'beacon',label:'Baliza',x:8,z:-3,size:1,height:2.5,color:'#a5b4fc'});
-  const cfg=normalise({title:'Exploradores 3D',objects});
+  const cfg=mapNormalise({title:'Exploradores 3D',objects});
   return {'index.html':'<!doctype html>\n<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Exploradores 3D</title><link rel="stylesheet" href="style.css"></head><body><main><header><div><small>KRUEKA · MI MUNDO 3D</small><h1 id="game-title"></h1></div><button id="mode">▶ Jugar</button></header><div class="toolbar"><span id="hud" role="status"></span><span id="renderer"></span><button id="pause">Pausar</button><button id="restart">Reiniciar</button></div><div class="stage"><canvas id="arena" tabindex="0" aria-label="Mundo 3D: arrastrá para girar la vista"></canvas><div class="camera"><button id="rotate-left" aria-label="Girar cámara a la izquierda">↶</button><button id="rotate-right" aria-label="Girar cámara a la derecha">↷</button></div><div class="badge">CREÁ TU PROPIO RECORRIDO</div></div><div id="controls"><button data-key="ArrowLeft" aria-label="Izquierda">←</button><button data-key="ArrowUp" aria-label="Avanzar">↑</button><button data-key="ArrowDown" aria-label="Retroceder">↓</button><button data-key="ArrowRight" aria-label="Derecha">→</button><button data-key="jump">Saltar</button></div><p id="status" role="status"></p></main><script src="game-config.js"><\/script><script src="game.js"><\/script></body></html>',
     'style.css':'*{box-sizing:border-box}body{margin:0;background:#081329;color:#eef6ff;font-family:system-ui,sans-serif;--accent:#67e8f9}main{max-width:1100px;margin:auto;padding:14px}header{display:flex;justify-content:space-between;align-items:center;gap:12px}h1{font-size:clamp(22px,3vw,32px);margin:5px 0}small{font-size:10px;letter-spacing:.18em;color:var(--accent)}button{border:1px solid #ffffff30;background:#172338;color:#e9f5ff;border-radius:10px;font:inherit;font-size:12px;padding:10px 13px;cursor:pointer;touch-action:none}#mode{background:var(--accent);color:#102238;font-weight:800;white-space:nowrap}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;margin:10px 0}#hud{font-weight:750;flex:1;min-width:170px}#renderer{color:#9ab0cd;font-size:10px}.stage{position:relative;border:1px solid #5a7caa66;border-radius:16px;overflow:hidden;box-shadow:0 16px 60px #0004}canvas{display:block;width:100%;height:clamp(300px,56vh,600px);touch-action:none;outline:0}.camera{position:absolute;right:12px;bottom:12px;display:flex;gap:6px}.badge{position:absolute;left:14px;top:14px;pointer-events:none;color:#abc7e1;font-size:9px;letter-spacing:.12em}#controls{display:flex;justify-content:center;gap:6px;margin:12px 0}#controls button{min-width:42px;min-height:42px}#status{font-size:12px;text-align:center;line-height:1.5;color:#a8bdd7;min-height:36px}@media(max-width:480px){main{padding:9px}#renderer{display:none}canvas{height:340px}#controls button{padding:9px 11px}.toolbar button{padding:8px}}',
-    'game-config.js':StudioKits.configFile(cfg),'game.js':inspectableGame,
+    'game-config.js':StudioKits.configFile(cfg),'game.js':legacy===true?inspectableGame:directionalGame,
     'LEEME.md':'# Exploradores 3D\n\nTema: Escenarios 3D y reglas de un videojuego.\nCapacidad: Construir y probar un recorrido, modificando objetos y ambientación.\nIndicadores: ubico objetos; comparo dos luces; pruebo colisiones y controles; explico una mejora.\n\n1. Elegí Bases y reglas: cambiá luces, escenario y personaje.\n2. Seleccioná un objeto en la escena o en la lista; cambiá X y Z, tamaño y altura.\n3. Probá con Jugar: juntá cristales y llegá al arco del fondo.\n4. Si es difícil, mové un obstáculo o aumentá el tiempo.\n5. Escribí acá qué cambiaste y qué mejoró. Enviá al profe.\n\nLos controles visuales no consultan IA. El Chat puede guardar ideas pendientes de conexión.\n'};
 }
 function piecePreview(){
@@ -327,7 +419,7 @@ function piecePreview(){
 }
 
 function renderEditor(studio,el,raw){
-  const cfg=normalise(raw),zone=Math.max(0,Math.min(cfg.zones.length,studio.expansionZone||0)),objects=cfg.objects.filter(o=>(o.zone||0)===zone),selected=objects.find(o=>o.id===studio.selectedSceneObject)||objects[0];studio.selectedSceneObject=selected?.id||null;
+  const cfg=mapNormalise(raw),zone=Math.max(0,Math.min(cfg.zones.length,studio.expansionZone||0)),objects=cfg.objects.filter(o=>(o.zone||0)===zone),selected=objects.find(o=>o.id===studio.selectedSceneObject)||objects[0];studio.selectedSceneObject=selected?.id||null;
   const compatibleTypes=studio.files?.['game.js']===create()['game.js']?types:Object.fromEntries(Object.entries(types).filter(([key])=>(key!=='character'&&!['mountain','airplane','shield','staff'].includes(key))||key===selected?.type));
   const options=(entries,value)=>Object.entries(entries).map(([id,label])=>'<option value="'+id+'" '+(id===value?'selected':'')+'>'+esc(label)+'</option>').join('');
   el.innerHTML='<div class="ks-section-label">CONSTRUÍ · ILUMINÁ · JUGÁ</div><h2>Tu mundo 3D</h2><p>Mové objetos, elegí las luces y probá tu recorrido. Estos controles funcionan sin IA.</p><div class="ks-light-grid">'+Object.entries(lights).map(([id,label])=>'<button class="ks-btn ks-light '+id+'" data-light="'+id+'" aria-pressed="'+(id===cfg.lighting)+'"><span></span>'+label+'</button>').join('')+'</div><section class="ks-settings"><h3>Ambientación y reglas</h3><label>Nombre en el juego<input data-scene="title" maxlength="60" value="'+esc(cfg.title)+'"></label><div class="ks-fields"><label>Mundo<select data-scene="theme">'+options(themes,cfg.zones[zone-1]?.theme||cfg.theme)+'</select></label><label>Color del explorador<input data-scene="avatarColor" type="color" value="'+cfg.avatarColor+'"></label><label>Velocidad<input data-scene="speed" type="number" min="2" max="9" step=".5" value="'+cfg.speed+'"></label><label>Vidas<input data-scene="lives" type="number" min="1" max="9" value="'+cfg.lives+'"></label><label>Tiempo (segundos)<input data-scene="seconds" type="number" min="30" max="300" value="'+cfg.seconds+'"></label><label>Cámara<select data-scene="camera">'+options({follow:'Seguir al personaje',orbit:'Vista general'},cfg.camera)+'</select></label><label>Calidad<select data-scene="quality">'+options({low:'Liviana',high:'Más nitidez'},cfg.quality)+'</select></label></div><button id="ks-scene-apply" class="ks-btn primary">Aplicar y probar</button></section><section class="ks-settings" id="ks-scene-objects"><h3>Objetos del mundo · '+objects.length+' / 48</h3><p>Tocá un objeto en la vista de edición o elegilo aquí. X mueve a los lados; Z, adelante y atrás.</p><div class="ks-scene-list">'+objects.map(o=>'<button class="ks-btn" data-object="'+o.id+'" aria-pressed="'+(o.id===selected?.id)+'">'+esc(o.label)+'<small>'+esc(types[o.type])+'</small></button>').join('')+'</div>'+ (selected?'<label>Nombre del objeto<input data-object-field="label" maxlength="32" value="'+esc(selected.label)+'"></label><div class="ks-fields"><label>Tipo<select data-object-field="type">'+options(compatibleTypes,selected.type)+'</select></label>'+[['x','Posición X',-10,10],['z','Posición Z',-12,12],['size','Tamaño',.4,4],['height','Altura',.5,5]].map(([id,label,min,max])=>'<label>'+label+'<input data-object-field="'+id+'" type="number" min="'+min+'" max="'+max+'" step=".5" value="'+selected[id]+'"></label>').join('')+'<label>Color<input data-object-field="color" type="color" value="'+selected.color+'"></label></div><div class="ks-scene-actions"><button id="ks-object-apply" class="ks-btn primary">Guardar objeto</button><button id="ks-object-copy" class="ks-btn">Duplicar</button><button id="ks-object-remove" class="ks-btn">Quitar</button></div>':'<p>Agregá objetos para construir tu recorrido.</p>')+'<div class="ks-scene-add"><select id="ks-object-type" aria-label="Tipo de objeto nuevo">'+options(Object.fromEntries(Object.entries(compatibleTypes).filter(([key])=>key!=='character')),'crystal')+'</select><button id="ks-object-add" class="ks-btn">＋ Agregar objeto</button></div></section><button id="ks-scene-bases" class="ks-btn">Cambiar base de juego</button><p class="ks-tip">Tus cambios se guardan en game-config.js y se pueden deshacer. Aplicar reinicia la vista del juego.</p>';
@@ -345,7 +437,7 @@ function renderEditor(studio,el,raw){
   for(const id of ['ks-object-add','ks-object-copy']){const b=el.querySelector('#'+id);if(b){b.dataset.limitReached=String(objects.length>=48);b.disabled=studio.busy||!studio.cloudReady||objects.length>=48;}}
   el.querySelector('#ks-scene-bases').onclick=()=>studio.showKits();
 }
-window.Studio3D={normalise,create,renderEditor,piecePreview,avatarProfiles,previewFiles};
+window.Studio3D={normalise:mapNormalise,layout:worldLayout,create,renderEditor,piecePreview,avatarProfiles,previewFiles};
 StudioKits.catalog.unshift({id:'explore3d',icon:'🧊',title:'Exploradores 3D',tag:'Mundos, luces y objetos',description:'Construí una escena 3D, explorá y abrí el portal.',challenge:'Compará dos luces, mové un obstáculo y explicá cómo cambia el recorrido.'});
 const originalCreate=StudioKits.create.bind(StudioKits),originalArt=StudioKits.art.bind(StudioKits);
 StudioKits.create=id=>id==='explore3d'?create():originalCreate(id);
