@@ -133,3 +133,25 @@
 #k3d-properties[open] summary{margin-bottom:10px}
 
 #krueka-studio #k3d-hero[hidden]{display:none!important}
+
+/* Edición aislada de piezas y colocación sin modificar el mundo hasta confirmar. */
+#krueka-studio #k3d-piece-editor{margin:auto;padding:clamp(14px,3vw,24px);width:min(720px,calc(100vw - 24px));max-height:calc(100dvh - 28px);overflow:auto;border:1px solid #536a92;border-radius:16px;color:#e9f2ff;background:#111c2e;box-shadow:0 24px 100px #0009}
+#k3d-piece-editor::backdrop{background:#030817cf}
+#k3d-piece-editor [hidden]{display:none!important}
+#k3d-piece-editor>header{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:14px}
+#k3d-piece-editor h2{margin:4px 0 0;overflow-wrap:anywhere;font-size:clamp(22px,4vw,30px)}
+#k3d-piece-editor p{font-size:13px;color:#c3d2e6}
+#k3d-piece-editor #k3d-piece-status:empty{display:none}
+#k3d-piece-editor #k3d-piece-status{color:#fed7aa;margin-bottom:0}
+.k3d-detail-layout,.k3d-position-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start}
+.k3d-detail-preview iframe{display:block;width:100%;height:300px;border:1px solid #536a92;border-radius:10px;background:#081329}
+.k3d-detail-preview p{margin:6px 0 0}
+.k3d-piece-actions{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px;margin-top:14px}
+#k3d-placement-map{position:relative;min-height:200px;aspect-ratio:1.2;background-color:#0b1523;border:1px solid #536a92;border-radius:10px;cursor:crosshair;background-image:linear-gradient(to right,#abc8e628 1px,transparent 1px),linear-gradient(to bottom,#abc8e628 1px,transparent 1px);background-size:4.4% 3.666667%}
+#k3d-placement-map span{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
+.k3d-place-existing{color:var(--dot);font-weight:900;font-size:22px}
+.k3d-place-landmark{font-size:10px;color:#e1e9ff;background:#25375a;border-radius:4px;padding:2px}
+.k3d-place-marker{z-index:1;color:#fff;background:#172842;border:2px solid var(--dot);border-radius:50%;width:25px;height:25px;text-align:center;font-size:15px;line-height:20px}
+@media(max-width:600px){.k3d-detail-layout,.k3d-position-layout{grid-template-columns:minmax(0,1fr)}.k3d-detail-preview iframe{height:210px}.k3d-position-fields{display:grid;grid-template-columns:1fr 1fr;gap:7px}.k3d-position-fields p{grid-column:1/-1;margin:0}.k3d-piece-actions{justify-content:flex-start}}
+
+.k3d-add-buttons{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px}

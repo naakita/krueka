@@ -3,7 +3,7 @@
 (function(){
 'use strict';
 if(window.Krueka3DToolbox)return;
-const MAX=48,LEGACY_ENGINE_SHA='2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724',FILENAME='escena-krueka.json';
+const MAX=48,LEGACY_ENGINE_SHA=new Set(['2ccca19589275907a5f9a4e073c9aea2cbe93f3bbee82919678dd89aeda8c724','6ac7fb92baebef6cbe7b33581328d73bd6b46971bac93b3b35c64ae49076c8bf']),FILENAME='escena-krueka.json';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const presets={
  city:{name:'Ciudad low-poly',theme:'station',lighting:'sunset',generate(){
@@ -124,7 +124,7 @@ async function characterEngine(studio){
  if(typeof candidate!=='string'||!globalThis.crypto?.subtle)throw Error('Este juego usa un motor distinto. Creá un Mundo 3D nuevo para usar esta herramienta sin cambiar tu código.');
  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(candidate));
  const hex=Array.from(new Uint8Array(digest),v=>v.toString(16).padStart(2,'0')).join('');
- if(hex!==LEGACY_ENGINE_SHA)throw Error('Este juego usa un motor distinto. Creá un Mundo 3D nuevo para usar esta herramienta sin cambiar tu código.');
+ if(!LEGACY_ENGINE_SHA.has(hex))throw Error('Este juego usa un motor distinto. Creá un Mundo 3D nuevo para usar esta herramienta sin cambiar tu código.');
  return latest;
 }
 async function commitScene(studio,next,selectedId,upgrade=false){
@@ -260,16 +260,123 @@ const sceneTypes={
 };
 const groupNames={cast:'Personajes',terrain:'Escenario',props:'Piezas y vehículos',mission:'Retos y cristales'};
 let panelOwner='',panelState={};
+const worldPosition=(x,z)=>[6+(x+10)*4.4,6+(z+12)*88/24];
+function pieceEditor(studio,source,{existing=false}={}){
+ const app=document.getElementById('krueka-studio');
+ if(!app||studio.busy||!studio.cloudReady||app.querySelector('#k3d-piece-editor'))return;
+ const openingProject=studio.projectId,ownership=studio.sid?.(),openingConfig=studio.files['game-config.js'];
+ const cfg=read({},studio),dialog=document.createElement('dialog');
+ if(!existing&&cfg.objects.length>=MAX){window.alert('El mundo ya tiene '+MAX+' objetos. Quitá uno para sumar otra pieza.');return;}
+ dialog.id='k3d-piece-editor';dialog.setAttribute('aria-labelledby','k3d-piece-title');dialog.className='ks-settings';
+ dialog.innerHTML='<header><div><div class="ks-section-label" id="k3d-step">1 DE 2 · EDITÁ LA PIEZA</div><h2 id="k3d-piece-title">Editar pieza</h2></div><button type="button" id="k3d-piece-close" class="ks-btn">Cancelar</button></header>'+
+  '<section id="k3d-detail-step"><div class="k3d-detail-layout"><div class="k3d-detail-preview"><iframe id="k3d-piece-model" title="Vista 3D de la pieza, independiente del mundo" sandbox="allow-scripts"></iframe><p>Girá la pieza con el mouse, el dedo o los botones.</p></div>'+
+  '<div id="k3d-detail-fields"><label>Nombre<input id="k3d-piece-name" maxlength="32" required></label><label>Molde<select id="k3d-piece-type"></select></label><label id="k3d-piece-style-row">Forma del personaje<select id="k3d-piece-style"><option value="robot">Robot</option><option value="piloto">Piloto</option><option value="explorador">Explorador</option></select></label>'+
+  '<div class="ks-fields"><label>Color<input id="k3d-piece-color" type="color"></label><label>Tamaño<input id="k3d-piece-size" type="number" min="0.4" max="4" step="0.1" required></label><label id="k3d-piece-height-row">Altura<input id="k3d-piece-height" type="number" min="0.5" max="5" step="0.1" required></label></div></div></div>'+
+  '<div class="k3d-piece-actions"><button type="button" class="ks-btn primary" id="k3d-place-step">Elegir dónde colocar →</button></div></section>'+
+  '<section id="k3d-position-step" hidden><p>Tocá el plano para elegir un lugar o ajustá las coordenadas. Nada cambia hasta confirmar.</p>'+
+  '<div class="k3d-position-layout"><div id="k3d-placement-map" aria-label="Plano de colocación"></div><div class="k3d-position-fields"><label>Posición X · izquierda/derecha<input id="k3d-place-x" type="number" min="-10" max="10" step="any" required></label><label>Posición Z · adelante/atrás<input id="k3d-place-z" type="number" min="-12" max="12" step="any" required></label><p id="k3d-placement-note" role="status"></p></div></div>'+
+  '<div class="k3d-piece-actions"><button type="button" class="ks-btn" id="k3d-piece-edit-back">← Volver a editar</button><button type="button" class="ks-btn" id="k3d-place-commit">Colocar en el mundo</button><button type="button" class="ks-btn primary" id="k3d-place-play">Colocar y probar</button></div></section>'+
+  '<p id="k3d-piece-status" role="status"></p>';
+ app.append(dialog);
+ const q=name=>dialog.querySelector('#k3d-'+name),frame=q('piece-model'),status=q('piece-status');
+ const detail=q('detail-step'),position=q('position-step'),map=q('placement-map');
+ const fields={'label':q('piece-name'),'type':q('piece-type'),'avatarStyle':q('piece-style'),'color':q('piece-color'),'size':q('piece-size'),'height':q('piece-height')};
+ let placing=false,committing=false;
+ const kind=source.type||'character', current=cfg.objects.find(o=>o.id===source.id);
+ let suggested={x:source.x,z:source.z};
+ if(suggested.x==null||suggested.z==null){
+  try{suggested=freeCharacterSpot(cfg.objects);}catch(e){suggested={x:3,z:4};}
+ }
+ for(const [id,[name]] of Object.entries(sceneTypes))fields.type.add(new Option(name,id));
+ const draft={id:source.id,type:kind,label:source.label||sceneTypes[kind][0],avatarStyle:source.avatarStyle||'robot',color:source.color||(kind==='character'?'#a5b4fc':'#67e8f9'),size:source.size??1,height:source.height??(kind==='character'?2:1.5),...suggested};
+ for(const [key,field] of Object.entries(fields))field.value=draft[key];
+ const x=q('place-x'),z=q('place-z');x.value=draft.x;z.value=draft.z;
+ const shape=()=>Studio3D.normalise({objects:[{
+  ...draft,type:fields.type.value,label:fields.label.value.trim()||draft.label,
+  size:Number.isFinite(fields.size.valueAsNumber)?fields.size.valueAsNumber:draft.size,
+  height:Number.isFinite(fields.height.valueAsNumber)?fields.height.valueAsNumber:draft.height,
+  avatarStyle:fields.avatarStyle.value,color:fields.color.value
+ }]}).objects[0];
+ const model=()=>{
+  const o=shape();
+  q('piece-title').textContent=o.label;
+  q('piece-style-row').hidden=o.type!=='character';
+  q('piece-height-row').hidden=['road','crystal','drone'].includes(o.type);
+  frame.contentWindow?.postMessage({type:'krueka-piece-model',object:o},'*');
+ };
+ for(const field of Object.values(fields)){field.addEventListener('input',model);field.addEventListener('change',model);}
+ fields.type.onchange=()=>{if(!existing&&fields.label.value===draft.label){draft.label=sceneTypes[fields.type.value][0];fields.label.value=draft.label;model();}};
+ frame.onload=model;frame.srcdoc=Studio3D.piecePreview();
+ function mark(text,x,z,tag,color){
+  const point=document.createElement('span');const [left,top]=worldPosition(x,z);
+  point.style.left=left+'%';point.style.top=top+'%';if(color)point.style.setProperty('--dot',color);
+  point.className=tag;point.title=text;point.textContent=tag==='k3d-place-existing'?'•':text;map.append(point);return point;
+ }
+ for(const o of cfg.objects)if(!existing||o.id!==source.id)mark(o.label,o.x,o.z,'k3d-place-existing',o.color);
+ mark('Inicio',0,11,'k3d-place-landmark');mark('Portal',0,-12,'k3d-place-landmark');
+ const marker=mark('✚',draft.x,draft.z,'k3d-place-marker',draft.color);
+ function coords(){
+  const vx=x.valueAsNumber,vz=z.valueAsNumber,valid=x.validity.valid&&z.validity.valid;
+  marker.hidden=!valid;
+  if(!valid){q('placement-note').textContent='Ingresá una posición dentro del plano.';return;}
+  const [left,top]=worldPosition(vx,vz);marker.style.left=left+'%';marker.style.top=top+'%';
+  marker.style.setProperty('--dot',fields.color.value);
+  const occupied=cfg.objects.some(o=>(!existing||o.id!==source.id)&&Math.hypot(o.x-vx,o.z-vz)<.8);
+  q('placement-note').textContent=occupied?'Hay otro objeto cerca. Si querés, elegí un lugar libre.':'La cruz marca el lugar de tu pieza.';
+ }
+ x.oninput=z.oninput=coords;
+ map.onclick=e=>{
+  if(committing)return;
+  const r=map.getBoundingClientRect(),c=(p,start,side,max)=>Math.max(-max,Math.min(max,Math.round(((p-start)/side-.5)*2*max/.88)));
+  x.value=c(e.clientX,r.left,r.width,10);z.value=c(e.clientY,r.top,r.height,12);coords();
+ };
+ function go(to){
+  placing=to;detail.hidden=placing;position.hidden=!placing;status.textContent='';
+  q('step').textContent=placing?'2 DE 2 · UBICÁ LA PIEZA':'1 DE 2 · EDITÁ LA PIEZA';
+  if(placing){coords();x.focus();}else{fields.label.focus();model();}
+ }
+ q('place-step').onclick=()=>{if(Object.values(fields).every(el=>el.closest('[hidden]')||el.reportValidity())&&fields.label.value.trim())go(true);else status.textContent='Revisá el nombre y las medidas de la pieza.';};
+ q('piece-edit-back').onclick=()=>go(false);
+ function dismiss(){if(!committing)dialog.close();}
+ q('piece-close').onclick=dismiss;
+ dialog.addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey)e.stopPropagation();});
+ dialog.addEventListener('cancel',e=>{if(committing)e.preventDefault();});
+ dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+ async function place(play){
+  if(committing||!placing||!x.reportValidity()||!z.reportValidity())return;
+  if(studio.projectId!==openingProject||studio.sid?.()!==ownership||studio.files['game-config.js']!==openingConfig){status.textContent='El proyecto cambió. Cerrá esta ficha y volvé a abrir la pieza.';return;}
+  if(studio.busy||!studio.cloudReady){status.textContent='Esperá a que termine el guardado e intentá de nuevo.';return;}
+  const ids=new Set(cfg.objects.map(o=>o.id));let seq=0;
+  const o={...shape(),x:x.valueAsNumber,z:z.valueAsNumber};
+  if(existing&&current)o.id=current.id;
+  else {while(ids.has('objeto-'+(++seq)));o.id='objeto-'+seq;}
+  const next=Studio3D.normalise({...cfg,objects:existing?cfg.objects.map(item=>item.id===o.id?o:item):[...cfg.objects,o]});
+  if(existing&&!current)return;
+  const result=validate(next),old=validate(cfg);
+  const introduced=result.warnings.find(w=>/bloquead|alcanzables|punto de salida/.test(w)&&!old.warnings.includes(w));
+  if(introduced){status.textContent=introduced+' Elegí otro lugar para colocar la pieza.';return;}
+  committing=true;for(const button of dialog.querySelectorAll('button'))button.disabled=true;
+  try{
+   studio.builderNotice='✓ '+o.label+' '+(existing?'actualizado.':'colocado en el mundo.');
+   await commitScene(studio,next,o.id,newTypes.includes(o.type));
+   dialog.close();if(play)studio.playCurrent();
+  }catch(e){studio.builderNotice='';status.textContent=e.message;}
+  finally{committing=false;for(const button of dialog.querySelectorAll('button'))button.disabled=false;}
+ }
+ q('place-commit').onclick=()=>place(false);q('place-play').onclick=()=>place(true);
+ dialog.showModal();fields.label.focus({preventScroll:true});
+}
+
 function scenePanel(studio,section,cfg){
  const id=(studio.sid?.()||'')+'|'+studio.projectId;
  if(id!==panelOwner){panelOwner=id;panelState={group:'all',search:'',grid:true,zoom:1,pane:'3d',moving:false};}
  const ui=panelState,locked=()=>studio.busy||!studio.cloudReady;
  const article=document.createElement('section');article.id='k3d-scene-panel';article.className='ks-settings';
- article.innerHTML='<header><div><h3>Objetos de escena</h3><small>'+cfg.objects.length+' / '+MAX+' objetos</small></div><button type="button" class="ks-btn primary" id="k3d-quick-add" aria-expanded="false">＋ Agregar</button></header>'+
+ article.innerHTML='<header><div><h3>Objetos de escena</h3><small>'+cfg.objects.length+' / '+MAX+' objetos</small></div><div class="k3d-add-buttons"><button type="button" class="ks-btn primary" id="k3d-new-character">＋ Personaje</button><button type="button" class="ks-btn" id="k3d-quick-add" aria-expanded="false">＋ Objeto</button></div></header>'+
   '<div class="k3d-command" role="group" aria-label="Herramientas de escena">'+
   '<button type="button" class="ks-btn" data-view="map">Plano 2D</button><button type="button" class="ks-btn" data-view="3d">Vista 3D</button>'+
   '<button type="button" class="ks-btn" id="k3d-undo" data-suite-undo>↶ Deshacer</button><button type="button" class="ks-btn" id="k3d-redo" data-suite-redo>↷ Rehacer</button></div>'+
-  '<div id="k3d-quick-fields" class="k3d-quick" hidden><label>Objeto nuevo<select id="k3d-new-kind"></select></label><button type="button" class="ks-btn primary" id="k3d-quick-put">Agregar a la escena</button></div>'+
+  '<div id="k3d-quick-fields" class="k3d-quick" hidden><label>Objeto nuevo<select id="k3d-new-kind"></select></label><button type="button" class="ks-btn primary" id="k3d-quick-put">Editar pieza</button></div>'+
   '<div class="ks-fields k3d-filters"><label>Buscar objetos<input type="search" id="k3d-search" placeholder="Ej.: robot"></label><label>Mostrar<select id="k3d-group"><option value="all">Todos los objetos</option></select></label></div>'+
   '<div id="k3d-map-controls" class="k3d-command" hidden><button type="button" id="k3d-grid" class="ks-btn">Cuadrícula</button><button type="button" id="k3d-zoom-out" class="ks-btn" aria-label="Alejar plano">−</button><button type="button" id="k3d-zoom-in" class="ks-btn" aria-label="Acercar plano">＋</button><button type="button" id="k3d-move" class="ks-btn">Mover en el plano</button></div>'+
   '<p id="k3d-map-help" hidden>Marcá un objeto. Para cambiarlo de lugar, activá «Mover en el plano» y tocá una posición. También podés usar X y Z en Propiedades.</p>'+
@@ -284,9 +391,7 @@ function scenePanel(studio,section,cfg){
  q('quick-fields').hidden=!ui.addOpen;q('quick-add').setAttribute('aria-expanded',String(!!ui.addOpen));
  q('quick-add').onclick=()=>{ui.addOpen=q('quick-fields').hidden;q('quick-fields').hidden=!ui.addOpen;q('quick-add').setAttribute('aria-expanded',String(ui.addOpen));if(ui.addOpen)q('new-kind').focus();};
  for(const [key,label] of Object.entries(groupNames))q('group').add(new Option(label,key));
- const recent=studio.files['game.js']===Studio3D.create()['game.js'];
  for(const [key,[label]] of Object.entries(sceneTypes)){
-  if(['mountain','airplane','shield','staff'].includes(key)&&!recent)continue;
   q('new-kind').add(new Option(label,key));
  }
  q('new-kind').value=ui.kind||'character';if(!q('new-kind').value)q('new-kind').value='character';
@@ -317,13 +422,15 @@ function scenePanel(studio,section,cfg){
    update({...cfg,objects:[...cfg.objects,object]},object.id,'✓ '+object.label+' agregado al mundo.');
   }catch(e){status.textContent=e.message;}
  }
- q('quick-put').onclick=()=>add({type:q('new-kind').value});
+ q('new-character').onclick=()=>pieceEditor(studio,{type:'character'});
+ q('quick-put').onclick=()=>pieceEditor(studio,{type:q('new-kind').value});
  function select(o,fromMap=false){
   selected=o;studio.selectedSceneObject=o.id;
   q('properties').open=ui.props=true;
   document.getElementById('ks-frame')?.contentWindow?.postMessage({type:'krueka-scene-highlight',id:o.id},'*');
   paint();inspector();
   (fromMap?map:article).querySelector('[data-k3d-id="'+o.id+'"]')?.focus();
+  if(!fromMap)pieceEditor(studio,o,{existing:true});
  }
  const place=(node,x,z)=>{node.style.left=((x+10)/20*88+6)+'%';node.style.top=((z+12)/24*88+6)+'%';};
  function paint(){
@@ -397,7 +504,7 @@ function builder(studio,el,cfg){
  const identity=(studio.sid?.()||'')+'|'+studio.projectId;
  if(identity!==draftOwner){draftOwner=identity;draftCode='';draftOpen=false;studio.builderCategory='ambiente';}
  const section=document.createElement('section');section.id='k3d-builder';section.className='ks-settings';
- section.innerHTML='<div class="ks-section-label">TU PROYECTO DE VIDEOJUEGO</div><h2>Construí tu mundo por partes</h2><p>Elegí una plantilla para sumar objetos y después movelos desde la lista de escena. Podés probar la misión sin escribir código.</p>'+
+ section.innerHTML='<div class="ks-section-label">TU PROYECTO DE VIDEOJUEGO</div><h2>Construí tu mundo por partes</h2><p>Editá una pieza en primer plano, elegí dónde colocarla y probá el mundo. Nada cambia hasta confirmar.</p>'+
   '<div class="ks-scene-actions"><button type="button" class="ks-btn" id="k3d-new">＋ Nuevo mundo 3D</button><button type="button" class="ks-btn" id="k3d-projects">Mis proyectos</button><button type="button" class="ks-btn" id="k3d-save">Guardar proyecto</button><button type="button" class="ks-btn primary" id="k3d-play">▶ Probar mundo</button><button type="button" class="ks-btn" id="k3d-edit">Editar una pieza</button></div>'+
   '<div id="k3d-scene-slot"></div><details open><summary>1. Elegí una plantilla</summary><label>Categoría <select id="k3d-category"></select></label><label>Plantilla <select id="k3d-piece"></select></label><p id="k3d-about"></p>'+
   '<div class="ks-scene-actions"><button type="button" class="ks-btn primary" id="k3d-apply-part">Agregar al mundo</button><button type="button" class="ks-btn" id="k3d-copy-code">Copiar plantilla</button><button type="button" class="ks-btn" id="k3d-hero" hidden>Usar como protagonista</button></div></details>'+
@@ -423,7 +530,8 @@ function builder(studio,el,cfg){
  function description(){
   const p=selected();const counts=p.objects?.length||0,keys=Object.keys(p.settings||{});
   query('hero').hidden=p.category!=='personaje';
-  if(p.category==='personaje'){query('about').textContent='Agrega un personaje de escena que queda en su lugar. «Usar como protagonista» cambia al que controlás.';return;}
+  query('apply-part').textContent=p.category==='personaje'?'Editar personaje':counts===1&&!keys.length?'Editar pieza':'Agregar al mundo';
+  if(p.category==='personaje'){query('about').textContent='Primero personalizá el personaje en primer plano. Después elegí dónde colocarlo. «Usar como protagonista» cambia al que controlás.';return;}
   query('about').textContent=(counts?'Agrega '+counts+' objeto'+(counts===1?'':'s')+'. ':'')+
    (keys.length?'Ajusta: '+keys.map(k=>labels[k]).join(', ')+'. ':'')+
    (p.category==='vehiculo'||p.category==='prop'?'Decorativo: no se conduce ni activa acciones.':'Los objetos que ya tenés se conservan.');
@@ -437,7 +545,7 @@ function builder(studio,el,cfg){
  query('new').onclick=()=>newWorld(studio);query('projects').onclick=()=>studio.showProjects();
  query('save').onclick=async()=>{if(!studio.cloudReady||studio.busy)return;say(await studio.save()?'✓ Proyecto y piezas guardados. Buscalos en Mis proyectos.':'No se pudo guardar. Reintentá antes de salir.');};
  query('play').onclick=()=>studio.playCurrent();
- query('edit').onclick=()=>{const panel=el.querySelector('#k3d-scene-panel');if(!panel)return;panel.scrollIntoView({block:'nearest'});const props=panel.querySelector('#k3d-properties');props.open=true;props.querySelector('summary')?.focus();};
+ query('edit').onclick=()=>{const o=cfg.objects.find(item=>item.id===studio.selectedSceneObject);if(o)pieceEditor(studio,o,{existing:true});else el.querySelector('#k3d-scene-panel')?.scrollIntoView({block:'nearest'});};
  query('copy-code').onclick=async()=>{
   paste.value=draftCode=JSON.stringify(selected(),null,2);draftOpen=pastePanel.open=true;
   try{await navigator.clipboard.writeText(paste.value);say('Plantilla copiada. Podés editarla o pegarla en otro mundo 3D compatible.');}
@@ -454,7 +562,12 @@ function builder(studio,el,cfg){
    await commitScene(studio,next,next.objects.length>before.objects.length?next.objects.at(-1)?.id:null,upgrade);
   }catch(e){studio.builderNotice='';say(e.message);}
  }
- query('apply-part').onclick=()=>apply(JSON.stringify(selected()));
+ query('apply-part').onclick=()=>{
+  const p=selected();
+  if(p.category==='personaje')pieceEditor(studio,{type:'character',label:p.name.slice(0,32),avatarStyle:p.settings.avatarStyle,color:p.settings.avatarColor});
+  else if(p.objects?.length===1&&!Object.keys(p.settings).length)pieceEditor(studio,p.objects[0]);
+  else apply(JSON.stringify(p));
+ };
  query('hero').onclick=()=>apply(JSON.stringify(selected()),true);
  query('apply-paste').onclick=()=>apply(paste.value);
  query('save-part').onclick=()=>{
@@ -509,6 +622,6 @@ function install(){
  }
  window.Studio3D.__toolboxReady=true;return true;
 }
-window.Krueka3DToolbox={MAX,presets,resources,template,validate,exportObj,importScene,install,library,parsePiece,mergePiece,initialWorld,newWorld};
+window.Krueka3DToolbox={editSelection(studio,id){const object=read({},studio).objects.find(o=>o.id===id);if(object)pieceEditor(studio,object,{existing:true});},MAX,presets,resources,template,validate,exportObj,importScene,install,library,parsePiece,mergePiece,initialWorld,newWorld};
 install();
 })();
