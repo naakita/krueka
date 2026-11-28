@@ -2,7 +2,23 @@
 (function(){
 'use strict';
 if(window.Studio3D||!window.StudioKits)return;
+function avatarProfiles(){
+ return {
+  robot:{name:'Robot violeta',color:'#a5b4fc',short:'Robot'},
+  explorador:{name:'Explorador del bosque',color:'#4cae89',short:'Explorador'},
+  piloto:{name:'Piloto celeste',color:'#4ca9e8',short:'Piloto'},
+  minero:{name:'Minerito de bloques',color:'#e7a846',short:'Minero con lámpara',block:true},
+  constructora:{name:'Constructora de cubos',color:'#ee8154',short:'Constructora con overol',block:true},
+  aventurera:{name:'Aventurera pixel',color:'#7b66d9',short:'Aventurera con mochila',block:true},
+  guardian:{name:'Guardián de obsidiana',color:'#6555a2',short:'Guardián luminoso',block:true},
+  velocista:{name:'Velocista del circuito',color:'#f75a7e',short:'Velocista con zapatillas',block:true},
+  astronauta:{name:'Astronauta de cubos',color:'#80baff',short:'Astronauta con visor',block:true},
+  brote:{name:'Brote de cubos',color:'#79bf5e',short:'Criatura del bosque',block:true},
+  aldeana:{name:'Aldeana del huerto',color:'#dc7857',short:'Aldeana con sombrero',block:true}
+ };
+}
 function normalise(raw){
+  const profiles=avatarProfiles(),style=v=>typeof v==='string'&&Object.hasOwn(profiles,v)?v:'robot';
   const c=raw&&typeof raw==='object'?raw:{},num=(v,a,b,d)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Number(v))):d;
   const color=(v,d)=>/^#[0-9a-f]{6}$/i.test(String(v))?String(v):d,ids=new Set();
   const themes=['station','forest','island'],theme=themes.includes(c.theme)?c.theme:'station';
@@ -13,9 +29,9 @@ function normalise(raw){
     const zone=Number.isInteger(o.zone)&&o.zone>=0&&o.zone<=zones.length?o.zone:0;
     if(counts[zone]>=48)return [];counts[zone]++;
     let id=/^[a-z0-9-]{1,32}$/.test(String(o.id))?String(o.id):'object-'+i;let salt=0;while(ids.has(id))id='object-'+i+'-'+(++salt);ids.add(id);
-    return {id,type:['crystal','crate','pillar','tree','drone','beacon','house','car','road','wall','rock','lamp','arch','mountain','airplane','shield','staff','character'].includes(o.type)?o.type:'crate',label:String(o.label||'Objeto '+(i+1)).slice(0,32),x:num(o.x,-10,10,0),z:num(o.z,-12,12,0),size:num(o.size,.4,4,1),height:num(o.height,.5,5,1.5),color:color(o.color,'#67e8f9'),...(zone?{zone}:{}),...(o.type==='character'?{avatarStyle:['robot','piloto','explorador'].includes(o.avatarStyle)?o.avatarStyle:'robot'}:{})};
+    return {id,type:['crystal','crate','pillar','tree','drone','beacon','house','car','road','wall','rock','lamp','arch','mountain','airplane','shield','staff','character'].includes(o.type)?o.type:'crate',label:String(o.label||'Objeto '+(i+1)).slice(0,32),x:num(o.x,-10,10,0),z:num(o.z,-12,12,0),size:num(o.size,.4,4,1),height:num(o.height,.5,5,1.5),color:color(o.color,'#67e8f9'),...(zone?{zone}:{}),...(o.type==='character'?{avatarStyle:style(o.avatarStyle)}:{})};
   });
-  return {...c,kind:'explore3d',title:String(c.title||'Exploradores 3D').slice(0,60),theme,zones,lighting:['cryo','alert','sunset'].includes(c.lighting)?c.lighting:'cryo',avatarColor:color(c.avatarColor,'#a5b4fc'),avatarStyle:['robot','piloto','explorador'].includes(c.avatarStyle)?c.avatarStyle:'robot',jumpEnabled:c.jumpEnabled!==false,speed:num(c.speed,2,9,5),lives:Math.round(num(c.lives,1,9,3)),seconds:Math.round(num(c.seconds,30,300,120)),camera:c.camera==='orbit'?'orbit':'follow',quality:c.quality==='high'?'high':'low',objects};
+  return {...c,kind:'explore3d',title:String(c.title||'Exploradores 3D').slice(0,60),theme,zones,lighting:['cryo','alert','sunset'].includes(c.lighting)?c.lighting:'cryo',avatarColor:color(c.avatarColor,'#a5b4fc'),avatarStyle:style(c.avatarStyle),jumpEnabled:c.jumpEnabled!==false,speed:num(c.speed,2,9,5),lives:Math.round(num(c.lives,1,9,3)),seconds:Math.round(num(c.seconds,30,300,120)),camera:c.camera==='orbit'?'orbit':'follow',quality:c.quality==='high'?'high':'low',objects};
 }
 function runtime(isolated){
   'use strict';
@@ -128,6 +144,9 @@ function runtime(isolated){
     avatar(x,y,z,cfg.avatarColor,cfg.avatarStyle,1,1,player.angle,walk);
   }
   function avatar(x,y,z,color,style,s,h,angle=0,walk=0){
+    if(['minero','constructora','aventurera','guardian','velocista','astronauta','brote','aldeana'].includes(style)){
+      blockAvatar(x,y,z,color,style,s,h,angle,walk);return;
+    }
     box(x,y+.5*h,z,.65*s,.7*h,.45*s,color,angle);
     box(x,y+1.22*h,z,.64*s,.48*h,.55*s,color,angle);
     box(x,y+1.32*h,z+.3*s,.45*s,.2*h,.05*s,'#67e8f9',angle,true);
@@ -138,6 +157,57 @@ function runtime(isolated){
     if(style==='piloto'){box(x,y+1.62*h,z,.7*s,.17*h,.6*s,'#e2e8f0',angle);box(x,y+.65*h,z-.26*s,.46*s,.53*h,.25*s,'#334155',angle);}
     else if(style==='explorador'){box(x,y+1.6*h,z,.84*s,.09*h,.69*s,'#db9a63',angle);box(x,y+1.67*h,z,.48*s,.21*h,.46*s,'#957153',angle);}
     else{box(x,y+1.7*h,z,.08*s,.25*h,.08*s,palette.edge);crystal(x,y+1.97*h,z,.1*s,light.accent);}
+  }
+  function blockAvatar(x,y,z,color,style,s,h,angle,walk){
+    const co=Math.cos(angle),si=Math.sin(angle);
+    const part=(dx,dy,dz,w,t,d,tone,lit=false)=>box(x+(dx*co+dz*si)*s,y+dy*h,z+(-dx*si+dz*co)*s,w*s,t*h,d*s,tone,angle,lit);
+    const bulky=style==='guardian'||style==='astronauta',fast=style==='velocista';
+    const face=style==='guardian'?'#2f294f':style==='brote'?'#637f35':style==='astronauta'?'#dceafa':style==='minero'?'#a97758':style==='constructora'?'#9a654d':'#dbab85';
+    const pants=style==='guardian'?'#3b315c':style==='brote'?'#715938':style==='aldeana'?'#816851':style==='astronauta'?'#e1eaf5':'#29384f';
+    const arm=bulky?.26:.20,body=bulky?.76:.63,head=bulky?.69:.59,shoe=fast?'#f8edcf':'#202938';
+    for(const dir of [-1,1]){
+      const bounce=Math.max(0,dir*walk*.10);
+      part(dir*.19,.11+bounce,-dir*walk*.08,.27,.45,.35,pants);
+      part(dir*.19,.02+bounce,.065-dir*walk*.08,.30,.13,.45,style==='brote'?'#5b472b':shoe);
+      if(fast)part(dir*.19,.1+bounce,.29-dir*walk*.08,.23,.05,.025,color,true);
+      part(dir*(body*.5+arm*.52),.63+dir*walk*.06,0,arm,.48,.32,color);
+      part(dir*(body*.5+arm*.52),.49+dir*walk*.06,0,arm*.93,.18,.31,bulky||style==='constructora'?'#dceafa':face);
+    }
+    part(0,.56,0,body,.60,.43,color);
+    part(0,1.17,0,head,.53,.55,face);
+    if(style==='astronauta'){
+      part(0,1.16,0,head+.11,.61,.64,'#deeaf5');
+      part(0,1.28,.33,.60,.34,.10,'#182d53');
+      part(-.13,1.52,.39,.29,.038,.012,'#a0ecf7',true);
+      part(0,.61,-.33,.55,.58,.30,color);
+      part(0,.80,.23,.28,.19,.04,'#293b58');
+      part(0,.91,.257,.17,.045,.015,'#68e6c3',true);
+    }else if(style==='guardian'){
+      part(0,1.17,.28,.52,.16,.062,'#272137');
+      for(const dir of [-1,1]){part(dir*.26,1.70,0,.18,.22,.26,color);part(dir*.14,1.22,.325,.12,.058,.025,'#a7f3f0',true);part(dir*.44,1.02,0,.28,.18,.42,'#42376b');}
+      part(0,.77,.234,.35,.25,.09,'#42376b');part(0,.82,.286,.15,.14,.035,'#c4abff',true);
+    }else{
+      for(const dir of [-1,1])part(dir*.13,1.37,.285,.073,.07,.024,'#30243a');
+      part(0,1.245,.285,.115,.030,.021,'#5b3943');
+      if(style==='minero'||style==='constructora'){
+        part(0,1.62,.02,.72,.09,.64,style==='minero'?'#be7c29':'#e7aa49');
+        part(0,1.70,.02,.58,.17,.53,style==='minero'?'#dca33f':'#fac45f');
+        if(style==='minero'){part(0,1.69,.33,.23,.18,.11,'#364150');part(0,1.73,.394,.135,.10,.028,'#fff1a7',true);}
+        else{for(const dir of [-1,1]){part(dir*.17,.71,.227,.085,.38,.035,'#37486a');part(dir*.17,.84,.253,.062,.055,.02,'#ffd27f');}part(0,.65,.239,.38,.20,.04,'#37486a');}
+      }else if(style==='aventurera'){
+        part(0,1.58,-.045,.63,.19,.61,'#603d35');part(0,1.49,.28,.64,.088,.075,color);
+        part(0,.68,-.34,.53,.45,.33,'#614e7c');part(0,.72,-.515,.32,.18,.04,'#bdb1df');
+      }else if(style==='velocista'){
+        part(0,1.60,-.016,.60,.16,.57,'#58404c');part(0,1.49,.29,.63,.09,.061,color);
+        part(0,.78,.227,.28,.28,.034,'#f0e4ce');part(0,.91,.253,.15,.052,.012,color);
+      }else if(style==='brote'){
+        part(-.14,1.65,-.03,.15,.39,.16,'#40734e');part(-.25,1.89,0,.28,.12,.20,color);
+        part(.22,1.62,-.02,.18,.22,.23,'#589864');part(0,.80,.229,.32,.26,.04,'#b3d271');
+      }else{
+        part(0,1.59,.01,.92,.092,.74,'#e5bc70');part(0,1.68,.02,.59,.23,.53,'#c29352');
+        part(0,1.69,.295,.60,.07,.047,color);part(0,.61,.234,.43,.35,.053,'#e9d2a2');
+      }
+    }
   }
   function project(v){const m=viewProjection,x=v[0],y=v[1],z=v[2],w=m[3]*x+m[7]*y+m[11]*z+m[15];if(w<=.1)return null;return {x:(1+(m[0]*x+m[4]*y+m[8]*z+m[12])/w)*canvas.width/2,y:(1-(m[1]*x+m[5]*y+m[9]*z+m[13])/w)*canvas.height/2,depth:w};}
   function draw(){
@@ -208,11 +278,11 @@ function create(){
   const cfg=normalise({title:'Exploradores 3D',objects});
   return {'index.html':'<!doctype html>\n<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Exploradores 3D</title><link rel="stylesheet" href="style.css"></head><body><main><header><div><small>KRUEKA · MI MUNDO 3D</small><h1 id="game-title"></h1></div><button id="mode">▶ Jugar</button></header><div class="toolbar"><span id="hud" role="status"></span><span id="renderer"></span><button id="pause">Pausar</button><button id="restart">Reiniciar</button></div><div class="stage"><canvas id="arena" tabindex="0" aria-label="Mundo 3D: arrastrá para girar la vista"></canvas><div class="camera"><button id="rotate-left" aria-label="Girar cámara a la izquierda">↶</button><button id="rotate-right" aria-label="Girar cámara a la derecha">↷</button></div><div class="badge">CREÁ TU PROPIO RECORRIDO</div></div><div id="controls"><button data-key="ArrowLeft" aria-label="Izquierda">←</button><button data-key="ArrowUp" aria-label="Avanzar">↑</button><button data-key="ArrowDown" aria-label="Retroceder">↓</button><button data-key="ArrowRight" aria-label="Derecha">→</button><button data-key="jump">Saltar</button></div><p id="status" role="status"></p></main><script src="game-config.js"><\/script><script src="game.js"><\/script></body></html>',
     'style.css':'*{box-sizing:border-box}body{margin:0;background:#081329;color:#eef6ff;font-family:system-ui,sans-serif;--accent:#67e8f9}main{max-width:1100px;margin:auto;padding:14px}header{display:flex;justify-content:space-between;align-items:center;gap:12px}h1{font-size:clamp(22px,3vw,32px);margin:5px 0}small{font-size:10px;letter-spacing:.18em;color:var(--accent)}button{border:1px solid #ffffff30;background:#172338;color:#e9f5ff;border-radius:10px;font:inherit;font-size:12px;padding:10px 13px;cursor:pointer;touch-action:none}#mode{background:var(--accent);color:#102238;font-weight:800;white-space:nowrap}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;margin:10px 0}#hud{font-weight:750;flex:1;min-width:170px}#renderer{color:#9ab0cd;font-size:10px}.stage{position:relative;border:1px solid #5a7caa66;border-radius:16px;overflow:hidden;box-shadow:0 16px 60px #0004}canvas{display:block;width:100%;height:clamp(300px,56vh,600px);touch-action:none;outline:0}.camera{position:absolute;right:12px;bottom:12px;display:flex;gap:6px}.badge{position:absolute;left:14px;top:14px;pointer-events:none;color:#abc7e1;font-size:9px;letter-spacing:.12em}#controls{display:flex;justify-content:center;gap:6px;margin:12px 0}#controls button{min-width:42px;min-height:42px}#status{font-size:12px;text-align:center;line-height:1.5;color:#a8bdd7;min-height:36px}@media(max-width:480px){main{padding:9px}#renderer{display:none}canvas{height:340px}#controls button{padding:9px 11px}.toolbar button{padding:8px}}',
-    'game-config.js':StudioKits.configFile(cfg),'game.js':'/* Motor 3D propio: geometría, cámara, iluminación, colisiones y modo compatible. */\nconst normalise = '+normalise.toString()+';\n('+runtime.toString()+')();',
+    'game-config.js':StudioKits.configFile(cfg),'game.js':'/* Motor 3D propio: geometría, cámara, iluminación, colisiones y modo compatible. */\nconst avatarProfiles = '+avatarProfiles.toString()+';\nconst normalise = '+normalise.toString()+';\n('+runtime.toString()+')();',
     'LEEME.md':'# Exploradores 3D\n\nTema: Escenarios 3D y reglas de un videojuego.\nCapacidad: Construir y probar un recorrido, modificando objetos y ambientación.\nIndicadores: ubico objetos; comparo dos luces; pruebo colisiones y controles; explico una mejora.\n\n1. Elegí Bases y reglas: cambiá luces, escenario y personaje.\n2. Seleccioná un objeto en la escena o en la lista; cambiá X y Z, tamaño y altura.\n3. Probá con Jugar: juntá cristales y llegá al arco del fondo.\n4. Si es difícil, mové un obstáculo o aumentá el tiempo.\n5. Escribí acá qué cambiaste y qué mejoró. Enviá al profe.\n\nLos controles visuales no consultan IA. El Chat puede guardar ideas pendientes de conexión.\n'};
 }
 function piecePreview(){
- const source="window.KRUEKA_GAME={};const normalise="+normalise.toString()+";("+runtime.toString()+")(true);";
+ const source="window.KRUEKA_GAME={};const avatarProfiles="+avatarProfiles.toString()+";const normalise="+normalise.toString()+";("+runtime.toString()+")(true);";
  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'unsafe-inline\'; style-src \'unsafe-inline\'"><title>Vista de la pieza</title><style>*{box-sizing:border-box}body{margin:0;background:#081329;color:#f1f5ff;font:12px system-ui}canvas{display:block;width:100%;height:100dvh;touch-action:none}nav{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:8px}button{font:inherit;color:inherit;min-width:44px;min-height:38px;border:1px solid #728aa7;border-radius:8px;background:#13283c;cursor:pointer}#status{position:absolute;top:0;left:8px;right:8px}</style></head><body><span id="renderer" hidden></span><span id="game-title" hidden></span><p id="status" role="status"></p><canvas id="arena" tabindex="0" aria-label="Modelo 3D aislado: arrastrá para girarlo"></canvas><nav aria-label="Girar el modelo"><button id="rotate-left" aria-label="Girar a la izquierda">↶</button><button id="rotate-right" aria-label="Girar a la derecha">↷</button></nav><script>'+source+'<\/script></body></html>';
 }
 
@@ -235,7 +305,7 @@ function renderEditor(studio,el,raw){
   for(const id of ['ks-object-add','ks-object-copy']){const b=el.querySelector('#'+id);if(b){b.dataset.limitReached=String(objects.length>=48);b.disabled=studio.busy||!studio.cloudReady||objects.length>=48;}}
   el.querySelector('#ks-scene-bases').onclick=()=>studio.showKits();
 }
-window.Studio3D={normalise,create,renderEditor,piecePreview};
+window.Studio3D={normalise,create,renderEditor,piecePreview,avatarProfiles};
 StudioKits.catalog.unshift({id:'explore3d',icon:'🧊',title:'Exploradores 3D',tag:'Mundos, luces y objetos',description:'Construí una escena 3D, explorá y abrí el portal.',challenge:'Compará dos luces, mové un obstáculo y explicá cómo cambia el recorrido.'});
 const originalCreate=StudioKits.create.bind(StudioKits),originalArt=StudioKits.art.bind(StudioKits);
 StudioKits.create=id=>id==='explore3d'?create():originalCreate(id);
