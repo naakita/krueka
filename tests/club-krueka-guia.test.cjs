@@ -60,5 +60,5 @@ test('La entrada y Mis talleres enlazan las guías sin cambiar el acceso',()=>{
  }
  assert.match(read('js/club-studio-creative.js'),/Guías Scratch y Roblox/);
  assert.match(read('js/club-studio-access.js'),/name==='club-studio-creative\.js'/);
- assert.match(read('app.html'),/club-studio-creative\.js\?v=20261121[a-z0-9]+/);
+ assert.ok(Number(read('app.html').match(/club-studio-creative\.js\?v=(\d{8})[a-z0-9]*"/)?.[1]) >= 20261121, 'debe cargar una versión con el taller');
 });

@@ -49,7 +49,7 @@ test('el encabezado tradicional de cuentos y dramas sigue disponible',()=>{
 test('Libros está en Escribir, con versión de caché y categoría de galería autorizada',()=>{
  assert.match(read('js/club-studio-club.js'),/id:'libros'.*name:'Libros'/);
  assert.match(read('js/club-studio-creative.js'),/label:'Escribir',ids:\['libros'/);
- for(const p of ['club-krueka.html','studio.html'])assert.match(read(p),/club-studio-access\.js\?v=20261125/);
+ for(const p of ['club-krueka.html','studio.html'])assert.ok(Number(read(p).match(/club-studio-access\.js\?v=(\d{8})[a-z0-9]*"/)?.[1]) >= 20261125, 'debe cargar una versión con el taller');
  assert.match(read('js/club-studio-access.js'),/club-studio-talleres\.js'.*20261125/);
  assert.match(read('app.html'),/club-studio-talleres\.js\?v=20261125/);
  assert.match(read('supabase/migrations/20261121113000_club_krueka_libros_galeria.sql'),/'cuentos','libros','dramas'/);
