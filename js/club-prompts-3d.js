@@ -138,7 +138,7 @@
   if(this.files?.['tipo-club.txt']==='juegos'||kind==='pabellon-juego'){
    const box=el('details');box.className='kg-prompt-panel';box.append(el('summary','Programar con Duck.ai · Mi ficha y mis prompts'));
    box.append(el('p','Hacé un cambio por vez en Código y usá Probar. La ficha se guarda con tu proyecto. Si abrís otro chat, elegí «Retomar en otro chat» y copiá el prompt.'));
-   host.prepend(box);mount(box,this);
+   if(host.querySelector('#k3d-builder'))host.append(box);else host.prepend(box);mount(box,this);
   }
   return result;
  };

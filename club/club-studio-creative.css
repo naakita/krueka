@@ -77,3 +77,16 @@
 #krueka-studio .km-trim-result{display:block;padding:9px 12px;border-radius:8px;background:#102d40;color:#c1edf5;font-size:14px;font-variant-numeric:tabular-nums}
 #krueka-studio .km-actions .ks-btn{font-size:14px;min-height:36px}
 @media(max-width:600px){#krueka-studio .km-track-row{grid-template-columns:minmax(80px,35%) minmax(0,1fr);gap:4px}#krueka-studio .km-ruler{margin-left:37%}#krueka-studio .km-actions{gap:6px}#krueka-studio .km-transport .km-actions .ks-btn{flex:1 1 42%}}
+
+#krueka-studio #kc-new-world{margin-top:8px}
+#krueka-studio #k3d-builder{border-color:#427c83;margin:12px 0 17px}
+#krueka-studio #k3d-builder h2{margin:4px 0 6px}
+#krueka-studio #k3d-builder details{padding:8px 12px;margin:8px 0;background:#131e2b;border:1px solid #35546b;border-radius:9px}
+#krueka-studio :is(#k3d-builder,#k3d-toolbox) summary{cursor:pointer;padding:5px;color:#c7ede8;font-weight:700}
+#krueka-studio #k3d-builder label{margin:6px 0}
+#krueka-studio #k3d-builder :is(select,textarea){display:block;width:100%;min-width:0;padding:8px;background:#0b1421;color:#e7f6ff;border:1px solid #49677f;border-radius:8px}
+#krueka-studio #k3d-builder textarea{font:13px/1.45 ui-monospace,monospace;resize:vertical}
+#krueka-studio #k3d-builder #k3d-about,#krueka-studio #k3d-diagnostico p{color:#b9d3e6;font-size:12px;margin:6px 0}
+#krueka-studio #k3d-build-result:empty{display:none}
+#krueka-studio .ks-top #ks-new{display:inline-flex;align-items:center;white-space:nowrap}
+@media(max-width:600px){#krueka-studio .ks-top #ks-new{font-size:10px;padding:4px 6px}}

@@ -215,6 +215,9 @@
   // Conservamos los botones originales y sus eventos: solo cambia su posición.
   const projects=panel.querySelector('#ks-projects');
   if(projects)top.insertBefore(projects,spacer);
+  const create=panel.querySelector('#ks-new');
+  if(create){create.textContent='＋ Nuevo proyecto';top.insertBefore(create,spacer);}
+
   top.insertBefore(tabs,spacer);
   const resources=tabs.querySelector('.ck-resources');
   if(resources)top.insertBefore(resources,spacer);

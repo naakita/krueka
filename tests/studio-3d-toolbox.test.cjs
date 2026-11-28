@@ -45,6 +45,22 @@ const studio=fs.readFileSync(path.join(root,'studio.html'),'utf8');
 assert.ok(app.indexOf('club-studio-3d-toolbox.js')>app.indexOf('club-studio-3d.js'));
 assert.ok(access.includes("'club-studio-academy.js','club-studio-3d-toolbox.js'"));
 assert.match(studio,/club-studio-access\.js\?v=\d{8}[a-z0-9]*\"/i);
+const simple=K.read(tool.initialWorld()),cards=tool.library();
+assert.equal(cards.length,20);
+assert.equal(new Set(cards.map(p=>p.category)).size,7);
+for(const p of cards){
+ const clean=tool.parsePiece(JSON.stringify(p));
+ const built=tool.mergePiece(simple,clean);
+ assert.equal(built.objects[0].id,'cristal-prueba','Nunca borra una creación anterior');
+ assert.equal(tool.validate(built).ok,true,'Plantilla jugable: '+p.name);
+}
+const plane=cards.find(p=>p.name==='Avión de exhibición');
+const withPlane=tool.mergePiece(simple,plane);
+assert.throws(()=>tool.mergePiece(withPlane,plane),/ya está en esas coordenadas/);
+assert.throws(()=>tool.parsePiece('{"version":1,\n"category":}'),/Sintaxis.*línea 2/);
+assert.throws(()=>tool.parsePiece(JSON.stringify({...plane,objects:[{...plane.objects[0],color:'bad'}]})),/Objeto 1.*#RRGGBB/);
+assert.throws(()=>tool.parsePiece(JSON.stringify({...plane,settings:{speed:4}})),/Coherencia/);
+assert.throws(()=>tool.parsePiece(JSON.stringify({...plane,settings:{['__proto__']:5}})),/Coherencia/);
 async function importTests(){
  let saved=null,changed=0;
  const s={cloudReady:true,busy:false,files:original,validFiles:x=>x,checkpoint(){},changed(){changed++},refreshAll(){},lock(){}};

@@ -25,7 +25,7 @@ function homeMarkup(studio){
   return '<article class="kc-path" data-family="'+family+'"><button class="kc-start" data-creative-start="'+p.first+'"><span class="kc-icon" aria-hidden="true">'+p.icon+'</span><span><strong>'+p.title+'</strong><small>'+p.text+'</small></span><b aria-hidden="true">↗</b></button>'+more+'</article>';
  }).join('');
  const filters=['Todos',...families.filter(f=>paths.some(p=>f.ids.includes(p.id))).map(f=>f.label)];
- return '<header class="kc-desk-head"><div><h2>Mis talleres</h2><p>Elegí qué querés crear.</p></div><button class="kc-continue" id="kc-resume"><small>Seguir trabajando →</small><strong>'+esc(studio.title||'Mi proyecto')+'</strong></button></header>'+
+ return '<header class="kc-desk-head"><div><h2>Mis talleres</h2><p>Elegí qué querés crear.</p><button type="button" class="ks-btn primary" id="kc-new-world">＋ Nuevo mundo 3D</button></div><button class="kc-continue" id="kc-resume"><small>Seguir trabajando →</small><strong>'+esc(studio.title||'Mi proyecto')+'</strong></button></header>'+
  '<nav class="kc-families" aria-label="Filtrar talleres">'+filters.map(f=>'<button type="button" data-kc-filter="'+f+'">'+f+'</button>').join('')+'</nav><div class="kc-paths">'+cards+'</div>'+
  '<div class="kc-desk-links"><button type="button" data-kc-page="learn">Mi clase</button><button type="button" data-kc-page="academy">Cursos</button><a href="club-krueka-guia.html" target="_blank" rel="noopener noreferrer">📖 Guías Scratch y Roblox ↗</a><button type="button" id="ck-open-gallery">Galería del Club</button><a id="ck-explore-models" href="club-krueka-galeria.html#ejemplos" target="_blank" rel="noopener">Explorar ejemplos ↗</a></div>';
 }
@@ -41,6 +41,7 @@ function renderHome(studio){
  home.querySelectorAll('[data-creative-start]').forEach(b=>b.onclick=()=>studio.createKit(b.dataset.creativeStart));
  home.querySelectorAll('[data-creative-path]').forEach(b=>b.onclick=()=>showOptions(studio,b.dataset.creativePath));
  home.querySelectorAll('[data-kc-page]').forEach(b=>b.onclick=()=>studio.showTab(b.dataset.kcPage));
+ home.querySelector('#kc-new-world').onclick=()=>window.Krueka3DToolbox?.newWorld(studio);
  home.querySelector('#ck-open-gallery').onclick=()=>studio.showTab('club-gallery');
  home.querySelector('#kc-resume').onclick=()=>{
   const tab=window.ClubKrueka?.isCreative(studio)?'club-work':window.StudioBloques?.isBlocks(studio)?'bloques':StudioKits.read(studio.files)?'create':'programacion';
@@ -56,6 +57,7 @@ function showOptions(studio,path){
 function decorateEditor(studio){
  const el=document.getElementById('ks-create');if(!el||el.querySelector('.kc-editor-guide'))return;
  const guide=document.createElement('div');guide.className='kc-editor-guide';guide.innerHTML='<span>1 · Creá</span><b>2 · Personalizá</b><button class="ks-btn" id="kc-test">3 · Probá</button><button class="ks-btn" id="kc-lesson">Guía de la clase</button>';
+ if(el.querySelector('#k3d-builder'))guide.hidden=true;
  el.insertBefore(guide,el.firstChild);guide.querySelector('#kc-test').onclick=()=>studio.playCurrent();guide.querySelector('#kc-lesson').onclick=()=>studio.showTab('learn');
  const log=document.createElement('section');log.className='ks-settings kc-log';log.innerHTML='<h3>Mi bitácora</h3><p>¿Qué cambiaste y cómo mejoró tu creación? Escribí dos o tres oraciones.</p><label for="kc-reflection">Mi decisión y mi prueba</label><textarea id="kc-reflection" maxlength="800" rows="4"></textarea><button id="kc-save-reflection" class="ks-btn">Guardar mi explicación</button><p class="ks-tip">Cuando termines, usá Guardar y Enviar al profe. Tu entrega es privada.</p>';
  const saved=String(studio.files['mi-proceso.txt']||'').slice(0,800);log.querySelector('textarea').value=saved;

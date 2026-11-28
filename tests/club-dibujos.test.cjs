@@ -139,7 +139,7 @@ test('Krita: los bloqueos de capas y los ajustes inválidos se normalizan con se
 
 test('el acceso carga el diseño actualizado tanto por código como por entrada directa',()=>{
  for(const page of ['club-krueka.html','studio.html','app.html'])assert.match(read(page),/club-studio-talleres\.css\?v=20261125/);
- for(const page of ['club-krueka.html','studio.html'])assert.match(read(page),/club-studio-access\.js\?v=20261125/);
+ for(const page of ['club-krueka.html','studio.html'])assert.ok(Number(read(page).match(/club-studio-access\.js\?v=(\d{8})[a-z0-9]*"/)?.[1]) >= 20261125, 'debe cargar una versión con el taller');
  assert.match(read('js/club-studio-access.js'),/club-studio-talleres\.js'.*return 'js\/'.*20261125/);
  assert.match(read('club/club-studio-talleres.css'),/ct-canvas-expanded/);
 });
